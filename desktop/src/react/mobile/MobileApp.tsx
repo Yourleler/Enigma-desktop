@@ -12,6 +12,8 @@ import { togglePreviewPanel } from '../stores/preview-actions';
 import { openSettingsModal } from '../stores/settings-modal-actions';
 import { useStore } from '../stores';
 import { createNewSession, reconcileCurrentSessionMessages } from '../stores/session-actions';
+import { exchangeLocalWorkbenchCredential } from './local-workbench-login';
+import enigmaAvatar from '../../assets/enigma/avatar.png';
 import {
   initializeMobileRuntime,
   loadMobileSessions,
@@ -58,6 +60,7 @@ export function MobileApp(): React.ReactElement {
   const [mobileUpdateAvailable, setMobileUpdateAvailable] = useState(() => window.__hanaMobileUpdateAvailable === true);
 
   const bootstrap = useCallback(async () => {
+    await exchangeLocalWorkbenchCredential();
     await ensureMobileAuthLocale();
     const session = await readMobileAuthSession();
     if (!session.authenticated || !session.principal) {
@@ -396,7 +399,7 @@ function MobileLoadingScreen() {
   return (
     <main className="onboarding">
       <section className="onboarding-step active">
-        <img className="onboarding-avatar" src="./icon.png" alt="" />
+        <img className="onboarding-avatar" src={window.location.pathname.startsWith('/desktop') ? enigmaAvatar : './icon.png'} alt="" />
         <h1 className="onboarding-title">HanaAgent</h1>
         <p className="onboarding-subtitle">{t('mobile.loading')}</p>
       </section>
@@ -438,7 +441,7 @@ function MobileLoginScreen({
         <img className="onboarding-avatar" src="./icon.png" alt="" />
         <h1 className="onboarding-title">{window.location.pathname.startsWith('/desktop') ? '登录 Enigma 工作台' : t('mobile.auth.title')}</h1>
         <p className="onboarding-subtitle">{mode === 'device'
-          ? t('mobile.auth.deviceHelp')
+          ? window.location.pathname.startsWith('/desktop') ? '本机使用无需设置密码。在项目目录运行 npm run enigma:open 自动登录；其他设备使用已配对的访问密钥。' : t('mobile.auth.deviceHelp')
           : t('mobile.auth.passwordHelp')}</p>
 
         <div className="provider-grid" role="tablist" aria-label={t('mobile.auth.tabLabel')}>

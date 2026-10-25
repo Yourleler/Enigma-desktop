@@ -76,6 +76,7 @@
     "pretypecheck": "npm run build:engineering",
     "enigma:web": "npm run build:packages && npm run build:renderer && node scripts/launch-enigma.mjs server",
     "enigma:desktop": "npm run build:packages && node scripts/launch-enigma.mjs electron",
+    "enigma:open": "node scripts/open-enigma-workbench.mjs",
     "postbuild:renderer": "npm run build:theme"
   },
   "dependencies": {

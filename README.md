@@ -6,6 +6,8 @@
 
 Mac 开发入口：`npm run enigma:web`。它使用独立的 `~/.enigma-desktop-dev` 数据目录；会话顶部选择工程工作区。模型在宿主设置中配置，也可用 `node scripts/launch-enigma.mjs server --models /path/to/models.json` 显式导入现有兼容配置。文件内密钥不会打印。旧 Enigma 和 Enigma-next 保留。
 
+服务启动后运行 `npm run enigma:open` 打开浏览器工作台，本机登录自动完成，无需设置或填写密码。访问凭证经原登录接口换成 HttpOnly cookie，地址中的临时凭证立即移除；远程设备仍按原配对方式登录。Enigma 默认使用几何 E 头像，已有自定义头像保留，可在设置中上传更换。
+
 - 项目来源、验证结果与开发边界：[FORK.md](FORK.md)
 - Pi 1.4.0 适配说明：[PI140_UPGRADE.md](PI140_UPGRADE.md)
 - 本轮迁移、验收与限制：[迁移记录](docs/enigma-migration-progress.md)

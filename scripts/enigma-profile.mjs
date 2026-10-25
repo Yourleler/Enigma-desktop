@@ -1,4 +1,5 @@
 import fs from 'node:fs/promises';
+import { constants } from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import YAML from 'js-yaml';
@@ -9,6 +10,10 @@ export async function prepareEnigmaProfile({ dataRoot, modelsFile, workspace } =
   const agentDir = path.join(nativeDataRoot,'agents','enigma');
   await fs.mkdir(agentDir,{recursive:true});
   const configPath=path.join(agentDir,'config.yaml');
+  const avatarDir=path.join(agentDir,'avatars');
+  await fs.mkdir(avatarDir,{recursive:true});
+  const hasAvatar=await Promise.all(['png','jpg','jpeg','webp'].map(ext=>fs.access(path.join(avatarDir,`agent.${ext}`)).then(()=>true,error=>{if(error.code==='ENOENT')return false;throw error;})));
+  if(!hasAvatar.some(Boolean))await fs.copyFile(new URL('../desktop/src/assets/enigma/avatar.png',import.meta.url),path.join(avatarDir,'agent.png'),constants.COPYFILE_EXCL);
   let config;
   try { config=YAML.load(await fs.readFile(configPath,'utf8')); }
   catch(error) {

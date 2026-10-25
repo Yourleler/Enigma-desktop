@@ -567,6 +567,7 @@
     "plugins/enigma/",
     "scripts/enigma-profile.mjs",
     "scripts/launch-enigma.mjs",
+    "scripts/open-enigma-workbench.mjs",
     "scripts/verify-enigma-native.mjs",
     "server/app-events.ts",
     "server/block-extractors.ts",
