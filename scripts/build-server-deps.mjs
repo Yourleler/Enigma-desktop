@@ -47,6 +47,7 @@ export function readPackageJsonWithRetry(filePath, { maxRetries = 5, baseDelayMs
 function getLockedPackageVersion(rootLock, packageName) {
   const packagePath = `node_modules/${packageName}`;
   const lockedPackage = rootLock?.packages?.[packagePath];
+  if (lockedPackage?.link && rootLock?.packages?.[lockedPackage.resolved]?.version) return rootLock.packages[lockedPackage.resolved].version;
   if (!lockedPackage?.version) {
     throw new Error(`[build-server] package-lock.json does not contain ${packagePath}`);
   }

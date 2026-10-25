@@ -62,7 +62,21 @@
     "lint": "eslint .",
     "lint:boundary": "node scripts/lint-open-boundary.mjs",
     "test:watch": "vitest --exclude '**/.claude/**' --exclude '**/.cache/**' --exclude '**/dist/**' --exclude '**/dist-server/**' --exclude '**/dist-computer-use/**' --exclude '**/dist-sandbox/**'",
-    "postinstall": "node scripts/patch-pi-sdk.cjs"
+    "postinstall": "node scripts/patch-pi-sdk.cjs",
+    "build:engineering": "npm run build --workspace=enigma-next",
+    "prestart": "npm run build:engineering",
+    "prestart:dev": "npm run build:engineering",
+    "prestart:vite": "npm run build:engineering",
+    "preserver": "npm run build:engineering",
+    "precli": "npm run build:engineering",
+    "predev:web": "npm run build:engineering",
+    "prebuild:server": "npm run build:engineering",
+    "prebuild:server:open": "npm run build:engineering",
+    "prebuild:renderer": "npm run build:engineering",
+    "pretypecheck": "npm run build:engineering",
+    "enigma:web": "npm run build:packages && npm run build:renderer && node scripts/launch-enigma.mjs server",
+    "enigma:desktop": "npm run build:packages && node scripts/launch-enigma.mjs electron",
+    "postbuild:renderer": "npm run build:theme"
   },
   "dependencies": {
     "@codemirror/lang-markdown": "^6.5.0",
@@ -110,7 +124,8 @@
     "undici": "7.24.7",
     "unpdf": "1.6.2",
     "ws": "^8.18.0",
-    "zustand": "^5.0.11"
+    "zustand": "^5.0.11",
+    "enigma-next": "0.4.2"
   },
   "overrides": {
     "form-data": "^4.0.0",

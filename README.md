@@ -2,10 +2,14 @@
 
 基于 [OpenHanako / HanaAgent](https://github.com/liliMozi/openhanako) 与 **Pi 1.4.0** 的 Enigma 桌面端开发仓库。
 
-本仓库从已验证的 Hana + Pi 1.4.0 适配起步。后续将通过独立工程模块、插件与宿主适配接入 Enigma-next 的多仓库协同、代码智能阅读、项目记忆、时光机和运行状态观察能力。这些 Enigma 功能目前尚未迁入。
+工程能力已迁入 `packages/enigma-engineering`，通过 `plugins/enigma` 绑定 Hana 的原生主会话、模型、审批与资源。原生 React 工作台接入多仓库协同、代码阅读、计划与联合验收、工程记忆、时光机、运行观察、隔离任务及背景交接；使用持久内容标签、深浅玻璃和可关闭动效。
+
+Mac 开发入口：`npm run enigma:web`。它使用独立的 `~/.enigma-desktop-dev` 数据目录；会话顶部选择工程工作区。模型在宿主设置中配置，也可用 `node scripts/launch-enigma.mjs server --models /path/to/models.json` 显式导入现有兼容配置。文件内密钥不会打印。旧 Enigma 和 Enigma-next 保留。
 
 - 项目来源、验证结果与开发边界：[FORK.md](FORK.md)
 - Pi 1.4.0 适配说明：[PI140_UPGRADE.md](PI140_UPGRADE.md)
+- 本轮迁移、验收与限制：[迁移记录](docs/enigma-migration-progress.md)
+- **全部后续点子、模型职责拆分与运行中切换：[总分析报告](docs/innovation-and-model-orchestration-report.md)**
 - 现有工程插件与 Web 工作台：[Enigma-next](https://github.com/Yourleler/Enigma-next)
 - 原 Python 历史版：[Enigma](https://github.com/Yourleler/Enigma)
 

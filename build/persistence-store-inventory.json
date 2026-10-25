@@ -921,6 +921,79 @@
       "exemption": null
     },
     {
+      "id": "enigma-execution-policies",
+      "ownerModule": "plugins/enigma/execution-policy.ts",
+      "pathPattern": "plugin-data/enigma/policies",
+      "pathPatterns": [
+        "plugin-data/enigma/policies"
+      ],
+      "pathExclusions": [],
+      "pathKind": "tree",
+      "format": "mixed-directory",
+      "schemaSource": {
+        "kind": "directory-contract",
+        "module": "plugins/enigma/execution-policy.ts",
+        "contract": "immutable hash-named SBPL profiles derived from the current native sandbox, repository rights and network policy"
+      },
+      "schemaContract": {
+        "kind": "protocol",
+        "source": "plugins/enigma/execution-policy.ts",
+        "compatibility": "The named runtime reader is canonical; this inventory does not imply stricter validation than runtime currently performs."
+      },
+      "openEntry": [
+        "withNativeEngineeringExecution"
+      ],
+      "migrationEntry": [],
+      "protocolModules": [],
+      "firstPossibleOpenPhase": "engine_construct",
+      "firstPossibleWritePhase": "runtime_ready",
+      "epochPolicy": "compatible",
+      "checkpointPolicy": "Derived profiles contain paths and access rules, never credentials; regenerate from verified runtime policy.",
+      "restorePolicy": "Verify the existing profile bytes or regenerate; do not make an old profile authoritative over current permissions.",
+      "affectedByEpochMigration": false,
+      "bootstrapSafety": null,
+      "preCoordinatorReadProjection": null,
+      "identityContract": "Profile hash identifies exact policy bytes; only the application writer may create this directory.",
+      "exemption": null
+    },
+    {
+      "id": "enigma-session-bindings",
+      "ownerModule": "plugins/enigma/host.ts",
+      "pathPattern": "user/enigma-bindings.json",
+      "pathPatterns": [
+        "user/enigma-bindings.json"
+      ],
+      "pathExclusions": [],
+      "pathKind": "file",
+      "format": "json",
+      "schemaSource": {
+        "kind": "runtime-contract",
+        "module": "plugins/enigma/host.ts",
+        "contract": "schema 1 native-session/workspace binding, absolute roots, explicit memory flag, and validated source identity"
+      },
+      "schemaContract": {
+        "kind": "runtime-source",
+        "source": "plugins/enigma/host.ts",
+        "compatibility": "An additive plugin-owned file; existing Hana stores and DATA_EPOCH remain unchanged."
+      },
+      "openEntry": [
+        "EngineeringHost.load",
+        "EngineeringHost.saveBinding"
+      ],
+      "migrationEntry": [],
+      "protocolModules": [],
+      "firstPossibleOpenPhase": "engine_construct",
+      "firstPossibleWritePhase": "runtime_ready",
+      "epochPolicy": "compatible",
+      "checkpointPolicy": "Bindings identify external engineering workspaces; capture this metadata without traversing or rolling back their repositories.",
+      "restorePolicy": "Restore only through the schema 1 binding reader; external workspace/code recovery remains an explicit Enigma operation.",
+      "affectedByEpochMigration": false,
+      "bootstrapSafety": null,
+      "preCoordinatorReadProjection": null,
+      "identityContract": "Hana sessionId owns one current workspace binding; sessionPath is only a locator for a not-yet-registered session.",
+      "exemption": null
+    },
+    {
       "id": "execution-leases",
       "ownerModule": "core/execution-lease-registry.ts",
       "pathPattern": "security/execution-leases.json",
@@ -1417,7 +1490,8 @@
       "pathExclusions": [
         "plugin-data/office/jobs",
         "plugin-data/office/generated",
-        "plugin-data/mcp"
+        "plugin-data/mcp",
+        "plugin-data/enigma/policies"
       ],
       "pathKind": "tree",
       "format": "mixed-directory",
@@ -8240,6 +8314,69 @@
       "ordinal": 0
     },
     {
+      "sourceFile": "plugins/enigma/execution-policy.ts",
+      "kind": "mkdir",
+      "excerpt": "fs.mkdir(directory,{recursive:true})",
+      "reason": "Writes only immutable, application-owned native execution profiles.",
+      "storeId": "enigma-execution-policies",
+      "exemptionId": null,
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "plugins/enigma/execution-policy.ts",
+      "kind": "write-file",
+      "excerpt": "fs.writeFile(file,contents,{mode:0o600,flag:'wx'})",
+      "reason": "Writes only immutable, application-owned native execution profiles.",
+      "storeId": "enigma-execution-policies",
+      "exemptionId": null,
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "plugins/enigma/host.ts",
+      "kind": "atomic-write",
+      "excerpt": "writeJson(path.join(fork.data, `session-${safeId(manager.getSessionId())}.json`), { ...previous, sessionFile: targetPath })",
+      "reason": "Writes schema-1 engineering state in an explicit external workspace, outside HANA_HOME. Its repository checkpoint, user-requirement and cumulative-budget protocol is independently verified by Enigma; host epoch rollback must not traverse external repositories.",
+      "storeId": null,
+      "exemptionId": "external-enigma-session-state",
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "plugins/enigma/host.ts",
+      "kind": "atomic-write",
+      "excerpt": "writeJson(path.join(workspace.data, `session-${safeId(target.getSessionId())}.json`), { schema: 1, mode: 'managed', requirements, requirementEntries: requirementEntries.filter(id => surviving.has(id)), reviewEntries: requirements.map((_text",
+      "reason": "Writes schema-1 engineering state in an explicit external workspace, outside HANA_HOME. Its repository checkpoint, user-requirement and cumulative-budget protocol is independently verified by Enigma; host epoch rollback must not traverse external repositories.",
+      "storeId": null,
+      "exemptionId": "external-enigma-session-state",
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "plugins/enigma/host.ts",
+      "kind": "atomic-write",
+      "excerpt": "writeJson(statePath, { schema: 1, requirements: [], requirementEntries: [], reviewEntries: [], evidence: [], requests: 0, corrections: 0, mode: 'managed', lastVerification: 'unverified', planFile: `active-plan-${safeId(nativeManager.getSess",
+      "reason": "Writes schema-1 engineering state in an explicit external workspace, outside HANA_HOME. Its repository checkpoint, user-requirement and cumulative-budget protocol is independently verified by Enigma; host epoch rollback must not traverse external repositories.",
+      "storeId": null,
+      "exemptionId": "external-enigma-session-state",
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "plugins/enigma/host.ts",
+      "kind": "atomic-write",
+      "excerpt": "writeJson(this.configPath, { schema: 1, sessions: bindings })",
+      "reason": "Writes the native engineering binding map only.",
+      "storeId": "enigma-session-bindings",
+      "exemptionId": null,
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "plugins/enigma/host.ts",
+      "kind": "atomic-write",
+      "excerpt": "writeJson(this.configPath, { schema: 1, sessions: bindings })",
+      "reason": "Writes the native engineering binding map only.",
+      "storeId": "enigma-session-bindings",
+      "exemptionId": null,
+      "ordinal": 1
+    },
+    {
       "sourceFile": "plugins/jimeng-cli/adapters/dreamina.ts",
       "kind": "mkdir",
       "excerpt": "fs.mkdirSync(resolved, { recursive: true })",
@@ -9863,6 +10000,17 @@
         "mkdir"
       ],
       "linePattern": "(?:skillsDir|fs[.]mkdirSync\\(dir|baseDir)"
+    },
+    {
+      "id": "external-enigma-session-state",
+      "ownerModule": "packages/enigma-engineering/src/pi-extension.ts",
+      "sourceFile": "plugins/enigma/host.ts",
+      "reason": "Writes schema-1 engineering state in an explicit external workspace, outside HANA_HOME. Its repository checkpoint, user-requirement and cumulative-budget protocol is independently verified by Enigma; host epoch rollback must not traverse external repositories.",
+      "expiresOn": "2026-12-31",
+      "kinds": [
+        "atomic-write"
+      ],
+      "linePattern": "statePath|workspace\\.data|fork\\.data"
     },
     {
       "id": "external-file-ref-io",

@@ -293,6 +293,17 @@
       "sourceFile": "server/routes/desk.ts"
     },
     {
+      "expiresOn": "2026-12-31",
+      "id": "external-enigma-session-state",
+      "kinds": [
+        "atomic-write"
+      ],
+      "linePattern": "statePath|workspace\\.data|fork\\.data",
+      "ownerModule": "packages/enigma-engineering/src/pi-extension.ts",
+      "reason": "Writes schema-1 engineering state in an explicit external workspace, outside HANA_HOME. Its repository checkpoint, user-requirement and cumulative-budget protocol is independently verified by Enigma; host epoch rollback must not traverse external repositories.",
+      "sourceFile": "plugins/enigma/host.ts"
+    },
+    {
       "expiresOn": "2027-01-31",
       "id": "external-file-ref-io",
       "kinds": [
@@ -668,7 +679,7 @@
     ],
     "version": 3
   },
-  "payloadFingerprint": "sha256:8a32a5fe92974ec9e0073dfbeccd54d9b69b15698d9fb3478b8c501217cb304d",
+  "payloadFingerprint": "sha256:81ecc26e1784d39a4f6e457f6306b8702d0c24436f765bb4e9080404ce7fd155",
   "registry": [
     {
       "affectedByEpochMigration": true,
@@ -1545,6 +1556,79 @@
       }
     },
     {
+      "affectedByEpochMigration": false,
+      "bootstrapSafety": null,
+      "checkpointPolicy": "Derived profiles contain paths and access rules, never credentials; regenerate from verified runtime policy.",
+      "epochPolicy": "compatible",
+      "exemption": null,
+      "firstPossibleOpenPhase": "engine_construct",
+      "firstPossibleWritePhase": "runtime_ready",
+      "format": "mixed-directory",
+      "id": "enigma-execution-policies",
+      "identityContract": "Profile hash identifies exact policy bytes; only the application writer may create this directory.",
+      "migrationEntry": [],
+      "openEntry": [
+        "withNativeEngineeringExecution"
+      ],
+      "ownerModule": "plugins/enigma/execution-policy.ts",
+      "pathExclusions": [],
+      "pathKind": "tree",
+      "pathPattern": "plugin-data/enigma/policies",
+      "pathPatterns": [
+        "plugin-data/enigma/policies"
+      ],
+      "preCoordinatorReadProjection": null,
+      "protocolModules": [],
+      "restorePolicy": "Verify the existing profile bytes or regenerate; do not make an old profile authoritative over current permissions.",
+      "schemaContract": {
+        "compatibility": "The named runtime reader is canonical; this inventory does not imply stricter validation than runtime currently performs.",
+        "kind": "protocol",
+        "source": "plugins/enigma/execution-policy.ts"
+      },
+      "schemaSource": {
+        "contract": "immutable hash-named SBPL profiles derived from the current native sandbox, repository rights and network policy",
+        "kind": "directory-contract",
+        "module": "plugins/enigma/execution-policy.ts"
+      }
+    },
+    {
+      "affectedByEpochMigration": false,
+      "bootstrapSafety": null,
+      "checkpointPolicy": "Bindings identify external engineering workspaces; capture this metadata without traversing or rolling back their repositories.",
+      "epochPolicy": "compatible",
+      "exemption": null,
+      "firstPossibleOpenPhase": "engine_construct",
+      "firstPossibleWritePhase": "runtime_ready",
+      "format": "json",
+      "id": "enigma-session-bindings",
+      "identityContract": "Hana sessionId owns one current workspace binding; sessionPath is only a locator for a not-yet-registered session.",
+      "migrationEntry": [],
+      "openEntry": [
+        "EngineeringHost.load",
+        "EngineeringHost.saveBinding"
+      ],
+      "ownerModule": "plugins/enigma/host.ts",
+      "pathExclusions": [],
+      "pathKind": "file",
+      "pathPattern": "user/enigma-bindings.json",
+      "pathPatterns": [
+        "user/enigma-bindings.json"
+      ],
+      "preCoordinatorReadProjection": null,
+      "protocolModules": [],
+      "restorePolicy": "Restore only through the schema 1 binding reader; external workspace/code recovery remains an explicit Enigma operation.",
+      "schemaContract": {
+        "compatibility": "An additive plugin-owned file; existing Hana stores and DATA_EPOCH remain unchanged.",
+        "kind": "runtime-source",
+        "source": "plugins/enigma/host.ts"
+      },
+      "schemaSource": {
+        "contract": "schema 1 native-session/workspace binding, absolute roots, explicit memory flag, and validated source identity",
+        "kind": "runtime-contract",
+        "module": "plugins/enigma/host.ts"
+      }
+    },
+    {
       "affectedByEpochMigration": true,
       "bootstrapSafety": null,
       "checkpointPolicy": "Exclude expired leases and preserve live leases only with their grant principals.",
@@ -2055,7 +2139,8 @@
       "pathExclusions": [
         "plugin-data/office/jobs",
         "plugin-data/office/generated",
-        "plugin-data/mcp"
+        "plugin-data/mcp",
+        "plugin-data/enigma/policies"
       ],
       "pathKind": "tree",
       "pathPattern": "plugin-data/{pluginId}",
@@ -3122,8 +3207,8 @@
   ],
   "review": {
     "classification": "compatible",
-    "compatibilityReason": "Pi 1.4 runtime and native max effort adaptation; Hana persistence store shapes and DATA_EPOCH are unchanged, auth refresh shares the SDK file lock, and old JSONL revisions are rechecked.",
-    "payloadFingerprint": "sha256:8a32a5fe92974ec9e0073dfbeccd54d9b69b15698d9fb3478b8c501217cb304d"
+    "compatibilityReason": "Enigma adds schema-1 session bindings, derived sandbox policies and optional Pi custom operation entries; existing Hana SQLite schemas and DATA_EPOCH remain unchanged. Scoped adapters, worker packaging and watcher shutdown preserve the independent Enigma project protocol.",
+    "payloadFingerprint": "sha256:81ecc26e1784d39a4f6e457f6306b8702d0c24436f765bb4e9080404ce7fd155"
   },
   "schemas": [
     {
@@ -3329,6 +3414,20 @@
       "module": "core/device-registry.ts",
       "sourceHash": "sha256:5e2db8e7b1de0b05eca16bb028fa9d972f1f7ea9f0a9f6417b0961c853d4a43f",
       "storeId": "device-access-registries"
+    },
+    {
+      "contract": "immutable hash-named SBPL profiles derived from the current native sandbox, repository rights and network policy",
+      "kind": "directory-contract",
+      "module": "plugins/enigma/execution-policy.ts",
+      "sourceHash": "sha256:e773549289ebb4060de85a67b260d2b0159729b70e2dd7493fe7e3e456936a80",
+      "storeId": "enigma-execution-policies"
+    },
+    {
+      "contract": "schema 1 native-session/workspace binding, absolute roots, explicit memory flag, and validated source identity",
+      "kind": "runtime-contract",
+      "module": "plugins/enigma/host.ts",
+      "sourceHash": "sha256:b16624cc480a9923dfce2d90e61003ecfc26a50452cbe74be849aa6a45235a56",
+      "storeId": "enigma-session-bindings"
     },
     {
       "contract": "execution lease registry validator and atomic serializer",
@@ -3544,7 +3643,7 @@
         {
           "contract": "core/session-coordinator.ts Hana metadata extensions",
           "module": "core/session-coordinator.ts",
-          "sourceHash": "sha256:7d7ea172061a3714a93f5b45b607825e85c7bba09fa292c783a56d9a30328de4"
+          "sourceHash": "sha256:902e6a02169e0ac14e5dc8570e192c0db817b13c27ff16c283f5e75fbc87dd53"
         },
         {
           "contract": "core/session-jsonl-file.ts repair contract",
@@ -8834,6 +8933,62 @@
       "reason": "Copies a generated cover beside an explicitly selected workspace Markdown file and atomically updates that external file.",
       "sourceFile": "plugins/beautify/lib/markdown-cover-service.ts",
       "storeId": null
+    },
+    {
+      "exemptionId": null,
+      "kind": "mkdir",
+      "ordinal": 0,
+      "reason": "Writes only immutable, application-owned native execution profiles.",
+      "sourceFile": "plugins/enigma/execution-policy.ts",
+      "storeId": "enigma-execution-policies"
+    },
+    {
+      "exemptionId": null,
+      "kind": "write-file",
+      "ordinal": 0,
+      "reason": "Writes only immutable, application-owned native execution profiles.",
+      "sourceFile": "plugins/enigma/execution-policy.ts",
+      "storeId": "enigma-execution-policies"
+    },
+    {
+      "exemptionId": "external-enigma-session-state",
+      "kind": "atomic-write",
+      "ordinal": 0,
+      "reason": "Writes schema-1 engineering state in an explicit external workspace, outside HANA_HOME. Its repository checkpoint, user-requirement and cumulative-budget protocol is independently verified by Enigma; host epoch rollback must not traverse external repositories.",
+      "sourceFile": "plugins/enigma/host.ts",
+      "storeId": null
+    },
+    {
+      "exemptionId": "external-enigma-session-state",
+      "kind": "atomic-write",
+      "ordinal": 0,
+      "reason": "Writes schema-1 engineering state in an explicit external workspace, outside HANA_HOME. Its repository checkpoint, user-requirement and cumulative-budget protocol is independently verified by Enigma; host epoch rollback must not traverse external repositories.",
+      "sourceFile": "plugins/enigma/host.ts",
+      "storeId": null
+    },
+    {
+      "exemptionId": "external-enigma-session-state",
+      "kind": "atomic-write",
+      "ordinal": 0,
+      "reason": "Writes schema-1 engineering state in an explicit external workspace, outside HANA_HOME. Its repository checkpoint, user-requirement and cumulative-budget protocol is independently verified by Enigma; host epoch rollback must not traverse external repositories.",
+      "sourceFile": "plugins/enigma/host.ts",
+      "storeId": null
+    },
+    {
+      "exemptionId": null,
+      "kind": "atomic-write",
+      "ordinal": 0,
+      "reason": "Writes the native engineering binding map only.",
+      "sourceFile": "plugins/enigma/host.ts",
+      "storeId": "enigma-session-bindings"
+    },
+    {
+      "exemptionId": null,
+      "kind": "atomic-write",
+      "ordinal": 1,
+      "reason": "Writes the native engineering binding map only.",
+      "sourceFile": "plugins/enigma/host.ts",
+      "storeId": "enigma-session-bindings"
     },
     {
       "exemptionId": null,

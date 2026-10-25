@@ -1,3 +1,4 @@
+import { createEnigmaRoute } from '../routes/enigma.ts';
 /**
  * server composition — open root.
  *
@@ -98,6 +99,7 @@ export function registerOpenRoutes(app: Hono, ctx: CompositionContext): void {
   app.route("/api", createSessionsRoute(engine, hub));
   app.route("/api", createSessionCollabRoute(engine));
   app.route("/api", createSessionProjectsRoute(engine));
+  app.route("/api", createEnigmaRoute(engine));
   app.route("/api", createModelsRoute(engine));
   app.route("/api", createConfigRoute(engine));
   app.route("/api", createMemoryDreamRoute(engine));

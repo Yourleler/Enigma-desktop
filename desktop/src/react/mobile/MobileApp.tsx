@@ -436,7 +436,7 @@ function MobileLoginScreen({
     <main className="onboarding">
       <form className="onboarding-step active" onSubmit={onSubmit}>
         <img className="onboarding-avatar" src="./icon.png" alt="" />
-        <h1 className="onboarding-title">{t('mobile.auth.title')}</h1>
+        <h1 className="onboarding-title">{window.location.pathname.startsWith('/desktop') ? '登录 Enigma 工作台' : t('mobile.auth.title')}</h1>
         <p className="onboarding-subtitle">{mode === 'device'
           ? t('mobile.auth.deviceHelp')
           : t('mobile.auth.passwordHelp')}</p>
@@ -489,6 +489,7 @@ function shouldIgnoreMobileEdgeGestureTarget(target: EventTarget | null): boolea
 
 function principalHasRequiredScopes(principal: MobilePrincipal, requiredScopes: readonly string[]): boolean {
   const scopes = Array.isArray(principal.scopes) ? principal.scopes : [];
+  if (principal.kind === 'local_user' && principal.credentialKind === 'loopback_token' && principal.connectionKind === 'local' && principal.trustState === 'local') return true;
   return requiredScopes.every((scope) => scopeAllows(scopes, scope));
 }
 

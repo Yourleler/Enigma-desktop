@@ -975,6 +975,21 @@ describe("callText provider-compat routing", () => {
     } as any)).resolves.toBe("OK from Responses");
   });
 
+  it("accepts a Responses gateway that returns SSE for a buffered utility request", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'text/event-stream; charset=utf-8' }),
+      body: makeSseBody([
+        `event: response.output_text.delta\ndata: ${JSON.stringify({ type: "response.output_text.delta", delta: '{"action":"allow"}' })}\n\n`,
+        `event: response.completed\ndata: ${JSON.stringify({ type: "response.completed", response: { status: "completed", usage: { input_tokens: 10, output_tokens: 7 } } })}\n\n`,
+      ]),
+    } as any);
+    await expect(callText({ api: 'openai-responses', apiKey: 'fixture', baseUrl: 'https://example.test/v1',
+      model: { id: 'fixture-model', provider: 'fixture' }, messages: [{ role: 'user', content: 'Return the decision.' }], timeoutMs: 5000 } as any))
+      .resolves.toBe('{"action":"allow"}');
+  });
+
   it("sends Codex Responses utility requests to ChatGPT /codex/responses with account headers", async () => {
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue({
       ok: true,

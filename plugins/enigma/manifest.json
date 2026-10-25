@@ -1,0 +1,8 @@
+{
+  "id": "enigma",
+  "name": "Enigma 工程工作台",
+  "version": "0.4.2",
+  "description": "多仓库协同、代码阅读、受保护恢复与工程记忆；复用 Hana 的原生主会话。",
+  "trust": "full-access",
+  "minAppVersion": "0.450.0"
+}

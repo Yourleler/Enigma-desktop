@@ -44,6 +44,8 @@ export default defineConfig({
         "ws",
         /^@mariozechner\//,
         /^@earendil-works\//,
+        // Keep the engineering package's worker files and package-relative URLs intact.
+        /^enigma-next(?:\/|$)/,
         "@silvia-odwyer/photon-node",
         "@larksuiteoapi/node-sdk",
         "node-telegram-bot-api",

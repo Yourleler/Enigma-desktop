@@ -96,3 +96,7 @@ reviews/
 
 # Codex environments
 .codex/
+
+# Enigma project runtime data
+.enigma-next/
+.enigma-desktop/

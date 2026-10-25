@@ -173,8 +173,11 @@ export function normalizeCreateAgentSessionOptions(options, version = getPiCodin
   const convertedCustomTools = rawCustomTools.map(tool => (
     wrapToolDefinitionExecutionOnce(tool, executionState)
   ));
+  const extensionTools = options.resourceLoader?.getExtensions?.()?.extensions || [];
+  const extensionNames = extensionTools.flatMap(extension => extension.tools instanceof Map ? [...extension.tools.keys()] : []);
   const allowedNames = uniqueToolNames([
     ...rawTools.map(tool => tool.name),
+    ...extensionNames,
     ...rawCustomTools.map(tool => getToolDefinitionName(tool)),
   ]);
 

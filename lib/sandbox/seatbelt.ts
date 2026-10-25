@@ -51,7 +51,7 @@ function realpath(p) {
 /**
  * 生成 Seatbelt SBPL profile
  */
-function generateProfile(policy, { allowNetwork = true } = {}) {
+export function generateProfile(policy, { allowNetwork = true } = {}) {
   const lines = [
     "(version 1)",
     "(deny default)",
@@ -69,13 +69,13 @@ function generateProfile(policy, { allowNetwork = true } = {}) {
   ];
 
   for (const p of policy.writablePaths) {
-    lines.push(`(allow file-write* (subpath "${realpath(p)}"))`);
+    lines.push(`(allow file-write* (subpath ${JSON.stringify(realpath(p))}))`);
   }
 
   // /tmp（macOS 上是 /private/tmp 和 /private/var/folders/...）
   lines.push(
     `(allow file-write* (subpath "/private/tmp"))`,
-    `(allow file-write* (subpath "${realpath(process.env.TMPDIR || "/tmp")}"))`
+    `(allow file-write* (subpath ${JSON.stringify(realpath(process.env.TMPDIR || "/tmp"))}))`
   );
 
   lines.push("");
@@ -84,7 +84,7 @@ function generateProfile(policy, { allowNetwork = true } = {}) {
   if (policy.protectedPaths.length) {
     lines.push(";; 写保护");
     for (const p of policy.protectedPaths) {
-      lines.push(`(deny file-write* (subpath "${realpath(p)}"))`);
+      lines.push(`(deny file-write* (subpath ${JSON.stringify(realpath(p))}))`);
     }
     lines.push("");
   }

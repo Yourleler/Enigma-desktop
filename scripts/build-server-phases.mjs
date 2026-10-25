@@ -18,7 +18,7 @@
 import fs from "fs";
 import path from "path";
 import { createHash } from "crypto";
-import { execSync } from "child_process";
+import { execSync, execFileSync } from "child_process";
 import { builtinModules } from "module";
 import { pathToFileURL } from "url";
 import ts from "typescript";
@@ -416,6 +416,15 @@ export async function resolveAndInstallExternalServerDeps({
     rootLock,
     pinnedTransitiveDeps,
   });
+  // Private workspace packages cannot be fetched from the npm registry. Pack the
+  // already-built package, then install its exact local tarball with its runtime deps.
+  if (externalPkg.dependencies['enigma-next']) {
+    execFileSync(process.execPath, [process.env.npm_execpath || path.join(path.dirname(process.execPath), '../lib/node_modules/npm/bin/npm-cli.js'),
+      'pack', '--workspace=enigma-next', '--ignore-scripts', '--pack-destination', outDir], { cwd: rootDir, stdio: 'pipe' });
+    const packageName = `enigma-next-${externalPkg.dependencies['enigma-next']}.tgz`;
+    if (!fs.existsSync(path.join(outDir, packageName))) throw new Error('Built engineering workspace package is missing');
+    externalPkg.dependencies['enigma-next'] = `file:./${packageName}`;
+  }
   const pinnedDeps = Object.entries(externalPkg.dependencies)
     .map(([name, version]) => `${name}@${version}`)
     .join(", ");

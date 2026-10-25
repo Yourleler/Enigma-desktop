@@ -1,0 +1,96 @@
+{
+  "name": "enigma-next",
+  "version": "0.4.2",
+  "private": true,
+  "description": "Pi-based multi-repository coding, source reading, and branch recovery",
+  "keywords": [
+    "pi-package",
+    "coding-agent",
+    "multi-repository"
+  ],
+  "pi": {
+    "extensions": [
+      "./dist/src/pi-extension.js",
+      "./dist/src/pi-observer.js",
+      "./dist/src/pi-memory.js",
+      "./dist/src/pi-handoff.js",
+      "./dist/src/pi-review.js",
+      "./dist/src/pi-project.js",
+      "./dist/src/pi-runtime.js",
+      "./dist/src/pi-delivery.js",
+      "./dist/src/pi-reuse.js",
+      "./dist/src/pi-collaboration.js",
+      "./dist/src/pi-learning.js"
+    ]
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "bin": {
+    "enigma-next": "dist/src/cli.js"
+  },
+  "exports": {
+    ".": "./dist/src/index.js",
+    "./extension": "./dist/src/pi-extension.js",
+    "./observer": "./dist/src/pi-observer.js",
+    "./memory": "./dist/src/pi-memory.js",
+    "./workbench": "./dist/src/workbench.js",
+    "./workbench-domain": "./dist/src/workbench-domain.js",
+    "./workbench-session": "./dist/src/workbench-session.js",
+    "./storage": "./dist/src/storage.js",
+    "./pi-extension": "./dist/src/pi-extension.js",
+    "./pi-project": "./dist/src/pi-project.js",
+    "./pi-runtime": "./dist/src/pi-runtime.js",
+    "./pi-delivery": "./dist/src/pi-delivery.js",
+    "./pi-reuse": "./dist/src/pi-reuse.js",
+    "./pi-collaboration": "./dist/src/pi-collaboration.js",
+    "./pi-learning": "./dist/src/pi-learning.js",
+    "./pi-memory": "./dist/src/pi-memory.js",
+    "./pi-observer": "./dist/src/pi-observer.js",
+    "./pi-handoff": "./dist/src/pi-handoff.js",
+    "./pi-review": "./dist/src/pi-review.js",
+    "./pi-session": "./dist/src/pi-session.js",
+    "./execution-boundary": "./dist/src/execution-boundary.js",
+    "./process": "./dist/src/process.js"
+  },
+  "files": [
+    "dist/src",
+    "README.md",
+    "docs"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run build && node --test dist/test/*.test.js",
+    "verify:local": "node scripts/verify-local.mjs",
+    "prepack": "npm run build",
+    "start": "node dist/src/cli.js"
+  },
+  "dependencies": {
+    "@creditkarma/thrift-parser": "2.0.0",
+    "diff": "8.0.4",
+    "playwright": "1.64.1",
+    "protobufjs": "8.8.1",
+    "turndown": "7.2.4",
+    "typescript": "6.0.3"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "1.4.0",
+    "typebox": "1.3.27"
+  },
+  "peerDependenciesMeta": {
+    "@earendil-works/pi-coding-agent": {
+      "optional": true
+    },
+    "typebox": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "1.4.0",
+    "@types/node": "22.19.19",
+    "@types/turndown": "5.0.6",
+    "typebox": "1.3.27"
+  }
+}

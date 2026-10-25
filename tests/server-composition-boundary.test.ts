@@ -59,6 +59,7 @@ const PRE_REFACTOR_MOUNT_CALLS = Object.freeze([
   '"/api" :: createDevicesRoute',
   '"/api" :: createDiaryRoute',
   '"/api" :: createDmRoute',
+  '"/api" :: createEnigmaRoute',
   '"/api" :: createExperimentsRoute',
   // 工作区文件历史的查询与还原面（挂载点 open-root，与 resource-io 同域）
   '"/api" :: createFileHistoryRoute',

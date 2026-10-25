@@ -1,3 +1,5 @@
+import { useEngineering } from '../../engineering/state';
+import { EngineeringSidebar } from '../../engineering/Engineering';
 import type { ActivePanel } from '../../types';
 import { useStore } from '../../stores';
 import { ChannelListSidebar } from '../channels/ChannelList';
@@ -40,6 +42,7 @@ export function ChatSidebarContent({
   region = 'sidebar',
 }: ChatSidebarContentProps) {
   const currentAgentId = useStore(s => s.currentAgentId);
+  const engineering = useEngineering(s => !!s.snapshot?.connected);
   const t = window.t ?? ((p: string) => p);
 
   return (
@@ -69,7 +72,7 @@ export function ChatSidebarContent({
         </div>
       </div>
 
-      {showActivityBars && (
+      {showActivityBars && !engineering && (
         <>
           <button className="sidebar-activity-bar sidebar-bridge-card" onClick={() => onTogglePanel?.('bridge')}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -102,6 +105,7 @@ export function ChatSidebarContent({
         </>
       )}
 
+      <EngineeringSidebar />
       <div className="session-list">
         <RegionalErrorBoundary region={region} resetKeys={[currentAgentId]}>
           <SessionList />

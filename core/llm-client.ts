@@ -586,7 +586,8 @@ export async function callText({
   let rawText;
   let data;
   try {
-    if (res.ok && api === "openai-codex-responses" && res.body && typeof res.body.getReader === "function") {
+    const eventStream = res.headers?.get?.('content-type')?.includes('text/event-stream') === true;
+    if (res.ok && (api === "openai-codex-responses" || api === "openai-responses" && eventStream) && res.body && typeof res.body.getReader === "function") {
       data = await readCodexResponsesStream(res.body);
       rawText = JSON.stringify(data);
     } else {

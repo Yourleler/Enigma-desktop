@@ -74,6 +74,9 @@ export async function createAgentSession(options) {
   if(typeof result?.session?.agent?.streamFunction==='function')Object.defineProperty(result.session.agent,'streamFn',{
     configurable:true,get(){return this.streamFunction;},set(value){this.streamFunction=value;},
   });
+  // Pi 1.4 builds its structured prompt/tool transcript when the session binds.
+  // Hana snapshots must observe the initialized session, before its first request.
+  await result?.session?.bindExtensions?.({});
   installToolOutcomeAdapter(result?.session);
   installAssistantStreamGuard(result?.session);
   return result;

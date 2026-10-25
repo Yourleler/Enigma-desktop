@@ -16,9 +16,9 @@
 
 当前代码包含 Hana 宿主、桌面和 Web 界面，以及已完成的 Pi 1.4.0 适配。[PI140_UPGRADE.md](PI140_UPGRADE.md) 记录具体变更与两个 SDK 深路径的维护边界。
 
-[Enigma-next](https://github.com/Yourleler/Enigma-next) 保留已有的工程插件与 Web 工作台；[Enigma](https://github.com/Yourleler/Enigma) 保留原 Python 历史版。后续从 Enigma-next 逐步接入多仓库协同、代码阅读、计划与验收、项目记忆、时光机、旁路观察等能力，优先共用核心模块。当前尚未完成这些迁移。
+[Enigma-next](https://github.com/Yourleler/Enigma-next) 保留已有的工程插件与 Web 工作台；[Enigma](https://github.com/Yourleler/Enigma) 保留原 Python 历史版。工程核心、全部原回归与研究文档已迁入 workspace package，通过 Hana 工程插件接入唯一主会话。`packages/enigma-engineering/SOURCE.json` 保存源提交和原文件 SHA256；适配变更保留在本仓。迁移实际验收见[迁移记录](docs/enigma-migration-progress.md)。
 
-先通过真实多仓任务、审批/取消、联合验收与受保护恢复验证宿主边界，再切换主入口。托管管家、做梦、自修复和文档专精继续作为研究议题。
+Mac 原生多仓任务、审批/取消、联合验收、受保护恢复和独立代码方案已验证。开发入口使用独立 `~/.enigma-desktop-dev`，定制安装与更新源仍未发行。托管管家、做梦、自修复、文档专精和新增模型策略继续作为研究议题，统一入口为[总分析报告](docs/innovation-and-model-orchestration-report.md)。
 
 ## 已有验证
 
@@ -30,7 +30,7 @@
 - 真实 Gateway 模型通过 Hana 模型管理器与 SDK 适配层完成隔离文件读写，并验证会话重开。
 - 使用一次性本地测试签名构建服务产物，实际启动与认证接口通过；生产签名与发布尚未完成。
 
-本次仓库准备只增加来源与项目说明，并未重新执行上述运行时验收。原始日志和验收 JSON 位于本机 `Documents/Codex/2026-10-25/openhanako-evaluation/`，其中运行配置、依赖、构建产物及签名材料不随本仓库提交。
+上述数字属于建仓时的 Pi 升级基线；本轮工程迁移的新增验证、最新通过和保留的失败另见[迁移记录](docs/enigma-migration-progress.md)。建仓原始日志位于 `Documents/Codex/2026-10-25/openhanako-evaluation/`，迁移证据位于 `Documents/Codex/2026-10-25/enigma-desktop-migration/`。运行配置、依赖、构建产物及签名材料不随本仓库提交。
 
 ## 仓库与发布边界
 

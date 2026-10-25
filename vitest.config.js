@@ -18,6 +18,9 @@ export default defineConfig({
     exclude: [
       ...configDefaults.exclude,
       ".cache/**",
+      // The migrated engineering suite uses node:test and runs separately.
+      "packages/enigma-engineering/test/**",
+      "packages/enigma-engineering/dist/**",
       // git worktree 副本有自己的测试快照，混进主树测试集会双份执行、断言错位
       ".claude/worktrees/**",
       "desktop/native/**/.build/**",

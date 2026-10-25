@@ -174,6 +174,8 @@ export function resolveRelativeSpecifier({ rootDir = REPOSITORY_ROOT, importerRe
   const candidates = [];
   if (CANDIDATE_EXTENSIONS.some((ext) => rawTarget.endsWith(ext))) {
     candidates.push(rawTarget);
+    // TypeScript NodeNext source uses .js imports which resolve to .ts/.tsx before emit.
+    if (rawTarget.endsWith(".js")) candidates.push(rawTarget.slice(0, -3) + ".ts", rawTarget.slice(0, -3) + ".tsx");
   } else {
     for (const ext of CANDIDATE_EXTENSIONS) candidates.push(`${rawTarget}${ext}`);
     for (const ext of CANDIDATE_EXTENSIONS) candidates.push(`${rawTarget}/index${ext}`);

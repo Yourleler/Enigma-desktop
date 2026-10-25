@@ -8,7 +8,7 @@ export function defaultDevHanaHome() {
 export function applyDevEnvironment(env = process.env, {
   nodeBin = process.execPath,
 } = {}) {
-  env.HANA_HOME = defaultDevHanaHome();
+  env.HANA_HOME = env.ENIGMA_DESKTOP_DATA || defaultDevHanaHome();
   env.HANA_DEV_NODE_BIN = nodeBin;
   return env;
 }

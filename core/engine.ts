@@ -1,3 +1,4 @@
+import { engineeringHost } from '../plugins/enigma/host.ts';
 /**
  * HanaEngine — Hanako 的核心引擎（Thin Facade）
  *
@@ -784,6 +785,18 @@ export class HanaEngine {
     this._emitEvent(event, this.currentSessionPath);
   }
 
+  /** Publish against an explicit native session; never borrow UI focus. */
+  getEngineeringExecutionPreferences() {
+    const prefs = this._readPreferences();
+    return { sandbox: prefs.sandbox !== false, network: prefs.sandbox_network !== false };
+  }
+
+  emitBoundSessionEvent(event, sessionPath) {
+    const ref = this.resolveSessionRef({ sessionPath });
+    const path = ref.sessionPath || ref.currentLocator?.path;
+    this._emitEvent({ ...event, sessionId: ref.sessionId, sessionPath: path }, path);
+  }
+
   setConfirmStore(store) {
     this._confirmStore = store;
     if (store) {
@@ -1547,7 +1560,14 @@ export class HanaEngine {
     return this._sessionCoord.createDetachedSession(opts);
   }
   async forkSessionAtNode(input: any = {}) {
-    return this._sessionCoord.forkSessionAtNode(input);
+    const result = await this._sessionCoord.forkSessionAtNode(input);
+    const targetPath = result?.sessionPath || result?.path;
+    if (typeof this.hanakoHome === 'string' && targetPath) {
+      const sourceManifest = this.resolveSessionRef(input);
+      const sourcePath = sourceManifest.sessionPath || sourceManifest.currentLocator?.path;
+      await engineeringHost(this).inherit(sourcePath, targetPath);
+    }
+    return result;
   }
   buildSessionCacheSnapshot(p, opts) {
     return this._sessionCoord.buildSessionCacheSnapshot(p, opts);
@@ -1599,10 +1619,16 @@ export class HanaEngine {
 
   // ── Path 感知 API（Phase 2） ──
   async promptSession(p, text, opts, submitOptions) {
+    if (engineeringHost(this).isBusy(p)) {
+      const error: any = new Error('session_busy'); error.code = 'session_busy'; error.status = 409; throw error;
+    }
     return this._sessionCoord.promptSession(p, text, opts, submitOptions);
   }
   steerSession(p, text) { return this._sessionCoord.steerSession(p, text); }
-  async abortSession(p, options) { return this._sessionCoord.abortSession(p, options); }
+  async abortSession(p, options) {
+    if (engineeringHost(this).isBusy(p)) await engineeringHost(this).cancel(p);
+    return this._sessionCoord.abortSession(p, options);
+  }
   async deliverCustomMessage(p, message, options) {
     return this._sessionCoord.deliverCustomMessage(p, message, options);
   }
@@ -1680,7 +1706,7 @@ export class HanaEngine {
   getSessionModelAvailability(p = this.currentSessionPath) {
     return this._sessionCoord.getSessionModelAvailability(p);
   }
-  isSessionStreaming(p) { return this._sessionCoord.isSessionStreaming(p); }
+  isSessionStreaming(p) { return engineeringHost(this).isBusy(p) || this._sessionCoord.isSessionStreaming(p); }
   isSessionSwitching(p) { return this._sessionCoord.isSessionSwitching(p); }
   async abortSessionByPath(p, options) { return this._sessionCoord.abortSessionByPath(p, options); }
   async listSessions(options = {}) { return this._sessionCoord.listSessions(options); }
@@ -1770,6 +1796,16 @@ export class HanaEngine {
   getExplicitHomeCwd(agentId) {
     return this._configCoord.getExplicitHomeFolder(agentId || this.currentAgentId) || null;
   }
+  /** Per-session plugin factories share one Pi extension runtime and event bus. */
+  async createEngineeringResourceLoader(factories) {
+    const loader = new DefaultResourceLoader({
+      ...this._createResourceLoaderOptions(path.join(this.hanakoHome, 'skills')),
+      extensionFactories: [...(this._extensionFactories || []), ...factories],
+    });
+    await loader.reload();
+    return loader;
+  }
+
   _createResourceLoaderOptions(skillsDir) {
     const cwd = resolveHanaPiSdkResourceLoaderCwd(this.hanakoHome);
     const agentDir = resolveHanaPiSdkResourceLoaderAgentDir(this.hanakoHome);
@@ -2695,6 +2731,7 @@ export class HanaEngine {
 
   async dispose() {
     try {
+      await engineeringHost(this).dispose();
       // 先卸载 plugins（它们可能依赖 engine 资源）
       if (this._pluginManager) {
         for (const p of this._pluginManager.listPlugins()) {
@@ -2718,7 +2755,11 @@ export class HanaEngine {
       try {
         await this.disposeComputerRuntime();
       } finally {
-        this._sessionManifestStore?.close?.();
+        try {
+          await this._fileHistory?.close?.();
+        } finally {
+          this._sessionManifestStore?.close?.();
+        }
       }
     }
   }

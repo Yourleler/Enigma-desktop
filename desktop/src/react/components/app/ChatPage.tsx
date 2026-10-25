@@ -1,3 +1,4 @@
+import { EngineeringToolbar } from '../../engineering/Engineering';
 import { useStore } from '../../stores';
 import { InputArea, type InputAreaProps } from '../InputArea';
 import { WelcomeScreen } from '../WelcomeScreen';
@@ -26,6 +27,7 @@ export function ChatPage({
 
   return (
     <>
+      <EngineeringToolbar />
       <div className={`chat-area${hasPanels ? ' has-panels' : ''}`}>
         <WelcomeContainer />
         <RegionalErrorBoundary region={`${regionPrefix}chat`} resetKeys={[currentSessionPath]}>

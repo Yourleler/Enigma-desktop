@@ -1,3 +1,5 @@
+import { EngineeringPanel } from '../../engineering/Engineering';
+import { useEngineering } from '../../engineering/state';
 import { useCallback, type CSSProperties } from 'react';
 import { useStore } from '../../stores';
 import type { RightWorkspaceTab } from '../../types';
@@ -100,10 +102,13 @@ function WorkspaceHeader() {
 
 export function RightWorkspacePanel({ compact = false }: { compact?: boolean }) {
   const rightWorkspaceTab = useStore(s => s.rightWorkspaceTab);
+  const engineeringVisible = useEngineering(s => !!s.snapshot?.connected && s.paneOpen && !!s.active);
   const setRightWorkspaceTab = useStore(s => s.setRightWorkspaceTab);
   const jianView = useStore(s => s.jianView);
   const jianDrawerOpen = useStore(s => s.jianDrawerOpen);
   const t = window.t ?? ((p: string) => p);
+
+  if (engineeringVisible) return <EngineeringPanel />;
 
   if (jianView.startsWith('widget:')) {
     return (

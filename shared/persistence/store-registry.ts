@@ -118,6 +118,38 @@ function defineStore(input: StoreInput): StoreDescriptor {
 }
 
 export const PERSISTENT_STORES: readonly StoreDescriptor[] = Object.freeze([
+
+  defineStore({
+    id: "enigma-session-bindings",
+    ownerModule: "plugins/enigma/host.ts",
+    pathPatterns: ["user/enigma-bindings.json"],
+    format: "json",
+    schemaSource: runtimeSource("plugins/enigma/host.ts", "schema 1 native-session/workspace binding, absolute roots, explicit memory flag, and validated source identity"),
+    openEntry: ["EngineeringHost.load", "EngineeringHost.saveBinding"],
+    epochPolicy: "compatible",
+    affectedByEpochMigration: false,
+    checkpointPolicy: "Bindings identify external engineering workspaces; capture this metadata without traversing or rolling back their repositories.",
+    restorePolicy: "Restore only through the schema 1 binding reader; external workspace/code recovery remains an explicit Enigma operation.",
+    compatibility: "An additive plugin-owned file; existing Hana stores and DATA_EPOCH remain unchanged.",
+    siteRules: rules(["plugins/enigma/host.ts"], "Writes the native engineering binding map only.", ["atomic-write"], "this\\.configPath"),
+    identityContract: "Hana sessionId owns one current workspace binding; sessionPath is only a locator for a not-yet-registered session.",
+  }),
+  defineStore({
+    id: "enigma-execution-policies",
+    ownerModule: "plugins/enigma/execution-policy.ts",
+    pathPatterns: ["plugin-data/enigma/policies"],
+    pathKind: "tree",
+    format: "mixed-directory",
+    schemaSource: directorySource("plugins/enigma/execution-policy.ts", "immutable hash-named SBPL profiles derived from the current native sandbox, repository rights and network policy"),
+    openEntry: ["withNativeEngineeringExecution"],
+    epochPolicy: "compatible",
+    affectedByEpochMigration: false,
+    checkpointPolicy: "Derived profiles contain paths and access rules, never credentials; regenerate from verified runtime policy.",
+    restorePolicy: "Verify the existing profile bytes or regenerate; do not make an old profile authoritative over current permissions.",
+    identityContract: "Profile hash identifies exact policy bytes; only the application writer may create this directory.",
+    siteRules: rules(["plugins/enigma/execution-policy.ts"], "Writes only immutable, application-owned native execution profiles."),
+  }),
+
   defineStore({
     id: "data-epoch-stamp",
     ownerModule: "shared/data-epoch.cjs",
@@ -925,7 +957,7 @@ export const PERSISTENT_STORES: readonly StoreDescriptor[] = Object.freeze([
     id: "plugin-runtime-data",
     ownerModule: "core/plugin-config.ts",
     pathPatterns: ["plugin-data/{pluginId}"],
-    pathExclusions: ["plugin-data/office/jobs", "plugin-data/office/generated", "plugin-data/mcp"],
+    pathExclusions: ["plugin-data/office/jobs", "plugin-data/office/generated", "plugin-data/mcp", "plugin-data/enigma/policies"],
     pathKind: "tree",
     format: "mixed-directory",
     schemaSource: {
@@ -1361,6 +1393,16 @@ function exemption(
 }
 
 export const PERSISTENCE_EXEMPTIONS: readonly PersistenceExemption[] = Object.freeze([
+  exemption(
+    "external-enigma-session-state",
+    "packages/enigma-engineering/src/pi-extension.ts",
+    "plugins/enigma/host.ts",
+    "Writes schema-1 engineering state in an explicit external workspace, outside HANA_HOME. Its repository checkpoint, user-requirement and cumulative-budget protocol is independently verified by Enigma; host epoch rollback must not traverse external repositories.",
+    "2026-12-31",
+    ["atomic-write"],
+    "statePath|workspace\\.data|fork\\.data",
+  ),
+
   exemption(
     "data-epoch-durable-json-primitive",
     "shared/data-epoch.cjs",

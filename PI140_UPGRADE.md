@@ -18,7 +18,7 @@
 
 Pi 1.4 没有在包根导出 file credential backend 和 prepareCompaction。为了让普通 OAuth 刷新与被拒收 token 的强制刷新共享原锁，适配层使用固定版本中的 credential backend；prepareCompaction 深路径继续留在既有适配层。没有改 node_modules 或取消权限检查。这两个位置以后升级 SDK 时必须复验。
 
-Hana 仍管理其原有记忆、权限、会话资源和压缩宿主策略。本轮不代表 Enigma 的多仓库、受保护恢复、工程记忆、资料或 UI 已迁移。
+Hana 仍管理权限、会话资源和压缩宿主策略。随后本仓的工程迁移已接入原生主会话；工程会话关闭通用记忆/experience 注入，按用户选择启用工程记忆。工具 allowlist 包括实际加载的扩展定义，工程工厂与宿主共享 ExtensionRuntime；Pi 1.4 结构化系统/工具声明在绑定后取得。多仓、恢复和 UI 的验收另见[迁移记录](docs/enigma-migration-progress.md)。
 
 ## 验证证据
 
@@ -41,4 +41,4 @@ Hana 仍管理其原有记忆、权限、会话资源和压缩宿主策略。本
 
 ## 下一步
 
-可以在这个底座上实现 Enigma 宿主适配和工程插件。下一轮应先接入一个真实三仓任务、审批/取消、原联合检查和一次受保护恢复，证明状态与权限保持一致，再切换当前 Enigma Web 主入口。现有 Enigma-next 0.4.2 和 Pi 1.4.0 工作台继续保留为对照与回退。
+Enigma 工程宿主适配和原生 React 界面已在本仓接入，并完成 Mac 三仓修改、原联合检查、审批/取消、分支和恢复测试。现有 Enigma-next 0.4.2 工作台继续保留为对照与回退。模型职责拆分和运行中切换只写了[分析报告](docs/innovation-and-model-orchestration-report.md)，未新增自动路由功能。

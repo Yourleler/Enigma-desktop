@@ -146,6 +146,7 @@ describe("persistent store registry", () => {
       "plugin-data/office/jobs",
       "plugin-data/office/generated",
       "plugin-data/mcp",
+      "plugin-data/enigma/policies",
     ]);
     // MCP config is owned by the core module, not by the plugin data store, even
     // though it kept its historical directory name.

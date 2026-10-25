@@ -1067,7 +1067,7 @@ export async function writeCliRuntimeClosure({ rootDir = REPOSITORY_ROOT } = {})
 // ---------------------------------------------------------------------------
 
 export const CLOSED_CONTENT_PATTERNS = Object.freeze([
-  { pattern: /^plugins\//, note: "Built-in plugins are closed-source product content shipped with the app, not part of the redistributable core." },
+  { pattern: /^plugins\/(?!enigma\/)/, note: "Built-in plugins are closed-source product content shipped with the app, not part of the redistributable core." },
   { pattern: /^skills2set\//, note: "Bundled built-in skill content shipped with the product; closed by default." },
   { pattern: /^desktop\/src\/assets\//, note: "Brand imagery; closed by default (any icon the packaged shell itself needs is handled separately)." },
   { pattern: /^desktop\/src\/screenshot-themes\//, note: "Brand-styled screenshot theme assets; closed by default." },
