@@ -3,6 +3,8 @@ import { readFile, readdir } from 'node:fs/promises';
 import type { WorkbenchSession } from './workbench-session.js';
 import type { AgentSession, ModelRuntime } from '@earendil-works/pi-coding-agent';
 import type { Workspace } from './workspace.js';
+import { contextCheckpoints, contextRewindHistory } from './context-rewind.js';
+import { ChangeReadings } from './change-reading.js';
 
 /** Domain calls can attach to a native host without creating another agent runtime. */
 export interface DomainController {
@@ -84,6 +86,7 @@ export const uiActions: UIAction[] = [
     { id: 'schema-read', group: 'reading', title: '阅读 Schema / IDL', description: '读取字段、类型和有来源的契约关系。', fields: [field('query', '类型或字段关键词')] },
     { id: 'map-build', group: 'reading', title: '建立任务代码地图', description: '按任务和 diff 关联入口、消费者、职责及原检查。', effect: 'write', fields: [goal, field('symbol', '起始符号'), field('repo', '起始仓库', 'select', { source: 'repos' }), field('baseline', '差异基线', 'select', { source: 'checkpoints' }), resources, field('requirements', '需求与测试点', 'rows', { fields: [identifier, field('text', '要求', 'textarea', { required: true }), checks] })] },
     { id: 'map-coverage', group: 'reading', title: '检查需求覆盖', description: '静态依据与实际检查分别核对，旧证据不算通过。', fields: [identifier, field('evidence', '检查证据 ID')] },
+    { id: 'changes-build', group: 'reading', title: '生成变更智能阅读', description: '全量 diff 与智能阅读引用同一份固定源码版本。', effect: 'write', fields: [goal, field('kind', '变更来源', 'select', { options: ['working','staged','commit','merge-request'], value: 'working' }), field('base', '各仓库基线版本（JSON）', 'textarea'), field('target', '各仓库目标版本（JSON）', 'textarea'), field('url', 'MR / PR 链接')] },
     { id: 'material-file', group: 'materials', title: '关联文件资料', description: '文件属于注册仓库，保存来源和修订。', effect: 'write', fields: [title, repo, field('file', '相对路径', 'text', { required: true }), field('private', '仅此任务', 'boolean')] },
     { id: 'material-note', group: 'materials', title: '添加项目笔记', description: '用户背景资料，保持参考来源角色。', effect: 'write', fields: [title, field('content', '正文', 'textarea', { required: true }), field('private', '仅此任务', 'boolean')] },
     { id: 'material-fetch', group: 'materials', title: '获取网页 / 飞书', description: '读取实际来源；局部范围、认证失败和远端新鲜度明确保留。', effect: 'write', fields: [field('url', '来源链接', 'text', { required: true }), title, field('scope', '读取范围', 'select', { options: ['outline', 'full', 'keyword', 'section', 'range'], value: 'outline' }), field('keyword', '关键词'), field('private', '仅此任务', 'boolean')] },
@@ -259,6 +262,10 @@ export async function domainAction(controller: DomainController, action: string,
         case 'schema-read': return readSchemas(w, { query: String(a.query ?? ''), signal });
         case 'map-build': return new TaskReadingStore(w).build({ ...a, goal: text(a, 'goal'), task, baseline: a.baseline as string | undefined, resources: a.resources as string[] | undefined, requirements: a.requirements as TaskReadingInput['requirements'], queries: a.symbol ? [{ symbol: String(a.symbol), repo: a.repo as string | undefined }] : a.queries as TaskReadingInput['queries'] }, signal);
         case 'map-coverage': return new TaskReadingStore(w).coverage(text(a, 'id'), a.evidence as string | undefined, task);
+        case 'changes-build': {
+            await controller.runCommand('change-reading', JSON.stringify({ ...a, base: a.base ? JSON.parse(String(a.base)) : undefined, target: a.target ? JSON.parse(String(a.target)) : undefined }));
+            return new ChangeReadings(w).latest(task);
+        }
         case 'material-file': return material.add({ title: text(a, 'title'), task: a.private ? task : undefined, source: { kind: 'file', repo: text(a, 'repo'), file: text(a, 'file') } });
         case 'material-note': return material.add({ title: text(a, 'title'), task: a.private ? task : undefined, source: { kind: 'note', author: 'user' }, content: text(a, 'content') });
         case 'material-fetch': return material.add({ ...await fetchResource(w, text(a, 'url'), { title: a.title as string | undefined, scope: a.scope as 'full' | 'outline' | 'keyword' | 'section' | 'range' | undefined, keyword: a.keyword as string | undefined, startBlock: a.startBlock as string | undefined, endBlock: a.endBlock as string | undefined, signal }), task: a.private ? task : undefined });
@@ -407,9 +414,10 @@ export async function domainData(controller: DomainController, group: string, qu
     if (group === 'collaboration')
         return { delegations: await new Delegations(w).list(task), experiments: await Promise.all((await new Experiments(w).list(task)).map(e => new Experiments(w).report(e.id, task))) };
     if (group === 'timeline')
-        return { checkpoints: await w.checkpoints(), operations: await w.operations(), tree: controller.snapshot().tree };
+        return { checkpoints: await w.checkpoints(), contextCheckpoints: contextCheckpoints(controller.runtime.session.sessionManager),
+            modelRewinds: contextRewindHistory(controller.runtime.session.sessionManager), operations: await w.operations(), tree: controller.snapshot().tree };
     if (group === 'reading')
-        return { graph: await repoGraph(w) };
+        return { graph: await repoGraph(w), changeReading: await new ChangeReadings(w).latest(task), changeReadings: await new ChangeReadings(w).list(task) };
     if (group === 'review') {
         let ids: string[] = [];
         try {

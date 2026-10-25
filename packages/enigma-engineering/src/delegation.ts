@@ -1,4 +1,4 @@
-import { workerEnvironment } from './execution-boundary.js';
+import { workerEnvironment,isolatedWorkerBoundary,withProcessBoundary } from './execution-boundary.js';
 import { spawn } from 'node:child_process';
 import { access, open, readFile, readdir, realpath, writeFile } from 'node:fs/promises';
 import { isAbsolute, join, relative, sep } from 'node:path';
@@ -67,9 +67,11 @@ export class Delegations {
         maxRequests: input.target === 'pi' ? input.maxRequests ?? 24 : undefined, provider: input.provider, model: input.model, agentDir: input.agentDir, inheritedRequests: input.source.requests ?? 0 };
       const spec: DelegationSpec = { ...base, fingerprint: hash(JSON.stringify(base)) }; await writeJson(join(directory, 'input.json'), spec);
       const worker = fileURLToPath(new URL('./delegation-worker.js', import.meta.url)); await access(worker);
+      const boundary=await isolatedWorkerBoundary(restored.workspace.root,restored.workspace.config.repos);
+      const environment=boundary?await withProcessBoundary(boundary,async()=>workerEnvironment(process.env)):workerEnvironment(process.env);
       const log = await open(join(directory, 'worker.log'), 'a', 0o600);
       let child: ReturnType<typeof spawn> | undefined;
-      try { const launched = spawn(process.execPath, [worker, join(directory, 'input.json')], { cwd: restored.workspace.root, detached: true, stdio: ['ignore', log.fd, log.fd], env: workerEnvironment(process.env) }); child = launched; await new Promise<void>((resolve, reject) => { launched.once('spawn', resolve); launched.once('error', reject); }); launched.unref(); }
+      try { const launched = spawn(process.execPath, [worker, join(directory, 'input.json')], { cwd: restored.workspace.root, detached: true, stdio: ['ignore', log.fd, log.fd], env: environment }); child = launched; await new Promise<void>((resolve, reject) => { launched.once('spawn', resolve); launched.once('error', reject); }); launched.unref(); }
       finally { await log.close(); }
       if (!child) throw new Error('Delegation worker was not dispatched');
       await writeJson(join(directory, 'owner.json'), { pid: child.pid, identity: child.pid ? (await processIdentity(child.pid)).identity : undefined, fingerprint: spec.fingerprint });

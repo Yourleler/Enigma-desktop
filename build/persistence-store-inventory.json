@@ -921,6 +921,43 @@
       "exemption": null
     },
     {
+      "id": "enigma-conductor-ledgers",
+      "ownerModule": "plugins/enigma/conductor.ts",
+      "pathPattern": "user/enigma-conductors/*.json",
+      "pathPatterns": [
+        "user/enigma-conductors/*.json"
+      ],
+      "pathExclusions": [],
+      "pathKind": "file",
+      "format": "json",
+      "schemaSource": {
+        "kind": "runtime-contract",
+        "module": "plugins/enigma/conductor.ts",
+        "contract": "schema 1 manager identity, explicit limits, owned projects/conversations, resumable interrupted tasks, selected integration previews and original acceptance evidence"
+      },
+      "schemaContract": {
+        "kind": "runtime-source",
+        "source": "plugins/enigma/conductor.ts",
+        "compatibility": "Additive plugin-owned JSON; existing Hana schemas and DATA_EPOCH are unchanged."
+      },
+      "openEntry": [
+        "ConversationConductor.load",
+        "ConversationConductor.initialize"
+      ],
+      "migrationEntry": [],
+      "protocolModules": [],
+      "firstPossibleOpenPhase": "engine_construct",
+      "firstPossibleWritePhase": "runtime_ready",
+      "epochPolicy": "compatible",
+      "checkpointPolicy": "Preserve manager metadata; do not restore or traverse external worker code through host epoch rollback.",
+      "restorePolicy": "Validate the manager identity and inspect actual worker state before resuming; never blindly replay stored tasks.",
+      "affectedByEpochMigration": false,
+      "bootstrapSafety": null,
+      "preCoordinatorReadProjection": null,
+      "identityContract": "One native manager sessionId owns its ledger and the worker/project references it created.",
+      "exemption": null
+    },
+    {
       "id": "enigma-execution-policies",
       "ownerModule": "plugins/enigma/execution-policy.ts",
       "pathPattern": "plugin-data/enigma/policies",
@@ -957,6 +994,42 @@
       "exemption": null
     },
     {
+      "id": "enigma-managed-workspace-roots",
+      "ownerModule": "plugins/enigma/conductor.ts",
+      "pathPattern": "workspaces/managed/",
+      "pathPatterns": [
+        "workspaces/managed/"
+      ],
+      "pathExclusions": [],
+      "pathKind": "tree",
+      "format": "directory-tree",
+      "schemaSource": {
+        "kind": "directory-contract",
+        "module": "plugins/enigma/conductor.ts",
+        "contract": "managerId/taskId owned isolated workspace roots; code/Enigma state have independently verified protocols"
+      },
+      "schemaContract": {
+        "kind": "protocol",
+        "source": "plugins/enigma/conductor.ts",
+        "compatibility": "The named runtime reader is canonical; this inventory does not imply stricter validation than runtime currently performs."
+      },
+      "openEntry": [
+        "ConversationConductor.run"
+      ],
+      "migrationEntry": [],
+      "protocolModules": [],
+      "firstPossibleOpenPhase": "engine_construct",
+      "firstPossibleWritePhase": "runtime_ready",
+      "epochPolicy": "compatible",
+      "checkpointPolicy": "Do not include worker Git state in Hana epoch rollback; workers retain their own code and receipts.",
+      "restorePolicy": "Resolve manager/task ownership, inspect source and pending effects, and use explicit Enigma recovery.",
+      "affectedByEpochMigration": false,
+      "bootstrapSafety": null,
+      "preCoordinatorReadProjection": null,
+      "identityContract": "A manager and task id own one isolated workspace root; conversation creation does not grant broader source access.",
+      "exemption": null
+    },
+    {
       "id": "enigma-session-bindings",
       "ownerModule": "plugins/enigma/host.ts",
       "pathPattern": "user/enigma-bindings.json",
@@ -969,7 +1042,7 @@
       "schemaSource": {
         "kind": "runtime-contract",
         "module": "plugins/enigma/host.ts",
-        "contract": "schema 1 native-session/workspace binding, absolute roots, explicit memory flag, and validated source identity"
+        "contract": "schema 1 native-session/workspace binding, absolute roots, explicit memory flag, validated source identity, manager model grants and bounded guardian configuration/usage"
       },
       "schemaContract": {
         "kind": "runtime-source",
@@ -8314,6 +8387,51 @@
       "ordinal": 0
     },
     {
+      "sourceFile": "plugins/enigma/conductor.ts",
+      "kind": "atomic-write",
+      "excerpt": "writeJson(this.file,value)",
+      "reason": "Writes only the manager ledger and its containing directory.",
+      "storeId": "enigma-conductor-ledgers",
+      "exemptionId": null,
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "plugins/enigma/conductor.ts",
+      "kind": "mkdir",
+      "excerpt": "fs.mkdir(path.dirname(file),{recursive:true})",
+      "reason": "Writes a bounded report under the explicit engineering workspace's approved runs result directory; Artifacts owns its immutable version. This external project content must not be traversed by Hana epoch rollback.",
+      "storeId": null,
+      "exemptionId": "external-enigma-conductor-reports",
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "plugins/enigma/conductor.ts",
+      "kind": "mkdir",
+      "excerpt": "fs.mkdir(path.dirname(root),{recursive:true})",
+      "reason": "Creates only the parent of a manager-owned worker workspace.",
+      "storeId": "enigma-managed-workspace-roots",
+      "exemptionId": null,
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "plugins/enigma/conductor.ts",
+      "kind": "mkdir",
+      "excerpt": "fs.mkdir(path.dirname(this.file),{recursive:true})",
+      "reason": "Writes only the manager ledger and its containing directory.",
+      "storeId": "enigma-conductor-ledgers",
+      "exemptionId": null,
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "plugins/enigma/conductor.ts",
+      "kind": "write-file",
+      "excerpt": "fs.writeFile(file,redact(text,workspace.secrets),{mode:0o600})",
+      "reason": "Writes a bounded report under the explicit engineering workspace's approved runs result directory; Artifacts owns its immutable version. This external project content must not be traversed by Hana epoch rollback.",
+      "storeId": null,
+      "exemptionId": "external-enigma-conductor-reports",
+      "ordinal": 0
+    },
+    {
       "sourceFile": "plugins/enigma/execution-policy.ts",
       "kind": "mkdir",
       "excerpt": "fs.mkdir(directory,{recursive:true})",
@@ -8370,11 +8488,20 @@
     {
       "sourceFile": "plugins/enigma/host.ts",
       "kind": "atomic-write",
-      "excerpt": "writeJson(this.configPath, { schema: 1, sessions: bindings })",
+      "excerpt": "writeJson(this.configPath, value)",
       "reason": "Writes the native engineering binding map only.",
       "storeId": "enigma-session-bindings",
       "exemptionId": null,
-      "ordinal": 1
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "plugins/enigma/host.ts",
+      "kind": "atomic-write",
+      "excerpt": "writeJson(this.configPath,value)",
+      "reason": "Writes the native engineering binding map only.",
+      "storeId": "enigma-session-bindings",
+      "exemptionId": null,
+      "ordinal": 0
     },
     {
       "sourceFile": "plugins/jimeng-cli/adapters/dreamina.ts",
@@ -10000,6 +10127,18 @@
         "mkdir"
       ],
       "linePattern": "(?:skillsDir|fs[.]mkdirSync\\(dir|baseDir)"
+    },
+    {
+      "id": "external-enigma-conductor-reports",
+      "ownerModule": "packages/enigma-engineering/src/artifacts.ts",
+      "sourceFile": "plugins/enigma/conductor.ts",
+      "reason": "Writes a bounded report under the explicit engineering workspace's approved runs result directory; Artifacts owns its immutable version. This external project content must not be traversed by Hana epoch rollback.",
+      "expiresOn": "2026-12-31",
+      "kinds": [
+        "write-file",
+        "mkdir"
+      ],
+      "linePattern": "(?:file,redact|path\\.dirname\\(file\\))"
     },
     {
       "id": "external-enigma-session-state",

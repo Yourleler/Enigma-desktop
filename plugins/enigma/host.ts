@@ -18,11 +18,18 @@ import { createMemoryExtension } from 'enigma-next/pi-memory';
 import { createObserverExtension } from 'enigma-next/pi-observer';
 import { createHandoffExtension } from 'enigma-next/pi-handoff';
 import { createReviewExtension } from 'enigma-next/pi-review';
+import { createChangeReadingExtension } from 'enigma-next/pi-change-reading';
 import { collectUserNotes } from 'enigma-next/pi-session';
 import { PlanStore } from 'enigma-next';
 import type { ExtensionAPI, ExtensionContext, ExtensionUIDialogOptions } from '@earendil-works/pi-coding-agent';
+import { Type } from 'typebox';
+import { modelForPhase, validateModelPolicy, type ModelPolicy } from './model-policy.ts';
+import { ConversationConductor, type ConductorLimits } from './conductor.ts';
+import { EngineeringGuardian } from './guardian-host.ts';
+import type { GuardianConfig } from 'enigma-next';
 
-type Binding = { root: string; memory: boolean; sessionPath: string; sessionId?: string };
+type PendingModel = { provider: string; id: string; revision: number; state: 'pending' | 'applied' | 'failed'; error?: string };
+type Binding = { root: string; memory: boolean; sessionPath: string; sessionId?: string; pendingModel?: PendingModel; modelPolicy?: ModelPolicy; kind?: 'engineering' | 'manager'; guardian?:GuardianConfig;guardianInterventions?:number;managedGrant?: {managerPath:string;root:string;models:string[]} };
 const hosts = new WeakMap<object, EngineeringHost>();
 
 /** The only Hana-facing adapter. Engineering code never owns a second main session. */
@@ -72,12 +79,34 @@ export class EngineeringHost {
   private readonly overviews = new Map<string, { at: number; value: unknown }>();
   readonly dialogs = new Map<string, { dialog: Dialog; sessionPath: string }>();
   readonly engine: any;
+  private bindingWrites: Promise<void> = Promise.resolve();
+  private defaultModelPolicy?: ModelPolicy;
+  private conductors=new Map<string,ConversationConductor>();
+  readonly guardian=new EngineeringGuardian(this);
   constructor(engine: any) { this.engine = engine; }
   isBusy(sessionPath: string) { return this.sessions.get(sessionPath)?.operation?.state === 'running'; }
   async dispose() {
+    await this.guardian.close();
+    await Promise.allSettled([...this.conductors.values()].map(manager=>manager.shutdown()));
     for (const id of this.dialogs.keys()) this.engine.confirmStore?.resolve(id, 'rejected');
     await Promise.all([...this.sessions.values()].map(controller => controller.detach()));
     this.sessions.clear(); this.dialogs.clear(); this.overviews.clear();
+  }
+  conductor(sessionPath:string){let manager=this.conductors.get(sessionPath);if(!manager){manager=new ConversationConductor(this,sessionPath);this.conductors.set(sessionPath,manager);}return manager;}
+  async createConductor(sourcePath:string,limits?:Partial<ConductorLimits>){
+    const binding=await this.binding(sourcePath);if(!binding)throw new Error('Select an engineering project as the manager scope');
+    const source=this.engine.getSessionByPath(sourcePath)||await this.engine.ensureSessionLoaded(sourcePath),workspace=await Workspace.open(binding.root);
+    const manager=SessionManager.create(binding.root,path.dirname(sourcePath)),targetPath=manager.getSessionFile();
+    await this.saveBinding(targetPath,{root:binding.root,memory:false});
+    const targetBinding=await this.binding(targetPath);targetBinding!.kind='manager';await this.saveBinding(targetPath,targetBinding!);
+    const config:ConductorLimits={maxConcurrent:limits?.maxConcurrent??3,maxTasks:limits?.maxTasks??8,writableRepos:limits?.writableRepos??workspace.config.repos.filter(repo=>repo.access==='write').map(repo=>repo.id),allowRewind:limits?.allowRewind??false,allowedModels:limits?.allowedModels??[`${source.model.provider}/${source.model.id}`]};
+    // Initialize ownership before the detached runtime loads its manager extension.
+    const created=await this.engine.createDetachedSession({sessionMgr:manager,cwd:binding.root,memoryEnabled:false,model:source.model,agentId:this.engine.resolveSessionOwnership(sourcePath).agentId,permissionMode:'auto',visibleInSessionList:true,sessionKind:'enigma-manager'});
+    await this.saveBinding(created.sessionPath,{root:binding.root,memory:false});const createdBinding=await this.binding(created.sessionPath);createdBinding!.kind='manager';await this.saveBinding(created.sessionPath,createdBinding!);
+    await this.conductor(created.sessionPath).initialize(binding.root,config);
+    await this.engine.reloadSessionRuntime(created.sessionPath,{refreshCapabilitySnapshots:true});
+    await this.engine.saveSessionTitle(created.sessionPath,'任务编排管家');
+    return {sessionPath:created.sessionPath,sessionId:created.sessionId,kind:'manager',sourceSession:source.sessionManager.getSessionId(),limits:config};
   }
   isEnabled() {
     if (!this.engine.pluginManager?.getPlugin) return true;
@@ -87,13 +116,14 @@ export class EngineeringHost {
   private async load() {
     if (this.bindings) return this.bindings;
     if (!this.loading) this.loading = (async () => {
-      let value: { schema: number; sessions: Record<string, Binding> };
+      let value: { schema: number; sessions: Record<string, Binding>; defaultModelPolicy?: ModelPolicy };
       try { value = await readJson(this.configPath); }
       catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; value = { schema: 1, sessions: {} }; }
       if (value.schema !== 1 || !value.sessions || typeof value.sessions !== 'object' || Array.isArray(value.sessions)
         || Object.values(value.sessions).some(binding => !binding || typeof binding.root !== 'string' || !path.isAbsolute(binding.root)
           || typeof binding.memory !== 'boolean' || typeof binding.sessionPath !== 'string')) throw new Error('Invalid engineering session bindings');
       this.bindings = value.sessions;
+      this.defaultModelPolicy = value.defaultModelPolicy;
       return this.bindings;
     })();
     try { return await this.loading; } catch (error) { this.loading = undefined; throw error; }
@@ -105,9 +135,118 @@ export class EngineeringHost {
   async saveBinding(sessionPath: string, input: Pick<Binding, 'root' | 'memory'>) {
     const bindings = await this.load(), sessionId = this.engine.getSessionIdForPath?.(sessionPath) || undefined;
     const key = sessionId || sessionPath;
-    bindings[key] = { ...input, sessionPath, sessionId };
+    bindings[key] = { ...bindings[key], ...input, sessionPath, sessionId };
     if (sessionId) delete bindings[sessionPath];
-    await writeJson(this.configPath, { schema: 1, sessions: bindings });
+    const value = JSON.parse(JSON.stringify({ schema: 1, sessions: bindings, defaultModelPolicy: this.defaultModelPolicy }));
+    this.bindingWrites = this.bindingWrites.catch(() => {}).then(() => writeJson(this.configPath, value));
+    await this.bindingWrites;
+  }
+  async configureDefaultModelPolicy(input: unknown) {
+    await this.load(); const policy=validateModelPolicy(input);
+    for(const role of [policy.execution,policy.planning,policy.review].filter(Boolean))if(!await this.engine.resolveModelWithCredentialsFresh(role))throw new Error(`Model ${role!.id} is unavailable`);
+    this.defaultModelPolicy=policy;
+    const value=JSON.parse(JSON.stringify({schema:1,sessions:this.bindings,defaultModelPolicy:policy}));
+    this.bindingWrites=this.bindingWrites.catch(()=>{}).then(()=>writeJson(this.configPath,value));await this.bindingWrites;
+    return policy;
+  }
+  async requestModel(sessionPath: string, provider: string, id: string, source = 'manual') {
+    const binding = await this.binding(sessionPath); if (!binding) throw new Error('Select an engineering workspace first');
+    await this.assertManagedModel(sessionPath,provider,id);
+    const model = await this.engine.resolveModelWithCredentialsFresh({ provider, id });
+    if (!model) throw new Error('Selected model is unavailable or has no configured credentials');
+    const pendingModel: PendingModel = { provider, id, revision: (binding.pendingModel?.revision || 0) + 1, state: 'pending' };
+    if (source === 'manual' && binding.modelPolicy) {
+      const key = binding.modelPolicy.phase === 'planning' ? 'planning' : binding.modelPolicy.phase === 'review' ? 'review' : 'execution';
+      binding.modelPolicy[key] = { ...binding.modelPolicy[key], provider, id };
+    }
+    binding.pendingModel = pendingModel; await this.saveBinding(sessionPath, binding);
+    const native = this.engine.getSessionByPath(sessionPath) || await this.engine.ensureSessionLoaded(sessionPath);
+    if (native.isIdle && !native.isCompacting) await this.applyRequestedModel(sessionPath);
+    this.publish(sessionPath, 'model_selection', pendingModel);
+    return { selection: pendingModel, effectiveAt: pendingModel.state === 'applied' ? 'now' : 'next-request' };
+  }
+  async configureModelPolicy(sessionPath: string, input: unknown) {
+    const binding = await this.binding(sessionPath); if (!binding) throw new Error('Select an engineering workspace first');
+    const policy = validateModelPolicy(input);
+    for (const role of [policy.execution,policy.planning,policy.review].filter(Boolean)) {
+      await this.assertManagedModel(sessionPath,role!.provider,role!.id);
+      if (!await this.engine.resolveModelWithCredentialsFresh(role)) throw new Error(`Model ${role!.provider}/${role!.id} is unavailable`);
+    }
+    policy.requests=binding.modelPolicy?.requests||0;
+    binding.modelPolicy = policy; await this.saveBinding(sessionPath, binding);
+    const role = modelForPhase(policy); await this.requestModel(sessionPath,role.provider,role.id,'phase');
+    return policy;
+  }
+  async modelPhase(sessionPath: string, phase: ModelPolicy['phase']) {
+    const binding = await this.binding(sessionPath), policy = binding?.modelPolicy;
+    if (!policy) throw new Error('Configure planning/execution model roles first');
+    policy.phase = phase; policy.failures = 0; await this.saveBinding(sessionPath,binding!);
+    const role = modelForPhase(policy); await this.requestModel(sessionPath,role.provider,role.id,'phase');
+    return { ...policy, selected: role };
+  }
+  modelPolicyFactory(sessionPath: string) {
+    return (pi: ExtensionAPI) => {
+      pi.on('session_start', () => { pi.events.emit('enigma:managed-tools',{owner:'native-model-policy',names:['agent_phase']}); pi.setActiveTools([...new Set([...pi.getActiveTools(),'agent_phase'])]); });
+      pi.on('tool_call', async event => {
+        const policy = (await this.binding(sessionPath))?.modelPolicy;
+        if (policy?.mode !== 'single' && policy?.phase === 'planning' && ['repo_write','repo_edit','repo_run','repo_stage'].includes(event.toolName)) return {block:true,reason:'Planning phase has read-only source tools. Build the task plan, then use agent_phase execute before writing or running source commands.'};
+      });
+      pi.on('before_agent_start', async event => {
+        const policy = (await this.binding(sessionPath))?.modelPolicy;
+        return policy ? {systemPrompt:event.systemPrompt+`\nConfigured model separation: ${policy.mode}, phase ${policy.phase}. In planning, inspect source and create task_plan; call agent_phase execute after the plan is ready. Execution may call agent_phase replan when evidence disproves the route, or review for an independent review phase. Original checks and user requirements remain authoritative.\n`} : undefined;
+      });
+      pi.on('tool_execution_end', async event => {
+        const binding = await this.binding(sessionPath), policy = binding?.modelPolicy;
+        if (!policy || policy.mode !== 'adaptive' || policy.phase !== 'execution' || event.toolName === 'agent_phase') return;
+        if (event.isError || ['failed','timeout'].includes(event.result?.structuredContent?.status as string)) policy.failures++;
+        else policy.failures = 0;
+        await this.saveBinding(sessionPath,binding!);
+        if (policy.failures >= 3) {
+          await this.modelPhase(sessionPath,'planning');
+          pi.sendMessage({customType:'enigma.model-escalation',display:true,content:'Repeated tool failures triggered the configured planning model. Inspect actual errors and revise the plan; do not change the original acceptance criteria.'},{triggerTurn:false});
+        }
+      });
+      pi.registerTool({name:'agent_phase',label:'Planning and execution phase',description:'Inspect configured model roles or switch at the next model request. execute requires an existing current task plan; replan returns to read-only planning after new evidence; review selects the configured review model. Does not create new user authority or alter acceptance.',executionMode:'sequential',parameters:Type.Object({action:Type.Union([Type.Literal('status'),Type.Literal('execute'),Type.Literal('replan'),Type.Literal('review')]),reason:Type.Optional(Type.String())}),execute:async (_id,args,_signal,_update,ctx) => {
+        const binding=await this.binding(sessionPath);if(!binding?.modelPolicy)throw new Error('No model separation configured');
+        if(args.action==='execute') {
+          const workspace=await Workspace.open(binding.root),state=await readJson<{planFile:string}>(path.join(workspace.data,`session-${safeId(ctx.sessionManager.getSessionId())}.json`));
+          if(!await new PlanStore(workspace,state.planFile).current())throw new Error('Create a source-grounded task plan before entering execution');
+        }
+        const value=args.action==='status'?binding.modelPolicy:await this.modelPhase(sessionPath,args.action==='execute'?'execution':args.action==='review'?'review':'planning');
+        return {content:[{type:'text',text:JSON.stringify(value)}],details:value,structuredContent:JSON.parse(JSON.stringify(value))};
+      }});
+    };
+  }
+  async applyRequestedModel(sessionPath: string) {
+    const binding = await this.binding(sessionPath), selection = binding?.pendingModel;
+    if (!selection || selection.state !== 'pending') return;
+    try {
+      await this.assertManagedModel(sessionPath,selection.provider,selection.id);
+      await this.engine.switchSessionModel(sessionPath, selection.id, selection.provider);
+      selection.state = 'applied';
+    } catch (error) {
+      selection.state = 'failed'; selection.error = String(error);
+    }
+    const current = await this.binding(sessionPath);
+    if (current?.pendingModel?.revision === selection.revision) {
+      current.pendingModel = selection; await this.saveBinding(sessionPath, current);
+    }
+    this.publish(sessionPath, 'model_selection', selection);
+  }
+  async assertManagedModel(sessionPath:string,provider:string,id:string){
+    const grant=(await this.binding(sessionPath))?.managedGrant;
+    if(grant&&!grant.models.includes(`${provider}/${id}`))throw new Error('Worker model is outside its current manager grant');
+  }
+  async setManagedModels(sessionPath:string,managerPath:string,models:string[]){
+    const binding=await this.binding(sessionPath);if(!binding)throw new Error('Worker workspace is not connected');
+    if(binding.managedGrant&&binding.managedGrant.managerPath!==managerPath)throw new Error('Worker manager ownership mismatch');
+    binding.managedGrant={managerPath,root:binding.root,models:[...models]};
+    if(binding.pendingModel&&!models.includes(`${binding.pendingModel.provider}/${binding.pendingModel.id}`))binding.pendingModel={...binding.pendingModel,state:'failed',error:'Manager model grant was revoked'};
+    const policy=binding.modelPolicy;
+    if(policy&&[policy.execution,policy.planning,policy.review].filter(Boolean).some(role=>!models.includes(`${role!.provider}/${role!.id}`))&&models.length){
+      const slash=models[0]!.indexOf('/');binding.modelPolicy={mode:'single',phase:'execution',execution:{provider:models[0]!.slice(0,slash),id:models[0]!.slice(slash+1)},requests:policy.requests,failures:0,maxRequests:policy.maxRequests};
+    }
+    await this.saveBinding(sessionPath,binding);
   }
   async inherit(sourcePath: string, targetPath: string) {
     const binding = await this.binding(sourcePath);
@@ -153,11 +292,12 @@ export class EngineeringHost {
     }
     const agentDir = path.dirname(this.engine.modelsJsonPath);
     const approval = 'ask' as const;
+    if(binding.kind==='manager')return {workspace,binding,factories:[this.conductor(sessionPath).extension(),createObserverExtension({enabled:true,root:workspace.root})].map(factory=>scopedFactory(factory,workspace,this.engine,sessionPath))};
     const factories = [createEnigmaExtension({ workspace, approval, managed: true }), createProjectExtension({ workspace }),
       createRuntimeExtension({ workspace, approval }), createDeliveryExtension({ workspace }), createReuseExtension({ workspace, approval }),
       createCollaborationExtension({ workspace, approval, agentDir }), createLearningExtension({ workspace, approval, knowledge: binding.memory }),
-      createMemoryExtension({ workspace, enabled: binding.memory }), createObserverExtension({ enabled: true, root: workspace.root }), createHandoffExtension({ workspace }), createReviewExtension({ workspace, agentDir, modelRuntime: await this.engine.modelRegistry.ready() })];
-    return { workspace, binding, factories: factories.map(factory => scopedFactory(factory, workspace, this.engine, sessionPath)) };
+      createMemoryExtension({ workspace, enabled: binding.memory }), createObserverExtension({ enabled: true, root: workspace.root }), createHandoffExtension({ workspace }), createReviewExtension({ workspace, agentDir, modelRuntime: await this.engine.modelRegistry.ready() }), createChangeReadingExtension({ workspace })];
+    return { workspace, binding, factories: [...factories,this.modelPolicyFactory(sessionPath)].map(factory => scopedFactory(factory, workspace, this.engine, sessionPath)) };
   }
   async attach(sessionPath: string, session: any) {
     const binding = await this.binding(sessionPath);
@@ -196,7 +336,9 @@ export class EngineeringHost {
       if (isGitRoot) await workspace.exclusive(() => workspace.addRepo('main', workspace.root, { role: '主要工程仓库', access: 'write' }));
     }
     const previous = await this.binding(sessionPath);
+    if(previous?.managedGrant&&workspace.root!==previous.managedGrant.root)throw new Error('Managed worker cannot change its assigned workspace');
     await this.saveBinding(sessionPath, { root: workspace.root, memory });
+    if (!previous && this.defaultModelPolicy) await this.configureModelPolicy(sessionPath,this.defaultModelPolicy);
     try { await this.engine.reloadSessionRuntime(sessionPath, { refreshCapabilitySnapshots: true }); }
     catch (error) {
       if (previous) await this.saveBinding(sessionPath, previous);
@@ -221,11 +363,16 @@ export class EngineeringHost {
     return controller.safeSnapshot({ connected: true, root: binding.root, memory: binding.memory, groups: engineeringGroups,
       actions: uiActions, sessionPath, sessionId: this.engine.getSessionIdForPath?.(sessionPath),
       overview,
+      modelSelection: binding.pendingModel,
+      modelPolicy: binding.modelPolicy,
+      kind:binding.kind||'engineering',
+      conductorSummary:binding.kind==='manager'?await this.conductor(sessionPath).summary():undefined,
       state: controller.snapshot(), dialogs: [...this.dialogs.values()].filter(item => item.sessionPath === sessionPath).map(item => item.dialog) });
   }
   async data(sessionPath: string, group: string, query: string) {
     const controller = await this.controller(sessionPath);
     const workspace = controller.options.workspace;
+    if(group==='conductor'){const manager=this.conductor(sessionPath);return {...await manager.status(),summary:await manager.summary()};}
     if (group === 'project') return controller.safeSnapshot(await projectOverview(workspace, { task: controller.chat.session }));
     if (group === 'materials') return controller.safeSnapshot(await new ProjectContext(workspace).search(query, { task: controller.chat.session }, 30).then(result => result.items));
     if (group === 'artifacts') return controller.safeSnapshot((await new Artifacts(workspace).list(controller.chat.session)).map(item => ({ ...item.record, sourceCurrent: item.sourceCurrent, evidenceStatus: item.evidence })));
@@ -341,6 +488,7 @@ class NativeEngineeringSession extends WorkbenchSession {
   readonly nativePath: string;
   readonly nativeSession: any;
   private createdContext?: { sessionPath: string; sessionId: string };
+  private restoreRequestPreparation?: () => void;
   constructor(host: EngineeringHost, nativePath: string, nativeSession: any, workspace: Workspace, models: any, binding: Binding) {
     super({ id: host.engine.getSessionIdForPath?.(nativePath) || nativeSession.sessionManager.getSessionId(),
       session: nativeSession.sessionManager.getSessionId(), sessionFile: nativePath, title: '工程任务',
@@ -351,6 +499,22 @@ class NativeEngineeringSession extends WorkbenchSession {
   }
   safeSnapshot(value: unknown) { return value === undefined ? null : JSON.parse(redact(JSON.stringify(value), this.options.workspace.secrets)); }
   async open() {
+    const agent = this.nativeSession.agent, previous = agent.prepareRequest;
+    const prepare = async (request: any, signal: AbortSignal) => {
+      signal?.throwIfAborted();
+      await this.host.applyRequestedModel(this.nativePath);
+      await this.host.assertManagedModel(this.nativePath,this.nativeSession.model.provider,this.nativeSession.model.id);
+      const binding = await this.host.binding(this.nativePath), policy = binding?.modelPolicy;
+      if (policy) {
+        if (policy.maxRequests !== undefined && policy.requests >= policy.maxRequests) throw new Error('Configured model-call budget reached; review the task before extending the budget');
+        policy.requests++;
+        const role = modelForPhase(policy); if (role.thinking) this.host.engine.setSessionThinkingLevel(this.nativePath,role.thinking);
+        await this.host.saveBinding(this.nativePath,binding!);
+      }
+      return previous?.(request, signal);
+    };
+    agent.prepareRequest = prepare;
+    this.restoreRequestPreparation = () => { if (agent.prepareRequest === prepare) agent.prepareRequest = previous; };
     // The facade delegates lifecycle changes to Hana; it does not construct a Pi runtime.
     this.runtime = { session: this.nativeSession, dispose: async () => {}, newSession: async (options: any = {}) => {
       const manager = SessionManager.create(this.options.workspace.root, path.dirname(this.nativePath), { parentSession: this.nativePath });
@@ -384,6 +548,7 @@ class NativeEngineeringSession extends WorkbenchSession {
     return this.host.confirm(this.nativePath, input, opts);
   }
   async detach() {
+    this.restoreRequestPreparation?.();
     // Closing the UI adapter must not dispose Hana's native session.
     this.operationAbort?.abort();
     await this.inflight;
@@ -394,7 +559,10 @@ class NativeEngineeringSession extends WorkbenchSession {
     if (name === 'new-context') this.createdContext = undefined;
     const result = await super.runCommand(name, args);
     let createdSession: any;
-    if (name === 'new-context') createdSession = this.createdContext;
+    if (name === 'new-context') {
+      createdSession = this.createdContext;
+      if(createdSession){const input=JSON.parse(args);await this.host.engine.saveSessionTitle(createdSession.sessionPath,String(input.goal||'新背景任务').slice(0,120));}
+    }
     if (name === 'branch-code') {
       const input = JSON.parse(args), fork = await Workspace.open(path.resolve(this.options.workspace.root, input.destination));
       const start = await readJson<{ sessionFile: string; sessionId: string }>(path.join(fork.data, 'session-start.json'));
@@ -404,6 +572,7 @@ class NativeEngineeringSession extends WorkbenchSession {
       await writeJson(path.join(fork.data, `session-${safeId(manager.getSessionId())}.json`), { ...previous, sessionFile: targetPath });
       await this.host.saveBinding(targetPath, { root: fork.root, memory: this.chat.memory === true });
       createdSession = await this.host.engine.createSession(manager, fork.root, false, this.nativeSession.model, { visibleInSessionList: true, thinkingLevel: this.nativeSession.thinkingLevel });
+      await this.host.engine.saveSessionTitle(createdSession.sessionPath,'独立代码方案');
       this.host.publish(this.nativePath, 'code_fork', { sessionPath: createdSession.sessionPath, sessionId: createdSession.sessionId, root: fork.root });
     }
     this.host.engine.syncSessionBranchHead(this.nativePath, this.nativeSession.sessionManager, 'engineering_command');

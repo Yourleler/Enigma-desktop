@@ -15,6 +15,7 @@ export interface TaskReadingInput {
   goal: string; queries?: { symbol: string; repo?: string }[]; baseline?: string; task?: string;
   resources?: string[]; expectedRepos?: string[]; expectedFiles?: { repo: string; file: string }[];
   requirements?: { id: string; text: string; checks?: string[] }[]; maxQueries?: number; maxFiles?: number;
+  changes?: { repo: string; file: string; change: string; patch?: string }[];
 }
 export interface TaskReading {
   schema: 1; id: string; revision: number; goal: string; task?: string; createdAt: string; evidence: string; reader?: string;
@@ -83,7 +84,8 @@ export class TaskReadingStore {
         if (read.current === null) gaps.push(`Imported material ${id} has not been revalidated against its remote source.`);
         return { id, revision: read.resource.revision, current: read.current };
       }));
-      let changes: { repo: string; file: string; change: string; patch?: string }[] = [];
+      let changes: { repo: string; file: string; change: string; patch?: string }[] = input.changes ?? [];
+      for (const change of changes) await this.workspace.path(change.repo, change.file);
       if (input.baseline) {
         const baseline = await this.workspace.loadCheckpoint(input.baseline), target = await this.workspace.checkpoint('task reading target');
         changes = await this.workspace.compare(baseline.id, target.id);

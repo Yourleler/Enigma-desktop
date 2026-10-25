@@ -7,7 +7,7 @@ import { ensureDir, hash, id, readJson, redact, safeId, storePath, writeJson } f
 import type { Access, Check, Checkpoint, Evidence, FileVersion, ForkHandoff, Observation, OperationRecord, Repo, RepoSnapshot, WorkspaceConfig } from './types.js';
 import { emitActivity, measured, type ActivitySink } from './telemetry.js';
 
-const excluded = (path: string): boolean => path.split('/').some(part => ['.git', '.enigma-next', 'node_modules', '.venv', '__pycache__'].includes(part))
+export const excluded = (path: string): boolean => path.split('/').some(part => ['.git', '.enigma-next', 'node_modules', '.venv', '__pycache__'].includes(part))
   || /(^|\/)(\.env(?:\..*)?|.*\.(?:pem|key))$/.test(path);
 const inside = (root: string, path: string): boolean => path === root || (!relative(root, path).startsWith(`..${sep}`)
   && relative(root, path) !== '..' && !isAbsolute(relative(root, path)));
@@ -222,6 +222,13 @@ export class Workspace {
     const paths = (await git(this.repo(repoId).root, ['ls-files', '-z', '--cached', '--others', '--exclude-standard']))
       .split('\0').filter(Boolean).filter(file => !excluded(file));
     return [...new Set(paths)].sort();
+  }
+  async restrictRuntime(writeRepos: string[], checks: string[]): Promise<void> {
+    const writes=new Set(writeRepos),selected=new Set(checks);
+    for(const repo of writes)if(this.repo(repo).access!=='write')throw new Error('Runtime restriction cannot expand repository access');
+    for(const check of selected)if(!this.config.checks.some(item=>item.id===check))throw new Error('Runtime checks must be a subset of the current definitions');
+    this.config.repos=this.config.repos.map(repo=>({...repo,access:writes.has(repo.id)?'write':'read'}));
+    this.config.checks=this.config.checks.filter(check=>selected.has(check.id));await this.persist();
   }
   async snapshotRepo(repoId: string, storeBlobs = true): Promise<RepoSnapshot> {
     return await measured('snapshot', { repo: repoId }, () => this.captureRepo(repoId, storeBlobs), this.activity);

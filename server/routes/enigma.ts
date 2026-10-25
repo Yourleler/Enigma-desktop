@@ -31,6 +31,31 @@ export function createEnigmaRoute(engine: any) {
       return c.json(await host.connect(sessionPath, body.root, body.memory === true));
     } catch (error) { return fail(c, error); }
   });
+  route.post('/enigma/model', async c => {
+    try {
+      const body = await safeJson(c), sessionPath = await session(c, true, body);
+      if (typeof body.provider !== 'string' || typeof body.modelId !== 'string') throw new Error('Select a configured provider and model');
+      return c.json(await host.requestModel(sessionPath, body.provider, body.modelId));
+    } catch (error) { return fail(c, error); }
+  });
+  route.post('/enigma/model-policy', async c => {
+    try { const body=await safeJson(c);return c.json(await host.configureModelPolicy(await session(c,true,body),body.policy)); }
+    catch(error){return fail(c,error);}
+  });
+  route.post('/enigma/model-policy-default', async c => {
+    try {
+      const context=createRequestContext(c,engine),allowed=context.authorize?.('settings.write');
+      if(!allowed?.allowed)return c.json({error:'Settings permission required'},403);
+      const body=await safeJson(c);return c.json(await host.configureDefaultModelPolicy(body.policy));
+    }catch(error){return fail(c,error);}
+  });
+  route.post('/enigma/conductor/new',async c=>{try{const body=await safeJson(c);return c.json(await host.createConductor(await session(c,true,body),body.limits));}catch(error){return fail(c,error);}});
+  route.post('/enigma/conductor/report',async c=>{try{const body=await safeJson(c);return c.json(await host.conductor(await session(c,true,body)).report());}catch(error){return fail(c,error);}});
+  route.post('/enigma/guardian/start',async c=>{try{const body=await safeJson(c);return c.json(await host.guardian.start(await session(c,true,body),body.config));}catch(error){return fail(c,error);}});
+  route.post('/enigma/guardian/stop',async c=>{try{const body=await safeJson(c);return c.json(await host.guardian.stop(await session(c,true,body)));}catch(error){return fail(c,error);}});
+  route.get('/enigma/guardian/status',async c=>{try{return c.json(await host.guardian.status(await session(c)));}catch(error){return fail(c,error);}});
+  route.post('/enigma/guardian/diagnose',async c=>{try{const body=await safeJson(c);return c.json(await host.guardian.diagnose(await session(c,false,body),body.question));}catch(error){return fail(c,error);}});
+  route.post('/enigma/guardian/act',async c=>{try{const body=await safeJson(c);return c.json(await host.guardian.act(await session(c,true,body),body));}catch(error){return fail(c,error);}});
   route.get('/enigma/data/:group', async c => {
     try { return c.json(await host.data(await session(c), c.req.param('group'), c.req.query('query') || '')); } catch (error) { return fail(c, error); }
   });

@@ -120,11 +120,37 @@ function defineStore(input: StoreInput): StoreDescriptor {
 export const PERSISTENT_STORES: readonly StoreDescriptor[] = Object.freeze([
 
   defineStore({
+    id: "enigma-conductor-ledgers",
+    ownerModule: "plugins/enigma/conductor.ts",
+    pathPatterns: ["user/enigma-conductors/*.json"],
+    format: "json",
+    schemaSource: runtimeSource("plugins/enigma/conductor.ts", "schema 1 manager identity, explicit limits, owned projects/conversations, resumable interrupted tasks, selected integration previews and original acceptance evidence"),
+    openEntry: ["ConversationConductor.load", "ConversationConductor.initialize"],
+    epochPolicy: "compatible", affectedByEpochMigration: false,
+    checkpointPolicy: "Preserve manager metadata; do not restore or traverse external worker code through host epoch rollback.",
+    restorePolicy: "Validate the manager identity and inspect actual worker state before resuming; never blindly replay stored tasks.",
+    compatibility: "Additive plugin-owned JSON; existing Hana schemas and DATA_EPOCH are unchanged.",
+    identityContract: "One native manager sessionId owns its ledger and the worker/project references it created.",
+    siteRules: rules(["plugins/enigma/conductor.ts"], "Writes only the manager ledger and its containing directory.", ["atomic-write", "mkdir"], "this\\.file"),
+  }),
+  defineStore({
+    id: "enigma-managed-workspace-roots",
+    ownerModule: "plugins/enigma/conductor.ts",
+    pathPatterns: ["workspaces/managed/"], pathKind: "tree", format: "directory-tree",
+    schemaSource: directorySource("plugins/enigma/conductor.ts", "managerId/taskId owned isolated workspace roots; code/Enigma state have independently verified protocols"),
+    openEntry: ["ConversationConductor.run"], epochPolicy: "compatible", affectedByEpochMigration: false,
+    checkpointPolicy: "Do not include worker Git state in Hana epoch rollback; workers retain their own code and receipts.",
+    restorePolicy: "Resolve manager/task ownership, inspect source and pending effects, and use explicit Enigma recovery.",
+    identityContract: "A manager and task id own one isolated workspace root; conversation creation does not grant broader source access.",
+    siteRules: rules(["plugins/enigma/conductor.ts"], "Creates only the parent of a manager-owned worker workspace.", ["mkdir"], "path\\.dirname\\(root\\)"),
+  }),
+
+  defineStore({
     id: "enigma-session-bindings",
     ownerModule: "plugins/enigma/host.ts",
     pathPatterns: ["user/enigma-bindings.json"],
     format: "json",
-    schemaSource: runtimeSource("plugins/enigma/host.ts", "schema 1 native-session/workspace binding, absolute roots, explicit memory flag, and validated source identity"),
+    schemaSource: runtimeSource("plugins/enigma/host.ts", "schema 1 native-session/workspace binding, absolute roots, explicit memory flag, validated source identity, manager model grants and bounded guardian configuration/usage"),
     openEntry: ["EngineeringHost.load", "EngineeringHost.saveBinding"],
     epochPolicy: "compatible",
     affectedByEpochMigration: false,
@@ -1393,6 +1419,13 @@ function exemption(
 }
 
 export const PERSISTENCE_EXEMPTIONS: readonly PersistenceExemption[] = Object.freeze([
+  exemption(
+    "external-enigma-conductor-reports",
+    "packages/enigma-engineering/src/artifacts.ts",
+    "plugins/enigma/conductor.ts",
+    "Writes a bounded report under the explicit engineering workspace's approved runs result directory; Artifacts owns its immutable version. This external project content must not be traversed by Hana epoch rollback.",
+    "2026-12-31", ["write-file", "mkdir"], "(?:file,redact|path\\.dirname\\(file\\))",
+  ),
   exemption(
     "external-enigma-session-state",
     "packages/enigma-engineering/src/pi-extension.ts",

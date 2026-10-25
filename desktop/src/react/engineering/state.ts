@@ -16,6 +16,7 @@ export const useEngineering = create<EngineeringState>(() => ({ sessionPath: '',
   loading: false, error: '', choices: {}, connectOpen: false, paneOpen: false, results: {} }));
 
 export const groups = [
+  { id:'conductor',label:'任务群' },
   { id: 'project', label: '项目与仓库' }, { id: 'plan', label: '计划' }, { id: 'collaboration', label: '协作' },
   { id: 'timeline', label: '时光机' }, { id: 'observer', label: '运行状态' }, { id: 'reading', label: '代码' },
   { id: 'materials', label: '资料' }, { id: 'artifacts', label: '产物' }, { id: 'environment', label: '环境' },
@@ -49,6 +50,9 @@ export async function refreshEngineering(sessionPath: string, signal?: AbortSign
     if (active === useEngineering.getState().active) { const tab = useEngineering.getState().tabs.find(item => item.id === active); if (tab) void loadEngineeringTab(tab); }
   }
   useEngineering.setState({ snapshot: value, results });
+  if(value.kind==='manager'&&!useEngineering.getState().loading&&useEngineering.getState().active==='group:conductor'&&JSON.stringify(value.conductorSummary)!==JSON.stringify(useEngineering.getState().data?.summary)) {
+    const tab=useEngineering.getState().tabs.find(tab=>tab.id==='group:conductor');if(tab)void loadEngineeringTab(tab);
+  }
 }
 
 export function openEngineering(tab: Tab) {

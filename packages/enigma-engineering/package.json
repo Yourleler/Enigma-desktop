@@ -20,7 +20,8 @@
       "./dist/src/pi-delivery.js",
       "./dist/src/pi-reuse.js",
       "./dist/src/pi-collaboration.js",
-      "./dist/src/pi-learning.js"
+      "./dist/src/pi-learning.js",
+      "./dist/src/pi-change-reading.js"
     ]
   },
   "type": "module",
@@ -50,6 +51,7 @@
     "./pi-observer": "./dist/src/pi-observer.js",
     "./pi-handoff": "./dist/src/pi-handoff.js",
     "./pi-review": "./dist/src/pi-review.js",
+    "./pi-change-reading": "./dist/src/pi-change-reading.js",
     "./pi-session": "./dist/src/pi-session.js",
     "./execution-boundary": "./dist/src/execution-boundary.js",
     "./process": "./dist/src/process.js"

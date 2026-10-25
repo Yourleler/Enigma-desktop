@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { Workspace } from 'enigma-next';
 import { runProcess } from '../packages/enigma-engineering/dist/src/process.js';
-import { workerEnvironment, withProcessBoundary } from 'enigma-next/execution-boundary';
+import { workerEnvironment, withProcessBoundary, isolatedWorkerBoundary,assertBoundaryPath } from 'enigma-next/execution-boundary';
 import { nativeEngineeringPolicy, withNativeEngineeringExecution } from '../plugins/enigma/execution-policy.ts';
 import { generateProfile } from '../lib/sandbox/seatbelt.ts';
 
@@ -57,5 +57,27 @@ describe('Enigma native execution boundary', () => {
     const generated = generateProfile({writablePaths:['/tmp/folder"\n(allow default)'],protectedPaths:[],denyReadPaths:[]});
     expect(generated).toContain('/tmp/folder\\"\\n(allow default)');
     expect(generated).not.toContain('\n(allow default)');
+  });
+  it('derived worker command sandbox allows scoped code and denies parent files, receipts and sibling repos',async()=>{
+    if(process.platform!=='darwin')return;
+    const f=await fixture(),child=path.join(f.repo,'.enigma-next','delegations','worker','workspace'),owned=path.join(child,'repos','owned'),readonly=path.join(child,'repos','readonly');
+    await fs.mkdir(owned,{recursive:true});await fs.mkdir(readonly,{recursive:true});
+    const worker=await withNativeEngineeringExecution(f.engine,f.workspace,f.sessionPath,()=>isolatedWorkerBoundary(child,[{root:owned,access:'write'},{root:readonly,access:'read'}]));
+    expect(worker?.kind).toBe('seatbelt');
+    const write=async(file:string)=>withProcessBoundary(worker!,()=>runProcess([process.execPath,'-e','require("fs").writeFileSync(process.argv[1],"probe")',file],owned));
+    expect((await write(path.join(owned,'ok.txt'))).status).toBe('passed');
+    for(const target of [path.join(f.repo,'parent.txt'),path.join(readonly,'blocked.txt'),path.join(child,'.enigma-next','workspace.json'),path.join(owned,'.git'),path.join(f.home,'agents','coder','sessions','injected.jsonl')]){
+      const result=await write(target);expect(result.status,target).toBe('failed');await expect(fs.access(target)).rejects.toMatchObject({code:'ENOENT'});
+    }
+    await expect(withProcessBoundary(worker!,async()=>assertBoundaryPath(path.join(f.repo,'parent.txt'),'write'))).rejects.toThrow('isolated repository');
+  });
+  it('native paths allow explicit managed code inside the home while retaining sibling and credential restrictions',async()=>{
+    const f=await fixture(),child=path.join(f.home,'workspaces','managed','child');await fs.mkdir(child,{recursive:true});
+    await runProcess(['git','init','-q',child],f.root);const workspace=await Workspace.open(child);await workspace.addRepo('child',child,{access:'write'});
+    nativeEngineeringPolicy(f.engine,workspace,f.sessionPath);
+    await expect(workspace.path('child','MODULE.md','write')).resolves.toBe(path.join(await fs.realpath(child),'MODULE.md'));
+    const {guard}=nativeEngineeringPolicy(f.engine,workspace,f.sessionPath);
+    expect(guard.check(path.join(f.home,'workspaces','managed','other','file'),'write').allowed).toBe(false);
+    expect(guard.check(path.join(f.home,'auth.json'),'read').allowed).toBe(false);
   });
 });

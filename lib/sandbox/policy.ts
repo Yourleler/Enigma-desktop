@@ -11,7 +11,7 @@ import { workspaceRootsForSandbox } from "../../shared/workspace-scope.ts";
 // ─── 常量 ─────────────────────────────────────
 
 /** hanakoHome 根级别被屏蔽的文件 */
-export const BLOCKED_FILES = ["auth.json", "models.json", "added-models.yaml", "crash.log"];
+export const BLOCKED_FILES = ["auth.json", "models.json", "added-models.yaml", "server-info.json", "crash.log"];
 
 /** hanakoHome 根级别被屏蔽的目录 */
 export const BLOCKED_DIRS = ["browser-data", "playwright-browsers"];

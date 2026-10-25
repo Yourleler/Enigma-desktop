@@ -85,6 +85,7 @@ type RefreshAppearanceSummaryOptions = {
 };
 
 type BuildSystemPromptOptions = {
+  forcePlainEngineering?: boolean;
   forSubagent?: boolean;
   forceMemoryEnabled?: boolean;
   forceExperienceEnabled?: boolean;
@@ -1260,7 +1261,10 @@ export class Agent {
     // identity + yuan + AGENTS.md（复用 personality getter）
     const yuanType = this._config?.agent?.yuan || "hanako";
     if (!this._readYuan()) throw new Error(`Cannot find yuan "${yuanType}". Check lib/yuan/`);
-    const agentsMd = this.personality;
+    const agentsMd = options.forcePlainEngineering
+      ? [this.readIdentitySource().content,this.readAgentsMdSource().content,
+        '工程工作模式：直接沟通目标、依据、进展与结果。无需输出人格心境、MOOD 或角色表演区块。'].join('\n\n')
+      : this.personality;
 
     // 可选文件
     const userMd = readFile(userProfilePath(this.userDir));

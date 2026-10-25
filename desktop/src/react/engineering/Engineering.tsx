@@ -1,4 +1,4 @@
-import { AUTO_LIGHT_DEFAULT, AUTO_DARK_DEFAULT } from '../../shared/theme-registry';
+import { AUTO_LIGHT_DEFAULT, AUTO_DARK_DEFAULT, THEMES, type ThemeId } from '../../shared/theme-registry';
 import { persistAppearancePreferences, readBrowserAppearancePreferences } from '../services/appearance-sync';
 import { switchSession } from '../stores/session-actions';
 import { renderMarkdown } from '../utils/markdown';
@@ -9,6 +9,11 @@ import { MarkdownContent } from '../components/chat/MarkdownContent';
 import { groups, useEngineering, refreshEngineering, restoreTabs, openGroup, openEngineering, loadEngineeringTab, showAction, submitAction, engineeringRequest,
   tabStorageKey, type Field, type Action, type Tab } from './state';
 import './engineering.css';
+import { Changes } from './Changes';
+import { ModelPolicyDialog } from './ModelPolicy';
+import { ConductorCreateDialog } from './ConductorCreate';
+import { ConductorTasks } from './ConductorTasks';
+import { GuardianPanel } from './Guardian';
 const EMPTY_LIST: any[] = [];
 
 function pointer(event: PointerEvent<HTMLElement>) {
@@ -21,6 +26,8 @@ export function EngineeringToolbar() {
   const sessionPath = useStore(s => s.currentSessionPath) || '';
   const connection = useStore(s => s.activeServerConnectionId);
   const snapshot = useEngineering(s => s.snapshot);
+  const activeTab = useEngineering(s => s.active);
+  const [modelsOpen,setModelsOpen]=useState(false);
   const [appearance, setAppearance] = useState(() => {
     try { return { glass: true, motion: true, ...JSON.parse(localStorage.getItem('enigma-appearance') || '{}') }; }
     catch { return { glass: true, motion: true }; }
@@ -49,45 +56,60 @@ export function EngineeringToolbar() {
     return () => window.removeEventListener('resize',resize);
   }, [snapshot?.connected]);
   useEffect(() => {
+    const tone=()=>{const selected=document.documentElement.getAttribute('data-theme') as ThemeId,background=THEMES[selected]?.backgroundColor || THEMES[AUTO_LIGHT_DEFAULT].backgroundColor;const red=parseInt(background.slice(1,3),16),green=parseInt(background.slice(3,5),16),blue=parseInt(background.slice(5,7),16);document.body.dataset.enigmaTone=0.2126*red+0.7152*green+0.0722*blue<128?'dark':'light';};
+    tone();const observer=new MutationObserver(tone);observer.observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});return ()=>observer.disconnect();
+  },[]);
+  useEffect(() => {
     document.body.classList.toggle('enigma-engineering', !!snapshot?.connected);
+    document.body.classList.add('enigma-surface');
     document.body.classList.toggle('enigma-glass-off', !appearance.glass);
     document.body.classList.toggle('enigma-motion-off', !appearance.motion);
     localStorage.setItem('enigma-appearance', JSON.stringify(appearance));
-    return () => document.body.classList.remove('enigma-engineering');
+    return () => document.body.classList.remove('enigma-engineering','enigma-surface');
   }, [snapshot?.connected, appearance]);
-  if (!sessionPath) return null;
+  if (!sessionPath) return <><div className="enigma-new-task-settings"><button onClick={()=>setModelsOpen(true)}>新任务模型分工</button></div>{modelsOpen&&<ModelPolicyDialog close={()=>setModelsOpen(false)} />}</>;
   const operation = snapshot?.state?.operation;
   const busy = operation?.state === 'running' || snapshot?.state?.idle === false;
   return <>
+    <svg width="0" height="0" aria-hidden="true" className="enigma-glass-definition"><defs><filter id="enigma-liquid-refraction" x="-10%" y="-10%" width="120%" height="120%" colorInterpolationFilters="sRGB"><feTurbulence type="fractalNoise" baseFrequency="0.008 0.018" numOctaves="1" seed="4" result="noise" /><feGaussianBlur in="noise" stdDeviation="3" result="smooth" /><feDisplacementMap in="SourceGraphic" in2="smooth" scale="24" xChannelSelector="R" yChannelSelector="G" /></filter></defs></svg>
     <div className="enigma-toolbar enigma-glass" onPointerMove={pointer} data-testid="engineering-toolbar">
       <button className="enigma-project-button" onClick={() => snapshot?.connected ? openGroup('project') : useEngineering.setState({ connectOpen: true })}>
         <span className="enigma-mark">E</span><span>{snapshot?.connected ? snapshot.root.split('/').pop() : '选择工程工作区'}</span>
       </button>
-      {snapshot?.connected && <><nav aria-label="当前任务功能">{['plan','collaboration','timeline','observer','handoff'].map(id => <button key={id} onClick={() => openGroup(id)}>{groups.find(group => group.id === id)!.label}</button>)}</nav>
-        <nav aria-label="项目内容" className="enigma-content-nav">{['reading','materials','artifacts','environment','review'].map(id => <button key={id} onClick={() => openGroup(id)}>{groups.find(group => group.id === id)!.label}</button>)}</nav></>}
+      {snapshot?.connected && <><nav aria-label="当前任务功能">{(snapshot.kind==='manager'?[['conductor','任务群'],['artifacts','汇总成果'],['timeline','恢复记录']]:[['plan','任务'],['reading','变更'],['artifacts','成果'],['timeline','时光机']]).map(([id,label]) => <button key={id} data-active={activeTab === `group:${id}`} onClick={() => openGroup(id)}>{label}</button>)}</nav>
+        <button className="enigma-runtime-button" onClick={() => openGroup('observer')}><span className={busy ? 'enigma-live' : ''}>●</span>{busy ? '运行中' : '运行状态'}</button>
+        <details className="enigma-more"><summary>更多</summary><div className="enigma-action-menu enigma-glass">{['collaboration','materials','environment','review','handoff'].map(id => <button key={id} onClick={() => openGroup(id)}>{groups.find(group => group.id === id)!.label}</button>)}</div></details></>}
       <details className="enigma-appearance"><summary aria-label="工作台外观">◐</summary><div className="enigma-glass">
         <label><input type="checkbox" checked={appearance.glass} onChange={e => setAppearance({ ...appearance, glass: e.target.checked })} />玻璃效果</label>
         <label><input type="checkbox" checked={appearance.motion} onChange={e => setAppearance({ ...appearance, motion: e.target.checked })} />界面动效</label>
         <div className="enigma-theme-choice">{[[AUTO_LIGHT_DEFAULT,'浅色'],[AUTO_DARK_DEFAULT,'深色']].map(([theme,label]) => <button key={theme} onClick={() => { window.setTheme?.(theme); void persistAppearancePreferences(readBrowserAppearancePreferences()).catch(error => useEngineering.setState({ error: String(error) })); }}>{label}</button>)}</div>
         <button onClick={() => useEngineering.setState({ connectOpen: true })}>切换工程工作区</button>
+        <button onClick={()=>setModelsOpen(true)}>模型分工</button>
+        <button onClick={()=>void engineeringRequest('/conductor/new',sessionPath,{}).then(result=>switchSession(result.sessionPath)).catch(error=>useEngineering.setState({error:String(error)}))}>新建任务编排管家</button>
       </div></details>
     </div>
     {snapshot?.connected && <div className="enigma-progress" role="status"><span className={busy ? 'enigma-live' : ''} />
       <span>{operation?.state === 'running' ? operation.title : busy ? 'Agent 正在运行' : operation?.state === 'failed' ? '操作失败，可查看详情' : '任务就绪'}</span>
       <span>{snapshot.overview?.repositories?.length || 0} 个仓库</span>
+      {snapshot.modelSelection?.state === 'pending' && <span>下一请求 → {snapshot.modelSelection.id}</span>}
+      {snapshot.modelSelection?.state === 'failed' && <span title={snapshot.modelSelection.error}>模型切换未生效，当前模型继续</span>}
       {snapshot.overview?.blockers?.length > 0 && <button onClick={() => openGroup('observer')}>{snapshot.overview.blockers.length} 项待核对</button>}
       {busy && <button onClick={() => void engineeringRequest('/cancel', sessionPath, {}).catch(error => useEngineering.setState({ error: String(error) }))}>停止</button>}
     </div>}
     <ConnectDialog /> <ActionDialog /> <ApprovalDialog />
+    {modelsOpen&&<ModelPolicyDialog close={()=>setModelsOpen(false)} />}
   </>;
 }
 
 export function EngineeringSidebar() {
   const snapshot = useEngineering(s => s.snapshot);
+  const [conductorOpen,setConductorOpen]=useState(false);
   if (!snapshot?.connected) return null;
   return <div className="enigma-sidebar-tools" aria-label="工程项目功能">
     <button onClick={() => openGroup('project')}>◇ 项目与仓库 <span>{snapshot.overview?.repositories?.length || 0}</span></button>
     <div><button onClick={() => openGroup('memory')}>记忆</button><button onClick={() => openGroup('skills')}>技能与配方</button></div>
+    {snapshot.kind!=='manager'&&<button onClick={()=>setConductorOpen(true)}>＋ 新建管家任务</button>}
+    {conductorOpen&&<ConductorCreateDialog close={()=>setConductorOpen(false)}/>}
   </div>;
 }
 
@@ -116,10 +138,10 @@ export function EngineeringPanel() {
       <button ref={element => { refs.current[tab.id] = element; }} role="tab" aria-selected={tab.id === state.active} tabIndex={tab.id === state.active ? 0 : -1} onKeyDown={event => key(event, index)} onClick={() => switchTab(tab)}>{tab.title}</button>
       <button aria-label={`关闭 ${tab.title}`} onClick={() => close(tab.id)}>×</button>
     </div>)}<button className="enigma-close-pane" aria-label="收起工程面板" onClick={() => useEngineering.setState({ paneOpen: false })}>⇥</button></div>
-    <div className="enigma-panel-head"><div><small>{active.file ? `${active.repo} / ${active.file}` : 'ENIGMA WORKSPACE'}</small><h2>{active.title}</h2></div>
+    <div className="enigma-panel-head"><div><small>{active.file ? `${active.repo} / ${active.file}` : state.snapshot.kind==='manager'?'管家任务群':'项目工作区'}</small><h2>{active.title}</h2></div>
       <button aria-label="刷新当前内容" onClick={() => void loadEngineeringTab(active, query)}>↻</button></div>
-    {!active.file && !active.resource && !active.artifact && <div className="enigma-panel-controls">
-      <input aria-label="查询当前内容" placeholder={active.group === 'observer' ? '例如：现在卡在哪里？' : '按关键词查找'} value={query} onChange={event => setQuery(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') void loadEngineeringTab(active, query); }} />
+    {!active.file && !active.resource && !active.artifact && !['conductor','observer',...(!active.repo?['reading']:[])].includes(active.group) && <div className="enigma-panel-controls">
+      <input aria-label="查询当前内容" placeholder="按关键词查找" value={query} onChange={event => setQuery(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') void loadEngineeringTab(active, query); }} />
       <button onClick={() => void loadEngineeringTab(active, query)}>查询</button>
       <details><summary>操作 <span>{actions.length}</span></summary><div className="enigma-action-menu enigma-glass">{actions.map(action => <button key={action.id} onClick={() => void showAction(action)}>{action.title}<small>{action.description}</small></button>)}</div></details>
     </div>}
@@ -136,9 +158,10 @@ export function EngineeringPanel() {
 function Content({ tab, value, query }: { tab: Tab; value: any; query: string }) {
   const overview = useEngineering(s => s.snapshot?.overview);
   if (value == null) return <div className="enigma-empty">还没有相关记录。通过“操作”添加或运行。</div>;
+  if(tab.group==='conductor')return <ConductorTasks value={value}/>;
   if (tab.file || tab.resource || tab.artifact) return <div className="enigma-document">
     <div className="enigma-source-note">{value.sourceCurrent === false || value.current === false ? '历史版本 · 当前来源已变化' : tab.resource ? `保存的资料修订 · ${value.freshness || '按来源记录核对'}` : '已重新读取当前来源'} {value.version && `· ${String(value.version).slice(0,12)}`}</div>
-    {tab.file?.match(/\.md$/i) || tab.resource ? <MarkdownContent html={renderMarkdown(value.content || '')} /> : <pre>{value.content || ''}</pre>}
+    {tab.file?.match(/\.md$/i) || tab.resource || tab.artifact&&value.record?.extension==='.md' ? <MarkdownContent html={renderMarkdown(value.content || '')} /> : <pre>{value.content || ''}</pre>}
     {tab.artifact && <button onClick={() => void downloadArtifact(tab.artifact!)}>下载这个版本</button>}
   </div>;
   if (tab.group === 'project') return <>
@@ -146,15 +169,20 @@ function Content({ tab, value, query }: { tab: Tab; value: any; query: string })
     {(overview?.repositories || []).map((repo: any) => <article className="enigma-repo" key={repo.id}><span className="enigma-repo-mark">⌘</span><div><strong>{repo.id}</strong><p>{repo.role || '尚未填写职责'}</p><small>{repo.root}</small><div className="enigma-chips">{repo.dependsOn.map((id: string) => <span key={id}>依赖 {id}</span>)}<span>{repo.access === 'write' ? '可写' : '只读'}</span></div></div><button onClick={() => openEngineering({ id: `repo:${repo.id}`, title: repo.id, group: 'reading', repo: repo.id })}>浏览代码</button></article>)}
     <Evidence value={{ checks: overview?.checks, blockers: overview?.blockers }} />
   </>;
-  if (tab.group === 'reading') return <FileTree repo={tab.repo} query={query} />;
+  if (tab.group === 'reading') return tab.repo ? <FileTree repo={tab.repo} query={query} /> : <Changes value={value} files={<FileTree query={query} />} />;
   if (tab.group === 'plan' && value.plan) return <>
     <div className="enigma-task-heading"><span>当前目标</span><h3>{value.plan.goal}</h3><div className="enigma-plan-meter"><div style={{ width:`${value.total ? value.completed/value.total*100 : 0}%` }} /></div><small>{value.completed} / {value.total} 步骤已验收 · 修订 {value.plan.revision}</small></div>
-    {(value.steps || []).map((step: any) => <article className="enigma-step" key={step.id}><span data-phase={step.phase}>{step.phase === 'verified' ? '✓' : step.phase === 'running' ? '◌' : '○'}</span><div><strong>{step.goal}</strong><div className="enigma-chips"><span>{step.repo}</span><span>{step.state || step.phase}</span>{step.checks.map((check: string) => <span key={check}>检查 {check}</span>)}</div>{step.blockedBy?.length > 0 && <p>等待 {step.blockedBy.join('、')}</p>}</div></article>)}
+    {(value.steps || []).map((step: any) => <article className="enigma-step" key={step.id}><span data-phase={step.phase}>{step.phase === 'verified' ? '✓' : step.phase === 'running' ? '◌' : '○'}</span><div><strong>{step.goal}</strong><div className="enigma-chips"><span>{step.repo}</span><span>{({ready:'可以开始',pending:'待开始',blocked:'等待前置任务',running:'正在执行',failed:'执行失败',verified:'已验收',stale:'需要重新验证'} as any)[step.state || step.phase] || step.state || step.phase}</span>{step.checks.map((check: string) => <span key={check}>检查 {check}</span>)}</div>{step.blockedBy?.length > 0 && <p>等待 {step.blockedBy.join('、')}</p>}</div></article>)}
     <details className="enigma-result"><summary>计划依赖与完整证据</summary><Evidence value={value} /></details>
   </>;
-  if (tab.group === 'observer') return <div className="enigma-observer-card"><span className="enigma-eyebrow">旁路观察</span><h3>{value.available ? '当前运行状态' : '暂时没有可用观测'}</h3><p>{value.answer}</p>{value.status && <><div className="enigma-chips"><span>{value.status.state}</span><span>来源进程 {value.status.sourceProcess?.liveness}</span><span>观测 {value.status.observation}</span></div><details className="enigma-result"><summary>可回查的事实与时间记录</summary><Evidence value={value.status} /></details></>}</div>;
+  if (tab.group === 'observer') return <div className="enigma-observer-card"><GuardianPanel/><span className="enigma-eyebrow">旁路观察</span><h3>{value.available ? '当前运行状态' : '暂时没有可用观测'}</h3><p>{value.answer}</p>{value.status && <><div className="enigma-chips"><span>{value.status.state}</span><span>来源进程 {value.status.sourceProcess?.liveness}</span><span>观测 {value.status.observation}</span></div><details className="enigma-result"><summary>可回查的事实与时间记录</summary><Evidence value={value.status} /></details></>}</div>;
   if (tab.group === 'timeline') return <>
     <p className="enigma-source-note">切换会话分支与恢复代码分别操作。恢复先预览冲突，保护当前修改并重新验收。</p>
+    <h3 className="enigma-section-title">Agent 主动回溯</h3>
+    <p className="enigma-source-note">模型走歪时可调用时光机，带着经验回到较早上下文并自动继续；当前文件保留。</p>
+    {[...(value.modelRewinds || [])].reverse().map((rewind: any) => <article className="enigma-step" key={rewind.id}><span>↶</span><div><strong>{rewind.reason}</strong><p>{rewind.lesson}</p><small>下一步：{rewind.nextStep}</small><div className="enigma-chips"><span>上下文已回溯</span><span>文件保留</span><span>{rewind.requests} 次累计请求</span></div></div></article>)}
+    {!value.modelRewinds?.length && <div className="enigma-source-note">尚无主动回溯记录 · {value.contextCheckpoints?.length || 0} 个当前可用上下文检查点</div>}
+    <h3 className="enigma-section-title">代码检查点</h3>
     {[...(value.checkpoints || [])].reverse().map((checkpoint: any) => <article className="enigma-checkpoint" key={checkpoint.id}><span>◈</span><div><strong>{checkpoint.label}</strong><small>{checkpoint.createdAt}</small><div className="enigma-chips">{checkpoint.repos.map((repo: any) => <span key={repo.repo.id}>{repo.repo.id}</span>)}</div></div><button onClick={() => { const action=useEngineering.getState().snapshot.actions.find((action: Action) => action.id === 'restore-preview'); void showAction({...action,fields:action.fields.map((field: Field) => field.name === 'target' ? {...field,value:checkpoint.id}:field)}); }}>预览恢复</button></article>)}
     <details className="enigma-result"><summary>会话树与未结算操作</summary><Evidence value={{tree:value.tree,operations:value.operations}} /></details>
   </>;

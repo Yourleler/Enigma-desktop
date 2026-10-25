@@ -162,16 +162,18 @@ export class PathGuard {
       }
     }
 
-    // 8. hanakoHome 内未匹配 → 遵守 read-all 契约：非敏感路径可读，写仍需显式白名单。
-    if (this._isInside(resolved, this.hanakoHome)) {
-      return this.allowExternalReads ? AccessLevel.READ_ONLY : AccessLevel.BLOCKED;
-    }
-
-    // 9. workspace roots 内 → FULL
+    // Explicit isolated workspaces may live under the host's managed-workspace
+    // directory. Sensitive and read-only host paths were checked above; this
+    // grants only the registered workspace subtree, never its host siblings.
     for (const root of this.workspaceRoots) {
       if (this._isInside(resolved, root)) {
         return AccessLevel.FULL;
       }
+    }
+
+    // hanakoHome 内未匹配 → 非敏感路径可读，写仍需显式白名单。
+    if (this._isInside(resolved, this.hanakoHome)) {
+      return this.allowExternalReads ? AccessLevel.READ_ONLY : AccessLevel.BLOCKED;
     }
 
     // 10. 策略显式写根：用于运行时缓存、沙盒临时目录等非 workspace 写入点。

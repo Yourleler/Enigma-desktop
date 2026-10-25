@@ -7,6 +7,7 @@ import type { Model } from '../../types';
 import type { SessionModel } from '../../stores/chat-types';
 import { SelectWidget, ProviderIcon, ProviderGroupHeader, selectWidgetStyles, type SelectOption } from '@/ui';
 import styles from './InputArea.module.css';
+import { useEngineering, engineeringRequest, refreshEngineering } from '../../engineering/state';
 
 export function ModelSelector({ models, sessionModel, isStreaming = false }: {
   models: Model[];
@@ -47,6 +48,12 @@ export function ModelSelector({ models, sessionModel, isStreaming = false }: {
     try {
       const state = useStore.getState();
       const { currentSessionPath, pendingNewSession, chatSessions, sessionModelsByPath } = state;
+      if (currentSessionPath && useEngineering.getState().snapshot?.connected && useEngineering.getState().sessionPath === currentSessionPath) {
+        const result = await engineeringRequest('/model', currentSessionPath, { modelId, provider });
+        await refreshEngineering(currentSessionPath);
+        useStore.getState().addToast(result.effectiveAt === 'now' ? '已切换模型' : '已记录选择，下一次模型请求生效', 'info');
+        return;
+      }
       const sessionHasMessages = !!(currentSessionPath && sessionScopedValue(state, chatSessions, currentSessionPath)?.items?.length);
 
       if (sessionHasMessages && currentSessionPath) {
@@ -185,7 +192,7 @@ export function ModelSelector({ models, sessionModel, isStreaming = false }: {
       popupClassName={selectWidgetStyles.providerInset}
       triggerBare
       onAttemptOpen={() => {
-        if (isStreaming) {
+        if (isStreaming && !useEngineering.getState().snapshot?.connected) {
           useStore.getState().addToast(t('model.switchWhileStreaming'), 'warning', 4000, {
             dedupeKey: 'model-switch-streaming',
           });

@@ -13,7 +13,10 @@ export function nativeEngineeringPolicy(engine: any, workspace: Workspace, sessi
   const policy = deriveSandboxPolicy({ agentDir:path.dirname(path.dirname(sessionPath)), cwd:workspace.root, workspace:workspace.root,
     workspaceFolders:workspace.config.repos.map(repo => repo.root), hanakoHome:engine.hanakoHome, mode:'standard' });
   const readOnlyRepos = workspace.config.repos.filter(repo => repo.access !== 'write').map(repo => repo.root);
-  policy.protectedPaths.push(...readOnlyRepos, path.join(engine.hanakoHome,'plugin-data','enigma','policies'));
+  policy.protectedPaths.push(...readOnlyRepos,
+    workspace.data,path.dirname(sessionPath),
+    ...['workspace.json','checkpoints','blobs','plans','memory','task-readings','change-readings','artifacts','source-index','readings'].map(name=>path.join(workspace.data,name)),
+    path.join(engine.hanakoHome,'plugin-data','enigma','policies'));
   const guard = new PathGuard(preferences.sandbox ? policy : { mode:'full-access' });
   workspace.pathPolicy = (file, access) => {
     const result = guard.check(file, access);
