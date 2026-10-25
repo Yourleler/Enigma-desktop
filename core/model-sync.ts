@@ -6,7 +6,7 @@
  */
 
 import fs from "fs";
-import { getPiModel } from "../lib/pi-sdk/index.ts";
+import { getPiModel,normalizePiProviderCompat } from "../lib/pi-sdk/index.ts";
 import { lookupKnown, lookupKnownProvider } from "../shared/known-models.ts";
 import { writeSecretFileSync } from "../shared/secret-fs.ts";
 import {
@@ -61,7 +61,7 @@ function resolveModelApi(modelEntry, provider, providerApi) {
   return explicitApi || lookupKnownProvider(provider, getModelId(modelEntry))?.api || providerApi;
 }
 
-const THINKING_LEVEL_MAP_KEYS = ["off", "minimal", "low", "medium", "high", "xhigh"];
+const THINKING_LEVEL_MAP_KEYS = ["off", "minimal", "low", "medium", "high", "xhigh", "max"];
 
 function normalizeThinkingLevelMap(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
@@ -477,6 +477,11 @@ export function syncModels(providers, opts: Record<string, any> = {}) {
     newProviders[runtimeProviderId] = providerConfig;
   }
 
+  for(const provider of Object.values(newProviders) as any[]) {
+    provider.compat=normalizePiProviderCompat(provider.compat);
+    for(const model of provider.models||[])model.compat=normalizePiProviderCompat(model.compat);
+    for(const override of Object.values(provider.modelOverrides||{}) as any[])override.compat=normalizePiProviderCompat(override.compat);
+  }
   const newJson = { providers: newProviders };
   const newStr = JSON.stringify(newJson, null, 4) + "\n";
 

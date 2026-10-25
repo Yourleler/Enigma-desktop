@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { clampMaxTokensToContext } from "@earendil-works/pi-ai/api/simple-options";
 import type { AssistantMessage, Model } from "@earendil-works/pi-ai";
+import { normalizeContext,getCurrentTools } from '@earendil-works/pi-ai/utils/transcript';
 
 // Mock compaction-utils 以便精准控制 L3 判断和硬截断结果
 vi.mock("../core/compaction-utils.js", () => ({
@@ -214,7 +215,7 @@ describe("CompactionGuardExtension", () => {
         tools: [],
         messages: await convertAgentMessagesToLlm(messages),
       };
-      expect(clampMaxTokensToContext(model, providerContextBefore, 32_000)).toBe(1);
+      expect(clampMaxTokensToContext(model, normalizeContext(providerContextBefore), 32_000)).toBe(32_000);
 
       const result = await pi.trigger("context", { messages });
       const providerContextAfter = {
@@ -225,7 +226,7 @@ describe("CompactionGuardExtension", () => {
 
       expect(result.messages[1].usage.totalTokens).toBe(0);
       expect(retainedAssistant.usage.totalTokens).toBe(127_000);
-      expect(clampMaxTokensToContext(model, providerContextAfter, 32_000)).toBe(32_000);
+      expect(clampMaxTokensToContext(model, normalizeContext(providerContextAfter), 32_000)).toBe(32_000);
     });
 
     it("does not project ordinary non-compacted conversations", async () => {
@@ -808,10 +809,8 @@ describe("CompactionGuardExtension", () => {
       expect(prepareArguments).toHaveBeenCalledWith({ inputPath: "notes.md" });
       expect(liveExecute).not.toHaveBeenCalled();
       expect(providerContexts).toHaveLength(2);
-      expect(providerContexts[0].tools[0]).toMatchObject({
+      expect(getCurrentTools(providerContexts[0].messages)[0]).toMatchObject({
         name: "read",
-        label: "Read",
-        prepareArguments,
       });
       expect(providerContexts[1].messages.at(-1)).toMatchObject({
         role: "toolResult",

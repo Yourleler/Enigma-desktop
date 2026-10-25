@@ -43,6 +43,7 @@ vi.mock("../lib/pi-sdk/index.js", () => ({
   resizeModelImageInput: vi.fn(async (image) => image),
   formatModelImageDimensionNote: vi.fn(() => undefined),
   refreshSessionModelFromRegistry: refreshSessionModelFromRegistryMock,
+  createInitialSystemMessage:(systemPrompt,tools)=>({role:'system',content:systemPrompt,toolsAdded:tools,timestamp:0}),
 }));
 
 vi.mock("../lib/debug-log.js", () => ({
@@ -3855,7 +3856,8 @@ Continue the restored transcript.
       firstKeptEntryId: null,
     });
     expect(providerContexts).toHaveLength(1);
-    expect(providerContexts[0].messages.slice(0, -1)).toEqual(transcriptMessages);
+    expect(providerContexts[0].messages[0]).toMatchObject({role:'system'});
+    expect(providerContexts[0].messages.slice(1, -1)).toEqual(transcriptMessages);
     expect(providerContexts[0].tools).toEqual([]);
     expect(appendCompaction).toHaveBeenCalledWith(
       summary,
@@ -4093,13 +4095,13 @@ Continue the restored transcript.
       return {};
     });
     const session: any = {
-      agent: { streamFn: originalStreamFn },
+      agent: { streamFunction: originalStreamFn },
       sessionManager: manager,
       subscribe: vi.fn(() => vi.fn()),
       abort: vi.fn(),
     };
     session.prompt = vi.fn(async () => {
-      await session.agent.streamFn(codexModel, { messages: [] }, {
+      await session.agent.streamFunction(codexModel, { messages: [] }, {
         sessionId: "pi-child",
         headers: { "x-test": "1" },
       });

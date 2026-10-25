@@ -5,6 +5,7 @@ import {
   type AgentMessage,
   type AgentTool,
   type StreamFn,
+  getCurrentTools,
 } from "../lib/pi-sdk/index.ts";
 import {
   runCachePreservingCompactionAgentRun,
@@ -219,8 +220,9 @@ describe("cache-preserving compaction AgentRun", () => {
 
     expect(result.summary).toBe(VALID_SUMMARY);
     expect(requests).toHaveLength(1);
-    expect(requests[0].messages).toEqual([...fixture.liveMessages, fixture.instruction]);
-    expect(requests[0].messages.slice(0, -1)).toEqual(fixture.liveMessages);
+    expect(requests[0].messages[0]).toMatchObject({role:'system',content:fixture.systemPrompt});
+    expect(requests[0].messages.slice(1)).toEqual([...fixture.liveMessages, fixture.instruction]);
+    expect(requests[0].messages.slice(1, -1)).toEqual(fixture.liveMessages);
     expect(requests[0].messages.at(-1)).toEqual(fixture.instruction);
   });
 
@@ -250,8 +252,8 @@ describe("cache-preserving compaction AgentRun", () => {
       },
     });
 
-    expect(requestMessages[2].content[0].text).toBe("recent-tail-1");
-    expect(requestMessages[3].content[0].text).toBe("recent-tail-2");
+    expect(requestMessages[3].content[0].text).toBe("recent-tail-1");
+    expect(requestMessages[4].content[0].text).toBe("recent-tail-2");
     expect(requestMessages.at(-1).content[0].text).toContain(
       "The recent tail is retained context, not replacement input",
     );
@@ -263,7 +265,7 @@ describe("cache-preserving compaction AgentRun", () => {
     await runCachePreservingCompactionAgentRun({
       ...fixture,
       streamFn: async (_model: any, context: any) => {
-        providerTools = context.tools;
+        providerTools = getCurrentTools(context.messages);
         return streamOf(textResponse(VALID_SUMMARY));
       },
     });
@@ -302,7 +304,9 @@ describe("cache-preserving compaction AgentRun", () => {
     });
 
     expect(prepareArguments).toHaveBeenCalledWith({ inputPath: "notes.md" });
-    expect(requests[0].tools[0].prepareArguments).toBe(prepareArguments);
+    expect(getCurrentTools(requests[0].messages)[0].name).toBe('read');
+    expect(getCurrentTools(requests[0].messages)[0]).not.toHaveProperty('execute');
+    expect(getCurrentTools(requests[0].messages)[0]).not.toHaveProperty('prepareArguments');
     expect(requests[1].messages.at(-1)).toMatchObject({
       role: "toolResult",
       toolCallId: "call-prepare",

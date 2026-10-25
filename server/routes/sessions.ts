@@ -1037,13 +1037,20 @@ export function createSessionsRoute(engine, hub = null) {
 
       // 修订点必须在读取内容之前取（同 messages 路由）：读取期间若有新写入，
       // revision 只会偏旧，下次请求会重新解析，不会把没读到的写入标成已同步。
-      const revision = await readSessionFileRevision(queryPath);
+      let revision = await readSessionFileRevision(queryPath);
       const cached = findEntriesCache.get(queryPath);
       let entries;
       if (revision && cached && cached.revision === revision) {
         entries = cached.entries;
       } else {
-        const sourceMessages = await loadSessionHistoryMessages(engine, queryPath);
+        let sourceMessages = await loadSessionHistoryMessages(engine, queryPath);
+        const observedRevision=await readSessionFileRevision(queryPath);
+        if(revision&&observedRevision&&revision!==observedRevision) {
+          // SDK 1.4 may migrate an old JSONL during the first read. Re-read
+          // once from the observed boundary; never stamp unseen future writes.
+          revision=observedRevision;
+          sourceMessages=await loadSessionHistoryMessages(engine,queryPath);
+        }
         const sanitize = (value) => {
           const withoutReminder = stripSessionReminderBlocks(value);
           return isBridgeSessionPath(queryPath)

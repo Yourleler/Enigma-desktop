@@ -119,7 +119,7 @@ describe("ModelManager AuthStorage ownership", () => {
       "x-grok-model-override": "grok-4.5",
     });
 
-    manager.authStorage.logout("xai-oauth");
+    await manager.authStorage.logout("xai-oauth");
     await manager.reloadAndSync();
     expect(manager.availableModels.filter((model) => model.provider === "xai-oauth")).toEqual([]);
   });

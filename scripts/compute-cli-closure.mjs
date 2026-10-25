@@ -217,6 +217,19 @@ export const NFT_TRACE_ROOTS = CLOSURE_ROOTS.filter((root) => root.inputType ===
 
 export const DYNAMIC_CALL_ALLOWLIST = Object.freeze([
   {
+    file:'node_modules/@earendil-works/pi-coding-agent/dist/utils/shell.js',callee:'spawn',argText:'join(process.env.SystemRoot || "C:\\\\Windows", "System32", "taskkill.exe")',
+    displayArgText:'join(SystemRoot, "System32", "taskkill.exe")',
+    reason:'Pi 1.4 Windows process-tree cancellation invokes the OS taskkill binary, not repo JavaScript. The caller PID is supplied as an argv value; the Mac validation does not execute this branch.',
+  },
+  {
+    file:'node_modules/@earendil-works/pi-coding-agent/dist/core/resolve-config-value.js',callee:'spawnSync',argText:'shell',
+    reason:'Pi 1.4 resolves an explicitly configured credential command through the configured shell with a finite timeout. It is existing runtime configuration execution, not a hidden source import; no new credential command is configured by this migration.',
+  },
+  {
+    file:'node_modules/@earendil-works/pi-coding-agent/dist/core/resolve-config-value.js',callee:'execSync',argText:'command',
+    reason:'Pi 1.4 Windows compatibility credential-command path runs the explicit user config command with a finite timeout. No repository module is selected here; preserve the source census guard for all other call sites.',
+  },
+  {
     file: "server/bootstrap.ts",
     callee: "import",
     argText: "pathToFileURL(serverEntry).href",
@@ -1005,10 +1018,10 @@ export async function computeCliRuntimeClosure({ rootDir = REPOSITORY_ROOT, incl
     version: CLOSURE_VERSION,
     generatedBy: GENERATOR_ID,
     roots: orderedRoots.map(({ id, path: rootPath, inputType, reason }) => ({ id, path: rootPath, inputType, reason })),
-    dynamicCallSites: DYNAMIC_CALL_ALLOWLIST.map(({ file, callee, argText, reason }) => ({
+    dynamicCallSites: DYNAMIC_CALL_ALLOWLIST.map(({ file, callee, argText, displayArgText, reason }) => ({
       file,
       callee,
-      argText,
+      argText:displayArgText||argText,
       reason,
     })),
     files,

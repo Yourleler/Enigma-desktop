@@ -62,7 +62,7 @@ export function normalizeRequestThinkingLevel(level, fallback = "off") {
 
 export function normalizePiSdkThinkingLevel(level) {
   const normalized = normalizeRequestThinkingLevel(level, "off");
-  return normalized === "max" ? "xhigh" : normalized;
+  return normalized;
 }
 
 function idIncludesAny(id, markers) {
@@ -89,7 +89,9 @@ export function modelSupportsXhigh(model) {
   const known = lookupKnown(model?.provider, model?.id);
   const explicitLevels = normalizeThinkingLevelChoices(model?.thinkingLevels);
   return typeof model?.thinkingLevelMap?.xhigh === "string"
+    || typeof model?.thinkingLevelMap?.max === "string"
     || typeof known?.thinkingLevelMap?.xhigh === "string"
+    || typeof known?.thinkingLevelMap?.max === "string"
     || model?.xhigh === true
     || explicitLevels?.includes("max")
     || known?.xhigh === true

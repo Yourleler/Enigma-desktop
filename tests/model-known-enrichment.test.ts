@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { enrichModelFromKnownMetadata } from "../core/model-known-enrichment.ts";
+import {getModel}from '@earendil-works/pi-ai/compat';
 
 describe("enrichModelFromKnownMetadata", () => {
   it("adds Hana metadata to Pi built-in Kimi models without dropping request headers", () => {
@@ -66,7 +67,7 @@ describe("enrichModelFromKnownMetadata", () => {
         cacheWrite: 6,
       },
     });
-    expect(enriched.headers).toEqual({ "User-Agent": "KimiCLI/1.5" });
+    expect(enriched.headers).toEqual(getModel('kimi-coding','k3')?.headers);
     expect(enriched.api).toBe("openai-completions");
     expect(enriched.baseUrl).toBe("https://api.kimi.com/coding/v1");
     expect(enriched.compat).toMatchObject({

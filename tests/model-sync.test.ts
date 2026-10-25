@@ -9,6 +9,7 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 import YAML from "js-yaml";
+import {getModel as currentPiModel} from "@earendil-works/pi-ai/compat";
 
 // mock known-models 词典查询：provider + model 二级结构，未命中时再查通用 fallback
 const KNOWN_MODELS = {
@@ -771,10 +772,10 @@ describe("syncModels", () => {
       maxTokens: 98304,
       input: ["text", "image"],
       reasoning: true,
-      headers: { "User-Agent": "KimiCLI/1.5" },
+      ...(currentPiModel("kimi-coding","kimi-for-coding")?.headers ? {headers:currentPiModel("kimi-coding","kimi-for-coding").headers} : {}),
       compat: {
         supportsDeveloperRole: false,
-        thinkingFormat: "kimi",
+        hanaThinkingFormat: "kimi",
         reasoningProfile: "kimi-openai",
       },
     });
@@ -805,7 +806,7 @@ describe("syncModels", () => {
       input: ["text", "image"],
       compat: {
         supportsDeveloperRole: false,
-        thinkingFormat: "kimi",
+        hanaThinkingFormat: "kimi",
         reasoningProfile: "kimi-openai",
         hanaVideoInput: true,
       },
@@ -851,7 +852,7 @@ describe("syncModels", () => {
       maxTokens: 12345,
       input: ["text"],
       reasoning: false,
-      headers: { "User-Agent": "KimiCLI/1.5" },
+      ...(currentPiModel("kimi-coding","kimi-for-coding")?.headers ? {headers:currentPiModel("kimi-coding","kimi-for-coding").headers} : {}),
     });
   });
 
@@ -885,7 +886,7 @@ describe("syncModels", () => {
         high: "high",
         xhigh: "max",
       },
-      headers: { "User-Agent": "KimiCLI/1.5" },
+      ...(currentPiModel("kimi-coding","kimi-for-coding")?.headers ? {headers:currentPiModel("kimi-coding","kimi-for-coding").headers} : {}),
     });
     expect(models[1]).toMatchObject({
       id: "k3-256k",
@@ -901,7 +902,7 @@ describe("syncModels", () => {
         high: "high",
         xhigh: "max",
       },
-      headers: { "User-Agent": "KimiCLI/1.5" },
+      ...(currentPiModel("kimi-coding","kimi-for-coding")?.headers ? {headers:currentPiModel("kimi-coding","kimi-for-coding").headers} : {}),
     });
     for (const model of models) {
       expect(model).not.toHaveProperty("maxTokens");
@@ -929,9 +930,9 @@ describe("syncModels", () => {
       id: "future-kimi-code-model",
       reasoning: true,
       input: ["text"],
-      headers: { "User-Agent": "KimiCLI/1.5" },
+      ...(currentPiModel("kimi-coding","kimi-for-coding")?.headers ? {headers:currentPiModel("kimi-coding","kimi-for-coding").headers} : {}),
       compat: {
-        thinkingFormat: "kimi",
+        hanaThinkingFormat: "kimi",
         reasoningProfile: "kimi-openai",
         reasoningReplay: {
           carrier: "reasoning_content",
@@ -959,10 +960,10 @@ describe("syncModels", () => {
     const result = JSON.parse(fs.readFileSync(modelsJsonPath, "utf-8"));
     const model = result.providers["kimi-coding"].models[0];
     expect(model.id).toBe("kimi-for-coding");
-    expect(model.headers).toEqual({ "User-Agent": "KimiCLI/1.5" });
+    expect(model.headers).toEqual(currentPiModel("kimi-coding","kimi-for-coding")?.headers);
     expect(model.compat).toMatchObject({
       supportsDeveloperRole: false,
-      thinkingFormat: "kimi",
+      hanaThinkingFormat: "kimi",
       reasoningProfile: "kimi-openai",
     });
   });
@@ -1002,13 +1003,13 @@ describe("syncModels", () => {
       id: "kimi-k2.6",
       compat: {
         supportsDeveloperRole: false,
-        thinkingFormat: "kimi",
+        hanaThinkingFormat: "kimi",
         reasoningProfile: "kimi-openai",
       },
     });
     expect(result.providers.minimax.models[0].compat).toMatchObject({
       supportsDeveloperRole: false,
-      thinkingFormat: "anthropic",
+      hanaThinkingFormat: "anthropic",
     });
     expect(result.providers["minimax-token-plan"].api).toBe("anthropic-messages");
     expect(result.providers["minimax-token-plan"].baseUrl).toBe("https://api.minimaxi.com/anthropic");
@@ -1022,7 +1023,7 @@ describe("syncModels", () => {
       reasoning: true,
       compat: {
         supportsDeveloperRole: false,
-        thinkingFormat: "anthropic",
+        hanaThinkingFormat: "anthropic",
       },
     });
     expect(result.providers["minimax-token-plan"].models[0].compat?.hanaVideoInput).toBeUndefined();
@@ -1045,7 +1046,7 @@ describe("syncModels", () => {
     const result = JSON.parse(fs.readFileSync(modelsJsonPath, "utf-8"));
     expect(result.providers.deepseek.models[0].compat).toMatchObject({
       supportsDeveloperRole: false,
-      thinkingFormat: "anthropic",
+      hanaThinkingFormat: "anthropic",
       reasoningProfile: "deepseek-v4-anthropic",
     });
   });
@@ -1336,7 +1337,7 @@ describe("syncModels", () => {
       reasoning: true,
       compat: {
         supportsDeveloperRole: false,
-        thinkingFormat: "volcengine",
+        hanaThinkingFormat: "volcengine",
       },
     });
   });
@@ -1369,7 +1370,7 @@ describe("syncModels", () => {
         reasoning: true,
         compat: {
           supportsDeveloperRole: false,
-          thinkingFormat: "anthropic",
+          hanaThinkingFormat: "anthropic",
           reasoningProfile: "anthropic-adaptive-only",
         },
       });
@@ -2007,7 +2008,7 @@ describe("syncModels", () => {
       supportsDeveloperRole: false,
       supportsStore: false,
       supportsReasoningEffort: false,
-      thinkingFormat: "zhipu",
+      hanaThinkingFormat: "zhipu",
       reasoningProfile: "zhipu-openai",
     });
   });
@@ -2043,7 +2044,7 @@ describe("syncModels", () => {
         supportsDeveloperRole: false,
         supportsStore: false,
         supportsReasoningEffort: false,
-        thinkingFormat: "zhipu",
+        hanaThinkingFormat: "zhipu",
         reasoningProfile: "zhipu-openai",
       },
     });
@@ -2080,7 +2081,7 @@ describe("syncModels", () => {
         supportsDeveloperRole: false,
         supportsStore: false,
         supportsReasoningEffort: false,
-        thinkingFormat: "zhipu",
+        hanaThinkingFormat: "zhipu",
         reasoningProfile: "zhipu-openai",
       },
       toolUse: {
@@ -2099,22 +2100,23 @@ describe("syncModels", () => {
         base_url: "https://opencode.ai/zen/go/v1",
         api: "openai-completions",
         api_key: "sk-test",
-        models: ["deepseek-v4-flash"],
+        models: ["deepseek-v4.1-flash"],
       },
     }, { modelsJsonPath });
 
     const result = JSON.parse(fs.readFileSync(modelsJsonPath, "utf-8"));
     expect(result.providers["opencode-go"].models[0]).toMatchObject({
-      id: "deepseek-v4-flash",
+      id: "deepseek-v4.1-flash",
       contextWindow: 1_000_000,
       maxTokens: 384_000,
       reasoning: true,
       thinkingLevelMap: {
         minimal: null,
-        low: null,
+        low: "low",
         medium: null,
         high: "high",
-        xhigh: "max",
+        xhigh: null,
+        max: "max",
       },
       compat: {
         supportsDeveloperRole: false,

@@ -8,7 +8,7 @@
 import fs from "fs";
 import fsp from "fs/promises";
 import path from "path";
-import { createAgentSession, SessionManager, estimateTokens, refreshSessionModelFromRegistry } from "../lib/pi-sdk/index.ts";
+import { createAgentSession, SessionManager, estimateTokens, refreshSessionModelFromRegistry, createInitialSystemMessage } from "../lib/pi-sdk/index.ts";
 import { isSessionJsonlFilename } from "../lib/session-jsonl.ts";
 import { createDefaultSettings } from "./session-defaults.ts";
 import { isDefaultWorkspacePath, restoreDefaultWorkspaceIfMissing } from "../shared/default-workspace.ts";
@@ -7111,7 +7111,12 @@ export class SessionCoordinator {
       // 容错即可，下面 agent.state.systemPrompt 仍独立尝试写入。
     }
     if (session?.agent?.state && typeof session.agent.state === "object") {
-      session.agent.state.systemPrompt = finalSystemPrompt;
+      const state=session.agent.state,descriptor=Object.getOwnPropertyDescriptor(state,'systemPrompt');
+      if(descriptor?.get&&!descriptor.set) {
+        const messages=state.messages||[],first=messages[0];
+        const initial=createInitialSystemMessage(finalSystemPrompt,first?.role==='system'?first.toolsAdded:state.tools);
+        state.messages=initial?[initial,...(first?.role==='system'?messages.slice(1):messages)]:messages;
+      } else state.systemPrompt = finalSystemPrompt;
     }
   }
 
@@ -7933,9 +7938,9 @@ export class SessionCoordinator {
       // no long-lived task to resume, so no mid-run compaction is installed.
       installDynamicCompactionReserve(session);
 
-      if (isolatedProviderCacheAffinityKey && typeof session?.agent?.streamFn === "function") {
-        const originalStreamFn = session.agent.streamFn;
-        session.agent.streamFn = function providerCacheAffinityStream(model, context, options) {
+      if (isolatedProviderCacheAffinityKey && typeof session?.agent?.streamFunction === "function") {
+        const originalStreamFn = session.agent.streamFunction;
+        session.agent.streamFunction = function providerCacheAffinityStream(model, context, options) {
           return originalStreamFn.call(
             this,
             model,

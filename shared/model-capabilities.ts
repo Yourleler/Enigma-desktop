@@ -166,7 +166,7 @@ export function normalizeModelProtocolCompat(value: any): Record<string, any> | 
   if (!isPlainObject(value)) return null;
   const out: Record<string, any> = {};
 
-  const thinkingFormat = lower(value.thinkingFormat);
+  const thinkingFormat = lower(value.hanaThinkingFormat || value.thinkingFormat);
   if (MODEL_THINKING_FORMATS.has(thinkingFormat)) {
     out.thinkingFormat = thinkingFormat;
   }
@@ -348,7 +348,7 @@ export function isDeepSeekReasoningModel(model: any, context: any = {}) {
 export function getThinkingFormat(model: any, context: any = {}) {
   if (!isPlainObject(model)) return null;
 
-  const explicit = lower(model.compat?.thinkingFormat);
+  const explicit = lower(model.compat?.hanaThinkingFormat || model.compat?.thinkingFormat);
   if (explicit) return explicit;
 
   const quirks = Array.isArray(model.quirks) ? model.quirks : [];

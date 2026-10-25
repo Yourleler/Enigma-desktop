@@ -3,6 +3,10 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
+import {vi}from 'vitest';
+// These are real multi-command Git fixtures. On this Mac the unchanged
+// baseline takes 11–13s per case; retain every assertion with a finite 30s cap.
+vi.setConfig({testTimeout:30_000});
 
 const AUDIT_SCRIPT = path.join(process.cwd(), "scripts", "merge-audit.mjs");
 

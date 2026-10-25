@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ExtensionRunner } from "@earendil-works/pi-coding-agent";
+import {getCurrentTools,getCurrentSystemPrompt} from '@earendil-works/pi-ai/utils/transcript';
 
 const {
   completeSimpleMock,
@@ -238,7 +239,7 @@ describe("session-compactor", () => {
     const signal = new AbortController().signal;
     let providerContext: any;
     const streamFn = vi.fn(async (_model, context) => {
-      providerContext = { ...context, messages: [...context.messages], tools: [...context.tools] };
+      providerContext = { ...context, messages: context.messages.filter(m=>m.role!=='system'), tools: getCurrentTools(context.messages), systemPrompt:getCurrentSystemPrompt(context.messages) };
       return agentStreamOf();
     });
     const convertToLlm = vi.fn(async (messages) => messages);
@@ -574,7 +575,8 @@ describe("session-compactor", () => {
       usageLedger: ledger,
       usageContext,
     });
-    expect(capturedRequests[0].slice(0, -1)).toEqual(liveBeforeFirst);
+    expect(capturedRequests[0][0]).toMatchObject({role:'system',content:systemPrompt});
+    expect(capturedRequests[0].slice(1, -1)).toEqual(liveBeforeFirst);
 
     const newUser = piUser("NEW_USER_AFTER_SUMMARY_ONE", 4);
     const newAssistant = piAssistant("NEW_ASSISTANT_AFTER_SUMMARY_ONE", 5);
@@ -598,7 +600,7 @@ describe("session-compactor", () => {
       usageLedger: ledger,
       usageContext,
     });
-    const secondPrefix = capturedRequests[1].slice(0, -1);
+    const secondPrefix = capturedRequests[1].slice(1, -1);
     const secondSerialized = JSON.stringify(secondPrefix);
     expect(secondPrefix).toEqual(liveBeforeSecond);
     expect(secondSerialized).toContain("Summary-1 checkpoint.");
@@ -654,8 +656,8 @@ describe("session-compactor", () => {
       piAssistant("old deleted-agent response", 2),
     ];
     const streamFn = vi.fn(async (_model, context) => {
-      expect(context.tools).toEqual([]);
-      expect(context.messages.slice(0, -1)).toEqual(transcriptMessages);
+      expect(getCurrentTools(context.messages)).toEqual([]);
+      expect(context.messages.filter(m=>m.role!=='system').slice(0, -1)).toEqual(transcriptMessages);
       return agentStreamOf();
     });
 
@@ -1950,7 +1952,7 @@ describe("session-compactor", () => {
     } as any);
 
     const [, context] = streamFn.mock.calls[0] as any;
-    const projected = context.messages[0].content[0];
+    const projected = context.messages.find(m=>m.role==='toolResult').content[0];
     expect(projected.type).toBe("text");
     expect(projected.text).toContain("uri: file:///workspace/spec.md");
     expect(projected.text).toContain("name: spec.md");

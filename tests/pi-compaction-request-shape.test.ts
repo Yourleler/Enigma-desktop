@@ -86,15 +86,16 @@ describe("Pi native compaction request shape adapter", () => {
     expect(adapterRequests).toHaveLength(2);
     for (const adapterRequest of adapterRequests) {
       const actualRequest = actualRequests.find(({ context }) => (
-        context.messages[0].content[0].text === adapterRequest.promptText
+        context.messages.find(message=>message.role==='user')?.content[0].text === adapterRequest.promptText
       ));
       expect(actualRequest).toBeDefined();
-      expect(actualRequest?.context.systemPrompt).toBe(adapterRequest.systemPrompt);
-      expect(actualRequest?.context.messages[0]).toMatchObject({
+      expect(piSdk.getCurrentSystemPrompt(actualRequest?.context.messages)).toBe(adapterRequest.systemPrompt);
+      expect(actualRequest?.context.messages.find(message=>message.role==='user')).toMatchObject({
         role: "user",
         content: [{ type: "text", text: adapterRequest.promptText }],
       });
-      expect(actualRequest?.options.maxTokens).toBe(adapterRequest.maxTokens);
+      expect(actualRequest?.options.maxTokens).toBeUndefined();
+      expect(adapterRequest.outputBudgetTokens).toBe(model.maxTokens);
     }
   });
 
@@ -113,7 +114,7 @@ describe("Pi native compaction request shape adapter", () => {
     expect(result.requests).toHaveLength(1);
     expect(result.requests[0]).toMatchObject({
       kind: "history",
-      maxTokens: 3_200,
+      outputBudgetTokens: 8_000,
       systemPrompt: expect.stringContaining("context summarization assistant"),
     });
     expect(result.requests[0].promptText).toContain(
@@ -147,7 +148,7 @@ describe("Pi native compaction request shape adapter", () => {
     expect(prompt).toContain("Additional focus: focus on migrations");
   });
 
-  it("builds the separate installed-Pi split-turn request with its half-reserve output cap", () => {
+  it("estimates separate installed-Pi split-turn requests using the model output limit", () => {
     const result = buildShape({
       preparation: {
         messagesToSummarize: [user("older history", 1)],
@@ -159,11 +160,11 @@ describe("Pi native compaction request shape adapter", () => {
     });
 
     expect(result.requests.map((request) => request.kind)).toEqual(["history", "turn-prefix"]);
-    expect(result.requests[0].maxTokens).toBe(3_200);
+    expect(result.requests[0].outputBudgetTokens).toBe(8_000);
     expect(result.requests[1]).toMatchObject({
       kind: "turn-prefix",
-      maxTokens: 2_000,
-      promptText: expect.stringContaining("This is the PREFIX of a turn that was too large to keep"),
+      outputBudgetTokens: 8_000,
+      promptText: expect.stringContaining("Later messages are stored separately"),
     });
     expect(result.requests[1].promptText).toContain("[User]: split request prefix");
   });
@@ -214,7 +215,7 @@ describe("Pi native compaction request shape adapter", () => {
       model: { maxTokens: 6_000 },
     });
 
-    expect(capped.requests.map((request) => request.maxTokens)).toEqual([1_200, 1_200]);
-    expect(reserveLimited.requests.map((request) => request.maxTokens)).toEqual([6_000, 5_000]);
+    expect(capped.requests.map((request) => request.outputBudgetTokens)).toEqual([1_200, 1_200]);
+    expect(reserveLimited.requests.map((request) => request.outputBudgetTokens)).toEqual([6_000, 6_000]);
   });
 });

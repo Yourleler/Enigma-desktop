@@ -19,8 +19,8 @@ const path = require("path");
 const root = path.join(__dirname, "..");
 const sdkRoot = path.join(root, "node_modules", "@earendil-works", "pi-coding-agent");
 const piAiRoot = path.join(root, "node_modules", "@earendil-works", "pi-ai");
-const verifiedVersions = new Set(["0.80.3"]);
-const verifiedPiAiVersions = new Set(["0.80.3"]);
+const verifiedVersions = new Set(["1.4.0"]);
+const verifiedPiAiVersions = new Set(["1.4.0"]);
 
 function fail(message) {
   console.error(`[verify-pi-sdk] ${message}`);
@@ -51,6 +51,7 @@ if (!verifiedPiAiVersions.has(piAiPkg.version)) {
 
 const sdkIndex = fs.readFileSync(path.join(sdkRoot, "dist", "index.js"), "utf8");
 const expectedExportMarkers = [
+  "ModelRuntime",
   "createAgentSession",
   "createReadTool",
   "createWriteTool",

@@ -12,13 +12,14 @@
  */
 
 import {
-  AuthStorage,
   createAgentSession as rawCreateAgentSession,
-  ModelRegistry,
   resizeImage as rawResizeImage,
   formatDimensionNote as rawFormatDimensionNote,
   convertToLlm as rawConvertToLlm,
 } from "@earendil-works/pi-coding-agent";
+import {AuthStorage,HanaModelRegistry} from './model-auth-adapter.ts';
+export {FileAuthStorageBackend,InMemoryAuthStorageBackend} from './model-auth-adapter.ts';
+export {ModelRuntime} from '@earendil-works/pi-coding-agent';
 // 0.80.0 起 pi-ai 老全局 API 移到 /compat 子入口（根入口是 createModels 新 API）
 import {
   getModel as rawGetPiModel,
@@ -67,7 +68,12 @@ export async function createAgentSession(options) {
   const sessionOptions = !options?.agentDir && typeof resourceLoaderAgentDir === "string" && resourceLoaderAgentDir
     ? { ...options, agentDir: resourceLoaderAgentDir }
     : options;
-  const result = await rawCreateAgentSession(normalizeCreateAgentSessionOptions(sessionOptions));
+  const {authStorage,modelRegistry,...currentOptions}=sessionOptions||{};
+  const modelRuntime=currentOptions.modelRuntime??(modelRegistry instanceof HanaModelRegistry?await modelRegistry.ready():authStorage instanceof AuthStorage?await authStorage.ready():undefined);
+  const result = await rawCreateAgentSession(normalizeCreateAgentSessionOptions({...currentOptions,...(modelRuntime?{modelRuntime}:{})}));
+  if(typeof result?.session?.agent?.streamFunction==='function')Object.defineProperty(result.session.agent,'streamFn',{
+    configurable:true,get(){return this.streamFunction;},set(value){this.streamFunction=value;},
+  });
   installToolOutcomeAdapter(result?.session);
   installAssistantStreamGuard(result?.session);
   return result;
@@ -91,11 +97,10 @@ export { formatSkillsForPrompt, getLastAssistantUsage } from "@earendil-works/pi
 export { AuthStorage };
 // The file-backed store is exported alongside AuthStorage because forcing a
 // credential rotation has to take the same auth.json lock the SDK takes.
-export { FileAuthStorageBackend } from "@earendil-works/pi-coding-agent";
 
 type OAuthProviderId = Parameters<AuthStorage["login"]>[0];
 export type OAuthLoginCallbacks = Parameters<AuthStorage["login"]>[1];
-export type SdkProviderRegistrationConfig = Parameters<ModelRegistry["registerProvider"]>[1];
+export type SdkProviderRegistrationConfig = Parameters<HanaModelRegistry["registerProvider"]>[1];
 export type SdkOAuthProvider = NonNullable<SdkProviderRegistrationConfig["oauth"]>;
 
 /**
@@ -148,6 +153,16 @@ export function getPiModels(provider) {
 
 // ── Schema 构造（typebox 的 Type 透过 adapter，避免工具直接依赖第三方包名）──
 export { Type } from "typebox";
+export {createInitialSystemMessage,getCurrentTools,getCurrentSystemPrompt} from '@earendil-works/pi-ai/utils/transcript';
+export {normalizeContext} from '@earendil-works/pi-ai/utils/transcript';
+/** Host wire metadata must not occupy a Pi field with a narrower 1.4 enum. */
+export function normalizePiProviderCompat(compat:any) {
+  if(!compat)return compat;
+  const formats=new Set(['openai','openrouter','deepseek','together','baseten','zai','qwen','chat-template','qwen-chat-template','string-thinking','ant-ling']);
+  if(!compat.thinkingFormat||formats.has(compat.thinkingFormat))return compat;
+  const {thinkingFormat,...rest}=compat;
+  return {...rest,hanaThinkingFormat:thinkingFormat};
+}
 
 // ── 类型 re-export（供 JSDoc 引用）──
 /** @typedef {import('@earendil-works/pi-coding-agent').ToolDefinition} ToolDefinition */
@@ -206,15 +221,14 @@ export function formatModelImageDimensionNote(result) {
 }
 
 /**
- * ModelRegistry 工厂。
- * 0.64.0 将构造函数私有化，必须用静态方法。
- * 下次 SDK 改工厂签名，只改这里。
- * @param {import('@earendil-works/pi-coding-agent').AuthStorage} authStorage
+ * Hana 目录门面。Pi 1.4 的模型/认证归同一个 ModelRuntime，
+ * 初始化 Promise 由此实例持有，不使用旧 ModelRegistry.create。
+ * @param {AuthStorage} authStorage
  * @param {string} [modelsJsonPath]
- * @returns {import('@earendil-works/pi-coding-agent').ModelRegistry}
+ * @returns {HanaModelRegistry}
  */
 export function createModelRegistry(authStorage, modelsJsonPath) {
-  return ModelRegistry.create(authStorage, modelsJsonPath);
+  return new HanaModelRegistry(authStorage, modelsJsonPath);
 }
 
 /**
@@ -224,7 +238,7 @@ export function createModelRegistry(authStorage, modelsJsonPath) {
  * instance and the login provider would be invisible to AuthStorage.
  */
 export function registerModelProvider(
-  modelRegistry: ModelRegistry,
+  modelRegistry: HanaModelRegistry,
   providerId: string,
   config: SdkProviderRegistrationConfig,
 ): void {
@@ -233,7 +247,7 @@ export function registerModelProvider(
 
 /** Remove a provider previously registered through registerModelProvider. */
 export function unregisterModelProvider(
-  modelRegistry: ModelRegistry,
+  modelRegistry: HanaModelRegistry,
   providerId: string,
 ): void {
   modelRegistry.unregisterProvider(providerId);

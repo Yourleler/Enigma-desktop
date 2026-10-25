@@ -41,6 +41,7 @@ export async function forceRefreshOAuthApiKey({
   authKey,
   staleApiKey,
 }: ForceRefreshOptions): Promise<string> {
+  await authStorage?.ready?.();
   if (!authStorage || typeof authStorage.getOAuthProviders !== "function") {
     throw new Error(`Cannot rotate OAuth credential for "${authKey}": auth storage unavailable`);
   }

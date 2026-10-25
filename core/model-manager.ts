@@ -270,7 +270,7 @@ export class ModelManager {
     });
     this._applyRuntimeApiKeyOverrides(projection);
     if (changed) {
-      this._modelRegistry.refresh();
+      await this._modelRegistry.refresh();
     }
     await this.refreshAvailable();
     this._rebindDefaultModel();

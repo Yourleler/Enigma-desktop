@@ -157,7 +157,7 @@ describe("xAI OAuth driver", () => {
       refresh: "refresh-old",
       expires: 0,
       tokenEndpoint: "https://auth.x.ai/oauth2/token",
-    })).resolves.toMatchObject({
+    },new AbortController().signal)).resolves.toMatchObject({
       access: "access-new",
       refresh: "refresh-new",
       expires: 61_000,
@@ -175,7 +175,7 @@ describe("xAI OAuth driver", () => {
       refresh: "refresh-keep",
       expires: 0,
       tokenEndpoint: "https://auth.x.ai/oauth2/token",
-    })).resolves.toMatchObject({
+    },new AbortController().signal)).resolves.toMatchObject({
       access: "access-newer",
       refresh: "refresh-keep",
       expires: 122_000,
@@ -191,7 +191,7 @@ describe("xAI OAuth driver", () => {
       refresh: "refresh-secret",
       expires: 0,
       tokenEndpoint: "https://evil.example/oauth2/token",
-    })).rejects.toThrow(/untrusted cached token_endpoint/i);
+    },new AbortController().signal)).rejects.toThrow(/untrusted cached token_endpoint/i);
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 
@@ -226,7 +226,7 @@ describe("xAI OAuth driver", () => {
       refresh: "old-refresh",
       expires: 0,
       tokenEndpoint: "https://auth.x.ai/oauth2/token",
-    })).resolves.toMatchObject({ expires: 1_234_000 });
+    },new AbortController().signal)).resolves.toMatchObject({ expires: 1_234_000 });
   });
 
   it("honors AbortSignal while waiting for device authorization", async () => {

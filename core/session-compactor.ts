@@ -1342,8 +1342,9 @@ export function estimateCachePreservingCompactionRequest({
     return {
       kind: request.kind,
       promptTokens,
-      maxTokens: request.maxTokens,
-      totalTokens: promptTokens + request.maxTokens,
+      maxTokens: request.outputBudgetTokens,
+      outputBudgetSource:request.outputBudgetSource,
+      totalTokens: promptTokens + request.outputBudgetTokens,
       messageTokens,
       instructionTokens: estimateTextTokens(request.promptText),
       systemPromptTokens,

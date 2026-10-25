@@ -58,8 +58,8 @@ describe("session thinking level capabilities", () => {
     expect(normalizeThinkingLevelForModel("max", { id: "plain-model", provider: "test" })).toBe("high");
   });
 
-  it("maps Hana-visible max to Pi SDK xhigh only at the SDK boundary", () => {
-    expect(normalizePiSdkThinkingLevel("max")).toBe("xhigh");
+  it("preserves Pi 1.4 native max and legacy xhigh at the SDK boundary", () => {
+    expect(normalizePiSdkThinkingLevel("max")).toBe("max");
     expect(normalizePiSdkThinkingLevel("xhigh")).toBe("xhigh");
     expect(normalizePiSdkThinkingLevel("auto")).toBe("medium");
   });

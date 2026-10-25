@@ -6,6 +6,7 @@ import {
   type AgentMessage,
   type AgentTool,
   type StreamFn,
+  createInitialSystemMessage,
 } from "../pi-sdk/index.ts";
 import {
   CACHE_STRATEGIES,
@@ -34,7 +35,7 @@ const SUMMARY_HEADING_SEQUENCE = [
   "## Critical Context",
 ];
 const INTERNAL_NARRATION_TYPES = ["mood", "pulse", "reflect"] as const;
-const THINKING_LEVELS = new Set(["off", "minimal", "low", "medium", "high", "xhigh"]);
+const THINKING_LEVELS = new Set(["off", "minimal", "low", "medium", "high", "xhigh", "max"]);
 
 type InternalNarrationType = typeof INTERNAL_NARRATION_TYPES[number];
 
@@ -104,7 +105,7 @@ interface BuildLoopConfigOptions {
   convertToLlm: AgentLoopConfig["convertToLlm"];
   transformContext?: AgentLoopConfig["transformContext"];
   streamOptions: Record<string, unknown>;
-  shouldStopAfterTurn: NonNullable<AgentLoopConfig["shouldStopAfterTurn"]>;
+  shouldStopAfterTurn: (turn:any)=>boolean;
 }
 
 function textContent(text: string) {
@@ -300,7 +301,7 @@ function buildLoopConfig({
     model,
     convertToLlm,
     toolExecution: "sequential",
-    shouldStopAfterTurn,
+    finishTurn: turn => shouldStopAfterTurn(turn) ? {action:'end'} : undefined,
     getSteeringMessages: async () => [],
     getFollowUpMessages: async () => [],
   };
@@ -342,9 +343,11 @@ export async function runCachePreservingCompactionAgentRun({
   if (signal?.aborted) throw abortError("Cache-preserving compaction AgentRun aborted", diagnostics);
 
   const placeholderTools = clonePlaceholderTools(Array.isArray(tools) ? tools : []);
+  const initialSystem=createInitialSystemMessage(systemPrompt,placeholderTools.map(tool=>({name:tool.name,description:tool.description,parameters:tool.parameters})));
+  const transcript=[...(Array.isArray(liveMessages)?liveMessages:[])];
+  if(transcript[0]?.role!=='system'&&initialSystem)transcript.unshift(initialSystem);
   const context: AgentContext = {
-    systemPrompt,
-    messages: [...(Array.isArray(liveMessages) ? liveMessages : [])],
+    messages: transcript,
     tools: placeholderTools,
   };
   const pendingUsage: Array<{ requestId?: string; settled: boolean }> = [];
