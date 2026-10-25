@@ -1,3 +1,20 @@
+# Enigma-desktop
+
+基于 [OpenHanako / HanaAgent](https://github.com/liliMozi/openhanako) 与 **Pi 1.4.0** 的 Enigma 桌面端开发仓库。
+
+本仓库从已验证的 Hana + Pi 1.4.0 适配起步。后续将通过独立工程模块、插件与宿主适配接入 Enigma-next 的多仓库协同、代码智能阅读、项目记忆、时光机和运行状态观察能力。这些 Enigma 功能目前尚未迁入。
+
+- 项目来源、验证结果与开发边界：[FORK.md](FORK.md)
+- Pi 1.4.0 适配说明：[PI140_UPGRADE.md](PI140_UPGRADE.md)
+- 现有工程插件与 Web 工作台：[Enigma-next](https://github.com/Yourleler/Enigma-next)
+- 原 Python 历史版：[Enigma](https://github.com/Yourleler/Enigma)
+
+本仓库为私有开发仓库，GitHub Actions 已关闭。保留上游 Apache-2.0 许可证、作者信息和 Git 历史。
+
+> 下方为保留的 Hana 上游说明；其中的官方安装包、签名和版本发布信息指向 Hana 上游。Enigma-desktop 的定制发行包将在独立配置安装标识、数据目录与更新源后提供。
+
+---
+
 <p align="center">
   <img src=".github/assets/banner.jpg" width="100%" alt="HanaAgent Banner">
 </p>

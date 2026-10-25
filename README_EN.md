@@ -1,3 +1,17 @@
+# Enigma-desktop
+
+An Enigma desktop development repository based on [OpenHanako / HanaAgent](https://github.com/liliMozi/openhanako), with its Pi runtime adapted to **1.4.0**.
+
+The current baseline contains the verified Hana/Pi adaptation. Enigma-next's multi-repository coordination, code reading, project memory, time machine, and runtime observation will be integrated through engineering modules, plugins, and host adapters; that migration is still pending.
+
+See [FORK.md](FORK.md) for provenance and baseline validation, and [PI140_UPGRADE.md](PI140_UPGRADE.md) for the SDK adaptation. [Enigma-next](https://github.com/Yourleler/Enigma-next) remains the engineering plugin and web workbench repository, and [Enigma](https://github.com/Yourleler/Enigma) preserves the original Python implementation.
+
+This private development repository has GitHub Actions disabled and retains upstream's Apache-2.0 license, authorship, and Git history.
+
+> The material below is the retained upstream documentation. Official downloads, signing, and release details refer to Hana upstream. Customized Enigma-desktop releases require independent application identity, data paths, and update configuration.
+
+---
+
 <p align="center">
   <img src=".github/assets/banner.jpg" width="100%" alt="HanaAgent Banner">
 </p>
