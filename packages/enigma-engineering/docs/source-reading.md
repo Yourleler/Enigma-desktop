@@ -20,6 +20,7 @@ Python 解释器默认 `python3`（Windows 为 `python`），可由 `ENIGMA_PYTH
 
 这不是完整多语言运行时调用图。跨语言真实 HTTP 案例已验证，但更多协议、语言和复杂模块边界仍需逐项接入。
 
+实现依据：[TypeScript Compiler API](https://github.com/microsoft/TypeScript/wiki/Using-the-Compiler-API)。具体实现和数据模型见本仓阅读器。
 
 Python 实现依据：[标准库 AST 文档](https://docs.python.org/3/library/ast.html)。
 

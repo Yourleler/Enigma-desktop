@@ -12,6 +12,7 @@
 
 | 要求 | 当前证据 | 判断与边界 |
 |---|---|---|
+| Pi 公共插件/SDK、独立领域层 | `plugin.test.ts` 安装/移除及共存，`pi.test.ts` 真正执行工具；`workbench-session.ts` 使用公开 runtime | 本地与真实任务成立；无内核 patch，不使用第三方私有实现 |
 | 可用 CLI 与 Web 安装入口 | `cli.test.ts` 的原生 CLI/HTTP 文件操作、`plugin.test.ts`；独立 tar 的 CLI/SDK/浏览器报告 | 已有实际安装证据，新增 UI 仍需与最新包对应复验 |
 | 多仓库数量不限于二、运行中加入 | `pi.test.ts` 加入第四仓库；`recovery.test.ts` 早期恢复保留较晚仓库 | 本地成立；实际综合案例为三个独立 Git 仓库 |
 | 仓库位置、角色、分支、权限、依赖 | `workspace.test.ts`、`planning.test.ts`、`changes.test.ts`；工作台 project 数据 | 本地成立；声明依赖与动态运行关系分别表达 |

@@ -39,6 +39,7 @@
 | Diátaxis | 按教程、操作指南、参考和解释区分读者需求 | 它是文档组织方法，不是代码事实验证或写作模型。[官方方法](https://diataxis.fr/) |
 | Python doctest / Sphinx autodoc | 检查文档中的交互示例；从代码/docstring 生成参考内容 | 自动生成和示例通过仍不能证明完整迁移正确；autodoc 导入模块可能执行副作用。[doctest](https://docs.python.org/3/library/doctest.html)、[autodoc](https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html) |
 
+因此不需要再造一个通用 Agent 底座、上下文数据库或文档编译器。后续插件应复用公开 Pi 会话与控制接口，采用独立领域数据，围绕现有工程任务增加可测量的决策与维护能力。实现范围以本项目需求为准，不纳入第三方私有源码、提示词、协议或服务。
 
 ## 4. 减少走弯路的机制候选
 

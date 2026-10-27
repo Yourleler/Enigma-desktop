@@ -84,6 +84,7 @@ Pi `/tree` 切换上下文，代码恢复需要另行操作。`restore TARGET EX
 
 ## 设计与证据
 
+Pi 提供通用模型与会话底座，独立插件承载领域增量；[架构](docs/architecture.md)说明状态归属和生命周期。领域能力只使用公开接口与本仓实现，不纳入第三方私有源码、提示词、协议或内部服务。
 
 真实 Gateway 三仓库 Python/JS 综合流程、Pi→Codex→Pi 子任务见 [核心验收](docs/acceptance-0.3.0.md)。完整交互工作台的 143 项回归、两种实际 Gateway 模型、68 个表单、视觉与独立生产安装证据见 [0.4.0 验收](docs/acceptance-0.4.0.md)。用户明确本次在 Mac 使用；Windows/Linux 当前兼容性未验证，GitHub Actions 保持关闭。
 

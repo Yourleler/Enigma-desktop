@@ -40,6 +40,7 @@
 | 轻量记忆、新背景会话、通用交接包 | 减少重复说明和重复调查，保留来源与适用范围 |
 | Pi 会话、模型循环、压缩与 Hana 界面框架 | 继续复用；增量以工程模块、Pi 插件和宿主适配提供 |
 
+本轮对话没有提出需要再次更换宿主的已验证缺口，DSH 保留为将来的适配候选。下一阶段继续完善任务地图、版本化结果、计划与实际状态分离、内容导航及环境管理；实现以本仓模块和公开依赖为准。[既有宿主与功能取舍](../packages/enigma-engineering/docs/next-phase-plan.md)
 
 ## 3. 下一阶段最先做的三件事
 
@@ -158,9 +159,11 @@ Kimi 官方 PR #2055 说明只回退聊天会造成 Plan/Todo/通知状态漂移
 
 | 主题 | 原报告 |
 |---|---|
+| 旧版记忆与公开研究 | [记忆与观察方案](../packages/enigma-engineering/docs/memory-observer-plan.md) |
 | 少走弯路及文档专精 | [创新与文档计划](../packages/enigma-engineering/docs/future-innovation-and-document-specialization.md)、[现实痛点](../packages/enigma-engineering/docs/agent-friction-ideas.md) |
 | 独立管家、压缩救援与自修复 | [托管可行性](../packages/enigma-engineering/docs/supervised-mode-feasibility.md) |
 | 新背景会话、跨 Agent 转交 | [交接分析](../packages/enigma-engineering/docs/context-handoff-plan.md)、[当前交接用法](../packages/enigma-engineering/docs/context-handoff.md) |
 | 代码阅读、知识与方案实验 | [阅读能力](../packages/enigma-engineering/docs/project-workbench.md)、[知识与实验](../packages/enigma-engineering/docs/project-knowledge-and-experiments.md) |
+| Pi/DSH 与领域能力取舍 | [宿主与功能方案](../packages/enigma-engineering/docs/next-phase-plan.md) |
 
 当前事实以本仓源码和[迁移记录](enigma-migration-progress.md)为准；公开接口以固定 Pi 1.4.0 文档和本地安装源码核对。外部来源用于支持机制事实，产品优先级属于设计判断，未来效果由上述真实任务验收。原资料及抓取记录保留在 `Documents/Codex/2026-10-25/enigma-desktop-research/` 和 `enigma-next-research/`，正文不堆叠论文或原始日志。
