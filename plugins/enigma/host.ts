@@ -141,6 +141,10 @@ export class EngineeringHost {
     this.bindingWrites = this.bindingWrites.catch(() => {}).then(() => writeJson(this.configPath, value));
     await this.bindingWrites;
   }
+  async getDefaultModelPolicy() {
+    await this.load();
+    return this.defaultModelPolicy ? structuredClone(this.defaultModelPolicy) : null;
+  }
   async configureDefaultModelPolicy(input: unknown) {
     await this.load(); const policy=validateModelPolicy(input);
     for(const role of [policy.execution,policy.planning,policy.review].filter(Boolean))if(!await this.engine.resolveModelWithCredentialsFresh(role))throw new Error(`Model ${role!.id} is unavailable`);

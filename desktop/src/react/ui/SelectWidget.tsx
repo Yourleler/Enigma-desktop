@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import styles from './SelectWidget.module.css';
 
@@ -13,6 +13,8 @@ export interface SelectOption {
 export { styles as selectWidgetStyles };
 
 interface SelectWidgetProps {
+  ariaLabel?: string;
+  ariaLabelledBy?: string;
   options: SelectOption[];
   value: string;
   onChange: (value: string) => void;
@@ -42,6 +44,8 @@ interface SelectWidgetProps {
 }
 
 export function SelectWidget({
+  ariaLabel,
+  ariaLabelledBy,
   options,
   value,
   onChange,
@@ -66,10 +70,13 @@ export function SelectWidget({
   const panelRef = useRef<HTMLDivElement>(null);
   const [panelStyle, setPanelStyle] = useState<React.CSSProperties>({});
   const [openDirection, setOpenDirection] = useState<'up' | 'down'>('down');
+  const keyboardOpen=useRef<'first'|'last'|null>(null);
 
   const close = useCallback(() => setOpen(false), []);
 
-  useEffect(() => {
+  useEffect(()=>{if(!open)return;const escape=(event:KeyboardEvent)=>{if(event.key==='Escape'){event.preventDefault();event.stopPropagation();close();triggerRef.current?.focus();}};document.addEventListener('keydown',escape,true);return()=>document.removeEventListener('keydown',escape,true);},[open,close]);
+
+  useLayoutEffect(() => {
     if (!open || !triggerRef.current) return;
     const rect = triggerRef.current.getBoundingClientRect();
     const spaceBelow = window.innerHeight - rect.bottom;
@@ -81,18 +88,21 @@ export function SelectWidget({
         : (spaceBelow < 200 && spaceAbove > spaceBelow);
     setOpenDirection(openAbove ? 'up' : 'down');
 
+    const bounds=panelRef.current?.getBoundingClientRect();
+    const maxWidth=Math.max(80,window.innerWidth-24),width=Math.min(maxWidth,Math.max(bounds?.width||0,popupMinWidth??rect.width));
     setPanelStyle({
       position: 'fixed',
-      ...(align === 'start'
-        ? { left: rect.left }
-        : { right: window.innerWidth - rect.right }),
-      minWidth: popupMinWidth ?? rect.width,
+      left:Math.max(12,Math.min(align==='start'?rect.left:rect.right-width,window.innerWidth-width-12)),
+      minWidth: Math.min(popupMinWidth ?? rect.width,maxWidth),
+      maxWidth,
+      maxHeight:Math.max(60,Math.min(360,(openAbove?spaceAbove:spaceBelow)-offset-12)),
       ...(openAbove
         ? { bottom: window.innerHeight - rect.top + offset }
         : { top: rect.bottom + offset }),
-      zIndex: 9999,
+      zIndex: triggerRef.current.closest('.enigma-modal-portal') ? 10020 : 9999,
     });
-  }, [open, align, offset, popupMinWidth, placement]);
+    if(keyboardOpen.current){const buttons=[...panelRef.current?.querySelectorAll<HTMLButtonElement>('[role="option"]:not(:disabled)')||[]];(buttons.find(button=>button.getAttribute('aria-selected')==='true')||(keyboardOpen.current==='last'?buttons.at(-1):buttons[0]))?.focus();keyboardOpen.current=null;}
+  }, [open, align, offset, popupMinWidth, placement,options]);
 
   useEffect(() => {
     if (!open) return;
@@ -164,6 +174,7 @@ export function SelectWidget({
         key={group ? `${group}/${item.value}` : item.value}
         role="option"
         aria-selected={selected}
+        data-menu-row=""
         className={[
           styles.option,
           selected && styles.selected,
@@ -174,6 +185,7 @@ export function SelectWidget({
           if (item.disabled) return;
           onChange(item.value);
           close();
+          triggerRef.current?.focus();
         }}
       >
         {renderOption ? renderOption(item, selected) : (
@@ -182,6 +194,7 @@ export function SelectWidget({
             {item.description && <span className={styles.optionDesc}>{item.description}</span>}
           </>
         )}
+        <span className={styles.selectionMark} aria-hidden="true">{selected&&<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12 4 4L19 6"/></svg>}</span>
       </button>
     );
   };
@@ -190,8 +203,12 @@ export function SelectWidget({
     <div className={[styles.root, open && styles.open, className].filter(Boolean).join(' ')}>
       <button
         type="button"
+        aria-label={ariaLabel}
+        aria-labelledby={ariaLabelledBy}
+        data-select-widget-trigger=""
         className={[!triggerBare && styles.trigger, triggerClassName].filter(Boolean).join(' ')}
         ref={triggerRef}
+        onKeyDown={event=>{if(['ArrowDown','ArrowUp'].includes(event.key)){event.preventDefault();if(disabled||!open&&onAttemptOpen&&onAttemptOpen()===false)return;if(open){const items=panelRef.current?.querySelectorAll<HTMLButtonElement>('[role="option"]:not(:disabled)');(event.key==='ArrowUp'?items?.[items.length-1]:items?.[0])?.focus();}else{keyboardOpen.current=event.key==='ArrowUp'?'last':'first';setOpen(true);}}}}
         onClick={() => {
           if (disabled) return;
           if (!open && onAttemptOpen && !onAttemptOpen()) return;
@@ -220,11 +237,20 @@ export function SelectWidget({
           ref={panelRef}
           style={panelStyle}
           data-select-widget-popup
+          data-liquid="menu"
+          data-menu-surface=""
+          data-menu-scroll=""
+          data-menu-position="fixed"
           data-direction={openDirection}
           data-align={align}
           role="listbox"
+          onKeyDown={event=>{
+            if(event.key==='Tab'){event.preventDefault();close();triggerRef.current?.focus();}
+            if(event.key==='Escape'){event.preventDefault();event.stopPropagation();close();triggerRef.current?.focus();}
+            if(['ArrowDown','ArrowUp','Home','End'].includes(event.key)){event.preventDefault();const items=[...panelRef.current?.querySelectorAll<HTMLButtonElement>('[role="option"]:not(:disabled)')||[]],index=items.indexOf(document.activeElement as HTMLButtonElement);if(items.length)items[event.key==='Home'?0:event.key==='End'?items.length-1:(index+(event.key==='ArrowDown'?1:items.length-1))%items.length]?.focus();}
+          }}
         >
-          {renderItems()}
+          {options.length?renderItems():<p className={styles.empty}>{window.i18n?.locale?.startsWith('zh')===false?'No options available':'暂无可选项'}</p>}
         </div>,
         document.body,
       )}

@@ -1,3 +1,4 @@
+import { FormSelectControl } from './FormSelect';
 import { AUTO_LIGHT_DEFAULT, AUTO_DARK_DEFAULT, THEMES, type ThemeId } from '../../shared/theme-registry';
 import { persistAppearancePreferences, readBrowserAppearancePreferences } from '../services/appearance-sync';
 import { switchSession } from '../stores/session-actions';
@@ -293,7 +294,7 @@ function FieldInput({ field, values, choices, change }: { field: Field; values: 
     }} />)}{kind === 'rows' && <button type="button" onClick={() => change(records.filter((_,i) => i !== index))}>移除此项</button>}</div>)}{kind === 'rows' && <button type="button" onClick={() => change([...records,defaults(field.fields || [])])}>＋ 添加一项</button>}</fieldset>;
   }
   return <label className="enigma-field"><span>{field.label}{field.required ? ' *' : ''}</span>
-    {(kind === 'select' || kind === 'multi') ? <select aria-label={field.label} multiple={kind === 'multi'} required={field.required} value={kind === 'multi' ? value || [] : value || ''} onChange={e => change(kind === 'multi' ? Array.from(e.target.selectedOptions).map(option => option.value) : e.target.value)}>
+    {kind === 'select' ? <FormSelectControl label={field.label} value={value||''} onChange={change} options={[{value:'',label:'请选择'},...options]}/> : (kind === 'select' || kind === 'multi') ? <select aria-label={field.label} multiple={kind === 'multi'} required={field.required} value={kind === 'multi' ? value || [] : value || ''} onChange={e => change(kind === 'multi' ? Array.from(e.target.selectedOptions).map(option => option.value) : e.target.value)}>
       {kind !== 'multi' && <option value="">请选择</option>}{options.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
     : ['textarea','lines','pairs'].includes(kind) ? <textarea aria-label={field.label} required={field.required} rows={kind === 'textarea' ? 4 : 3} value={kind === 'lines' ? (value || []).join('\n') : kind === 'pairs' ? Object.entries(value || {}).map(([key,item]) => `${key}=${item}`).join('\n') : value || ''} onChange={e => change(kind === 'lines' ? e.target.value.split('\n').filter(Boolean) : kind === 'pairs' ? Object.fromEntries(e.target.value.split('\n').filter(Boolean).map(line => { const split=line.indexOf('='); return split < 0 ? [line,''] : [line.slice(0,split),line.slice(split+1)]; })) : e.target.value)} />
     : <input aria-label={field.label} type={kind === 'number' ? 'number' : 'text'} required={field.required} value={value ?? ''} onChange={e => change(kind === 'number' ? e.target.value === '' ? undefined : Number(e.target.value) : e.target.value)} />}
@@ -312,7 +313,7 @@ function ApprovalDialog() {
       await refreshEngineering(sessionPath);
     } catch (error) { setError(String(error)); }
   };
-  return <Modal key={dialog.id} title={dialog.title} close={() => void answer(false)}><p>{dialog.message}</p>{dialog.kind === 'select' ? <select aria-label="选择答案" value={value} onChange={event => setValue(event.target.value)}><option value="">请选择</option>{(dialog.options || []).map((option: string) => <option key={option}>{option}</option>)}</select> : dialog.kind !== 'confirm' && <textarea aria-label="输入答案" value={value} onChange={event => setValue(event.target.value)} />}
+  return <Modal key={dialog.id} title={dialog.title} close={() => void answer(false)}><p>{dialog.message}</p>{dialog.kind === 'select' ? <FormSelectControl label="选择答案" value={value} onChange={setValue} options={[{value:'',label:'请选择'},...(dialog.options||[]).map((option:string)=>({value:option,label:option}))]}/> : dialog.kind !== 'confirm' && <textarea aria-label="输入答案" value={value} onChange={event => setValue(event.target.value)} />}
     {error && <p role="alert">{error}</p>}<div className="enigma-dialog-actions"><button onClick={() => void answer(false)}>拒绝</button><button className="enigma-primary" onClick={() => void answer(true)}>确认</button></div></Modal>;
 }
 
@@ -322,6 +323,7 @@ function Modal({ title, close, children }: { title: string; close: () => void; c
     const previous = document.activeElement as HTMLElement | null;
     ref.current?.querySelector<HTMLElement>('input,textarea,select,button')?.focus();
     const key = (event: KeyboardEvent) => {
+      if(ref.current?.querySelector('[data-select-widget-trigger][aria-expanded="true"]'))return;
       if (event.key === 'Escape') { event.preventDefault(); close(); }
       if (event.key !== 'Tab') return;
       const items = Array.from(ref.current?.querySelectorAll<HTMLElement>('button:not(:disabled),input:not(:disabled),textarea:not(:disabled),select:not(:disabled)') || []), first = items[0], last = items.at(-1);

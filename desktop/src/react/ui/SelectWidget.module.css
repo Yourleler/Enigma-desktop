@@ -33,8 +33,8 @@
 
 .value {
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  white-space: normal;
   flex: 1;
   min-width: 0;
 }
@@ -167,3 +167,10 @@
   background-attachment: var(--paper-texture-attachment, fixed);
   background-blend-mode: var(--paper-texture-card-blend-mode);
 }
+
+:global(body.enigma-surface) .popup {padding:6px;border-radius:16px;max-width:calc(100vw - 24px);}
+:global(body.enigma-surface) .option {padding:8px 10px;min-height:36px;border-radius:9px;font-size:13px;line-height:1.45;transition:background-color 130ms ease,color 130ms ease;}
+:global(body.enigma-surface) .optionDesc {font-size:11px;opacity:.82;max-width:190px;white-space:normal;text-align:right;}
+:global(body.enigma-surface) .groupHeader {padding:8px 10px 4px;font-size:10px;letter-spacing:.03em;}
+.selectionMark {display:inline-flex;width:16px;flex:none;margin-left:4px;color:var(--accent);}
+.empty {padding:10px 12px;color:var(--text-muted);font-size:12px;}

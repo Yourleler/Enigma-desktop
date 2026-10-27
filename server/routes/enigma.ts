@@ -42,6 +42,14 @@ export function createEnigmaRoute(engine: any) {
     try { const body=await safeJson(c);return c.json(await host.configureModelPolicy(await session(c,true,body),body.policy)); }
     catch(error){return fail(c,error);}
   });
+  route.get("/enigma/model-policy-default", async (c) => {
+    try {
+      const context = createRequestContext(c, engine);
+      if (!context.authorize?.("settings.read")?.allowed)
+        return c.json({ error: "Settings permission required" }, 403);
+      return c.json({ policy: await host.getDefaultModelPolicy() });
+    } catch (error) { return fail(c, error); }
+  });
   route.post('/enigma/model-policy-default', async c => {
     try {
       const context=createRequestContext(c,engine),allowed=context.authorize?.('settings.write');

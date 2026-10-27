@@ -691,7 +691,7 @@
     ],
     "version": 3
   },
-  "payloadFingerprint": "sha256:f351c41d515f5d7132687251b7de7f6bb8b8c30a0433f9fa4775aa6d03cee605",
+  "payloadFingerprint": "sha256:b33a8bd5489f975a03bcf6beae712de113685ea5f124906bee892bd6ff4764f5",
   "registry": [
     {
       "affectedByEpochMigration": true,
@@ -3292,8 +3292,8 @@
   ],
   "review": {
     "classification": "compatible",
-    "compatibilityReason": "Enigma schema 1 optional manager integration/resume and bounded guardian settings preserve old records; metadata is validated against current ownership, source and grants. Host DATA_EPOCH is unchanged. Re-pin owning implementation hashes after completed control and observer wiring.",
-    "payloadFingerprint": "sha256:f351c41d515f5d7132687251b7de7f6bb8b8c30a0433f9fa4775aa6d03cee605"
+    "compatibilityReason": "Read existing default model policy and improve form layout; persisted formats unchanged.",
+    "payloadFingerprint": "sha256:b33a8bd5489f975a03bcf6beae712de113685ea5f124906bee892bd6ff4764f5"
   },
   "schemas": [
     {
@@ -3525,7 +3525,7 @@
       "contract": "schema 1 native-session/workspace binding, absolute roots, explicit memory flag, validated source identity, manager model grants and bounded guardian configuration/usage",
       "kind": "runtime-contract",
       "module": "plugins/enigma/host.ts",
-      "sourceHash": "sha256:a5f0fee4c2bfcfc7dcd30b773c52c194e2b452dcfb52cf47d64e2aadc278ed2c",
+      "sourceHash": "sha256:d4aece8919873e27f1f513abf489745e7d4552298ce64c0e4c9401e248c04547",
       "storeId": "enigma-session-bindings"
     },
     {
