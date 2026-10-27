@@ -13,7 +13,7 @@ const directory = resolve(process.argv[2] ?? userHomeDirectory() + '/Documents/C
 await mkdir(directory, { recursive: true });
 const { root, workspace } = await crossLanguageFixture(); const agentDir = await configureGateway(workspace.data);
 const modelRuntime = await ModelRuntime.create({ authPath: join(agentDir, 'auth.json'), modelsPath: join(agentDir, 'models.json'), refreshOnCreate: false });
-const model = modelRuntime.getModel('gateway', 'gateway-gpt-6-1-sol'); assert(model);
+const model = modelRuntime.getModels('gateway')[0]; assert(model);
 const store = await MemoryStore.open(workspace);
 const prior = 'Project decision from a previous session: documentation must call the public endpoint GREETING-CONTRACT, never legacy-output. For technical facts, verify actual source. For this isolated project, the term is a documentation convention, not a wire-level field.';
 const startedBuild = performance.now();

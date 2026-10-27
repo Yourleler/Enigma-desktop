@@ -89,11 +89,11 @@ test('Gateway setup preserves other providers and configures Responses without a
   try {
     const dir = join(workspace.data, 'pi-agent'); await mkdir(dir);
     await writeJson(join(dir, 'models.json'), { providers: { local: { models: [{ id: 'existing' }] } } });
-    await configureGateway(workspace.data);
+    await configureGateway(workspace.data, { baseUrl: 'http://127.0.0.1:9999/v1', model: 'configured-model' });
     const models = JSON.parse(await readFile(join(dir, 'models.json'), 'utf8'));
     assert.equal(models.providers.gateway.api, 'openai-responses');
     assert.equal(models.providers.local.models[0].id, 'existing');
-    assert.equal(JSON.parse(await readFile(join(dir, 'settings.json'), 'utf8')).defaultModel, 'gateway-gpt-6-1-sol');
+    assert.equal(JSON.parse(await readFile(join(dir, 'settings.json'), 'utf8')).defaultModel, 'configured-model');
     await assert.rejects(configureGateway(workspace.data, { baseUrl: 'http://user:password@example.test/v1' }), /without embedded credentials/);
   } finally { await rm(root, { recursive: true, force: true }); }
 });

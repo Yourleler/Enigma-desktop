@@ -18,7 +18,7 @@ import { Experiments } from '../dist/src/experiments.js';
 import { redact } from '../dist/src/storage.js';
 
 const output = resolve(process.argv[2] ?? userHomeDirectory() + '/Documents/Codex/2026-10-25/enigma-next-validation/learning'); await mkdir(output, { recursive: true });
-const { root, workspace } = await fixture(), agentDir = await configureGateway(workspace.data), modelId = process.env.ENIGMA_MODEL ?? 'gateway-gpt-6-1-sol';
+const { root, workspace } = await fixture(), agentDir = await configureGateway(workspace.data), modelId = process.env.ENIGMA_GATEWAY_MODEL;
 await writeFile(join(root, 'library', 'MIGRATION.md'), '# 接口迁移\n公共函数名保持 greet/call/main。库返回 lib:v2，SDK 返回 sdk:lib:v2，应用返回 app:sdk:lib:v2。升级必须同步三仓库，保留原检查与用户文件。\n');
 await writeFile(join(root, 'app', 'USER.md'), 'USER-OWNED-7342: preserve this file exactly.\n');
 const resource = await new ProjectContext(workspace).add({ title: '三仓库接口迁移', repos: ['library', 'sdk', 'app'], source: { kind: 'file', repo: 'library', file: 'MIGRATION.md' } });

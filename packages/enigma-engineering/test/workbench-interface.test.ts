@@ -169,26 +169,28 @@ test('Gateway discovery preserves default config and real IDs, works through Mes
     await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
     const address = server.address();
     assert(address && typeof address === 'object');
-    const original = { providers: { gateway: { baseUrl: `http://127.0.0.1:${address.port}/v1`, api: 'openai-responses', apiKey: 'gateway', models: [{ id: 'default-model', contextWindow: 100000, maxTokens: 2048 }] }, existing: { baseUrl: 'http://127.0.0.1:1/v1', api: 'openai-completions', apiKey: 'other', models: [{ id: 'existing-model' }] } } };
+    const original = { providers: { gateway: { baseUrl: `http://127.0.0.1:${address.port}`, api: 'anthropic-messages', apiKey: 'fixture-only', models: [{ id: 'default-model', contextWindow: 100000, maxTokens: 2048 }] }, existing: { baseUrl: 'http://127.0.0.1:1/v1', api: 'openai-completions', apiKey: 'other', models: [{ id: 'existing-model' }] } } };
     await writeFile(join(dir, 'models.json'), JSON.stringify(original));
     const runtime = await ModelRuntime.create({ authPath: join(dir, 'auth.json'), modelsPath: join(dir, 'models.json') });
     try {
         assert.equal((await syncGatewayModels(dir, runtime)).count, 2);
         const saved = JSON.parse(await readFile(join(dir, 'models.json'), 'utf8'));
-        assert.deepEqual(saved.providers.gateway, original.providers.gateway);
+        assert.equal(saved.providers.gateway.api, original.providers.gateway.api);
+        assert.equal(saved.providers.gateway.apiKey, original.providers.gateway.apiKey);
+        assert.deepEqual(saved.providers.gateway.models[0], original.providers.gateway.models[0]);
         assert.deepEqual(saved.providers.existing, original.providers.existing);
         for (const id of ['first', 'second']) {
-            const model = runtime.getModel('gateway-catalog', id);
+            const model = runtime.getModel('gateway', id);
             assert(model);
             const result = await runtime.completeSimple(model, { messages: [{ role: 'user', content: 'Reply', timestamp: Date.now() }] }, { reasoning: 'high', maxTokens: 100 });
             assert.equal(result.stopReason, 'stop', result.errorMessage + ' ' + JSON.stringify(paths));
             assert.equal(result.content.filter(p => p.type === 'text').map(p => p.text).join(''), 'MODEL ' + id);
         }
         assert.deepEqual(calls.map(c => c.model), ['first', 'second']);
-        assert(calls.every(c => c.effort === 'high'), 'Selected thinking effort must be sent to the actual API');
+        assert(calls.every(c => c.effort == null), 'Discovery must not invent unsupported thinking capabilities');
         broken = true;
         await assert.rejects(syncGatewayModels(dir, runtime), /目录/);
-        assert(runtime.getModel('gateway-catalog', 'first'));
+        assert(runtime.getModel('gateway', 'first'));
         assert.deepEqual(JSON.parse(await readFile(join(dir, 'models.json'), 'utf8')), saved);
     }
     finally {

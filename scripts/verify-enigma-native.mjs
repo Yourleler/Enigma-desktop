@@ -1,3 +1,4 @@
+import { loadValidationModel } from './validation-model.mjs';
 import { homedir as userHomeDirectory } from 'node:os';
 import { SubagentThreadStore } from '../lib/subagent-thread-store.ts';
 import { SubagentRunStore } from '../lib/subagent-run-store.ts';
@@ -25,9 +26,8 @@ let calls=0, utilityCalls=0, engine, hub, gateway, report; const requestShapes=[
 const responses=[['workspace_graph',{}],['repo_read',{repo:'alpha',path:'value.txt'}],['repo_write',{repo:'alpha',path:'value.txt',content:'after\n'}],['workspace_verify',{}],['final','ENIGMA_NATIVE_DONE']];
 let provider, model;
 if (live) {
-  const existing=JSON.parse(await fs.readFile(process.env.ENIGMA_GATEWAY_CONFIG || userHomeDirectory() + '/code/Enigma-next/.enigma-next/pi-agent/models.json','utf8'));
-  provider=existing.providers.gateway; assert.equal(new URL(provider.baseUrl).hostname,'127.0.0.1');
- model=provider.models.find(item=>item.id==='gateway-gpt-6-1-sol'); assert(model);
+  const selected = await loadValidationModel();
+  provider=selected.provider; model=selected.model;
 } else {
   gateway=http.createServer(async(req,res)=>{
     if(req.url?.endsWith('/models')) { res.writeHead(200,{'content-type':'application/json'});res.end(JSON.stringify({data:[{id:'native-fixture',object:'model'}]}));return; }

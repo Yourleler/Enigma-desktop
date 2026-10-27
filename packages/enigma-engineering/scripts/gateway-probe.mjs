@@ -11,7 +11,7 @@ import { Workspace, createEnigmaExtension, toolNames } from '../dist/src/index.j
 const exec = promisify(execFile);
 const projectRoot = fileURLToPath(new URL('..', import.meta.url));
 const root = resolve(process.argv[2] ?? join(projectRoot, '.enigma-next', 'live-validation', `gateway-${Date.now()}`));
-const modelId = process.env.ENIGMA_LIVE_MODEL ?? 'gateway-gpt-6-1-sol';
+const modelId = process.env.ENIGMA_GATEWAY_MODEL;
 const agentDir = join(projectRoot, '.enigma-next', 'pi-agent');
 await mkdir(root, { recursive: true });
 const workspace = await Workspace.open(root);
@@ -64,7 +64,7 @@ try {
   const report = { kind: 'real-model-validation', model: modelId, provider: 'gateway', api: 'openai-responses',
     pi: '1.4.0', workspace: root, streamedTextChunks: textChunks, events, errors, verification: checked,
     finalAnswer: session.getLastAssistantText(), sources, sessionFile: manager.getSessionFile(),
-    limitations: ['one real migration task; not a success-rate benchmark', 'no claim of official Gateway support for Pi'] };
+    limitations: ['one real migration task; not a success-rate benchmark', 'compatibility is limited to the explicitly selected provider and model'] };
   await writeFile(join(root, 'report.json'), JSON.stringify(report, null, 2) + '\n');
   console.log(JSON.stringify({ report: join(root, 'report.json'), status: checked.status, model: modelId, streamedTextChunks: textChunks, tools: events.length }));
 } finally { clearTimeout(timer); session.dispose(); }

@@ -17,7 +17,7 @@ const agentDir = await configureGateway(workspace.data);
 const runtime = await ModelRuntime.create({ authPath: join(agentDir, 'auth.json'), modelsPath: join(agentDir, 'models.json'), refreshOnCreate: false });
 const report = await runPiReview(workspace, { baseline: baseline.id, goal: 'Change the service JSON response while preserving the SDK/app string result.',
   requirements: [{ text: 'After the migration, the JS SDK must read data.message and the app must still display the message string. Inspect consumers when a producer changes shape.', reference: 'explicit validation objective' }] },
-  { modelRuntime: runtime, provider: 'gateway', model: 'gateway-gpt-6-1-sol', agentDir, timeoutMs: 180000 });
+  { modelRuntime: runtime, provider: 'gateway', model: process.env.ENIGMA_GATEWAY_MODEL, agentDir, timeoutMs: 180000 });
 assert.equal(report.status, 'completed', JSON.stringify(report));
 assert(report.text.includes('sdk') && report.text.toLowerCase().includes('message'), report.text);
 assert.equal(await readFile(join(root, 'server', 'model.py'), 'utf8'), before);

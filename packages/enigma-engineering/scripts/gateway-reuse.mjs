@@ -29,7 +29,7 @@ for (const [repo, method, expected] of [['library', 'greet', 'v2'], ['sdk', 'cal
 await recipes.save({ id: 'migration', label: 'Three-repository migration and browser acceptance', parameters: { version: { description: 'Response version as a literal argv data value' } }, steps: [
   { id: 'migrate', kind: 'command', repo: 'library', argv: [process.execPath, 'migrate.mjs', '{{version}}'] }, { id: 'start', kind: 'service', service: 'web', action: 'start' },
   { id: 'browser', kind: 'browser', scenario: 'click' }, { id: 'stop', kind: 'service', service: 'web', action: 'stop' }, { id: 'acceptance', kind: 'verify' } ] });
-const agentDir = await configureGateway(workspace.data), modelId = process.env.ENIGMA_MODEL ?? 'gateway-gpt-6-1-sol';
+const agentDir = await configureGateway(workspace.data), modelId = process.env.ENIGMA_GATEWAY_MODEL;
 const runtime = await ModelRuntime.create({ authPath: join(agentDir, 'auth.json'), modelsPath: join(agentDir, 'models.json'), refreshOnCreate: false }), model = runtime.getModel('gateway', modelId); assert(model);
 const settings = SettingsManager.inMemory({ compaction: { enabled: false }, retry: { enabled: false } }), manager = SessionManager.create(root, join(workspace.data, 'sessions'));
 const loader = new DefaultResourceLoader({ cwd: root, agentDir, settingsManager: settings, noContextFiles: true, noPromptTemplates: true, noThemes: true,

@@ -15,7 +15,7 @@ const output = resolve(process.argv[2] ?? userHomeDirectory() + '/Documents/Code
 await mkdir(output, { recursive: true });
 const { root, workspace } = await crossLanguageFixture();
 const agentDir = await configureGateway(workspace.data);
-const modelId = process.env.ENIGMA_MODEL ?? 'gateway-gpt-6-1-sol';
+const modelId = process.env.ENIGMA_GATEWAY_MODEL;
 const python = process.env.ENIGMA_PYTHON ?? (process.platform === 'win32' ? 'python' : 'python3');
 const runner = join(workspace.data, 'joint-check.mjs');
 const helpers = pathToFileURL(resolve('dist/test/cross-language-fixtures.js')).href;

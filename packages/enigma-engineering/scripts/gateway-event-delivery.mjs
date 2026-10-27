@@ -15,7 +15,7 @@ import { redact } from '../dist/src/storage.js';
 import { setTimeout as delay } from 'node:timers/promises';
 
 const output = resolve(process.argv[2] ?? userHomeDirectory() + '/Documents/Codex/2026-10-25/enigma-next-validation/event-delivery'); await mkdir(output, { recursive: true });
-const { root, workspace } = await fixture(), agentDir = await configureGateway(workspace.data), modelId = process.env.ENIGMA_MODEL ?? 'gateway-gpt-6-1-sol';
+const { root, workspace } = await fixture(), agentDir = await configureGateway(workspace.data), modelId = process.env.ENIGMA_GATEWAY_MODEL;
 const runtime = await ModelRuntime.create({ authPath: join(agentDir, 'auth.json'), modelsPath: join(agentDir, 'models.json'), refreshOnCreate: false }), model = runtime.getModel('gateway', modelId); assert(model);
 const settings = SettingsManager.inMemory({ compaction: { enabled: false }, retry: { enabled: false } }), manager = SessionManager.create(root, join(workspace.data, 'sessions'));
 const loader = new DefaultResourceLoader({ cwd: root, agentDir, settingsManager: settings, noSkills: true, noContextFiles: true, noPromptTemplates: true, noThemes: true,

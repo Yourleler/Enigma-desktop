@@ -32,7 +32,7 @@ await workspace.exclusive(async () => {
   await workspace.addCheck({ id: 'joint-go', repo: 'app', joint: true, argv: [process.execPath, runner] });
 });
 const baseline = await workspace.exclusive(() => workspace.checkpoint('Go v1 baseline'));
-const agentDir = await configureGateway(workspace.data), modelId = process.env.ENIGMA_MODEL ?? 'gateway-gpt-6-1-sol';
+const agentDir = await configureGateway(workspace.data), modelId = process.env.ENIGMA_GATEWAY_MODEL;
 const runtime = await ModelRuntime.create({ authPath: join(agentDir, 'auth.json'), modelsPath: join(agentDir, 'models.json'), refreshOnCreate: false });
 const model = runtime.getModel('gateway', modelId); assert(model);
 const settings = SettingsManager.inMemory({ compaction: { enabled: false }, retry: { enabled: false } });

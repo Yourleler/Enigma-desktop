@@ -62,11 +62,6 @@ export class Workbench {
                 agentDir = getAgentDir();
             }
         const models = options.modelRuntime ?? await ModelRuntime.create({ authPath: join(agentDir, 'auth.json'), modelsPath: join(agentDir, 'models.json'), allowModelNetwork: false });
-        if (!options.modelRuntime)
-            try {
-                await syncGatewayModels(agentDir, models);
-            }
-            catch { /* A missing gateway never removes configured models or prevents local work. */ }
         const host = new Workbench(workspace, options, models, agentDir);
         try {
             const catalog = await readJson<{

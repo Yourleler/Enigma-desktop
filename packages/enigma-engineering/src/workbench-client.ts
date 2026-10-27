@@ -92,7 +92,7 @@ function card(title, subtitle, stateValue) { const c = el('article', undefined, 
 function cardButtons(c, items) { const row = el('div', undefined, 'card-actions'); items.forEach(([title, action]) => row.append(button(title, action))); c.append(row); }
 function empty(root, title, description) { const e = el('div', undefined, 'empty-panel'); e.append(el('strong', title), el('span', description || '使用下方操作开始。')); root.append(e); }
 function formatDate(value) { return value ? new Date(value).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''; }
-function prettyModel(m) { return (m?.name || m?.id || '选择模型').replace(/^Gateway\s+/, '').replace(/^gateway-gpt-6-1-sol$/, 'GPT-6.1-Sol · Responses'); }
+function prettyModel(m) { return m?.name || m?.id || '选择模型'; }
 function family(model) { const name = prettyModel(model); return /GPT/i.test(name) ? 'GPT' : /Opus|Sonnet|Claude/i.test(name) ? 'Claude' : /DeepSeek/i.test(name) ? 'DeepSeek' : /Gemini/i.test(name) ? 'Gemini' : /Seed|Doubao/i.test(name) ? 'Seed / Doubao' : /GLM/i.test(name) ? 'GLM' : '其他模型'; }
 function inline(text) {
     const frag = document.createDocumentFragment();

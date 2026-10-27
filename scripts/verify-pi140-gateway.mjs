@@ -1,3 +1,4 @@
+import { loadValidationModel } from './validation-model.mjs';
 import { homedir as userHomeDirectory } from 'node:os';
 import assert from 'node:assert/strict';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
@@ -8,9 +9,7 @@ import { createAgentSession, DefaultResourceLoader, SessionManager, SettingsMana
 
 const output=resolve(process.argv[2]);await mkdir(output,{recursive:true});
 const home=join(output,'home'), workspace=join(output,'workspace');await mkdir(home,{recursive:true});await mkdir(workspace,{recursive:true});
-const existing=JSON.parse(await readFile(userHomeDirectory() + '/code/Enigma-next/.enigma-next/pi-agent/models.json','utf8'));
-const provider=existing.providers.gateway;assert.equal(new URL(provider.baseUrl).hostname,'127.0.0.1');
-const selected=provider.models.find(model=>model.id==='gateway-gpt-6-1-sol');assert(selected);
+const { provider, model: selected } = await loadValidationModel();
 await writeFile(join(home,'added-models.yaml'),YAML.dump({providers:{gateway:{base_url:provider.baseUrl,api:provider.api,api_key:provider.apiKey,models:[{id:selected.id,name:selected.name,context:selected.contextWindow,maxOutput:4000,reasoning:true}]}}}),{mode:0o600});
 const marker='HANA_PI_140_ACTUAL_TOOL_OK';await writeFile(join(workspace,'fixture.txt'),marker);
 let runtime,report,readCalls=0,writeCalls=0;const events=[];

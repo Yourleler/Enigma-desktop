@@ -27,7 +27,7 @@ await workspace.exclusive(async () => {
   await workspace.addCheck({ id: 'app-syntax', repo: 'app', argv: [process.execPath, '--check', 'index.js'] });
   await workspace.addCheck({ id: 'browser-joint', repo: 'app', joint: true, argv: [process.execPath, resolve('dist/src/cli.js'), '--workspace', root, 'browser', 'run', 'greeting-ui'], timeoutMs: 30000 });
 });
-const agentDir = await configureGateway(workspace.data), modelId = process.env.ENIGMA_MODEL ?? 'gateway-gpt-6-1-sol';
+const agentDir = await configureGateway(workspace.data), modelId = process.env.ENIGMA_GATEWAY_MODEL;
 const runtime = await ModelRuntime.create({ authPath: join(agentDir, 'auth.json'), modelsPath: join(agentDir, 'models.json'), refreshOnCreate: false }), model = runtime.getModel('gateway', modelId); assert(model);
 const settings = SettingsManager.inMemory({ compaction: { enabled: false }, retry: { enabled: false } });
 const loader = new DefaultResourceLoader({ cwd: root, agentDir, settingsManager: settings, noSkills: true, noContextFiles: true, noPromptTemplates: true, noThemes: true,

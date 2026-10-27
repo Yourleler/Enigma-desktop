@@ -30,7 +30,7 @@ import { hash, readJson, redact } from '../dist/src/storage.js';
 import { validationBuild } from './validation-evidence.mjs';
 
 const output = resolve(process.argv[2] ?? userHomeDirectory() + '/Documents/Codex/2026-10-25/enigma-next-validation/full-workflow'); await mkdir(output, { recursive: true });
-const { root, workspace, material, commonChecks } = await workflowFixture(), agentDir = await configureGateway(workspace.data), modelId = process.env.ENIGMA_MODEL ?? 'gateway-gpt-6-1-sol';
+const { root, workspace, material, commonChecks } = await workflowFixture(), agentDir = await configureGateway(workspace.data), modelId = process.env.ENIGMA_GATEWAY_MODEL;
 const build = await validationBuild(['gateway-full-workflow.mjs', 'workflow-fixture.mjs', 'validation-evidence.mjs']), originalCriteria = hash(JSON.stringify(workspace.config.checks));
 const protectedFiles = [['server', 'server.py'], ['server', 'DESIGN.md'], ['server', 'response.schema.json'], ['app', 'web.mjs'], ['app', 'USER.md'], ['sdk', 'package.json'], ['app', 'package.json']];
 const protectedHashes = Object.fromEntries(await Promise.all(protectedFiles.map(async ([repo, file]) => [`${repo}:${file}`, hash(await readFile(join(root, repo, file)))])));

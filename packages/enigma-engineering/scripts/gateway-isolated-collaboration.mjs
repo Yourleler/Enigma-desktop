@@ -19,7 +19,7 @@ import { hash } from '../dist/src/storage.js';
 import { Workspace } from '../dist/src/workspace.js';
 
 const output = resolve(process.argv[2] ?? userHomeDirectory() + '/Documents/Codex/2026-10-25/enigma-next-validation/isolated-collaboration'); await mkdir(output, { recursive: true });
-const { root, workspace } = await fixture(), agentDir = await configureGateway(workspace.data), modelId = process.env.ENIGMA_MODEL ?? 'gateway-gpt-6-1-sol';
+const { root, workspace } = await fixture(), agentDir = await configureGateway(workspace.data), modelId = process.env.ENIGMA_GATEWAY_MODEL;
 await writeFile(join(root, 'library', 'API.md'), '# API\nThe library exports greet(), SDK exports call(), and application exports main(). Current result is v1. Document the real call chain without changing the API.\n');
 const resource = await new ProjectContext(workspace).add({ title: 'Current API', source: { kind: 'file', repo: 'library', file: 'API.md' } });
 await workspace.exclusive(() => workspace.addCheck({ id: 'document', repo: 'sdk', argv: [process.execPath, '-e', 'const fs=require("node:fs");const s=fs.readFileSync("DESIGN.md","utf8");for(const name of ["greet","call","main","v1"])if(!s.includes(name))process.exit(1)'] }));

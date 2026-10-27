@@ -19,7 +19,7 @@ await exportHandoff(workspace, first, { mode: 'background', goal, source: { agen
   { role: 'user', kind: 'background', reference: 'project-brief', text: 'There are three independent repos: server is a Python HTTP producer; sdk is a JS fetch consumer; app calls the SDK. A previous task considered changing response structure, but this new task is only documentation.' },
   { role: 'source', kind: 'observation', reference: 'source-layout', text: 'Relevant entries: server/model.py and server/server.py, sdk/index.js, app/index.js. Contract manifest is in server/.enigma-contracts.json. Read actual files to establish current behavior.' },
 ] });
-const codex = await runCodexHandoff(workspace, first, { writable: true, model: 'gateway-gpt-6-1-sol', timeoutMs: 240000 });
+const codex = await runCodexHandoff(workspace, first, { writable: true, model: process.env.ENIGMA_GATEWAY_MODEL, timeoutMs: 240000 });
 assert.equal(codex.report.status, 'passed', JSON.stringify(codex.report));
 const artifact = await readFile(join(root, 'sdk', 'HANDOFF.md'), 'utf8'); assert(artifact.includes('/greet')); assert(artifact.toLowerCase().includes('message'));
 assert((await readFile(join(root, 'server', 'model.py'), 'utf8')).includes('"v1"'));
@@ -30,7 +30,7 @@ await exportHandoff(workspace, returning, { mode: 'background', goal: 'Verify sd
 const inspection = await inspectHandoff(workspace, returning); const imported = await importPiHandoff(workspace, inspection);
 const agentDir = await configureGateway(workspace.data);
 const runtime = await ModelRuntime.create({ authPath: join(agentDir, 'auth.json'), modelsPath: join(agentDir, 'models.json'), refreshOnCreate: false });
-const model = runtime.getModel('gateway', 'gateway-gpt-6-1-sol'); assert(model);
+const model = runtime.getModels('gateway')[0]; assert(model);
 const settings = SettingsManager.inMemory({ compaction: { enabled: false }, retry: { enabled: false } });
 const loader = new DefaultResourceLoader({ cwd: root, agentDir, settingsManager: settings, noContextFiles: true, noSkills: true,
   extensionFactories: [createEnigmaExtension({ workspace, managed: true, approval: 'auto' })] }); await loader.reload();
