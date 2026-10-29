@@ -41,3 +41,7 @@ it('loads semantic text on demand when layout tabs only contain metadata',async(
  fireEvent.click(screen.getByRole('button',{name:'文本'}));
  expect(await screen.findByText('按需读取的文本')).toBeVisible();
 });
+
+it('displays a frame-confirmed search limit separately from exact counts',()=>{
+ render(<DocxPreview previewItem={item}/>);const frame=screen.getByTitle('new.docx · Word 版式') as HTMLIFrameElement;report(frame,'rendered',{pages:1});fireEvent.change(screen.getByRole('textbox',{name:'搜索文档内容'}),{target:{value:'word'}});report(frame,'matches',{index:1,count:2000,truncated:false});expect(screen.getByText('1 / 2000')).toBeTruthy();expect(screen.queryByText(/已显示前/)).toBeNull();report(frame,'matches',{index:1,count:2000,truncated:true});expect(screen.getByText('1 / 2000+')).toBeTruthy();expect(screen.getByText('已显示前 2000 项，请缩小查询范围。')).toBeTruthy();
+});

@@ -12,3 +12,8 @@ it('keeps original offsets for Unicode case-insensitive search and treats regex 
 it('ignores non-reading controls and bounds repeated matches',()=>{
  const root=document.createElement('div');root.innerHTML='<p>word word word word</p><button>word</button><p hidden>word</p>';expect(findTextRanges(root,'word')).toHaveLength(4);expect(findTextRanges(root,'word',2)).toHaveLength(2);
 });
+
+import {findTextMatchPage} from '../../utils/text-search-ranges';
+it('distinguishes an exact result limit from omitted matches',()=>{
+ const root=document.createElement('div');root.textContent='word word';expect(findTextMatchPage(root,'word',2).truncated).toBe(false);root.textContent+=' word';const result=findTextMatchPage(root,'word',2);expect(result.truncated).toBe(true);expect(result.ranges.map(r=>r.toString())).toEqual(['word','word']);
+});

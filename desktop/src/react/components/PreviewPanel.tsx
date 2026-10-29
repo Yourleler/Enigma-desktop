@@ -31,7 +31,7 @@ import {
 } from '../stores/selection-actions';
 import type { PreviewItem } from '../types';
 import { isRemoteWorkbenchContentRef, saveRemoteWorkbenchContent } from '../utils/remote-file-preview';
-import {findTextRanges,createDocumentHighlights} from '../utils/text-search-ranges';
+import {findTextMatchPage,createDocumentHighlights} from '../utils/text-search-ranges';
 import { applyFindMarks, clearFindMarks } from '../utils/find-marks';
 import { OpenPreviewDocumentWatchBridge } from './app/OpenPreviewDocumentWatchBridge';
 import {
@@ -125,6 +125,7 @@ export function PreviewPanel() {
   const [findQuery, setFindQuery] = useState('');
   const [findIndex, setFindIndex] = useState(0);
   const [findCount, setFindCount] = useState(0);
+  const [findTruncated,setFindTruncated]=useState(false);
   const [chapterRailVisible, setChapterRailVisible] = useState(false);
   const previewBodyRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<PreviewEditorHandle | null>(null);
@@ -367,19 +368,20 @@ export function PreviewPanel() {
     clearFindMarks(previewBodyRef.current, 'preview-find-mark');
     previewFindMarksRef.current = [];
     if (!findOpen || !findQuery || !previewItem) {
-      setFindCount(0);
+      setFindCount(0);setFindTruncated(false);
       return undefined;
     }
     if (editable) return;
     const root=previewBodyRef.current?.querySelector<HTMLElement>('.preview-markdown')||previewBodyRef.current;
     const highlight=root?createDocumentHighlights(root):null;
     if(root&&highlight){
-      const refresh=()=>{const ranges=findTextRanges(root,findQuery);nativeFindRef.current={ranges,highlight};setFindCount(ranges.length);highlight.set(ranges,Math.min(findIndex,Math.max(0,ranges.length-1)));};
+      const refresh=()=>{const {ranges,truncated}=findTextMatchPage(root,findQuery);setFindTruncated(truncated);nativeFindRef.current={ranges,highlight};setFindCount(ranges.length);highlight.set(ranges,Math.min(findIndex,Math.max(0,ranges.length-1)));};
       refresh();highlight.scroll(nativeFindRef.current?.ranges[findIndex]);
       const observer=new MutationObserver(refresh);observer.observe(root,{childList:true,subtree:true,characterData:true});
       return()=>{observer.disconnect();highlight.clear();nativeFindRef.current=null;};
     }
-    const marks = applyFindMarks(previewBodyRef.current, [findQuery], 'preview-find-mark');
+    const marks = applyFindMarks(previewBodyRef.current, [findQuery], 'preview-find-mark',{maxMatches:2001});
+    setFindTruncated(marks.length>2000);marks.splice(2000).forEach(mark=>mark.replaceWith(...mark.childNodes));
     previewFindMarksRef.current = marks;
     setFindCount(marks.length);
     return () => {
@@ -456,6 +458,7 @@ export function PreviewPanel() {
             query={findQuery}
             resultIndex={Math.min(findIndex, Math.max(0, findCount - 1))}
             resultCount={findCount}
+            truncated={findTruncated}
             onQueryChange={setFindQuery}
             onPrevious={() => goFind(-1)}
             onNext={() => goFind(1)}

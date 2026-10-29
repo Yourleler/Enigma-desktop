@@ -21,6 +21,7 @@ export function ClassicFindBox({
   query,
   resultIndex,
   resultCount,
+  truncated = false,
   onQueryChange,
   onPrevious,
   onNext,
@@ -34,6 +35,7 @@ export function ClassicFindBox({
   query: string;
   resultIndex: number;
   resultCount: number;
+  truncated?: boolean;
   onQueryChange: (query: string) => void;
   onPrevious: () => void;
   onNext: () => void;
@@ -51,7 +53,7 @@ export function ClassicFindBox({
     return()=>{window.clearTimeout(timer);if(document.activeElement===inputRef.current)previous?.focus();};
   }, [open]);
   if (!open) return null;
-  const countLabel = query ? `${resultCount ? resultIndex + 1 : 0}/${resultCount}` : '0/0';
+  const countLabel = query ? `${resultCount ? resultIndex + 1 : 0}/${resultCount}${truncated?'+':''}` : '0/0';
   return (
     <div className={`${styles.findBox} ${inline?styles.findBoxInline:''}`} role="search">
       <Icon kind="search" />
@@ -74,10 +76,11 @@ export function ClassicFindBox({
         aria-label={ariaLabel}
         data-classic-find-input=""
       />
-      <span className={styles.findCount}>{countLabel}</span>
+      <span className={styles.findCount} aria-live="polite">{countLabel}</span>
       <button type="button" onClick={onPrevious} aria-label={labels.previous} disabled={inline&&!resultCount} title="Shift+Enter"><Icon kind="up" /></button>
       <button type="button" onClick={onNext} aria-label={labels.next} disabled={inline&&!resultCount} title="Enter"><Icon kind="down" /></button>
       <button type="button" onClick={onClose} aria-label={labels.close} title="Esc"><Icon kind="close" /></button>
+      {query&&truncated&&<small className={styles.findLimit} role="status">已显示前 {resultCount} 项，请缩小查询范围。</small>}
     </div>
   );
 }

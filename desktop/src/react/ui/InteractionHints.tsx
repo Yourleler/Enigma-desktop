@@ -31,6 +31,9 @@ export function InteractionHints() {
       if (event.type === 'focusin' && !keyboard) return;
       const element = event.target instanceof Element ? event.target : null;
       if (element && target?.contains(element)) { clearTimeout(closeTimer); return; }
+      // Embedded documents own their content interactions. Their title is an
+      // accessible document name, not a hover hint to remove or float above it.
+      if (element?.matches('iframe,object,embed')) { hide(); return; }
       if (element?.closest('[data-interaction-hint]')) { clearTimeout(closeTimer); return; }
       const anchor = element?.closest<HTMLElement>('[data-tooltip], [title], button, [role="button"], a[href], summary, select');
       if (!anchor || anchor.closest('[data-tooltip-managed], [inert], [aria-hidden="true"], .enigma-drawer-scrim, .mobile-drawer-scrim')) { hide(); return; }

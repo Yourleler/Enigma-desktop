@@ -7,3 +7,5 @@
 .enigma-docx-body{position:relative;flex:1;min-height:0}.enigma-docx-body iframe{width:100%;height:100%;border:0;display:block}.enigma-docx-text{overflow:auto;height:100%;padding:16px;user-select:text}.enigma-docx-notice{position:absolute;inset:0;background:var(--bg-card);display:flex;align-content:center;justify-content:center;align-items:center;flex-wrap:wrap;padding:24px;gap:8px;font-size:13px;color:var(--text-muted);text-align:center}.enigma-docx-notice p{flex-basis:100%}.enigma-docx-hint{font-size:11px;color:var(--text-muted);padding:5px 10px;line-height:1.5}
 
 .enigma-docx-find{background:color-mix(in srgb,var(--accent) 25%,transparent);color:inherit}.enigma-docx-find.is-active{outline:2px solid var(--accent)}
+
+.enigma-docx-search-limit{font-size:11px;line-height:1.5;color:var(--text-muted);padding:4px 10px;border-bottom:1px solid var(--border);}

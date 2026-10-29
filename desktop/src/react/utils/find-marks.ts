@@ -19,6 +19,7 @@ export function applyFindMarks(
   options?: {
     /** 只标注 closest(scopeSelector) 命中的文本节点；不传则全树标注（preview 现状） */
     scopeSelector?: string;
+    maxMatches?: number;
   },
 ): HTMLElement[] {
   if (!root) return [];
@@ -43,6 +44,7 @@ export function applyFindMarks(
 
   const marks: HTMLElement[] = [];
   for (const node of nodes) {
+    if(marks.length >= (options?.maxMatches ?? Infinity))break;
     const text = node.nodeValue || '';
     const lower = text.toLowerCase();
     const taken: Array<{ from: number; to: number }> = [];
@@ -60,6 +62,7 @@ export function applyFindMarks(
     const fragment = document.createDocumentFragment();
     let cursor = 0;
     for (const range of taken) {
+      if(marks.length >= (options?.maxMatches ?? Infinity))break;
       if (range.from > cursor) fragment.append(document.createTextNode(text.slice(cursor, range.from)));
       const mark = document.createElement('mark');
       mark.className = className;

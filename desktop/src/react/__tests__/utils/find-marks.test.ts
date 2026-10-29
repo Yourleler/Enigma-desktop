@@ -66,3 +66,7 @@ describe('find-marks', () => {
     expect(() => clearFindMarks(null, 'x')).not.toThrow();
   });
 });
+
+it('bounds fallback marks while preserving the unmatched tail',()=>{
+ const root=document.createElement('div');root.innerHTML='<p>word word word word</p><p>word</p>';const before=root.innerHTML;expect(applyFindMarks(root,['word'],'limit',{maxMatches:3})).toHaveLength(3);expect(root.textContent).toBe('word word word wordword');clearFindMarks(root,'limit');expect(root.innerHTML).toBe(before);
+});

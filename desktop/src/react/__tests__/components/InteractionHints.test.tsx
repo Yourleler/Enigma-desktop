@@ -53,4 +53,8 @@ describe('Interaction hints', () => {
     fireEvent.keyDown(document, { key: 'Tab' }); fireEvent.focusIn(button); advance();
     expect(screen.getByRole('tooltip')).toHaveTextContent('查看工程操作');
   });
+  it('keeps embedded document titles and does not cover their content with a delegated hint',()=>{
+    render(<><InteractionHints/><iframe title="Word 文档"/></>);const frame=screen.getByTitle('Word 文档');fireEvent.pointerOver(frame);advance();fireEvent.focusIn(frame);advance();expect(frame).toHaveAttribute('title','Word 文档');expect(screen.queryByRole('tooltip')).toBeNull();
+  });
+
 });
