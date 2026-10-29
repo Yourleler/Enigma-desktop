@@ -1243,12 +1243,16 @@ export async function ensureSession(expectedPendingDraftId?: string | null): Pro
     if (!stillOwnsPendingView) return ref;
 
     stageDetachedSessionForActivation(data, ref, latestState);
+    // Session creation is not message delivery. Transfer the latest home draft
+    // before activation so input typed while creation awaited is not discarded.
+    const homeText=latestState.drafts?.[HOME_DRAFT_KEY],homeDoc=latestState.draftDocs?.[HOME_DRAFT_KEY];
+    if(homeText!==undefined||homeDoc)useStore.getState().setDraft?.(ref.sessionId,homeText||'',homeDoc);
     await switchSession(ref.sessionPath);
     const activated = useStore.getState() as Record<string, any>;
     if (activated.currentSessionId === ref.sessionId && activated.currentSessionPath === ref.sessionPath) {
-      activated.clearDraft?.(HOME_DRAFT_KEY);
-      activated.clearDraft?.(ref.sessionId);
-      activated.clearDraft?.(ref.sessionPath);
+      // The session now owns this draft. Retain the home copy if another
+      // pending view changed it during activation.
+      if(activated.drafts?.[HOME_DRAFT_KEY]===homeText&&activated.draftDocs?.[HOME_DRAFT_KEY]===homeDoc)activated.clearDraft?.(HOME_DRAFT_KEY);
       useStore.setState({ pendingDraftId: null });
     }
     return ref;

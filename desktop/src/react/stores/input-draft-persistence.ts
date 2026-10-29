@@ -81,7 +81,14 @@ async function push(key:string,keepalive=false):Promise<void>{
     else if(latest){latest.baseRevision=result.revision;storeRecord(latest);schedule(key,0);}
   }catch{
     if(epoch===generation&&request===requestScope()&&record.scope===scope){if(useDraftSaveState.getState().items[key]?.state!=='local-error')setStatus(key,{state:'offline'});const count=(failures.get(key)||0)+1;failures.set(key,count);schedule(key,Math.min(60000,5000*2**Math.min(count-1,4)));}
-  }finally{if(inflight.get(key)===operation)inflight.delete(key);}
+  }finally{
+    if(inflight.get(key)===operation){
+      inflight.delete(key);
+      // Credential/port rotation may trigger hydration while this request is
+      // still active. Its scheduled push was skipped; retry after releasing it.
+      if(epoch===generation&&record.scope===scope&&request!==requestScope()&&pending.has(key))schedule(key,0);
+    }
+  }
 }
 export function retryInputDraft(key:string){if(pending.has(key)){setStatus(key,{state:'pending'});schedule(key,0);}}
 export function flushInputDrafts(){for(const key of pending.keys()){clearTimer(key);void push(key,true);}}

@@ -46,7 +46,7 @@ const initialStateFactory = (): MockState => ({
   attachedFilesBySession: {} as Record<string, unknown>,
   drafts: {} as Record<string, string>,
   draftDocs: {} as Record<string, unknown>,
-  setDraft: vi.fn(),
+  setDraft: vi.fn((key:string,text:string,doc:unknown)=>{const drafts=mockState.drafts as Record<string,string>,docs=mockState.draftDocs as Record<string,unknown>;drafts[key]=text;if(doc)docs[key]=doc;else delete docs[key];}),
   clearDraft: vi.fn(),
   streamingSessions: [] as string[],
   unreadOutputSessionPaths: [] as string[],
@@ -806,7 +806,7 @@ function mockPermissionDefault(mode = 'ask') {
         .toHaveBeenCalledWith('__home__');
     });
 
-    it('consumes home draft on activation without copying text into the new session draft', async () => {
+    it('transfers home draft on activation and keeps it until message delivery', async () => {
       const homeDoc = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: '晚上好啊' }] }] };
       Object.assign(mockState, {
         pendingNewSession: true,
@@ -848,9 +848,9 @@ function mockPermissionDefault(mode = 'ask') {
         .toHaveBeenCalledWith('__home__');
       const drafts = mockState.drafts as Record<string, string>;
       const draftDocs = mockState.draftDocs as Record<string, unknown>;
-      expect(drafts.sess_home_consume).toBeUndefined();
+      expect(drafts.sess_home_consume).toBe('晚上好啊');
       expect(drafts['/session/home-consume.jsonl']).toBeUndefined();
-      expect(draftDocs.sess_home_consume).toBeUndefined();
+      expect(draftDocs.sess_home_consume).toBe(homeDoc);
       expect(draftDocs['/session/home-consume.jsonl']).toBeUndefined();
       expect((mockState.attachedFilesBySession as Record<string, unknown[]>).sess_home_consume)
         .toEqual([{

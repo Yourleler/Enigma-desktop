@@ -1,12 +1,15 @@
 // @vitest-environment jsdom
 
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { InputArea } from '../../components/InputArea';
 import { useStore } from '../../stores';
 
 const mocks = vi.hoisted(() => ({
+  editorJson: {type:'doc',content:[]} as any,
+  socketAvailable:true,
+  socketState:1,
   clearContent: vi.fn(),
   ensureSession: vi.fn(),
   hanaFetch: vi.fn(),
@@ -32,7 +35,7 @@ vi.mock('@tiptap/react', () => ({
       },
       chain: () => chain,
       getText: () => '',
-      getJSON: () => ({ type: 'doc', content: [] }),
+      getJSON: () => mocks.editorJson,
       state: { tr: { setMeta: vi.fn(() => ({})) } },
       view: { dispatch: vi.fn() },
       on: vi.fn(),
@@ -84,7 +87,7 @@ vi.mock('../../stores/desk-actions', () => ({
 }));
 
 vi.mock('../../services/websocket', () => ({
-  getWebSocket: vi.fn(() => ({ send: mocks.wsSend })),
+  getWebSocket: vi.fn(() => mocks.socketAvailable?{send:mocks.wsSend,readyState:mocks.socketState}:null),
 }));
 
 vi.mock('../../MainContent', () => ({
@@ -184,6 +187,8 @@ function seedSession() {
     sessionLocatorsById: { sess_media: { path: '/session/media.jsonl' } },
     connected: true,
     pendingNewSession: false,
+    pendingDraftId:null,
+    drafts:{},draftDocs:{},
     streamingSessions: [],
     inlineErrors: {},
     attachedFiles: [{
@@ -270,7 +275,7 @@ describe('InputArea media send', () => {
   });
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.clearAllMocks();mocks.editorJson={type:'doc',content:[]};mocks.socketAvailable=true;mocks.socketState=1;mocks.wsSend.mockReset();
     mocks.ensureSession.mockResolvedValue({
       sessionId: 'sess_media',
       sessionPath: '/session/media.jsonl',
@@ -287,6 +292,24 @@ describe('InputArea media send', () => {
       readFileBase64: vi.fn(async () => 'IMAGE_BASE64'),
     } as unknown as typeof window.platform;
     delete (window as unknown as { hana?: unknown }).hana;
+  });
+
+  it('keeps new text and attachments typed during an asynchronous media read',async()=>{
+    const submitted={type:'doc',content:[{type:'paragraph',content:[{type:'text',text:'first message'}]}]};mocks.editorJson=submitted;
+    useStore.getState().setDraft('/session/media.jsonl','first message',submitted);
+    let release!:(value:string)=>void;window.platform.readFileBase64=vi.fn(()=>new Promise<string>(r=>release=r));render(<InputArea/>);
+    fireEvent.click(screen.getByTestId('send'));await waitFor(()=>expect(window.platform.readFileBase64).toHaveBeenCalled());
+    const fresh={type:'doc',content:[{type:'paragraph',content:[{type:'text',text:'new text while preparing'}]}]};
+    act(()=>{mocks.editorJson=fresh;useStore.getState().setDraft('/session/media.jsonl','new text while preparing',fresh);useStore.getState().addAttachedFile({path:'/tmp/new.txt',name:'new.txt'});});
+    release('IMAGE_BASE64');await waitFor(()=>expect(mocks.wsSend).toHaveBeenCalledTimes(1));
+    expect(JSON.parse(mocks.wsSend.mock.calls[0][0]).text).toContain('first message');expect(mocks.clearContent).not.toHaveBeenCalled();expect(useStore.getState().drafts.sess_media).toBe('new text while preparing');expect(useStore.getState().attachedFiles).toEqual([{path:'/tmp/new.txt',name:'new.txt'}]);
+  });
+
+  it.each(['missing','closed','throws'])('preserves composer data when the socket is %s',async failure=>{
+    const submitted={type:'doc',content:[{type:'paragraph',content:[{type:'text',text:'keep on failure'}]}]};mocks.editorJson=submitted;useStore.getState().setDraft('/session/media.jsonl','keep on failure',submitted);
+    if(failure==='missing')mocks.socketAvailable=false;if(failure==='closed')mocks.socketState=3;if(failure==='throws')mocks.wsSend.mockImplementation(()=>{throw Error('socket failed')});
+    render(<InputArea/>);fireEvent.click(screen.getByTestId('send'));await waitFor(()=>expect(useStore.getState().chatSessions.sess_media?.items.some(item=>item.type==='message'&&item.data.sendStatus==='failed')).toBe(true));
+    expect(mocks.clearContent).not.toHaveBeenCalled();expect(useStore.getState().drafts.sess_media).toBe('keep on failure');expect(useStore.getState().attachedFiles).toHaveLength(1);
   });
 
   it('sends pasted image bytes through the platform API when window.hana is unavailable', async () => {

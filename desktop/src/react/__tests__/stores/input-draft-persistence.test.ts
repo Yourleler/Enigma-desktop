@@ -72,3 +72,7 @@ it('does not silently advance an old editor base revision when focus fetches a n
 it('recognizes an already-accepted deletion after its acknowledgment was lost',async()=>{
  start();await hydrateInputDrafts();request.mockResolvedValueOnce(response({conflict:true,entry:null,revision:2},409));set('');await vi.advanceTimersByTimeAsync(600);expect(useDraftSaveState.getState().items.__home__.state).toBe('saved');
 });
+it('retries a pending draft after credentials rotate during the previous write',async()=>{
+ start();await hydrateInputDrafts();let release!:(r:Response)=>void;request.mockImplementationOnce(()=>new Promise(r=>release=r));set('kept through rotation');await vi.advanceTimersByTimeAsync(600);expect(puts()).toHaveLength(1);
+ useStore.setState({serverToken:'rotated-test-token'});await vi.advanceTimersByTimeAsync(1);expect(puts()).toHaveLength(1);release(response({revision:2}));await vi.advanceTimersByTimeAsync(10);expect(puts()).toHaveLength(2);expect(useDraftSaveState.getState().items.__home__.state).toBe('saved');
+});

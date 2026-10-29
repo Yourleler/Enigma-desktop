@@ -1,3 +1,4 @@
+import {isSubmittedDraft,withoutSubmittedFiles} from '../utils/submitted-composer';
 import {DraftSaveNotice} from './input/DraftSaveNotice';
 /**
  * InputArea — 聊天输入区域 React 组件
@@ -605,8 +606,6 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
   // Zustand actions
   const addAttachedFile = useStore(s => s.addAttachedFile);
   const removeAttachedFile = useStore(s => s.removeAttachedFile);
-  const clearAttachedFiles = useStore(s => s.clearAttachedFiles);
-  const clearAttachedFilesForSession = useStore(s => s.clearAttachedFilesForSession);
   const setDocContextAttached = useStore(s => s.setDocContextAttached);
   const setDraft = useStore(s => s.setDraft);
   const clearDraft = useStore(s => s.clearDraft);
@@ -1715,7 +1714,11 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
     const clickedQuotes = clickState.quotedSelections.map(quote => ({ ...quote }));
     const clickedDocContextAttached = docContextAttached;
     const clickedDoc = currentDoc ? { ...currentDoc } : null;
+    const submittedDraftKey=clickedPendingDraftId?HOME_DRAFT_KEY:clickedSessionPath;
+    const submittedDraft={text:rawText,doc:editorJson,storedDoc:submittedDraftKey?sessionScopedValue(clickState,clickState.draftDocs,submittedDraftKey):undefined};
     const clickedUiContext = collectUiContext(clickState);
+    const connectionIdentity=(state:typeof clickState)=>JSON.stringify([state.activeServerConnectionId,state.activeServerConnection?.serverId,state.activeServerConnection?.studioId,state.activeServerConnection?.userId]);
+    const clickedConnection=connectionIdentity(clickState);
 
     if (agentMentions.length > 1) {
       addToast(t('input.mention.singleAgent'), 'warning', 5000);
@@ -1971,26 +1974,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
       const allFiles = [...(hasFiles ? inputFiles : [])];
       if (docForRender) allFiles.push({ path: docForRender.path, name: docForRender.name });
 
-      const beforeCleanup = useStore.getState();
-      const stillOwnsPendingComposer = !!clickedPendingDraftId
-        && beforeCleanup.pendingNewSession === true
-        && beforeCleanup.pendingDraftId === clickedPendingDraftId;
-      const stillOwnsComposer = stillOwnsPendingComposer || (
-        beforeCleanup.currentSessionId === sessionRef.sessionId
-        && beforeCleanup.currentSessionPath === sessionRef.sessionPath
-      );
-      clearDraft(sessionRef.sessionPath);
-      clearAttachedFilesForSession(sessionRef.sessionPath);
-      if (clickedPendingDraftId && beforeCleanup.pendingDraftId === clickedPendingDraftId) {
-        clearDraft(HOME_DRAFT_KEY);
-      }
-      if (stillOwnsComposer) {
-        editor.commands.clearContent();
-        if (stillOwnsPendingComposer) clearAttachedFiles();
-        if (clickedDocContextAttached) setDocContextAttached(false);
-        if (clickedQuotes.length > 0) useStore.getState().clearQuotedSelections();
-      }
-
+      if(connectionIdentity(useStore.getState())!==clickedConnection)return;
       const clientMessageId = createClientUserMessageId();
       const displayMessage = {
         text,
@@ -2049,7 +2033,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
       if (skills.length > 0) wsMsg.skills = skills;
       if (sessionRefs.length > 0) wsMsg.sessionRefs = sessionRefs;
       if (agentMentions.length > 0) wsMsg.agentReviewRequests = agentMentions;
-      if (!ws) {
+      if (!ws || (typeof ws.readyState==='number' && ws.readyState!==1)) {
         useStore.getState().markOptimisticUserMessageFailed(
           sessionPathForSend,
           clientMessageId,
@@ -2057,18 +2041,40 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
         );
         return;
       }
-      try {
-        ws.send(JSON.stringify(wsMsg));
-        upsertOptimisticSessionFirstMessage(sessionPathForSend, text, new Date().toISOString());
-      } catch (err) {
+      try { ws.send(JSON.stringify(wsMsg)); }
+      catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         useStore.getState().markOptimisticUserMessageFailed(sessionPathForSend, clientMessageId, message);
-        throw err;
+        return;
       }
+
+      // Preparation may await session creation, upload or file reads. Consume
+      // only the submitted snapshot, after the socket accepted the message.
+      const current=useStore.getState();
+      const stillPending=!!clickedPendingDraftId&&current.pendingNewSession&&current.pendingDraftId===clickedPendingDraftId;
+      const ownsComposer=stillPending||(current.currentSessionId===sessionRef.sessionId&&current.currentSessionPath===sessionRef.sessionPath);
+      const targetKey=stillPending?HOME_DRAFT_KEY:sessionRef.sessionPath;
+      const currentDraft={text:sessionScopedValue(current,current.drafts,targetKey),doc:sessionScopedValue(current,current.draftDocs,targetKey)};
+      const unchanged=isSubmittedDraft(currentDraft,submittedDraft);
+      const liveUnchanged=ownsComposer&&JSON.stringify(editor.getJSON())===JSON.stringify(editorJson)&&(!currentDraft.doc||!submittedDraft.storedDoc||currentDraft.doc===submittedDraft.storedDoc);
+      if(unchanged||liveUnchanged){
+        clearDraft(targetKey);
+        if(ownsComposer)editor.commands.clearContent();
+      }
+      if(ownsComposer){
+        current.setAttachedFiles(withoutSubmittedFiles(current.attachedFiles,clickedAttachedFiles));
+        if(clickedDocContextAttached&&current.previewOpen&&current.previewItems.find(item=>item.id===current.activeTabId)?.filePath===clickedDoc?.path)setDocContextAttached(false);
+        if(clickedQuotes.length>0)current.setQuotedSelections(current.quotedSelections.filter(quote=>!clickedQuotes.some(sent=>JSON.stringify(sent)===JSON.stringify(quote))));
+      }else{
+        const key=sessionScopedKey(current,sessionRef.sessionPath)||sessionRef.sessionPath;
+        const files=sessionScopedValue(current,current.attachedFilesBySession,sessionRef.sessionPath)||[];
+        useStore.setState({attachedFilesBySession:{...current.attachedFilesBySession,[key]:withoutSubmittedFiles(files,clickedAttachedFiles)}});
+      }
+      upsertOptimisticSessionFirstMessage(sessionPathForSend, text, new Date().toISOString());
     } finally {
       setSending(false);
     }
-  }, [addToast, editor, inputLocked, attachedFiles, docContextAttached, connected, isStreaming, sending, currentDoc, clearAttachedFiles, clearAttachedFilesForSession, clearDraft, setDocContextAttached, slashCommands, slashSelected, handleSlashSelect, supportsVision, currentModelInfo, loadVisionAuxiliaryConfig, modelSwitching, t]);
+  }, [addToast, editor, inputLocked, attachedFiles, docContextAttached, connected, isStreaming, sending, currentDoc, clearDraft, setDocContextAttached, slashCommands, slashSelected, handleSlashSelect, supportsVision, currentModelInfo, loadVisionAuxiliaryConfig, modelSwitching, t]);
 
   const handleSend = useCallback(async () => {
     await submitEditorMessage('prompt');
