@@ -1,0 +1,27 @@
+{
+  "version": "0.452.35",
+  "checkedAt": "2026-10-27T06:28:46.888Z",
+  "scope": "Final source identity and evidence inventory; hashes prove version identity only, behavior is proved by linked workflow reports.",
+  "hashes": {
+    "desktop/src/react/ui/LiquidGlass.tsx": "c1a525bcfe86216bf746a4bf175ab7499c2218f6794c1002be027f500d9ea3ba",
+    "desktop/src/react/ui/liquid-glass-map.ts": "0dadde54c1a28362df5cefb0e88f077b4da485e0dabbf4e31cd67d0f2b3e7118",
+    "desktop/src/react/engineering/liquid-glass.css": "79b0706901679842387a45c706aff277758074bd6db14e73f94f6b9c65716c4b",
+    "desktop/src/react/engineering/Project.tsx": "0f1ca150a0a8118661ec2312c12c97d2d41e2ffd9487244e16228e7be76e5bf9",
+    "desktop/src/react/engineering/TimeMachine.tsx": "94e4efcb5738afb2e0dcd88fb90fbdef7e56f073026d9f931c143bc0d74e5485",
+    "desktop/src/react/engineering/OperationResult.tsx": "615a3d10bc4a12ebfa1bd6b61f4118a8b14f426946b27ebf6acf78a562666e6e",
+    "desktop/src/react/components/input/TokenMeterPill.tsx": "b9e18a96487b6537bd05da568e83e718864cd9c666b801a2a094e29618d398a1",
+    "server/session-token-meter.ts": "b70e85329be69882b6b794a24bbdc202f352d4d7f168ce4723c9eb64545031bc",
+    "plugins/enigma/guardian-host.ts": "9fde2303ea8b0657696cd37f5be49b0fea3a9d2dd2643b05c105b8ece79191b2"
+  },
+  "reports": [
+    "docs/audit/engineering-operations.json",
+    "docs/audit/dedicated-feature-entrypoints.json",
+    "docs/audit/long-tool-token-meter.json",
+    "docs/audit/glass-interaction-sampling.json",
+    "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/native-r34/report.json",
+    "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/native-r35/report.json"
+  ],
+  "remaining": [],
+  "complete": true,
+  "pathsAndProviderNamesRedacted": true
+}

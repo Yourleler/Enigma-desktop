@@ -41,6 +41,7 @@ export function NoticeDialog({
       className={styles.dialog}
       initialFocusRef={titleRef}
       contentProps={{
+        'data-liquid': 'sheet',
         role: 'dialog',
         'aria-modal': true,
         'aria-labelledby': titleId,

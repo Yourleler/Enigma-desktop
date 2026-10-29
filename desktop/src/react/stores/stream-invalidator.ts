@@ -10,6 +10,7 @@
  */
 
 export interface StreamBufferSnapshot {
+  timestamp?: number;
   hasContent: boolean;
   messageId: string | null;
   text: string;

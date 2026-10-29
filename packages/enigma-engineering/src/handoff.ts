@@ -119,7 +119,7 @@ async function boundedRead(path: string, max: number): Promise<string> {
   return await readFile(path, 'utf8');
 }
 
-export async function inspectHandoff(workspace: Workspace, directory: string, options: { mapping?: Record<string, string> } = {}): Promise<HandoffInspection> {
+export async function inspectHandoff(workspace: Workspace, directory: string, options: { mapping?: Record<string, string>;memoryAccess?:MemoryAccess } = {}): Promise<HandoffInspection> {
   const sources = await workspace.observeSources(), before = sources.observation;
   const path = resolve(directory); if ((await lstat(path)).isSymbolicLink()) throw new Error('Handoff directory cannot be a symbolic link');
   const manifest = JSON.parse(await boundedRead(join(path, 'manifest.json'), 1000000)) as HandoffManifest;
@@ -159,7 +159,9 @@ export async function inspectHandoff(workspace: Workspace, directory: string, op
   for (const memoryId of manifest.memories) {
     if (!sourceWorkspace) { memories.push({ id: memoryId, state: 'omitted', reason: 'Cannot recheck current deletion and source state' }); continue; }
     try {
-      const note = await (await MemoryStore.open(sourceWorkspace)).read(memoryId, manifest.memoryAccess);
+      // The exported access description is provenance, never a grant to the
+      // receiving conversation. Revalidation uses the caller's actual scope.
+      const note = await (await MemoryStore.open(sourceWorkspace)).read(memoryId, options.memoryAccess??{});
       memories.push({ id: memoryId, state: note.freshness === 'current' ? 'current' : 'stale', summary: note.freshness === 'current' ? note.content?.slice(0, 1200) : undefined,
         reason: note.problems.join('; ') || undefined });
     } catch { memories.push({ id: memoryId, state: 'omitted', reason: 'Forgotten, changed, missing or outside current memory scope' }); }

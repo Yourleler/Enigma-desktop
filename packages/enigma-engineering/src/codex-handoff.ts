@@ -1,7 +1,8 @@
 import { mkdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { Workspace } from './workspace.js';
-import { inspectHandoff, type HandoffInspection } from './handoff.js';
+import type { HandoffInspection } from './handoff.js';
+import { inspectPortableHandoff } from './differential-handoff.js';
 import { id, redact, writeJson } from './storage.js';
 import { runProcess } from './process.js';
 
@@ -9,7 +10,7 @@ import { runProcess } from './process.js';
 export async function runCodexHandoff(workspace: Workspace, directory: string, options: {
   writable?: boolean; signal?: AbortSignal; timeoutMs?: number; model?: string; executable?: string;
 } = {}) {
-  const inspection = await inspectHandoff(workspace, directory);
+  const inspection = await inspectPortableHandoff(workspace, directory);
   if (options.writable && !inspection.safeToContinue) throw new Error('Cannot start writable continuation with unresolved code or operation conflicts');
   const writableRoot = workspace.config.repos.find(repo => repo.access === 'write');
   if (options.writable && !writableRoot) throw new Error('Register a writable repository before starting a writable target agent');
@@ -25,7 +26,7 @@ export async function runCodexHandoff(workspace: Workspace, directory: string, o
   // Codex keeps its own permission boundary; this is coordination, not host confinement.
   const result = options.writable && writableRoot
     ? await workspace.exclusive(async () => {
-      const current = await inspectHandoff(workspace, directory);
+      const current = await inspectPortableHandoff(workspace, directory);
       if (!current.safeToContinue) throw new Error('Target changed before Codex dispatch; inspect the handoff again');
       return await workspace.mutate(writableRoot.id, 'command', execute);
     })

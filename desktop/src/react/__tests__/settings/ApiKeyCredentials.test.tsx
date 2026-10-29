@@ -63,6 +63,15 @@ describe('ApiKeyCredentials', () => {
     cleanup();
   });
 
+  it('shows the provider validation reason instead of a generic configuration failure',async()=>{
+    mocks.hanaFetch.mockResolvedValue(jsonResponse({ok:false,error:'HTTP 401: invalid API key'}));
+    render(<ApiKeyCredentials providerId="deepseek" summary={providerSummary({})} isPresetSetup presetInfo={{value:'deepseek',label:'DeepSeek',url:'https://api.deepseek.com',api:'openai-completions'}} onRefresh={vi.fn()}/>);
+    const input=document.querySelector('input[type="password"]') as HTMLInputElement;fireEvent.change(input,{target:{value:'test-invalid-key'}});
+    fireEvent.click(screen.getByRole('button', { name: 'settings.providers.verifyConnection' }));
+    await waitFor(()=>expect(useSettingsStore.getState().toastMessage).toContain('HTTP 401: invalid API key'));
+    expect(mocks.hanaFetch.mock.calls.some(([url])=>url==='/api/config')).toBe(false);
+  });
+
   it('syncs an empty saved api key into the input when the provider summary is refreshed', async () => {
     const onRefresh = vi.fn(async () => {});
     const { container, rerender } = render(

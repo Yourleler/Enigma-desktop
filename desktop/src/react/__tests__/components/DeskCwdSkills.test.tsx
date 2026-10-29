@@ -76,4 +76,12 @@ describe('DeskCwdSkillsPanel source status', () => {
     expect(screen.getByText(/desk\.cwdSkillShadowed/).textContent).toContain('Agents');
     expect(screen.getByText('desk.cwdSkillInactive')).toBeTruthy();
   });
+
+  it('retains the full skill description including constraints at the end', async () => {
+    const { DeskCwdSkillsPanel } = await import('../../components/desk/DeskCwdSkills');
+    const description = 'This skill prepares a complete project migration report. '.repeat(4) + 'Never replace the original source files.';
+    state.cwdSkills[0].description = description;
+    render(<DeskCwdSkillsPanel />);
+    expect(await screen.findByText(description)).toBeTruthy();
+  });
 });

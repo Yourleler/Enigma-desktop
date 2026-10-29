@@ -1,6 +1,6 @@
 {
   "name": "hanako",
-  "version": "0.450.0",
+  "version": "0.452.82",
   "type": "module",
   "description": "HanaAgent - a personal AI agent with memory and soul",
   "license": "Apache-2.0",
@@ -77,6 +77,8 @@
     "enigma:web": "npm run build:packages && npm run build:renderer && node scripts/launch-enigma.mjs server",
     "enigma:desktop": "npm run build:packages && node scripts/launch-enigma.mjs electron",
     "enigma:open": "node scripts/open-enigma-workbench.mjs",
+    "enigma:pack": "node scripts/pack-enigma.mjs pack",
+    "enigma:release-check": "node scripts/pack-enigma.mjs check",
     "postbuild:renderer": "npm run build:theme"
   },
   "dependencies": {
@@ -170,6 +172,7 @@
       "desktop/src/shared/launch-integrity.cjs",
       "desktop/src/shared/windows-system-ca.cjs",
       "shared/hana-runtime-paths.cjs",
+      "shared/enigma-product.cjs",
       "desktop/preload.bundle.cjs",
       "desktop/dist-splash/**",
       "desktop/src/**/*.{html,icns,ico,png,svg,json}",
@@ -179,7 +182,8 @@
       "release-digest.v2.json",
       "!packages/**",
       "!**/node_modules/**",
-      "node_modules/ws/**"
+      "node_modules/ws/**",
+      "desktop/src/shared/browser-prompt-preload.cjs"
     ],
     "extraResources": [
       {

@@ -78,17 +78,17 @@ describe('ChatTimelineNavigator layout', () => {
     expect(source).toContain('finiteNumber(panel.scrollHeight)');
     expect(source).toContain('finiteNumber(panel.scrollTop)');
     expect(source).toContain('finiteNumber(rect.top)');
-    expect(source).toContain('markerWidthEm');
+    expect(source).toContain('offsetTop');
     expect(source).toContain('const shouldMeasure = active && anchors.length > 0');
     expect(source).toContain('if (!panel || !shouldMeasure) return');
     expect(source).not.toContain('panel.scrollTop + rect.top - panelRect.top');
   });
 
-  it('keeps timeline anchor construction behind the active hover preparation gate', () => {
+  it('prepares navigation for the active session without a hidden hover gate', () => {
     const source = readChatMessageSurfaceSource();
 
-    expect(source).toContain('active && timelinePrepared ? buildTimelineAnchors(items) : EMPTY_TIMELINE_ANCHORS');
-    expect(source).toContain('if (active && inRailX && inRailY) setTimelinePrepared(true)');
-    expect(source).toContain('setTimelinePrepared(false)');
+    expect(source).toContain('active ? buildTimelineAnchors(items) : EMPTY_TIMELINE_ANCHORS');
+    expect(source).not.toContain('TIMELINE_HOVER_ZONE_PX');
+    expect(source).toContain('onBeforeJump={bottomScroll.cancelFollow}');
   });
 });

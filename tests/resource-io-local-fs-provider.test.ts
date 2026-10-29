@@ -52,6 +52,25 @@ describe("LocalFsProvider", () => {
     expect(Object.keys(provider.capabilities()).sort()).toEqual(CAPABILITY_KEYS);
   });
 
+  it("keeps other work responsive while an OS directory read is pending", async () => {
+    const { provider } = makeProvider();
+    let finish!: (items: never[]) => void;
+    const pending = new Promise<never[]>(resolve => { finish = resolve; });
+    const asyncRead = vi.spyOn(fs.promises, 'readdir').mockImplementationOnce(() => pending as never);
+    const syncRead = vi.spyOn(fs, 'readdirSync').mockImplementationOnce(() => { throw new Error('Main thread directory read'); });
+    try {
+      let completed = false;
+      const listing = provider.list({ kind: 'local-file', path: '.' }).then(result => { completed = true; return result; });
+      await new Promise(resolve => setTimeout(resolve, 10));
+      expect(completed).toBe(false);
+      expect(syncRead).not.toHaveBeenCalled();
+      finish([]);
+      await expect(listing).resolves.toMatchObject({ items: [] });
+    } finally {
+      asyncRead.mockRestore(); syncRead.mockRestore();
+    }
+  });
+
   it("writes and stats a local file through PathGuard", async () => {
     const { cwd, realCwd, check, provider } = makeProvider();
     const result = await provider.write({ kind: "local-file", path: "notes/a.md" }, "hello");

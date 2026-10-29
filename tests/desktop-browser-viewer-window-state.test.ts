@@ -153,7 +153,11 @@ describe("desktop browser viewer window state", () => {
     const visibility = caseBody(source, "viewerVisibility");
 
     expect(visibility).toContain("browserViewerWindow.isVisible()");
-    expect(visibility).toContain("sessionPath: _currentBrowserSession");
+    const inspect = new Function('browserViewerWindow', '_currentBrowserSession', '_sidebarBrowser', 'mainWindow', visibility);
+    const mainWindow = {isVisible: () => true, isMinimized: () => false};
+    const dock = {binding: {visible: true, sessionPath: 'side-session'}};
+    expect(inspect(null, 'other-session', dock, mainWindow)).toMatchObject({visible: true, sessionPath: 'side-session'});
+    expect(inspect(null, 'other-session', {binding: null}, mainWindow)).toMatchObject({visible: false});
 
     expect(source).toContain("function _sendBrowserUserActivity");
     expect(source).toContain('type: "browser-user-activity"');

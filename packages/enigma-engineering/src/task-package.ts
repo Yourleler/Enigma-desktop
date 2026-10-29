@@ -1,4 +1,4 @@
-import { chmod, lstat, mkdir, readFile, realpath, writeFile } from 'node:fs/promises';
+import { chmod, lstat, mkdir, readFile,readdir, realpath, writeFile } from 'node:fs/promises';
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { Workspace } from './workspace.js';
 import { ensureDir, hash, id, redact, safeId, writeJson } from './storage.js';
@@ -32,6 +32,7 @@ export interface TaskPackageManifest {
 }
 export interface PackageRestoreOptions {
   writeRepos?: string[]; mapping?: Record<string, string>; activateRuntime?: boolean; checks?: string[]; includePlan?: boolean; preparePi?: boolean; task?: string; signal?: AbortSignal;
+  expectedManifest?: string;
 }
 const inside = (root: string, file: string) => { const rel = relative(root, file); return !isAbsolute(rel) && rel !== '..' && !rel.startsWith(`..${sep}`); };
 const safeRelative = (file: string) => {
@@ -62,6 +63,19 @@ export async function relocatePackageArgument(argument: string, manifest: TaskPa
 /** Portable task data and exact code bytes. It never imports native history or historical success. */
 export class TaskPackages {
   constructor(readonly workspace: Workspace) {}
+  async list(task?:string) {
+    const directory=join(this.workspace.data,'packages');let names:string[];try{names=await readdir(directory);}catch(error){if((error as NodeJS.ErrnoException).code==='ENOENT')return {items:[],truncated:false};throw error;}
+    const items=[];
+    for(const name of names)try{
+      safeId(name);const root=join(directory,name),statePath=join(root,'state.json');if((await lstat(statePath)).size>10000)continue;const state=JSON.parse(await readFile(statePath,'utf8'));if(state.task&&state.task!==task)continue;
+      if(state.status!=='complete'){items.push({id:name,directory:root,status:state.status==='failed'?'failed':'preparing',createdAt:state.createdAt||'',goal:'尚未完成的任务包'});continue;}
+      const manifestPath=join(root,'manifest.json');if((await lstat(manifestPath)).size>16000000)continue;const envelope=JSON.parse(await readFile(manifestPath,'utf8')),manifest=envelope.manifest;if(manifest?.task&&manifest.task!==task)continue;
+      if(manifest?.schema!==1||manifest.id!==name||digest(manifest)!==envelope.hash||typeof manifest.goal!=='string'||!Array.isArray(manifest.repos))throw new Error('Invalid package manifest');
+      items.push({id:name,directory:root,status:'complete',createdAt:manifest.createdAt,goal:manifest.goal,repos:manifest.repos.length,bytes:manifest.bytes});
+    }catch{items.push({id:name,directory:join(directory,name),status:'unavailable',goal:'任务包暂不可读取',createdAt:''});}
+    items.sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));
+    return {items:items.slice(0,50),truncated:items.length>50};
+  }
   async export(input: TaskPackageInput, options: { directory?: string; signal?: AbortSignal } = {}) {
     if (!input.goal?.trim() || input.goal.length > 4000 || !input.source?.agent || !Array.isArray(input.notes) || input.notes.length > 100
       || input.notes.reduce((total, note) => total + (typeof note.text === 'string' ? note.text.length : 1000000), 0) > 48000) throw new Error('Invalid task package context');
@@ -73,7 +87,7 @@ export class TaskPackages {
     await realpath(dirname(directory));
     if (this.workspace.config.repos.some(repo => inside(repo.root, directory)) && !inside(this.workspace.data, directory)) throw new Error('Task package output cannot be inside source code');
     await mkdir(directory, { mode: 0o700 }); await mkdir(join(directory, 'blobs'), { mode: 0o700 });
-    await writeJson(join(directory, 'state.json'), { status: 'preparing', id: packageId });
+    await writeJson(join(directory, 'state.json'), { status: 'preparing', id: packageId,task:input.task,createdAt:new Date().toISOString() });
     try {
       const manifest = await this.workspace.exclusive(async () => {
         options.signal?.throwIfAborted();
@@ -132,9 +146,9 @@ export class TaskPackages {
         return JSON.parse(redact(JSON.stringify(manifest), this.workspace.secrets)) as TaskPackageManifest;
       });
       await writeJson(join(directory, 'manifest.json'), { manifest, hash: digest(manifest) });
-      await writeJson(join(directory, 'state.json'), { status: 'complete', id: packageId });
-      return { manifest, directory };
-    } catch (error) { await writeJson(join(directory, 'state.json'), { status: 'failed', id: packageId, error: redact(String(error), this.workspace.secrets) }); throw error; }
+      await writeJson(join(directory, 'state.json'), { status: 'complete', id: packageId,task:input.task,createdAt:manifest.createdAt });
+      return { manifest, directory,manifestHash:digest(manifest) };
+    } catch (error) { await writeJson(join(directory, 'state.json'), { status: 'failed', id: packageId,task:input.task,createdAt:new Date().toISOString(), error: redact(String(error), this.workspace.secrets) }); throw error; }
   }
   static async inspect(directory: string) {
     const requested = resolve(directory); if ((await lstat(requested)).isSymbolicLink()) throw new Error('Task package directory cannot be a symlink');
@@ -148,14 +162,20 @@ export class TaskPackages {
     const envelope = JSON.parse((await read('manifest.json', 16000000)).toString()) as { manifest: TaskPackageManifest; hash: string }, manifest = envelope.manifest;
     if (manifest.schema !== 1 || state.status !== 'complete' || state.id !== manifest.id || digest(manifest) !== envelope.hash) throw new Error('Task package is incomplete or its manifest changed'); safeId(manifest.id);
     if (!Array.isArray(manifest.repos) || !manifest.repos.length || manifest.repos.length > 100 || !manifest.blobs || Object.keys(manifest.blobs).length > 20000
-      || !manifest.runtime || !Array.isArray(manifest.notes) || !Array.isArray(manifest.unresolved) || !Array.isArray(manifest.materials) || !Array.isArray(manifest.artifacts) || !Array.isArray(manifest.evidence) || !Array.isArray(manifest.memories)) throw new Error('Invalid package structure');
+      || !manifest.runtime || !Array.isArray(manifest.notes) || !Array.isArray(manifest.unresolved) || !Array.isArray(manifest.materials) || !Array.isArray(manifest.artifacts) || !Array.isArray(manifest.evidence) || !Array.isArray(manifest.memories)
+      ||typeof manifest.goal!=='string'||!manifest.goal.trim()||manifest.goal.length>4000||typeof manifest.sourceWorkspace!=='string'||typeof manifest.environment?.executable!=='string'
+      ||!['checks','services','browser','recipes'].every(key=>Array.isArray((manifest.runtime as any)[key]))
+      ||manifest.notes.some(note=>typeof note.text!=='string'||!['user','assistant','source'].includes(note.role)||!['background','requirement','decision','observation'].includes(note.kind))) throw new Error('Invalid package structure');
     const ids = new Set<string>(), folders: string[] = [];
     for (const repo of manifest.repos) {
       safeId(repo.repo.id); safeRelative(repo.directory);
+      if(typeof repo.repo.root!=='string'||typeof repo.repo.role!=='string'||!Array.isArray(repo.repo.dependsOn)||repo.repo.dependsOn.some(dep=>typeof dep!=='string'))throw new Error('Invalid package repository');
       if (ids.has(repo.repo.id) || folders.some(folder => repo.directory === folder || repo.directory.startsWith(folder + '/') || folder.startsWith(repo.directory + '/'))) throw new Error('Package repository paths overlap');
       ids.add(repo.repo.id); folders.push(repo.directory);
       for (const [file, version] of Object.entries(repo.files)) { safeRelative(file); if (!/^[a-f0-9]{64}$/.test(version.hash) || !Number.isInteger(version.mode) || version.mode < 0 || version.mode > 0o777 || manifest.blobs[version.hash] === undefined) throw new Error('Invalid package file version'); }
     }
+    for(const definition of [...manifest.runtime.checks,...manifest.runtime.services])if(!ids.has(definition.repo)||!Array.isArray(definition.argv)||!definition.argv.length||definition.argv.some(arg=>typeof arg!=='string'))throw new Error('Invalid package runtime definition');
+    for(const recipe of manifest.runtime.recipes)if(typeof recipe.label!=='string'||!Array.isArray(recipe.steps))throw new Error('Invalid package recipe definition');
     let bytes = 0;
     for (const [key, size] of Object.entries(manifest.blobs)) {
       if (!/^[a-f0-9]{64}$/.test(key) || !Number.isSafeInteger(size) || size < 0 || size > 32000000) throw new Error('Invalid package blob');
@@ -170,10 +190,11 @@ export class TaskPackages {
     for (const artifact of manifest.artifacts) if (artifact.record.hash !== artifact.blob || artifact.record.bytes !== manifest.blobs[artifact.blob]) throw new Error('Package artifact version mismatch');
     for (const evidence of manifest.evidence) if (manifest.blobs[evidence.blob] === undefined || JSON.parse((await read(`blobs/${evidence.blob}`, 32000000)).toString()).id !== evidence.id) throw new Error('Package evidence origin mismatch');
     for (const memory of manifest.memories) if (manifest.blobs[memory.blob] === undefined || JSON.parse((await read(`blobs/${memory.blob}`, 32000000)).toString()).record?.id !== memory.id) throw new Error('Package memory origin mismatch');
-    return { manifest, directory: root, blob: async (key: string) => { if (manifest.blobs[key] === undefined) throw new Error('Unknown package blob'); const content = await read(`blobs/${key}`, 32000000); if (content.length !== manifest.blobs[key] || hash(content) !== key) throw new Error('Package blob changed after inspection'); return content; } };
+    return { manifest, directory: root,manifestHash:envelope.hash, blob: async (key: string) => { if (manifest.blobs[key] === undefined) throw new Error('Unknown package blob'); const content = await read(`blobs/${key}`, 32000000); if (content.length !== manifest.blobs[key] || hash(content) !== key) throw new Error('Package blob changed after inspection'); return content; } };
   }
   static async restore(directory: string, destination: string, options: PackageRestoreOptions = {}) {
     const packageData = await this.inspect(directory), manifest = packageData.manifest, requested = resolve(destination);
+    if(options.expectedManifest!==undefined&&options.expectedManifest!==packageData.manifestHash)throw new Error('任务包在预览后已变化，请重新检查内容和仓库权限。');
     const target = join(await realpath(dirname(requested)), basename(requested));
     if (inside(packageData.directory, target) || manifest.repos.some(repo => inside(repo.repo.root, target)) && !inside(join(manifest.sourceWorkspace, '.enigma-next'), target)) throw new Error('Restore destination cannot be inside a package or source code');
     if (manifest.unresolved.length) throw new Error('Package has unresolved source effects; reconcile its source before creating an executable task');
@@ -186,7 +207,9 @@ export class TaskPackages {
     try {
       for (const item of manifest.repos) {
         options.signal?.throwIfAborted(); const root = join(target, 'repos', item.directory); await mkdir(root, { recursive: true, mode: 0o700 });
-        const initialized = await runProcess(['git', 'init', '-b', `codex/package-${manifest.id.slice(-12)}`], root, { signal: options.signal, timeoutMs: 30000 });
+        // This fixed metadata operation initializes a newly validated directory;
+        // it is not a model-supplied command in the source workspace sandbox.
+        const initialized = await runProcess(['git', 'init', '-b', `codex/package-${manifest.id.slice(-12)}`], root, { signal: options.signal, timeoutMs: 30000,internalGit:true });
         if (initialized.status !== 'passed') throw new Error(`Cannot initialize restored repository: ${initialized.output}`);
         await workspace.exclusive(() => workspace.addRepo(map(item.repo.id), root, { role: item.repo.role, access: writes.has(map(item.repo.id)) ? 'write' : 'read' }));
         for (const [file, version] of Object.entries(item.files)) { const path = await workspace.path(map(item.repo.id), file); await mkdir(dirname(path), { recursive: true }); await writeFile(path, await packageData.blob(version.hash), { mode: version.mode, flag: 'wx' }); await chmod(path, version.mode); }

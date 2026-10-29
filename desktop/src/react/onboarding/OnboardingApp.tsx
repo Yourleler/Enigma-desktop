@@ -1,15 +1,21 @@
+import { EnigmaDesign } from '../ui/EnigmaDesign';
+import './onboarding-shell.css';
 /** OnboardingApp.tsx — Orchestration layer (6 steps, each in ./steps/) */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { TOTAL_STEPS } from './constants';
-import { createOnboardingVerificationPlan, resolveOnboardingAgentId } from './onboarding-actions';
-import type { HanaFetch } from './onboarding-actions';
-import { LocaleStep } from './steps/LocaleStep';
-import { NameStep } from './steps/NameStep';
-import { ProviderStep } from './steps/ProviderStep';
-import { ModelStep } from './steps/ModelStep';
-import { WorkspaceStep } from './steps/WorkspaceStep';
-import { TutorialStep } from './steps/TutorialStep';
+import { useState, useEffect, useRef, useCallback } from "react";
+import { TOTAL_STEPS } from "./constants";
+import {
+  createOnboardingVerificationPlan,
+  resolveOnboardingAgentId,
+  describeOnboardingError,
+} from "./onboarding-actions";
+import type { HanaFetch } from "./onboarding-actions";
+import { LocaleStep } from "./steps/LocaleStep";
+import { NameStep } from "./steps/NameStep";
+import { ProviderStep } from "./steps/ProviderStep";
+import { ModelStep } from "./steps/ModelStep";
+import { WorkspaceStep } from "./steps/WorkspaceStep";
+import { TutorialStep } from "./steps/TutorialStep";
 import {
   appendConnectionAuth,
   buildConnectionUrl,
@@ -17,48 +23,61 @@ import {
   createLocalServerConnection,
   persistServerConnectionSelection,
   type ServerConnection,
-} from '../services/server-connection';
+} from "../services/server-connection";
 
-interface OnboardingAppProps { preview: boolean; skipToTutorial: boolean }
+interface OnboardingAppProps {
+  preview: boolean;
+  skipToTutorial: boolean;
+}
 export function OnboardingApp({ preview, skipToTutorial }: OnboardingAppProps) {
-  const [serverConnection, setServerConnection] = useState<ServerConnection | null>(null);
-  const [agentId, setAgentId] = useState('');
-  const [initError, setInitError] = useState('');
+  const [serverConnection, setServerConnection] =
+    useState<ServerConnection | null>(null);
+  const [agentId, setAgentId] = useState("");
+  const [initError, setInitError] = useState("");
   const [step, setStep] = useState(skipToTutorial ? 5 : 0);
   const [stepKey, setStepKey] = useState(0);
-  const [agentName, setAgentName] = useState('Hanako');
-  const [avatarSrc, setAvatarSrc] = useState('assets/Hanako.png');
-  const [locale, setLocale] = useState('zh-CN');
+  const [agentName, setAgentName] = useState("Enigma");
+  const [avatarSrc, setAvatarSrc] = useState("assets/enigma/avatar.png");
+  const [locale, setLocale] = useState("zh-CN");
   const [i18nReady, setI18nReady] = useState(false);
+  const [skipping,setSkipping]=useState(false);
 
   // Provider info passed from ProviderStep to ModelStep
-  const [providerName, setProviderName] = useState('');
-  const [providerUrl, setProviderUrl] = useState('');
-  const [providerApi, setProviderApi] = useState('openai-completions');
-  const [apiKey, setApiKey] = useState('');
+  const [providerName, setProviderName] = useState("");
+  const [providerUrl, setProviderUrl] = useState("");
+  const [providerApi, setProviderApi] = useState("openai-completions");
+  const [apiKey, setApiKey] = useState("");
 
-  const [toastMsg, setToastMsg] = useState('');
+  const [toastMsg, setToastMsg] = useState("");
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const localeLoadSeq = useRef(0);
   const verificationPlan = useRef(createOnboardingVerificationPlan()).current;
 
-  const hanaFetch: HanaFetch = useCallback((path, opts = {}) => {
-    if (!serverConnection) {
-      throw new Error(`onboarding hanaFetch ${path}: server connection not ready`);
-    }
-    const headers = appendConnectionAuth(serverConnection, opts.headers);
-    return fetch(buildConnectionUrl(serverConnection, path), { ...opts, headers });
-  }, [serverConnection]);
+  const hanaFetch: HanaFetch = useCallback(
+    (path, opts = {}) => {
+      if (!serverConnection) {
+        throw new Error(
+          `onboarding hanaFetch ${path}: server connection not ready`,
+        );
+      }
+      const headers = appendConnectionAuth(serverConnection, opts.headers);
+      return fetch(buildConnectionUrl(serverConnection, path), {
+        ...opts,
+        headers,
+      });
+    },
+    [serverConnection],
+  );
 
   const showError = useCallback((msg: string) => {
     setToastMsg(msg);
     if (toastTimer.current) clearTimeout(toastTimer.current);
-    toastTimer.current = setTimeout(() => setToastMsg(''), 3000);
+    toastTimer.current = setTimeout(() => setToastMsg(""), 3000);
   }, []);
 
   const goToStep = useCallback((index: number) => {
     if (index < 0 || index >= TOTAL_STEPS) return;
-    setStepKey(k => k + 1);
+    setStepKey((k) => k + 1);
     setStep(index);
   }, []);
 
@@ -70,7 +89,7 @@ export function OnboardingApp({ preview, skipToTutorial }: OnboardingAppProps) {
     try {
       await i18n.load(loc);
     } catch (err) {
-      console.error('[onboarding] locale load failed:', err);
+      console.error("[onboarding] locale load failed:", err);
     } finally {
       if (localeLoadSeq.current === seq) {
         setI18nReady(true);
@@ -78,55 +97,86 @@ export function OnboardingApp({ preview, skipToTutorial }: OnboardingAppProps) {
     }
   }, []);
 
-  const onProviderReady = useCallback((name: string, url: string, api: string, key: string) => {
-    setProviderName(name);
-    setProviderUrl(url);
-    setProviderApi(api);
-    setApiKey(key);
-  }, []);
+  const onProviderReady = useCallback(
+    (name: string, url: string, api: string, key: string) => {
+      setProviderName(name);
+      setProviderUrl(url);
+      setProviderApi(api);
+      setApiKey(key);
+    },
+    [],
+  );
 
-  const connectLanServer = useCallback(async (baseUrl: string, credential: string) => {
-    const connection = await connectDeviceServerConnection({ baseUrl, credential });
-    persistServerConnectionSelection(connection);
-    setServerConnection(connection);
-    if (!preview) {
-      await window.hana.onboardingComplete?.();
-    }
-  }, [preview]);
+  const connectLanServer = useCallback(
+    async (baseUrl: string, credential: string) => {
+      const connection = await connectDeviceServerConnection({
+        baseUrl,
+        credential,
+      });
+      persistServerConnectionSelection(connection);
+      setServerConnection(connection);
+      if (!preview) {
+        await window.hana.onboardingComplete?.();
+      }
+    },
+    [preview],
+  );
 
   useEffect(() => {
     (async () => {
       let localeLoaded = false;
       try {
+        if (preview && !window.hana?.getServerPort) {
+          // Preview the real setup screens without requiring Electron IPC or
+          // creating an agent/profile on the connected server.
+          i18n.defaultName = 'Enigma';
+          await i18n.load('zh-CN');
+          setI18nReady(true);
+          return;
+        }
         const port = await window.hana.getServerPort();
         const token = await window.hana.getServerToken();
-        const connection = createLocalServerConnection({ serverPort: port, serverToken: token });
-        if (!connection) throw new Error('Local server connection is unavailable');
+        const connection = createLocalServerConnection({
+          serverPort: port,
+          serverToken: token,
+        });
+        if (!connection)
+          throw new Error("Local server connection is unavailable");
         setServerConnection(connection);
         const splashInfo = await window.hana.getSplashInfo?.();
-        const loc = splashInfo?.locale || 'zh-CN';
-        const name = splashInfo?.agentName || 'Hanako';
+        const loc = splashInfo?.locale || "zh-CN";
+        const name = splashInfo?.agentName || "Enigma";
         setLocale(loc);
         setAgentName(name);
         await i18n.load(loc);
         localeLoaded = true;
         i18n.defaultName = name;
         try {
-          const localPath = await window.hana.getAvatarPath?.('agent');
-          if (localPath) setAvatarSrc(window.platform?.getFileUrl?.(localPath) ?? '');
-        } catch { /* ignore */ }
+          const localPath = await window.hana.getAvatarPath?.("agent");
+          if (localPath&&splashInfo?.productName!=='Enigma')
+            setAvatarSrc(window.platform?.getFileUrl?.(localPath) ?? "");
+        } catch {
+          /* ignore */
+        }
         if (!preview) {
           const connectionFetch: HanaFetch = (path, opts = {}) => {
             const headers = appendConnectionAuth(connection, opts.headers);
-            return fetch(buildConnectionUrl(connection, path), { ...opts, headers });
+            return fetch(buildConnectionUrl(connection, path), {
+              ...opts,
+              headers,
+            });
           };
           setAgentId(await resolveOnboardingAgentId(connectionFetch));
         }
         setI18nReady(true);
       } catch (err) {
-        console.error('[onboarding] init failed:', err);
+        console.error("[onboarding] init failed:", err);
         if (!localeLoaded) {
-          try { await i18n.load('zh-CN'); } catch { /* keep the visible fallback below */ }
+          try {
+            await i18n.load("zh-CN");
+          } catch {
+            /* keep the visible fallback below */
+          }
         }
         setInitError(err instanceof Error ? err.message : String(err));
         setI18nReady(true);
@@ -137,24 +187,122 @@ export function OnboardingApp({ preview, skipToTutorial }: OnboardingAppProps) {
   if (!i18nReady) return null;
   const activeStep = initError ? 0 : step;
   const visibleError = toastMsg || initError;
+  const skipSetup=async()=>{
+    if(skipping)return;
+    if(preview){window.close();return;}
+    setSkipping(true);
+    try{
+      if(!window.hana.onboardingComplete)throw Error('无法打开工作台，请重新启动应用后重试。');
+      await window.hana.onboardingComplete();
+    }catch(error){showError(describeOnboardingError(error,t('onboarding.error')));setSkipping(false);}
+  };
 
   return (
     <div className="onboarding">
+      <EnigmaDesign />
+      <div className="onboarding-skip">
+        <button type="button" className="ob-btn ob-btn-secondary" disabled={skipping||!preview&&(!serverConnection||!!initError)} onClick={()=>void skipSetup()}>{skipping?(locale.startsWith('en')?'Opening…':'正在进入…'):(locale.startsWith('en')?'Set up later · Open workspace':'稍后设置，进入工作台')}</button>
+        <small>{locale.startsWith('en')?'You can configure models in Settings when needed.':'模型和偏好都可以之后在设置中配置。'}</small>
+      </div>
       <div className="onboarding-progress">
         {Array.from({ length: TOTAL_STEPS }, (_, i) => (
-          <div key={`dot-${i}`} className={`onboarding-dot${i === activeStep ? ' active' : ''}${i < activeStep ? ' done' : ''}`} />
+          <div
+            key={`dot-${i}`}
+            className={`onboarding-dot${i === activeStep ? " active" : ""}${i < activeStep ? " done" : ""}`}
+          />
         ))}
       </div>
 
-      {activeStep === 0 && <LocaleStep key={`step-0-${stepKey}`} preview={preview} hanaFetch={hanaFetch} agentId={agentId} verificationPlan={verificationPlan} avatarSrc={avatarSrc} initialLocale={locale} goToStep={goToStep} showError={showError} onLocaleChange={onLocaleChange} onConnectLanServer={connectLanServer} />}
-      {activeStep === 1 && <NameStep key={`step-1-${stepKey}`} preview={preview} hanaFetch={hanaFetch} agentId={agentId} verificationPlan={verificationPlan} goToStep={goToStep} showError={showError} />}
-      {activeStep === 2 && <ProviderStep key={`step-2-${stepKey}`} preview={preview} hanaFetch={hanaFetch} agentId={agentId} verificationPlan={verificationPlan} goToStep={goToStep} showError={showError} onProviderReady={onProviderReady} />}
-      {activeStep === 3 && <ModelStep key={`step-3-${stepKey}`} preview={preview} hanaFetch={hanaFetch} agentId={agentId} verificationPlan={verificationPlan} providerName={providerName} providerUrl={providerUrl} providerApi={providerApi} apiKey={apiKey} goToStep={goToStep} showError={showError} />}
-      {activeStep === 4 && <WorkspaceStep key={`step-4-${stepKey}`} preview={preview} hanaFetch={hanaFetch} agentId={agentId} verificationPlan={verificationPlan} goToStep={goToStep} showError={showError} />}
-      {activeStep === 5 && <TutorialStep key={`step-5-${stepKey}`} preview={preview} hanaFetch={hanaFetch} agentId={agentId} verificationPlan={verificationPlan} showError={showError} />}
+      {activeStep === 0 && (
+        <LocaleStep
+          key={`step-0-${stepKey}`}
+          preview={preview}
+          hanaFetch={hanaFetch}
+          agentId={agentId}
+          verificationPlan={verificationPlan}
+          avatarSrc={avatarSrc}
+          initialLocale={locale}
+          goToStep={goToStep}
+          showError={showError}
+          onLocaleChange={onLocaleChange}
+          onConnectLanServer={connectLanServer}
+        />
+      )}
+      {activeStep === 1 && (
+        <NameStep
+          key={`step-1-${stepKey}`}
+          preview={preview}
+          hanaFetch={hanaFetch}
+          agentId={agentId}
+          verificationPlan={verificationPlan}
+          goToStep={goToStep}
+          showError={showError}
+        />
+      )}
+      {activeStep === 2 && (
+        <ProviderStep
+          key={`step-2-${stepKey}`}
+          preview={preview}
+          hanaFetch={hanaFetch}
+          agentId={agentId}
+          verificationPlan={verificationPlan}
+          goToStep={goToStep}
+          showError={showError}
+          onProviderReady={onProviderReady}
+        />
+      )}
+      {activeStep === 3 && (
+        <ModelStep
+          key={`step-3-${stepKey}`}
+          preview={preview}
+          hanaFetch={hanaFetch}
+          agentId={agentId}
+          verificationPlan={verificationPlan}
+          providerName={providerName}
+          providerUrl={providerUrl}
+          providerApi={providerApi}
+          apiKey={apiKey}
+          goToStep={goToStep}
+          showError={showError}
+        />
+      )}
+      {activeStep === 4 && (
+        <WorkspaceStep
+          key={`step-4-${stepKey}`}
+          preview={preview}
+          hanaFetch={hanaFetch}
+          agentId={agentId}
+          verificationPlan={verificationPlan}
+          goToStep={goToStep}
+          showError={showError}
+        />
+      )}
+      {activeStep === 5 && (
+        <TutorialStep
+          key={`step-5-${stepKey}`}
+          preview={preview}
+          hanaFetch={hanaFetch}
+          agentId={agentId}
+          verificationPlan={verificationPlan}
+          showError={showError}
+        />
+      )}
 
       {visibleError && (
-        <div style={{ position: 'fixed', bottom: 20, left: '50%', transform: 'translateX(-50%)', background: 'var(--coral, #c66)', color: '#fff', padding: '8px 20px', borderRadius: 8, fontSize: '0.82rem', zIndex: 999 }}>
+        <div
+          style={{
+            position: "fixed",
+            bottom: 20,
+            left: "50%",
+            transform: "translateX(-50%)",
+            background: "var(--coral, #c66)",
+            color: "#fff",
+            padding: "8px 20px",
+            borderRadius: 8,
+            fontSize: "0.82rem",
+            zIndex: 999,
+          }}
+        >
           {visibleError}
         </div>
       )}

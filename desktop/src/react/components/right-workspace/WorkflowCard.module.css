@@ -30,7 +30,7 @@
 .title {
     flex: 1;
     text-align: left;
-    font-family: "Songti SC", "Noto Serif CJK SC", serif;
+    font-family: var(--font-ui);
     font-size: var(--fs-body);
     font-weight: 600;
     color: var(--accent);
@@ -119,9 +119,9 @@
 
 .name {
     color: var(--text);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
+    min-width: 0;
+    overflow-wrap: anywhere;
 }
 
 .agentCount {
@@ -194,9 +194,9 @@
 
 .nodeName {
     color: var(--text);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
+    min-width: 0;
+    overflow-wrap: anywhere;
 }
 
 .nodeTokens {
@@ -250,9 +250,9 @@
 .phaseName {
   font-size: var(--fs-caption);
   color: var(--text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .headerDots {

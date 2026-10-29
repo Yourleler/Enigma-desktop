@@ -7,15 +7,16 @@
  * 关键：server/node_modules 里的 .node 文件（native addon）也要签，
  * codesign --deep 不会递归进 node_modules 目录。
  */
-const { execSync } = require("child_process");
+const { execFileSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 
-const APP = "/Applications/HanaAgent.app";
+const APP = path.resolve(process.argv[2]||"/Applications/HanaAgent.app");
+if(!APP.endsWith('.app')||!fs.existsSync(path.join(APP,'Contents','Info.plist')))throw new Error('Select an existing application bundle');
 const ENT = path.join(__dirname, "..", "desktop", "entitlements.mac.plist");
 
-function sign(target, opts = "") {
-  execSync(`codesign --sign - --force ${opts} "${target}"`, { stdio: "inherit" });
+function sign(target, opts = []) {
+  execFileSync('codesign',['--sign','-','--force',...opts,target],{stdio:'inherit'});
 }
 
 // 1. 签 server 里的所有 Mach-O 文件（node binary + .node addons）
@@ -50,15 +51,15 @@ const frameworks = path.join(APP, "Contents", "Frameworks");
 for (const entry of fs.readdirSync(frameworks)) {
   const full = path.join(frameworks, entry);
   if (entry.endsWith(".framework")) {
-    sign(full, "--deep");
+    sign(full, ["--deep"]);
   } else if (entry.endsWith(".app")) {
-    sign(full, `--entitlements "${ENT}"`);
+    sign(full, ['--entitlements',ENT]);
   }
 }
 
 // 4. 签主 app（带 entitlements，V8 需要 JIT 权限）
-sign(APP, `--entitlements "${ENT}"`);
+sign(APP, ['--entitlements',ENT]);
 
 // 5. 验证
-execSync(`codesign --verify --deep --strict "${APP}"`, { stdio: "inherit" });
+execFileSync('codesign',['--verify','--deep','--strict',APP],{stdio:'inherit'});
 console.log("✓ Signed and verified");

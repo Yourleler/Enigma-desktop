@@ -2,6 +2,7 @@ import type { FileRef } from '../../../types/file-ref';
 import { useStore } from '../../../stores';
 import { resolveServerConnection } from '../../../services/server-connection';
 import { resolveFileRefUrl } from '../../../services/resource-url';
+import { isWebRuntime } from '../../../utils/platform-runtime';
 
 export interface MediaSource {
   url: string;
@@ -20,11 +21,11 @@ export async function loadMediaSource(ref: FileRef): Promise<MediaSource> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- window.platform 的运行时存在性要在这里显式校验
   const platform = (window as any).platform;
 
-  if (ref.kind !== 'image' && ref.kind !== 'svg' && ref.kind !== 'video') {
+  if (ref.kind !== 'image' && ref.kind !== 'svg' && ref.kind !== 'video' && ref.kind !== 'audio') {
     throw new Error(`unsupported media kind: ${ref.kind}`);
   }
 
   const connection = resolveServerConnection(useStore.getState());
-  const source = resolveFileRefUrl(ref, { connection, platform });
+  const source = resolveFileRefUrl(ref, { connection, platform, preferLocalFile: !isWebRuntime() });
   return { url: source.url };
 }

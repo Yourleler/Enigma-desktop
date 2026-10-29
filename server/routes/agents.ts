@@ -63,8 +63,13 @@ import { recordSecurityAuditEvent } from "../http/security-audit.ts";
 
 function hideDisabledGlobalToolsForSettings(toolNames, engine) {
   const computerUseEnabled = engine?.getComputerUseSettings?.()?.enabled === true;
-  if (computerUseEnabled) return toolNames;
-  return (toolNames || []).filter((name) => name !== "computer");
+  const plugins = engine?.pluginManager;
+  return (toolNames || []).filter(name => {
+    if (name === 'computer' && !computerUseEnabled) return false;
+    if (['browser', 'computer'].includes(name) && typeof plugins?.getNativeToolContribution === 'function')
+      return !!plugins.getNativeToolContribution(name);
+    return true;
+  });
 }
 import { assertAgentConfigPatchYuan } from "../../core/yuan-registry.ts";
 import { createModuleLogger } from "../../lib/debug-log.ts";

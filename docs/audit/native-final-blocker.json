@@ -1,0 +1,15 @@
+{
+  "version": "0.452.34",
+  "blocker": "Mac locked",
+  "freshAuditStart": "User unlocked; native checks and restore succeeded, then Mac locked again",
+  "consecutiveGoalTurns": 3,
+  "confirmedAt": "2026-10-27T05:57:37.707Z",
+  "remaining": [],
+  "progressThisTurn": false,
+  "processRestarted": false,
+  "status": "resolved",
+  "reason": "CUA confirmed Mac locked in three consecutive goal turns after native validation resumed. Remaining work requires native interaction; no independent implementation or verification remains before this gate.",
+  "resolvedAt": "2026-10-27T06:28:46.895Z",
+  "resolution": "Core native r34 checks completed after unlock, r35 narrow phase correction verified through shared final packaged renderer and server; final Mac startup verified.",
+  "pathsAndProviderNamesRedacted": true
+}

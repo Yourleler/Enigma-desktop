@@ -7,6 +7,7 @@ import { createHash } from "crypto";
 import { FileHistoryStore, type SnapshotOrigin } from "./history-store.ts";
 import { createWorkspaceWatcher, type WorkspaceWatcher } from "./workspace-watcher.ts";
 import { MAX_SNAPSHOT_BYTES, isIgnoredRelPath, isTrackedFile } from "./text-file-policy.ts";
+import {readDirectoryIsolated} from '../isolated-directory-reader.ts';
 
 export const FILE_HISTORY_DEFAULTS = {
   mergeWindowMs: 60_000,
@@ -243,15 +244,15 @@ export class FileHistoryService {
   async _sweep(entry: WorkspaceEntry): Promise<void> {
     const walk = async (dirAbs: string, dirRel: string): Promise<void> => {
       let dirents;
-      try { dirents = await fsp.readdir(dirAbs, { withFileTypes: true }); } catch { return; }
+      try { dirents = await readDirectoryIsolated(dirAbs); } catch { return; }
       for (const dirent of dirents) {
         const rel = dirRel ? `${dirRel}/${dirent.name}` : dirent.name;
-        if (dirent.isDirectory()) {
+        if (dirent.isDirectory) {
           if (isIgnoredRelPath(rel + "/")) continue;
           await walk(path.join(dirAbs, dirent.name), rel);
           continue;
         }
-        if (!dirent.isFile() || !isTrackedFile(rel) || isIgnoredRelPath(rel)) continue;
+        if (!dirent.isFile || !isTrackedFile(rel) || isIgnoredRelPath(rel)) continue;
         try {
           const absPath = path.join(dirAbs, dirent.name);
           const stat = await fsp.stat(absPath);

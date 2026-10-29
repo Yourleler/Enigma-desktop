@@ -206,6 +206,7 @@ export function SelectWidget({
         aria-label={ariaLabel}
         aria-labelledby={ariaLabelledBy}
         data-select-widget-trigger=""
+        data-glass-interactive=""
         className={[!triggerBare && styles.trigger, triggerClassName].filter(Boolean).join(' ')}
         ref={triggerRef}
         onKeyDown={event=>{if(['ArrowDown','ArrowUp'].includes(event.key)){event.preventDefault();if(disabled||!open&&onAttemptOpen&&onAttemptOpen()===false)return;if(open){const items=panelRef.current?.querySelectorAll<HTMLButtonElement>('[role="option"]:not(:disabled)');(event.key==='ArrowUp'?items?.[items.length-1]:items?.[0])?.focus();}else{keyboardOpen.current=event.key==='ArrowUp'?'last':'first';setOpen(true);}}}}
@@ -239,7 +240,6 @@ export function SelectWidget({
           data-select-widget-popup
           data-liquid="menu"
           data-menu-surface=""
-          data-menu-scroll=""
           data-menu-position="fixed"
           data-direction={openDirection}
           data-align={align}
@@ -250,7 +250,9 @@ export function SelectWidget({
             if(['ArrowDown','ArrowUp','Home','End'].includes(event.key)){event.preventDefault();const items=[...panelRef.current?.querySelectorAll<HTMLButtonElement>('[role="option"]:not(:disabled)')||[]],index=items.indexOf(document.activeElement as HTMLButtonElement);if(items.length)items[event.key==='Home'?0:event.key==='End'?items.length-1:(index+(event.key==='ArrowDown'?1:items.length-1))%items.length]?.focus();}
           }}
         >
-          {options.length?renderItems():<p className={styles.empty}>{window.i18n?.locale?.startsWith('zh')===false?'No options available':'暂无可选项'}</p>}
+          <div className={styles.scrollArea} data-select-widget-scroll="" data-menu-scroll="">
+            {options.length?renderItems():<p className={styles.empty}>{window.i18n?.locale?.startsWith('zh')===false?'No options available':'暂无可选项'}</p>}
+          </div>
         </div>,
         document.body,
       )}

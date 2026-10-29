@@ -1,0 +1,311 @@
+/* Liquid material follows the SDF displacement-map technique documented at
+   https://github.com/childrentime/liquid-glass/blob/main/LIQUID_GLASS_EFFECT_CN.md
+   Typography and layout remain owned by enigma-design.css. */
+body.enigma-surface {
+  isolation: isolate;
+  --eg-page: #f8f6fd;
+  --eg-sidebar: #f4f0fb;
+  --eg-card: #fdfcff;
+  --eg-secondary: #f0eaf9;
+  --eg-text: #292435;
+  --eg-muted: #625a70;
+  --eg-accent: #7149be;
+  --eg-accent-soft: #ece3f8;
+  --eg-on-accent: #fff;
+  --eg-link: #7650ba;
+  --eg-stroke: rgb(114 85 151 / 14%);
+  --eg-stroke-strong: rgb(114 85 151 / 29%);
+  --eg-shadow: 0 14px 40px rgb(64 39 99 / 11%);
+  --eg-scrim: rgb(65 39 98 / 14%);
+  --accent-rgb: 113,73,190;
+  --glass-fill: rgb(255 255 255 / 5%);
+  --glass-overlay: rgb(255 255 255 / 18%);
+  --glass-edge: rgb(255 255 255 / 96%);
+  --glass-edge-low: rgb(91 85 117 / 20%);
+  --glass-sheen: rgb(255 255 255 / 96%);
+  --glass-aura-rgb: 139 88 210;
+  --glass-shadow: rgb(62 46 91 / 22%);
+  --glass-blur: .5px;
+  --glass-prism-cool: rgb(115 169 231 / 32%);
+  --glass-prism-warm: rgb(188 150 222 / 28%);
+  --aurora-a: rgb(157 114 225 / 36%);
+  --aurora-b: rgb(196 162 239 / 29%);
+  --aurora-c: rgb(144 160 239 / 20%);
+  --aurora-ribbon: rgb(174 132 234 / 20%);
+  --aurora-filament: rgb(255 255 255 / 64%);
+  background: var(--eg-page);
+}
+body.enigma-surface[data-enigma-tone="dark"] {
+  --eg-page: #090d13;
+  --eg-sidebar: #0c131b;
+  --eg-card: #151c26;
+  --eg-secondary: #1b2632;
+  --eg-text: #e8edf3;
+  --eg-muted: #a3afc0;
+  --eg-accent: #8ddbc5;
+  --eg-accent-soft: #1d3937;
+  --eg-on-accent: #0a201c;
+  --eg-link: #a2bdf3;
+  --eg-scrim: rgb(0 3 8 / 32%);
+  --eg-stroke: rgb(179 212 227 / 13%);
+  --eg-stroke-strong: rgb(180 220 228 / 27%);
+  --accent-rgb: 141,219,197;
+  --glass-fill: rgb(12 18 27 / 10%);
+  --glass-overlay: rgb(213 241 244 / 5%);
+  --glass-edge: rgb(234 253 255 / 73%);
+  --glass-edge-low: rgb(173 186 210 / 18%);
+  --glass-sheen: rgb(243 255 255 / 90%);
+  --glass-aura-rgb: 111 224 198;
+  --glass-shadow: rgb(0 0 0 / 48%);
+  --glass-prism-cool: rgb(133 208 244 / 38%);
+  --glass-prism-warm: rgb(196 166 235 / 30%);
+  --aurora-a: rgb(45 201 157 / 29%);
+  --aurora-b: rgb(69 138 192 / 23%);
+  --aurora-c: rgb(147 104 227 / 26%);
+  --aurora-ribbon: rgb(65 204 170 / 20%);
+  --aurora-filament: rgb(182 234 228 / 24%);
+}
+body.enigma-surface::before {
+  content: ''; position: fixed; inset: -15%; z-index: -1; pointer-events: none;
+  background: radial-gradient(ellipse 66% 39% at 48% 40%,transparent 63.65%,var(--aurora-filament) 64%,transparent 64.45%),radial-gradient(ellipse 70% 42% at 48% 37%,transparent 42%,var(--aurora-ribbon) 58%,transparent 76%),radial-gradient(ellipse 66% 39% at 48% 40%,transparent 61%,var(--aurora-c) 64%,transparent 68%),radial-gradient(ellipse 52% 42% at 28% 8%,var(--aurora-a),transparent 76%),radial-gradient(ellipse 32% 60% at 82% 65%,var(--aurora-b),transparent 78%),radial-gradient(ellipse 55% 36% at 44% 87%,var(--aurora-c),transparent 75%);
+  transform: translate3d(0,0,0); animation: enigma-aurora-drift 24s ease-in-out infinite alternate;
+}
+/* Keep the original halo available; these are the aurora's GPU fallbacks. */
+body.enigma-surface[data-enigma-tone="dark"]:not([data-dark-background="halo"])::before {
+  inset:-12%;
+  background:radial-gradient(ellipse 48% 35% at 18% 18%,rgb(31 166 125 / 22%),transparent 76%),radial-gradient(ellipse 44% 54% at 87% 78%,rgb(65 106 198 / 18%),transparent 78%);
+  animation:enigma-aurora-atmosphere 29s ease-in-out infinite alternate;
+}
+body.enigma-surface[data-enigma-tone="dark"]:not([data-dark-background="halo"])::after {
+  content:'';position:fixed;inset:-12%;z-index:-1;pointer-events:none;
+  background:url('../../assets/enigma/aurora-curtain.svg') center/100% 100% no-repeat;
+  animation:enigma-aurora-dance 24s ease-in-out infinite alternate;
+}
+@keyframes enigma-aurora-atmosphere {from{transform:translate3d(-2%,1%,0) scale(1)}to{transform:translate3d(4%,-3%,0) scale(1.06)}}
+@keyframes enigma-aurora-dance {0%{transform:translate3d(-3%,-2%,0) scale(1.04) skewY(-3deg)}50%{transform:translate3d(1%,2%,0) scale(1.08,1.02) skewY(2deg)}100%{transform:translate3d(4%,-1%,0) scale(1.02,1.09) skewY(-1deg)}}
+body.enigma-surface[data-enigma-tone="light"][data-light-background="marble"]::before {
+  background:#faf9fd url('../../assets/enigma/marble-bands.svg') center/cover no-repeat;
+}
+.enigma-animated-background { position:fixed;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none;display:none; }
+body.enigma-surface[data-enigma-tone="dark"][data-dark-background="aurora"] .enigma-animated-background[data-background-scene="aurora"],
+body.enigma-surface[data-enigma-tone="light"][data-light-background="marble"] .enigma-animated-background[data-background-scene="marble"] { display:block; }
+body.enigma-surface[data-enigma-tone="dark"][data-dark-background="aurora"][data-background-ready="aurora"]::before,
+body.enigma-surface[data-enigma-tone="dark"][data-dark-background="aurora"][data-background-ready="aurora"]::after,
+body.enigma-surface[data-enigma-tone="light"][data-light-background="marble"][data-background-ready="marble"]::before { display:none; }
+@media(prefers-reduced-transparency:reduce),(prefers-contrast:more){.enigma-animated-background{opacity:.3;}}
+/* Persistent scene layers own the complete backdrop. Palette changes cannot
+   expose the old CSS fallback while the next WebGL frame is preparing. */
+.enigma-animated-background.enigma-background-stage { display:block;overflow:hidden; }
+.enigma-background-layer { position:absolute;inset:0;opacity:0;transition:opacity 360ms ease-in-out;overflow:hidden; }
+.enigma-background-layer canvas { width:100%;height:100%;display:block; }
+.enigma-background-layer[data-scene="aurora"] { background:#09121c url('../../assets/enigma/aurora-curtain.svg') center/cover; }
+.enigma-background-layer[data-scene="marble"] { background:#faf9fd url('../../assets/enigma/marble-bands.svg') center/cover; }
+.enigma-background-layer[data-scene="solid-dark"] { background:#101217; }
+.enigma-background-layer[data-scene="solid-light"] { background:#f7f7f9; }
+.enigma-background-layer[data-scene="halo"] { background:#090d13; }
+.enigma-background-layer[data-scene="ribbon"] { background:#f8f6fd; }
+.enigma-background-layer[data-scene="halo"]::before,.enigma-background-layer[data-scene="ribbon"]::before {
+  content:'';position:absolute;inset:-15%;pointer-events:none;
+  background:radial-gradient(ellipse 66% 39% at 48% 40%,transparent 63.65%,var(--scene-filament) 64%,transparent 64.45%),radial-gradient(ellipse 70% 42% at 48% 37%,transparent 42%,var(--scene-ribbon) 58%,transparent 76%),radial-gradient(ellipse 66% 39% at 48% 40%,transparent 61%,var(--scene-c) 64%,transparent 68%),radial-gradient(ellipse 52% 42% at 28% 8%,var(--scene-a),transparent 76%),radial-gradient(ellipse 32% 60% at 82% 65%,var(--scene-b),transparent 78%),radial-gradient(ellipse 55% 36% at 44% 87%,var(--scene-c),transparent 75%);
+  animation:enigma-aurora-drift 24s ease-in-out infinite alternate;
+}
+.enigma-background-layer[data-scene="halo"] { --scene-a:rgb(45 201 157 / 29%);--scene-b:rgb(69 138 192 / 23%);--scene-c:rgb(147 104 227 / 26%);--scene-ribbon:rgb(65 204 170 / 20%);--scene-filament:rgb(182 234 228 / 24%); }
+.enigma-background-layer[data-scene="ribbon"] { --scene-a:rgb(157 114 225 / 36%);--scene-b:rgb(196 162 239 / 29%);--scene-c:rgb(144 160 239 / 20%);--scene-ribbon:rgb(174 132 234 / 20%);--scene-filament:rgb(255 255 255 / 64%); }
+body.enigma-surface[data-background-ready="managed"]::before,body.enigma-surface[data-background-ready="managed"]::after { display:none; }
+.enigma-background-stage[data-motion="off"] .enigma-background-layer { transition:none; }
+.enigma-background-stage[data-motion="off"] .enigma-background-layer::before { animation:none; }
+@media(prefers-reduced-motion:reduce) { .enigma-background-layer{transition:none;}.enigma-background-layer::before{animation:none;} }
+body.enigma-surface :is(.main-content,.chat-area,.app-container,.chat-area.has-panels,.jian-sidebar,.jian-sidebar-inner) { background: transparent; }
+body.enigma-surface .titlebar { background: var(--glass-fill); backdrop-filter: blur(18px) saturate(1.2); }
+body.enigma-surface [data-liquid-surface] {
+  position: relative; isolation: isolate; background: transparent; border-color: transparent;
+  box-shadow: 0 12px 24px -16px var(--glass-shadow), 0 1px 3px rgb(0 0 0 / 8%);
+}
+/* Capture the world behind the complete control before its own border and
+   children paint. A nested negative-z backdrop can pick up its host's rim. */
+body.enigma-surface[data-enigma-tone] [data-liquid-surface] {
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.18);
+  backdrop-filter: var(--liquid-refraction, blur(0px)) blur(var(--glass-blur)) saturate(1.18);
+}
+body.enigma-surface [data-liquid-surface]::before {
+  content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; border-radius: inherit;
+  background: linear-gradient(135deg,var(--glass-overlay),transparent 18%,transparent 84%,var(--glass-overlay)),var(--glass-fill);
+}
+body.enigma-surface [data-liquid-surface]::after {
+  content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; border-radius: inherit;
+  border: 1px solid transparent;
+  background: radial-gradient(ellipse 140px 55px at var(--glass-pointer-x,22%) var(--glass-pointer-y,0%),var(--glass-sheen),transparent 80%),conic-gradient(from 135deg,var(--glass-edge),transparent 12%,var(--glass-prism-cool) 27%,transparent 42%,var(--glass-edge) 49%,transparent 57%,var(--glass-prism-warm) 76%,transparent 89%,var(--glass-edge)) border-box;
+  box-shadow: inset 0 1px 0 var(--glass-edge),inset 0 -1px 0 var(--glass-edge-low);
+  mask: linear-gradient(#fff 0 0) padding-box,linear-gradient(#fff 0 0); mask-composite: exclude;
+}
+body.enigma-surface .enigma-toolbar { margin: 8px 12px 0; border: 1px solid var(--eg-stroke); border-radius: 16px; padding: 8px 12px; }
+body.enigma-surface .enigma-panel { border-radius: 18px; background: color-mix(in srgb,var(--eg-card) 94%,transparent); }
+body.enigma-surface .sidebar { border-radius: 0; background: transparent; box-shadow: none; }
+body.enigma-surface [data-liquid="sidebar"] { --glass-fill: color-mix(in srgb,var(--eg-sidebar) 38%,transparent); --glass-blur: 4px; }
+/* Reflow once, then animate the stable inner surface on the compositor.
+   Avoid generating a new refraction texture for each intermediate width. */
+body.enigma-surface :is(.sidebar,.jian-sidebar) { transition:none; }
+body.enigma-surface .sidebar-inner { transform:translateX(0);transition:transform 150ms ease-out,opacity 150ms ease-out; }
+body.enigma-surface .sidebar.collapsed .sidebar-inner { transform:translateX(-12px);opacity:0; }
+body.enigma-surface .jian-sidebar-inner { transform:translateX(0);transition:transform 150ms ease-out,opacity 150ms ease-out; }
+body.enigma-surface .jian-sidebar.collapsed .jian-sidebar-inner { transform:translateX(12px);opacity:0;pointer-events:none; }
+body.enigma-surface .enigma-surface-menu { position: fixed; background: transparent; }
+body.enigma-surface :is(.enigma-surface-menu,.enigma-token-popover) { --glass-fill: color-mix(in srgb,var(--eg-card) 64%,transparent); --glass-blur: 10px; }
+body.enigma-surface [data-liquid-active] { box-shadow: 0 16px 28px -18px var(--glass-shadow),0 1px 3px rgb(0 0 0 / 8%); }
+body.enigma-surface .enigma-modal { background: color-mix(in srgb,var(--eg-card) 94%,transparent); }
+body.enigma-surface .enigma-catalog-list { max-height: min(62vh,560px); overflow: auto; overscroll-behavior: contain; }
+body.enigma-surface .enigma-operation-catalog { width: min(620px,calc(100vw - 32px)); }
+body.enigma-surface .enigma-catalog-list section { padding-block: 12px; border-bottom: 1px solid var(--border); }
+body.enigma-surface .enigma-catalog-list h3 { color: var(--text-muted); font-size: 12px; }
+body.enigma-surface .enigma-catalog-list button { width: 100%; display: block; text-align: left; padding: 10px; }
+body.enigma-surface .enigma-catalog-list small { display: block; color: var(--text-muted); font-size: 12px; margin-top: 3px; }
+body.enigma-surface :is(button,[role="tab"]) { transition: background-color 160ms ease,color 160ms ease,box-shadow 160ms ease; }
+body.enigma-surface .enigma-panel { animation: enigma-glass-arrive 200ms cubic-bezier(.2,.7,.2,1); }
+.enigma-liquid-definitions { position: fixed; pointer-events: none; overflow: hidden; }
+@keyframes enigma-aurora-drift { to { transform: translate3d(2%,-2%,0) scale(1.04); } }
+@keyframes enigma-glass-arrive { from { opacity: 0; transform: translate3d(8px,0,0); } to { opacity: 1; transform: none; } }
+@media (max-width: 760px) {
+  /* Drawers must leave the titlebar controls reachable. Material positioning
+     must not turn the mobile sidebar back into an in-flow desktop column. */
+  body.enigma-surface .sidebar:not(.collapsed),
+  body.enigma-surface .jian-sidebar:not(.collapsed) {
+    position: fixed;
+    top: var(--titlebar-h,44px);
+    height: calc(100dvh - var(--titlebar-h,44px));
+    max-height: calc(100dvh - var(--titlebar-h,44px));
+  }
+}
+body.enigma-surface.enigma-glass-off [data-liquid-surface] { background: var(--eg-card); box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+body.enigma-surface.enigma-glass-off [data-liquid-surface]::before,body.enigma-surface.enigma-glass-off [data-liquid-surface]::after { display: none; }
+body.enigma-surface.enigma-glass-off .titlebar { background: var(--eg-sidebar); backdrop-filter: none; }
+@media (prefers-reduced-motion: reduce) { body.enigma-surface::before,body.enigma-surface .enigma-panel { animation: none; } }
+body.enigma-surface.enigma-motion-off::before,body.enigma-surface.enigma-motion-off .enigma-panel { animation: none; }
+@supports not (backdrop-filter: blur(1px)) { body.enigma-surface [data-liquid-surface] { background: var(--eg-card); } }
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  body.enigma-surface[data-enigma-tone] [data-liquid-surface], body.enigma-surface :is(.enigma-panel,.enigma-modal,.titlebar) { background: var(--eg-card); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  body.enigma-surface [data-liquid-surface]::before, body.enigma-surface [data-liquid-surface]::after { display: none; }
+  body.enigma-surface::before { opacity: .3; animation: none; }
+}
+
+/* Keep the ribbon visible through navigation and controls. Dimming for text
+   belongs to menus/content, so clarity does not turn every surface opaque. */
+body.enigma-surface [data-liquid="sidebar"] {
+  --glass-fill: color-mix(in srgb,var(--eg-sidebar) var(--glass-navigation-mix,35%),transparent);
+  --glass-blur: var(--glass-navigation-blur,5px);
+}
+body.enigma-surface :is(.enigma-toolbar,[data-liquid="composer"]) {
+  --glass-fill: color-mix(in srgb,var(--eg-card) var(--glass-control-mix,14%),transparent);
+  --glass-blur: var(--glass-control-blur,1.5px);
+}
+/* More specific than the opaque base input-wrapper rule, independent of CSS
+   chunk load order. The slider controls the real composer backdrop and fill. */
+body.enigma-surface[data-enigma-tone]:not(.enigma-glass-off) [data-liquid="composer"][data-liquid-surface] {
+  background:transparent;
+  --glass-fill:color-mix(in srgb,var(--eg-card) var(--glass-composer-mix,38%),transparent);
+  --glass-blur:var(--glass-composer-blur,5.35px);
+}
+@media (prefers-reduced-transparency:reduce),(prefers-contrast:more) {
+  body.enigma-surface[data-enigma-tone]:not(.enigma-glass-off) [data-liquid="composer"][data-liquid-surface] {
+    background:var(--eg-card);backdrop-filter:none;-webkit-backdrop-filter:none;
+  }
+}
+body.enigma-surface :is(.enigma-surface-menu,.enigma-token-popover) {
+  --glass-fill: color-mix(in srgb,var(--eg-card) var(--glass-menu-mix,54%),transparent);
+  --glass-blur: 10px;
+}
+body.enigma-surface .enigma-workspace-shell {
+  margin: 8px 8px 8px 0; height: calc(100% - 16px); padding: 4px 0;
+  gap: 0; border: 1px solid var(--eg-stroke); border-radius: 18px;
+}
+body.enigma-surface .enigma-workspace-shell > .universal-card {
+  background: transparent; border: 0; border-radius: 0; box-shadow: none;
+}
+body.enigma-surface .enigma-workspace-shell > .universal-card + .universal-card { border-top: 1px solid var(--eg-stroke); }
+body.enigma-surface .enigma-workspace-shell [data-right-workspace-card] { padding-bottom: 4px; }
+body.enigma-surface .enigma-workspace-shell [role="tabpanel"] {
+  margin: 8px; border: 1px solid var(--eg-stroke); border-radius: 12px;
+  background: color-mix(in srgb,var(--eg-page) 52%,transparent);
+}
+body.enigma-surface .enigma-workspace-shell [aria-label="文件夹说明"] { background: color-mix(in srgb,var(--eg-card) 60%,transparent); }
+body.enigma-surface [data-glass-selection] {
+  pointer-events: none; border: 1px solid color-mix(in srgb,var(--eg-accent) 40%,var(--glass-edge));
+  background: linear-gradient(155deg,color-mix(in srgb,var(--glass-edge) 13%,transparent),transparent 65%),color-mix(in srgb,var(--eg-accent) 7%,transparent);
+  box-shadow: inset 0 1px 0 var(--glass-edge),inset 0 -1px 0 var(--glass-edge-low),0 2px 7px color-mix(in srgb,var(--eg-accent) 14%,transparent);
+  backdrop-filter: blur(3px) saturate(1.3); -webkit-backdrop-filter: blur(3px) saturate(1.3);
+  transition: transform 340ms cubic-bezier(.22,.8,.18,1.08),width 340ms cubic-bezier(.22,.8,.18,1.08);
+  transform-origin: center;
+}
+body.enigma-surface .hana-toggle { border-radius: 999px; height: 22px; width: 38px; cursor: pointer; border: 1px solid var(--eg-stroke); }
+body.enigma-surface .hana-toggle::after {
+  border-radius: 999px; width: 16px; height: 16px; top: 2px; left: 2px;
+  background: linear-gradient(145deg,#fff 10%,rgb(255 255 255 / 65%));
+  border: 1px solid rgb(255 255 255 / 80%); box-shadow: 0 1px 4px rgb(0 0 0 / 22%),inset 0 1px 0 #fff;
+  transition: transform 280ms cubic-bezier(.22,.8,.18,1.1),box-shadow 180ms;
+}
+body.enigma-surface .hana-toggle:active::after { width: 19px; }
+body.enigma-surface .enigma-switch-track i {
+  background: linear-gradient(145deg,#fff,rgb(230 245 242 / 86%)); border: 1px solid rgb(255 255 255 / 75%);
+  box-shadow: inset 0 1px 0 #fff,0 1px 4px rgb(0 0 0 / 22%);
+  transition: transform 280ms cubic-bezier(.22,.8,.18,1.1);
+}
+.enigma-glass-clarity { display: grid; gap: 8px; padding: 12px 4px 4px; border-top: 1px solid var(--border); font-size: 12px; }
+.enigma-glass-clarity label,.enigma-glass-clarity > div { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.enigma-glass-clarity > div,.enigma-glass-clarity output { color:var(--text-muted); font-size:11px; }
+.enigma-glass-clarity input { width:100%; margin:0; accent-color:var(--accent); cursor:pointer; }
+body.enigma-surface.enigma-glass-off [data-glass-selection] { background:var(--eg-accent-soft); backdrop-filter:none; box-shadow:none; }
+body.enigma-surface.enigma-glass-off .enigma-workspace-shell { background:var(--eg-sidebar); }
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  body.enigma-surface [data-glass-selection],body.enigma-surface .enigma-workspace-shell { background:var(--eg-card); backdrop-filter:none; -webkit-backdrop-filter:none; }
+}
+
+/* Shared material families: compact sheets can refract, while large/scrolled
+   frames use one stable backdrop instead of scrolling a pseudo-element. */
+body.enigma-surface [data-liquid="sheet"] { --glass-fill:color-mix(in srgb,var(--eg-card) var(--glass-frame-mix,57%),transparent); --glass-blur:14px; border-radius:22px; }
+body.enigma-surface [data-glass-frame], body.enigma-surface .enigma-modal[data-glass-frame], body.enigma-surface .enigma-panel[data-glass-frame] {
+  --glass-light-opacity: 0;
+  background:radial-gradient(ellipse 340px 200px at var(--glass-pointer-x,50%) var(--glass-pointer-y,50%),rgb(var(--glass-aura-rgb) / calc(var(--glass-light-opacity,0) * .22)),transparent 80%),linear-gradient(140deg,color-mix(in srgb,var(--glass-edge) 6%,transparent),transparent 58%),color-mix(in srgb,var(--eg-card) var(--glass-frame-mix,57%),transparent);
+  border:1px solid var(--eg-stroke-strong);
+  box-shadow:inset 0 1px 0 var(--glass-edge),inset 0 -1px 0 var(--glass-edge-low),0 18px 48px -20px var(--glass-shadow);
+  backdrop-filter:blur(14px) saturate(1.18); -webkit-backdrop-filter:blur(14px) saturate(1.18);
+}
+body.enigma-surface .enigma-modal[data-glass-frame] > :is(header,footer) { background:transparent; }
+body.enigma-surface [data-glass-frame="settings"] .settings-panel { background:transparent; }
+body.enigma-surface .settings-panel { --bg-card:color-mix(in srgb,var(--eg-card) 32%,transparent); }
+body.enigma-surface .settings-panel [data-settings-surface="card"] { background:color-mix(in srgb,var(--eg-card) 28%,transparent); }
+body.enigma-surface .settings-panel input:not([type="range"]):not([type="checkbox"]),body.enigma-surface .settings-panel textarea { background:color-mix(in srgb,var(--eg-card) 36%,transparent); }
+body.enigma-surface [data-settings-navigation] { background:color-mix(in srgb,var(--eg-sidebar) 28%,transparent); }
+body.enigma-surface [data-settings-navigation] > button[aria-current="page"] { background:transparent; box-shadow:none; }
+body.enigma-surface [data-glass-frame="hint"] { color:var(--eg-text); border-radius:11px; background:color-mix(in srgb,var(--eg-card) 92%,transparent); }
+body.enigma-surface [data-glass-frame="sheet"] { animation:enigma-sheet-arrive 260ms cubic-bezier(.18,.78,.22,1); }
+body.enigma-surface [data-glass-selection] { overflow:hidden; transition:transform 420ms cubic-bezier(.2,.8,.18,1.04),width 420ms cubic-bezier(.2,.8,.18,1.04),height 420ms cubic-bezier(.2,.8,.18,1.04); }
+body.enigma-surface [data-glass-selection]::after { content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;background:linear-gradient(110deg,transparent 12%,color-mix(in srgb,var(--glass-edge) 44%,transparent) 48%,transparent 80%); }
+body.enigma-surface [data-glass-selection][data-glass-motion="running"]::after { animation:enigma-lens-sheen 420ms ease-out; }
+body.enigma-surface :is([data-glass-interactive],[data-glass-controls] button) { transition:scale 260ms cubic-bezier(.2,.8,.2,1.15),background-color 150ms,box-shadow 150ms,color 150ms; }
+body.enigma-surface:not(.enigma-glass-off) :is([data-glass-interactive],[data-glass-controls] button):is(:hover,:focus-visible,[data-liquid-pressed]):not(:disabled) {
+  background-image:radial-gradient(ellipse 75% 100% at var(--glass-pointer-x,50%) var(--glass-pointer-y,25%),color-mix(in srgb,var(--glass-edge) var(--glass-control-highlight,26%),transparent),transparent 82%);
+  box-shadow:inset 0 1px 0 color-mix(in srgb,var(--glass-edge) 70%,transparent),0 3px 10px color-mix(in srgb,var(--glass-shadow) 24%,transparent);
+}
+body.enigma-surface:not(.enigma-motion-off) :is([data-glass-interactive],[data-glass-controls] button)[data-liquid-pressed] { scale:.975; }
+body.enigma-surface [data-menu-surface][data-direction="up"] { transform-origin:bottom right; }
+body.enigma-surface [data-menu-surface][data-direction="down"] { transform-origin:top right; }
+@keyframes enigma-lens-sheen { 0%{opacity:0;translate:-35% 0} 35%{opacity:.65} 100%{opacity:0;translate:35% 0} }
+@keyframes enigma-sheet-arrive { from{opacity:0;translate:0 8px;scale:.975} to{opacity:1;translate:0 0;scale:1} }
+@media(prefers-reduced-motion:reduce) { body.enigma-surface :is([data-glass-interactive],[data-glass-controls] button)[data-liquid-pressed] {scale:1;} }
+body.enigma-surface.enigma-glass-off [data-glass-frame] {background:var(--eg-card);backdrop-filter:none;-webkit-backdrop-filter:none;box-shadow:none;}
+@media(prefers-reduced-transparency:reduce),(prefers-contrast:more) {body.enigma-surface[data-enigma-tone] [data-glass-frame] {background:var(--eg-card);backdrop-filter:none;-webkit-backdrop-filter:none;}}
+body.enigma-surface .enigma-surface-menu {display:flex;flex-direction:column;overflow:hidden;}
+.enigma-surface-menu-scroll {min-height:0;flex:1 1 auto;overflow:auto;overscroll-behavior:contain;scroll-padding-block:8px;}
+
+/* A full-height sidebar is a planar divider, not a lens: avoid the heavy
+   refraction/shadow stripe and show a resize hint only while interacting. */
+body.enigma-surface[data-enigma-tone] .sidebar-inner[data-liquid-surface] {box-shadow:none;}
+body.enigma-surface .sidebar-inner[data-liquid-surface]::after {display:none;}
+body.enigma-surface .sidebar {border-right:1px solid color-mix(in srgb,var(--eg-accent) 9%,transparent);}
+body.enigma-surface .resize-handle-right {background:transparent;opacity:1;}
+body.enigma-surface .resize-handle-right:is(:hover,.active) {background:linear-gradient(transparent,var(--eg-accent),transparent) center/1px 42% no-repeat;opacity:.5;}
+body.enigma-surface.enigma-glass-off .settings-panel {--bg-card:var(--eg-card);}
+body.enigma-surface.enigma-glass-off .settings-panel [data-settings-surface="card"] {background:var(--eg-card);}
+body.enigma-surface.enigma-glass-off .settings-panel input:not([type="range"]):not([type="checkbox"]),body.enigma-surface.enigma-glass-off .settings-panel textarea {background:var(--eg-card);}
+body.enigma-surface.enigma-motion-off[data-enigma-tone="dark"]::before,body.enigma-surface.enigma-motion-off[data-enigma-tone="dark"]::after {animation:none;}
+@media(prefers-reduced-motion:reduce){body.enigma-surface[data-enigma-tone="dark"]::before,body.enigma-surface[data-enigma-tone="dark"]::after{animation:none;}}
+@media(prefers-reduced-transparency:reduce),(prefers-contrast:more){body.enigma-surface .settings-panel{--bg-card:var(--eg-card);}body.enigma-surface .settings-panel [data-settings-surface="card"]{background:var(--eg-card);}body.enigma-surface[data-enigma-tone="dark"]::after{opacity:.3;animation:none;}}

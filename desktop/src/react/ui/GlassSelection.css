@@ -1,0 +1,10 @@
+[data-glass-segmented] { position: relative; isolation: isolate; }
+[data-glass-segmented] > .enigma-glass-selection {
+  position: absolute; inset: 0 auto auto 0; width: 0; height: 0; opacity: 0;
+  pointer-events: none; z-index: 0; box-sizing: border-box;
+}
+[data-glass-segmented] > :not(.enigma-glass-selection) { position: relative; z-index: 1; }
+body.enigma-surface [data-glass-segmented] > button:is([aria-selected="true"],[aria-pressed="true"],[aria-current="page"]),
+body.enigma-surface [data-glass-segmented] > .enigma-tab[data-active="true"] {
+  background: transparent; box-shadow: none; border-color: transparent;
+}

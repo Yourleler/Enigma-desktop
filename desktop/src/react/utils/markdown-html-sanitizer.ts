@@ -221,7 +221,7 @@ const ALLOWED_DISPLAY_VALUES = new Set([
 
 const UNSAFE_CSS_VALUE_RE = /url\s*\(|expression\s*\(|@import|javascript:|vbscript:|data:|file:|behavior\s*:/i;
 
-function sanitizeHref(raw: string): string | null {
+function sanitizeHref(raw: string, previewFileLinks: ReadonlySet<string>): string | null {
   const href = raw.trim();
   if (!href) return null;
   if (href.startsWith('#')) return href;
@@ -229,18 +229,20 @@ function sanitizeHref(raw: string): string | null {
 
   try {
     const parsed = new URL(href);
-    return SAFE_URL_PROTOCOLS.has(parsed.protocol) ? href : null;
+    return SAFE_URL_PROTOCOLS.has(parsed.protocol)
+      || (parsed.protocol === 'file:' && previewFileLinks.has(href)) ? href : null;
   } catch {
     return null;
   }
 }
 
-function sanitizeImageSrc(raw: string): string | null {
+function sanitizeImageSrc(raw: string, allowLocalImages: boolean): string | null {
   const src = raw.trim();
   if (!src || !EXPLICIT_PROTOCOL_RE.test(src)) return null;
 
   try {
     const parsed = new URL(src);
+    if (parsed.protocol === 'file:' && !allowLocalImages) return null;
     return SAFE_IMAGE_URL_PROTOCOLS.has(parsed.protocol) ? src : null;
   } catch {
     return null;
@@ -340,7 +342,7 @@ function normalizeFootnoteRole(element: Element, tagName: string, raw: string): 
   return null;
 }
 
-function sanitizeAttributes(element: Element, tagName: string): void {
+function sanitizeAttributes(element: Element, tagName: string, previewFileLinks: ReadonlySet<string>, allowLocalImages: boolean): void {
   for (const attr of Array.from(element.attributes)) {
     const name = attr.name.toLowerCase();
 
@@ -350,7 +352,7 @@ function sanitizeAttributes(element: Element, tagName: string): void {
     }
 
     if (tagName === 'a' && name === 'href') {
-      const href = sanitizeHref(attr.value);
+      const href = sanitizeHref(attr.value, previewFileLinks);
       if (href) {
         element.setAttribute('href', href);
         element.setAttribute('rel', 'noopener noreferrer');
@@ -361,7 +363,7 @@ function sanitizeAttributes(element: Element, tagName: string): void {
     }
 
     if (tagName === 'img' && name === 'src') {
-      const src = sanitizeImageSrc(attr.value);
+      const src = sanitizeImageSrc(attr.value, allowLocalImages);
       if (src) element.setAttribute('src', src);
       else element.removeAttribute(attr.name);
       continue;
@@ -459,13 +461,13 @@ function unwrapElement(element: Element): void {
   parent.removeChild(element);
 }
 
-function sanitizeChildren(parent: ParentNode): void {
+function sanitizeChildren(parent: ParentNode, previewFileLinks: ReadonlySet<string>, allowLocalImages: boolean): void {
   for (const child of Array.from(parent.childNodes)) {
-    sanitizeNode(child);
+    sanitizeNode(child, previewFileLinks, allowLocalImages);
   }
 }
 
-function sanitizeNode(node: ChildNode): void {
+function sanitizeNode(node: ChildNode, previewFileLinks: ReadonlySet<string>, allowLocalImages: boolean): void {
   if (node.nodeType === 3) return;
 
   if (node.nodeType !== 1) {
@@ -496,7 +498,7 @@ function sanitizeNode(node: ChildNode): void {
 
   const isFootnoteSection = tagName === 'section' && hasClass(element, 'footnotes');
   if (!isFootnoteSection && !ALLOWED_TAGS.has(tagName)) {
-    sanitizeChildren(element);
+    sanitizeChildren(element, previewFileLinks, allowLocalImages);
     unwrapElement(element);
     return;
   }
@@ -507,21 +509,21 @@ function sanitizeNode(node: ChildNode): void {
     return;
   }
 
-  sanitizeAttributes(element, tagName);
+  sanitizeAttributes(element, tagName, previewFileLinks, allowLocalImages);
   if (tagName === 'img' && !element.getAttribute('src')) {
     element.remove();
     return;
   }
-  sanitizeChildren(element);
+  sanitizeChildren(element, previewFileLinks, allowLocalImages);
 }
 
-export function sanitizeMarkdownPreviewHtml(html: string): string {
+export function sanitizeMarkdownPreviewHtml(html: string, previewFileLinks: ReadonlySet<string> = new Set(), allowLocalImages = true): string {
   if (typeof document === 'undefined') {
     throw new Error('Markdown preview sanitizer requires a DOM environment');
   }
 
   const template = document.createElement('template');
   template.innerHTML = html;
-  sanitizeChildren(template.content);
+  sanitizeChildren(template.content, previewFileLinks, allowLocalImages);
   return template.innerHTML;
 }

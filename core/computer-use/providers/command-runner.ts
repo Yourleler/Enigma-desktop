@@ -13,6 +13,8 @@ interface RunOptions {
   windowsHide?: boolean;
   timeoutMs?: number;
   stdin?: any;
+  signal?: AbortSignal;
+  onStderr?: (chunk: string) => void;
 }
 
 export function createCommandRunner({ spawnImpl = spawn } = {}) {
@@ -32,6 +34,7 @@ export function createCommandRunner({ spawnImpl = spawn } = {}) {
 
     run(command: string, args: string[] = [], options: RunOptions = {}) {
       return new Promise((resolve, reject) => {
+        if (options.signal?.aborted) { reject(options.signal.reason); return; }
         const child = spawnImpl(command, args, {
           env: options.env || process.env,
           windowsHide: options.windowsHide !== false,
@@ -42,11 +45,20 @@ export function createCommandRunner({ spawnImpl = spawn } = {}) {
         let stderr = "";
         let settled = false;
         let timer = null;
+        let terminationTimer = null;
+        const abort = () => {
+          // Native foreground input handles SIGTERM and releases mouse-down
+          // before exiting. Allow that cleanup before the hard fallback.
+          try { child.kill("SIGTERM"); } catch {}
+          terminationTimer = setTimeout(() => { try { child.kill("SIGKILL"); } catch {} }, 1000);
+        };
 
         const finish = (fn, value) => {
           if (settled) return;
           settled = true;
           if (timer) clearTimeout(timer);
+          if (terminationTimer) clearTimeout(terminationTimer);
+          options.signal?.removeEventListener('abort', abort);
           fn(value);
         };
 
@@ -60,11 +72,13 @@ export function createCommandRunner({ spawnImpl = spawn } = {}) {
         }
 
         child.stdout?.on("data", (chunk) => { stdout += chunk.toString(); });
-        child.stderr?.on("data", (chunk) => { stderr += chunk.toString(); });
+        child.stderr?.on("data", (chunk) => { stderr += chunk.toString(); options.onStderr?.(chunk.toString()); });
         child.on("error", (err) => finish(reject, err));
         child.on("close", (exitCode, signal) => {
           finish(resolve, { stdout, stderr, exitCode, signal });
         });
+        options.signal?.addEventListener('abort', abort, {once:true});
+        if (options.signal?.aborted) abort();
 
         if (options.stdin != null) {
           child.stdin?.write(String(options.stdin));

@@ -4,7 +4,7 @@ const mode=process.argv[2]||'server';
 const modelsIndex=process.argv.indexOf('--models');
 const workspaceIndex=process.argv.indexOf('--workspace');
 const profile=await prepareEnigmaProfile({modelsFile:modelsIndex>=0?process.argv[modelsIndex+1]:undefined,workspace:workspaceIndex>=0?process.argv[workspaceIndex+1]:undefined});
-const child=spawn(process.execPath,['scripts/launch.js',mode],{stdio:'inherit',env:{...process.env,HANA_HOME:profile.dataRoot,ENIGMA_DESKTOP_DATA:profile.dataRoot}});
+const child=spawn(process.execPath,['scripts/launch.js',mode],{stdio:'inherit',env:{...process.env,HANA_HOME:profile.dataRoot,ENIGMA_DESKTOP_DATA:profile.dataRoot,ENIGMA_DESKTOP_PRODUCT:'1'}});
 child.on('error',error=>{console.error(error.message);process.exitCode=1;});
 for(const signal of ['SIGTERM','SIGINT'])process.on(signal,()=>child.kill(signal));
 child.on('exit',code=>{process.exitCode=code??1;});

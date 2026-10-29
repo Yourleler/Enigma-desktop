@@ -19,6 +19,8 @@ import { uniqueMarkdownHeadingId } from './markdown-document';
 type MarkdownItInstance = ReturnType<typeof markdownit>;
 type MarkdownRenderEnv = {
   markdownImage?: MarkdownImageContext;
+  markdownLink?: MarkdownImageContext;
+  previewFileLinks?: Set<string>;
   footnoteIdPrefix?: string;
   footnotes?: FootnoteState;
 };
@@ -26,6 +28,8 @@ type MarkdownRenderEnv = {
 export interface MarkdownPreviewOptions {
   filePath?: string | null;
   getFileUrl?: ((filePath: string) => string | undefined) | null;
+  getLinkUrl?: ((filePath: string) => string | undefined) | null;
+  allowLocalImages?: boolean;
 }
 
 export interface MarkdownImageContext {
@@ -250,7 +254,7 @@ export function resolveMarkdownImageSrc(src: string, context: MarkdownImageConte
   if (!resolvedPath) return src;
 
   const fileUrl = context.getFileUrl(resolvedPath);
-  return fileUrl ? `${fileUrl}${suffix}` : src;
+  return fileUrl ? `${fileUrl}${suffix.startsWith('?') && fileUrl.includes('?') ? '&' + suffix.slice(1) : suffix}` : src;
 }
 
 export function parseImageDimensions(raw: string): ImageDimensions | null {
@@ -1023,6 +1027,32 @@ function markdownImageRenderer(md: MarkdownItInstance): void {
   };
 }
 
+function markdownPreviewLinkRenderer(md: MarkdownItInstance): void {
+  const defaultLinkOpen = md.renderer.rules.link_open
+    ?? ((tokens, idx, options, _env, self) => self.renderToken(tokens, idx, options));
+  md.renderer.rules.link_open = (tokens, idx, options, env, self) => {
+    const token = tokens[idx];
+    const href = token.attrGet('href')?.trim();
+    const context = env as MarkdownRenderEnv;
+    if (href && context.previewFileLinks && !href.startsWith('#')
+      && !href.startsWith('//') && !href.startsWith('\\\\') && !EXPLICIT_PROTOCOL_RE.test(href)) {
+      const resolved = resolveMarkdownImageSrc(href, context.markdownLink || context.markdownImage);
+      // Only file URLs generated from this preview's explicit file context may
+      // survive sanitization. Raw HTML and context-free messages get no grant.
+      try {
+        const protocol = new URL(resolved).protocol;
+        if (protocol === 'file:') {
+          context.previewFileLinks.add(resolved);
+          token.attrSet('href', resolved);
+        } else if (context.markdownLink && (protocol === 'http:' || protocol === 'https:')) {
+          token.attrSet('href', resolved);
+        }
+      } catch { /* An unresolved relative link remains inert. */ }
+    }
+    return defaultLinkOpen(tokens, idx, options, env, self);
+  };
+}
+
 function markdownTableScrollWrapper(md: MarkdownItInstance): void {
   const defaultTableOpen = md.renderer.rules.table_open
     ?? ((tokens, idx, options, _env, self) => self.renderToken(tokens, idx, options));
@@ -1045,6 +1075,7 @@ function buildMarkdownEnv(src: string, options: MarkdownPreviewOptions = {}): Ma
       filePath: options.filePath,
       getFileUrl: options.getFileUrl,
     },
+    ...(options.getLinkUrl ? {markdownLink: {filePath:options.filePath,getFileUrl:options.getLinkUrl}} : {}),
   };
 }
 
@@ -1071,6 +1102,7 @@ export function getPreviewMd(): MarkdownItInstance {
     typographer: true,
   });
   applyMarkdownPlugins(_previewMd);
+  _previewMd.use(markdownPreviewLinkRenderer);
   return _previewMd;
 }
 
@@ -1080,7 +1112,9 @@ export function renderMarkdown(src: string): string {
 
 export function renderMarkdownPreview(src: string, options: MarkdownPreviewOptions = {}): string {
   try {
-    return sanitizeMarkdownPreviewHtml(getPreviewMd().render(src, buildMarkdownEnv(src, options)));
+    const env = buildMarkdownEnv(src, options);
+    env.previewFileLinks = new Set();
+    return sanitizeMarkdownPreviewHtml(getPreviewMd().render(src, env), env.previewFileLinks, options.allowLocalImages !== false);
   } catch (err) {
     if (process.env.NODE_ENV !== 'production') {
       console.warn('[markdown] preview sanitizer failed:', err);

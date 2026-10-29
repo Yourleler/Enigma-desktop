@@ -4,6 +4,8 @@ import {
   computerUseHelperOutputDir,
   patchCuaDriverAppStateSource,
   patchCuaDriverClickToolSource,
+  patchCuaDriverVisibleRowsSource,
+  patchCuaDriverScrollToolSource,
   resolveComputerUseHelperBuildArch,
   shouldBuildComputerUseHelper,
   swiftBuildScratchPath,
@@ -11,6 +13,22 @@ import {
 } from "../scripts/build-computer-use-helper.mjs";
 
 describe("Computer Use helper build script", () => {
+  it('uses native page actions only when the observed region advertises them',()=>{
+    const source='                if let element = focusedElement {\n                    // keyboard fallback\n';
+    const patched=patchCuaDriverScrollToolSource(source);
+    expect(patched).toContain('AXInput.advertisedActionNames(of: element).contains(action)');
+    expect(patched).toContain('AXInput.performAction(action, on: element)');
+    expect(patched).toContain('// keyboard fallback');
+    expect(patchCuaDriverScrollToolSource(patched)).toBe(patched);
+  });
+  it('prioritizes visible table rows while retaining the fallback for other AX controls',()=>{
+    const source='        let result = AXUIElementCopyAttributeValue(element, "AXChildren" as CFString, &value)';
+    const patched=patchCuaDriverVisibleRowsSource(source);
+    expect(patched).toContain('"AXVisibleRows"');
+    expect(patched).toContain('role == "AXTable" || role == "AXOutline"');
+    expect(patched).toContain('AXUIElementCopyAttributeValue(element, "AXChildren"');
+    expect(patchCuaDriverVisibleRowsSource(patched)).toBe(patched);
+  });
   it("skips the Swift helper build outside macOS", () => {
     expect(shouldBuildComputerUseHelper({ platform: "linux" })).toBe(false);
     expect(shouldBuildComputerUseHelper({ platform: "win32" })).toBe(false);

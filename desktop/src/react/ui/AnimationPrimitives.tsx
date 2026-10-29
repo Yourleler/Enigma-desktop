@@ -1,3 +1,4 @@
+import { useMotionEnabled } from './material-preferences';
 /**
  * Hana 动画原语组件
  *
@@ -53,7 +54,8 @@ export const FadeIn = forwardRef<HTMLDivElement, FadeInProps>(function FadeIn(
   { children, preset = 'paper', delay = 0, y = 4, className, style },
   ref,
 ) {
-  const transition: Transition = delay
+  const enabled = useMotionEnabled();
+  const transition: Transition = !enabled ? { duration: 0 } : delay
     ? { ...spring[preset], delay }
     : spring[preset];
 
@@ -94,6 +96,7 @@ interface CollapseProps {
  * ```
  */
 export function Collapse({ open, children, preset = 'paper', className, style }: CollapseProps) {
+  const enabled = useMotionEnabled();
   return (
     <AnimatePresence initial={false}>
       {open && (
@@ -102,7 +105,7 @@ export function Collapse({ open, children, preset = 'paper', className, style }:
           initial={{ height: 0, opacity: 0 }}
           animate={{ height: 'auto', opacity: 1 }}
           exit={{ height: 0, opacity: 0 }}
-          transition={spring[preset]}
+          transition={enabled ? spring[preset] : { duration: 0 }}
           style={{ overflow: 'hidden', ...style }}
           className={className}
         >
@@ -142,6 +145,7 @@ export const SlideIn = forwardRef<HTMLDivElement, SlideInProps>(function SlideIn
   { children, from = 'right', preset = 'paperGentle', distance = 300, className, style },
   ref,
 ) {
+  const enabled = useMotionEnabled();
   const axis = from === 'left' || from === 'right' ? 'x' : 'y';
   const sign = from === 'right' || from === 'bottom' ? 1 : -1;
   const offset = distance * sign;
@@ -152,7 +156,7 @@ export const SlideIn = forwardRef<HTMLDivElement, SlideInProps>(function SlideIn
       initial={{ opacity: 0.5, [axis]: offset }}
       animate={{ opacity: 1, [axis]: 0 }}
       exit={{ opacity: 0, [axis]: offset }}
-      transition={spring[preset]}
+      transition={enabled ? spring[preset] : { duration: 0 }}
       className={className}
       style={style}
     >
@@ -209,6 +213,7 @@ interface AnimatedListItemProps extends ComponentPropsWithoutRef<typeof motion.d
  */
 export const AnimatedListItem = forwardRef<HTMLDivElement, AnimatedListItemProps>(
   function AnimatedListItem({ children, preset = 'paper', ...rest }, ref) {
+    const enabled = useMotionEnabled();
     return (
       <motion.div
         ref={ref}
@@ -216,7 +221,7 @@ export const AnimatedListItem = forwardRef<HTMLDivElement, AnimatedListItemProps
         initial={{ opacity: 0, y: 6, scale: 0.97 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, x: -20, scale: 0.95 }}
-        transition={spring[preset]}
+        transition={enabled ? spring[preset] : { duration: 0 }}
         {...rest}
       >
         {children}

@@ -63,6 +63,18 @@ describe('streamBufferManager.snapshot', () => {
     useStore.getState().initSession(PATH, [userItem('u1', 'hi')], false);
   });
 
+  it('preserves receiving time through rehydration and uses the persisted completion timestamp', () => {
+    streamBufferManager.handle({type:'text_delta',sessionPath:PATH,delta:'answer'});
+    const first = getAssistantMessage()!.timestamp;
+    expect(snapshotStreamBuffer(PATH)?.timestamp).toBe(first);
+    useStore.getState().initSession(PATH,[userItem('u1','hi')],false);
+    streamBufferManager.handle({type:'text_delta',sessionPath:PATH,delta:' continued'});
+    expect(getAssistantMessage()!.timestamp).toBe(first);
+    streamBufferManager.handle({type:'turn_end',sessionPath:PATH,assistantTimestamp:first!+20000,turnStartedAt:first!-1000});
+    expect(getAssistantMessage()!.timestamp).toBe(first!+20000);
+    expect(getAssistantMessage()!.turnStartedAt).toBe(first!-1000);
+  });
+
   it('空 buffer 返回 null', () => {
     expect(snapshotStreamBuffer(PATH)).toBeNull();
   });

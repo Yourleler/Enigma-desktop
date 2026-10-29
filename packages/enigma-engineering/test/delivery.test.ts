@@ -36,3 +36,16 @@ test('real Pi resumes once from an actual background event and does not replay i
     assert.equal((await events.delivery((await events.events(manager.getSessionId()))[0]!))?.state, 'enqueued');
   } finally { await session.abort(); session.dispose(); await rm(root, { recursive: true, force: true }); }
 });
+test('a completed wait cancelled before delivery cannot restart the main task',async()=>{
+ const {root,workspace}=await fixture(),waits=new TaskEvents(workspace),runs=new BackgroundRuns(workspace);let runId:string|undefined;
+ const hooks=new Map<string,Function>(),sent:unknown[]=[];
+ const pi:any={on:(name:string,handler:Function)=>hooks.set(name,handler),events:{emit(){}},getActiveTools:()=>[],setActiveTools(){},registerTool(){},appendEntry(){},sendMessage:(message:unknown)=>sent.push(message)};
+ const ctx:any={cwd:root,isIdle:()=>true,hasPendingMessages:()=>false,sessionManager:{getSessionId:()=> 'owned',getBranch:()=>[]}};
+ try{
+  const run=await runs.start({repo:'library',task:'owned',label:'done',argv:[process.execPath,'-e','console.log("done")']});runId=run.spec.id;
+  const wait=await waits.start({label:'resume later',task:'owned',condition:{kind:'background',run:runId},resume:true,pollMs:250});
+  const until=Date.now()+5000;while(!(await waits.events('owned')).length&&Date.now()<until)await delay(25);const event=(await waits.events('owned'))[0]!;assert(event);assert(event.resume);
+  await waits.cancel(wait.id,'owned');createDeliveryExtension({workspace,pollMs:10000})(pi);await hooks.get('session_start')!({},ctx);await hooks.get('agent_settled')!({},ctx);
+  assert.equal(sent.length,0);assert.equal((await waits.delivery(event))?.state,'suppressed');
+ }finally{await hooks.get('session_shutdown')?.();if(runId)await runs.drain(runId);await rm(root,{recursive:true,force:true});}
+});

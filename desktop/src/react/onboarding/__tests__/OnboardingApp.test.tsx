@@ -115,6 +115,13 @@ describe('OnboardingApp locale switching', () => {
     vi.unstubAllGlobals();
   });
 
+  it('allows entering the workspace without provider credentials and keeps errors actionable', async () => {
+    render(<OnboardingApp preview={false} skipToTutorial={false}/>);
+    const button=await screen.findByRole('button',{name:'稍后设置，进入工作台'});await waitFor(()=>expect(button).toBeEnabled());
+    vi.mocked(window.hana.onboardingComplete!).mockRejectedValueOnce(new Error('保存暂时失败'));fireEvent.click(button);expect(await screen.findByText(/保存暂时失败/)).toBeVisible();expect(button).toBeEnabled();fireEvent.click(button);await waitFor(()=>expect(window.hana.onboardingComplete).toHaveBeenCalledTimes(2));
+    expect(vi.mocked(fetch).mock.calls.every(([url])=>String(url).includes('/agents?fresh=1'))).toBe(true);
+  });
+
   it('renders the newly selected locale only after that locale has loaded', async () => {
     render(<OnboardingApp preview skipToTutorial={false} />);
 
@@ -236,4 +243,19 @@ describe('OnboardingApp locale switching', () => {
     expect(container.querySelectorAll('.onboarding-dot')[5]).toHaveClass('active');
     expect(screen.queryByRole('heading', { name: 'onboarding.theme.title' })).not.toBeInTheDocument();
   });
+});
+
+it('renders the setup preview without Electron IPC and without mutating a server profile', async () => {
+  const originalHana = window.hana;
+  const fetchMock = vi.fn();
+  vi.stubGlobal('fetch', fetchMock);
+  Object.assign(window, { hana: undefined, i18n: { defaultName: '', load: vi.fn().mockResolvedValue(undefined) }, t: (key: string) => key });
+  try {
+    render(<OnboardingApp preview skipToTutorial={false} />);
+    expect(await screen.findByRole('button', { name: 'onboarding.welcome.next' })).toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(window.i18n.defaultName).toBe('Enigma');
+  } finally {
+    cleanup(); Object.assign(window, { hana: originalHana }); vi.unstubAllGlobals();
+  }
 });

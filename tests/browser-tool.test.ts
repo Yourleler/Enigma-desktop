@@ -41,7 +41,7 @@ describe("browser tool invocation descriptors", () => {
   });
 
   it("fails closed for an action outside the browser schema", () => {
-    expect(resolveToolInvocationPermission(createBrowserTool(() => null), { action: "download" }))
+    expect(resolveToolInvocationPermission(createBrowserTool(() => null), { action: "invalid_action" }))
       .toMatchObject({ ok: false, error: { reason: "resolver_rejected" } });
   });
 

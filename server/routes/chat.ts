@@ -1,3 +1,5 @@
+import { timeMillis } from '../../shared/session-timing.ts';
+import { registerSessionTimingRoute } from '../session-timing.ts';
 /**
  * WebSocket 聊天路由
  *
@@ -6,7 +8,11 @@
  */
 import { Hono } from "hono";
 import { MoodParser, ThinkTagParser, CardParser } from "../../core/events.ts";
-import { dropUninstalledPluginCards, extractBlocks, pluginInstalledPredicate } from "../block-extractors.ts";
+import {
+  dropUninstalledPluginCards,
+  extractBlocks,
+  pluginInstalledPredicate,
+} from "../block-extractors.ts";
 import { normalizePluginChatSurfaceBlocks } from "../plugin-chat-surface.ts";
 import { toAppEventWsMessage } from "../app-events.ts";
 import { toResourceEventWsMessage } from "../resource-events-ws.ts";
@@ -20,6 +26,7 @@ import {
 import { debugLog, createModuleLogger } from "../../lib/debug-log.ts";
 import { t } from "../../lib/i18n.ts";
 import { getLastAssistantUsage } from "../../lib/pi-sdk/index.ts";
+import { SessionTokenMeters } from "../session-token-meter.ts";
 import {
   compactSessionWithCachePreservationRecoveringRuntime,
   runLossyLocalCompactionForSession,
@@ -31,7 +38,10 @@ import {
   INSTANT_SIMPLE_COMPACTION_RUNTIME_MODE,
   normalizeCompactionLifecycleMode,
 } from "../../shared/compaction-mode.ts";
-import { submitDesktopSessionInterjection, submitDesktopSessionMessage } from "../../core/desktop-session-submit.ts";
+import {
+  submitDesktopSessionInterjection,
+  submitDesktopSessionMessage,
+} from "../../core/desktop-session-submit.ts";
 import {
   AgentReviewTurnCoordinator,
   buildSessionReferenceBlock,
@@ -51,7 +61,10 @@ import { visiblePromptText } from "../../core/session-reminders.ts";
 import { AppError } from "../../shared/errors.ts";
 import { errorBus } from "../../shared/error-bus.ts";
 import { createRequestContext } from "../http/boundary.ts";
-import { buildDeferredResultInterludeBlock, resolveDeferredReceiverName } from "../deferred-result-interlude.ts";
+import {
+  buildDeferredResultInterludeBlock,
+  resolveDeferredReceiverName,
+} from "../deferred-result-interlude.ts";
 import { DEFERRED_RESULT_MESSAGE_TYPE } from "../../lib/deferred-result-notification.ts";
 import {
   TURN_INPUT_CONSUMPTION_EVENT_TYPE,
@@ -62,10 +75,19 @@ import {
   isSessionTurnInputEntry,
 } from "../../lib/turn-input-presentation.ts";
 import { buildAutomationSuggestionBlock } from "../suggestion-blocks.ts";
-import { isAllowedChatImageMime, isChatImageBase64WithinLimit } from "../../shared/image-mime.ts";
-import { isAllowedChatVideoMime, isChatVideoBase64WithinLimit } from "../../shared/video-mime.ts";
-import { isAllowedChatAudioMime, isChatAudioBase64WithinLimit } from "../../shared/audio-mime.ts";
-import { getAssistantTextPhase } from "../../shared/text-signature.ts";
+import {
+  isAllowedChatImageMime,
+  isChatImageBase64WithinLimit,
+} from "../../shared/image-mime.ts";
+import {
+  isAllowedChatVideoMime,
+  isChatVideoBase64WithinLimit,
+} from "../../shared/video-mime.ts";
+import {
+  isAllowedChatAudioMime,
+  isChatAudioBase64WithinLimit,
+} from "../../shared/audio-mime.ts";
+import { getAssistantTextPhase, includesCompatibleResponseText } from "../../shared/text-signature.ts";
 import { summarizeToolArgs } from "../../shared/tool-arg-summary.ts";
 import { projectLiveToolResultOutcome } from "../../shared/tool-outcome.ts";
 import fs from "fs";
@@ -81,7 +103,11 @@ import {
 const log = createModuleLogger("chat");
 const wsLog = createModuleLogger("ws");
 
-export function summarizeToolStartArgs(toolName: any, rawArgs: any, startedAt = Date.now()) {
+export function summarizeToolStartArgs(
+  toolName: any,
+  rawArgs: any,
+  startedAt = Date.now(),
+) {
   void toolName;
   void startedAt;
   return summarizeToolArgs(rawArgs);
@@ -94,31 +120,43 @@ function extractText(content: any) {
   if (typeof content === "string") return content;
   if (!Array.isArray(content)) return "";
   return content
-    .filter(b => b.type === "text" && b.text)
-    .map(b => b.text)
+    .filter((b) => b.type === "text" && b.text)
+    .map((b) => b.text)
     .join("");
 }
 
 function persistedTurnEntryIds(engine: any, sessionPath: string) {
-  const branch = engine.getSessionByPath?.(sessionPath)?.sessionManager?.getBranch?.();
+  const branch = engine
+    .getSessionByPath?.(sessionPath)
+    ?.sessionManager?.getBranch?.();
   if (!Array.isArray(branch) || branch.length === 0) {
-    return { turnInputEntryId: null, userEntryId: null, assistantEntryId: null };
+    return {
+      turnInputEntryId: null,
+      userEntryId: null,
+      assistantEntryId: null,
+    };
   }
 
   let lastTurnInputIndex = -1;
   let lastAssistantIndex = -1;
   for (let index = branch.length - 1; index >= 0; index -= 1) {
     const entry = branch[index];
-    if (lastTurnInputIndex < 0 && isSessionTurnInputEntry(entry)) lastTurnInputIndex = index;
+    if (lastTurnInputIndex < 0 && isSessionTurnInputEntry(entry))
+      lastTurnInputIndex = index;
     if (
-      lastAssistantIndex < 0
-      && entry?.type === "message"
-      && entry.message?.role === "assistant"
-    ) lastAssistantIndex = index;
+      lastAssistantIndex < 0 &&
+      entry?.type === "message" &&
+      entry.message?.role === "assistant"
+    )
+      lastAssistantIndex = index;
     if (lastTurnInputIndex >= 0 && lastAssistantIndex >= 0) break;
   }
   if (lastTurnInputIndex < 0) {
-    return { turnInputEntryId: null, userEntryId: null, assistantEntryId: null };
+    return {
+      turnInputEntryId: null,
+      userEntryId: null,
+      assistantEntryId: null,
+    };
   }
 
   let turnInputIndex = lastTurnInputIndex;
@@ -134,21 +172,31 @@ function persistedTurnEntryIds(engine: any, sessionPath: string) {
   }
   const turnInputEntry = branch[turnInputIndex];
   const turnInputEntryId = turnInputEntry?.id || null;
-  const visibleUserEntry = turnInputEntry?.type === "message"
-    && turnInputEntry.message?.role === "user"
-    && !isHiddenTurnInputMessage(turnInputEntry.message);
+  const visibleUserEntry =
+    turnInputEntry?.type === "message" &&
+    turnInputEntry.message?.role === "user" &&
+    !isHiddenTurnInputMessage(turnInputEntry.message);
   return {
     turnInputEntryId,
     userEntryId: visibleUserEntry ? turnInputEntryId : null,
     assistantEntryId,
+    turnStartedAt: timeMillis(turnInputEntry?.timestamp ?? turnInputEntry?.message?.timestamp),
+    assistantTimestamp: assistantEntryId ? timeMillis(branch[lastAssistantIndex]?.timestamp ?? branch[lastAssistantIndex]?.message?.timestamp) : null,
   };
 }
 
 function deferredResultFileBlocks(result: any, taskId: any = null) {
   if (!result || typeof result !== "object" || Array.isArray(result)) return [];
-  const sessionFiles = Array.isArray(result.sessionFiles) ? result.sessionFiles : [];
+  const sessionFiles = Array.isArray(result.sessionFiles)
+    ? result.sessionFiles
+    : [];
   return sessionFiles
-    .map((file) => sessionFileToContentBlock(file, taskId ? { replacesTaskId: taskId } : undefined))
+    .map((file) =>
+      sessionFileToContentBlock(
+        file,
+        taskId ? { replacesTaskId: taskId } : undefined,
+      ),
+    )
     .filter(Boolean);
 }
 
@@ -157,8 +205,14 @@ function sessionFileToContentBlock(file: any, extra: any = undefined) {
   const filePath = file.filePath || file.realPath || null;
   if (!filePath) return null;
   const fileId = file.fileId || file.id || null;
-  const label = file.label || file.displayName || file.filename || path.basename(filePath);
-  const ext = file.ext ?? path.extname(filePath || label).toLowerCase().replace(/^\./, "");
+  const label =
+    file.label || file.displayName || file.filename || path.basename(filePath);
+  const ext =
+    file.ext ??
+    path
+      .extname(filePath || label)
+      .toLowerCase()
+      .replace(/^\./, "");
   return {
     type: "file",
     ...(extra || {}),
@@ -183,7 +237,13 @@ function sessionFileToContentBlock(file: any, extra: any = undefined) {
 
 function deferredResultFailureBlock(event: any) {
   const metaType = event?.meta?.type || "";
-  const mediaKind = event?.meta?.mediaKind || (metaType === "video-generation" ? "video" : (metaType === "image-generation" ? "image" : null));
+  const mediaKind =
+    event?.meta?.mediaKind ||
+    (metaType === "video-generation"
+      ? "video"
+      : metaType === "image-generation"
+        ? "image"
+        : null);
   if (!mediaKind || !event?.taskId) return null;
   return {
     type: "media_generation",
@@ -205,7 +265,8 @@ export function toCompactionLifecycleWsMessage(
   if (!sessionPath) return null;
   const sessionId = getSessionIdForPath?.(sessionPath) ?? null;
   const rawMode = event?.mode ?? getCompactionMode?.();
-  const mode = rawMode == null ? null : normalizeCompactionLifecycleMode(rawMode);
+  const mode =
+    rawMode == null ? null : normalizeCompactionLifecycleMode(rawMode);
   if (event.type === "compaction_start") {
     return {
       type: "compaction_start",
@@ -244,7 +305,11 @@ function sessionIdForLegacyCompactPath(engine: any, sessionPath: string) {
   }
 }
 
-export function buildDesktopSlashSessionRef(engine: any, agentId: string, sessionPath: string) {
+export function buildDesktopSlashSessionRef(
+  engine: any,
+  agentId: string,
+  sessionPath: string,
+) {
   const sessionId = sessionIdForLegacyCompactPath(engine, sessionPath);
   return {
     kind: "desktop",
@@ -256,13 +321,24 @@ export function buildDesktopSlashSessionRef(engine: any, agentId: string, sessio
 
 // compact 只接受 manifest 当前定位器：压缩会重写 JSONL，落到过期路径上等于写错文件。
 export function resolveCompactSessionTarget(engine: any, msg: any) {
-  const ctx = resolveWsSessionContext(engine, msg, { requireManifestLocator: true });
+  const ctx = resolveWsSessionContext(engine, msg, {
+    requireManifestLocator: true,
+  });
   // 显式比较 false 而不是 !ctx.ok：server 侧关掉了 strictNullChecks，此时对显式声明的
   // 判别联合取反不会收窄到错误分支（推导出来的 as const 联合不受此限）。
   if (ctx.ok === false) {
-    return { ok: false as const, code: ctx.code, message: ctx.message, sessionId: ctx.sessionId };
+    return {
+      ok: false as const,
+      code: ctx.code,
+      message: ctx.message,
+      sessionId: ctx.sessionId,
+    };
   }
-  return { ok: true as const, sessionId: ctx.sessionId, sessionPath: ctx.sessionPath };
+  return {
+    ok: true as const,
+    sessionId: ctx.sessionId,
+    sessionPath: ctx.sessionPath,
+  };
 }
 
 function compactionNoopReason(message: string) {
@@ -272,11 +348,12 @@ function compactionNoopReason(message: string) {
 }
 
 export function toNotificationWsMessage(event: any, sessionPath: any = null) {
-  const desktopFocusPolicy = event.desktopFocusPolicy === "when_session_unfocused"
-    ? "when_session_unfocused"
-    : event.desktopFocusPolicy === "when_unfocused"
-      ? "when_unfocused"
-      : "always";
+  const desktopFocusPolicy =
+    event.desktopFocusPolicy === "when_session_unfocused"
+      ? "when_session_unfocused"
+      : event.desktopFocusPolicy === "when_unfocused"
+        ? "when_unfocused"
+        : "always";
   return {
     type: "notification",
     title: event.title,
@@ -305,24 +382,36 @@ export function toAgentActivityWsMessage(event: any, sessionPath: any) {
 export const DEFAULT_DISCONNECT_ABORT_GRACE_MS = 5 * 60_000;
 export const DEFAULT_TURN_STALL_ABORT_MS = 20 * 60_000;
 
-export function resolveDisconnectAbortGraceMs(value = process.env.HANA_WS_DISCONNECT_ABORT_GRACE_MS) {
-  if (value === undefined || value === null || value === "") return DEFAULT_DISCONNECT_ABORT_GRACE_MS;
+export function resolveDisconnectAbortGraceMs(
+  value = process.env.HANA_WS_DISCONNECT_ABORT_GRACE_MS,
+) {
+  if (value === undefined || value === null || value === "")
+    return DEFAULT_DISCONNECT_ABORT_GRACE_MS;
   const parsed = Number(value);
-  if (!Number.isFinite(parsed) || parsed < 0) return DEFAULT_DISCONNECT_ABORT_GRACE_MS;
+  if (!Number.isFinite(parsed) || parsed < 0)
+    return DEFAULT_DISCONNECT_ABORT_GRACE_MS;
   return Math.floor(parsed);
 }
 
-export function resolveTurnStallAbortMs(value = process.env.HANA_TURN_STALL_ABORT_MS) {
-  if (value === undefined || value === null || value === "") return DEFAULT_TURN_STALL_ABORT_MS;
+export function resolveTurnStallAbortMs(
+  value = process.env.HANA_TURN_STALL_ABORT_MS,
+) {
+  if (value === undefined || value === null || value === "")
+    return DEFAULT_TURN_STALL_ABORT_MS;
   const parsed = Number(value);
-  if (!Number.isFinite(parsed) || parsed < 0) return DEFAULT_TURN_STALL_ABORT_MS;
+  if (!Number.isFinite(parsed) || parsed < 0)
+    return DEFAULT_TURN_STALL_ABORT_MS;
   return Math.floor(parsed);
 }
 
-export function createChatRoute(engine: any, hub: any, {
-  upgradeWebSocket,
-  runInstantSimpleCompaction = runLossyLocalCompactionForSession,
-}: any) {
+export function createChatRoute(
+  engine: any,
+  hub: any,
+  {
+    upgradeWebSocket,
+    runInstantSimpleCompaction = runLossyLocalCompactionForSession,
+  }: any,
+) {
   const restRoute = new Hono();
   const wsRoute = new Hono();
 
@@ -348,13 +437,70 @@ export function createChatRoute(engine: any, hub: any, {
 
       // 中断所有正在 streaming 的 owner session（焦点 + 后台）
       for (const [, ss] of sessionState) ss.isAborted = true;
-      debugLog()?.log("ws", `no clients for ${disconnectAbortGraceMs}ms, aborting all streaming`);
+      debugLog()?.log(
+        "ws",
+        `no clients for ${disconnectAbortGraceMs}ms, aborting all streaming`,
+      );
       engine.abortAllStreaming().catch(() => {});
     }, disconnectAbortGraceMs);
     disconnectAbortTimer.unref?.();
   }
 
   const MAX_SESSION_STATES = 100;
+
+  // ── 实时 token 流速（Claude Code 风格 ↑/↓）：估算 + provider usage 真值对账 ──
+  const tokenMeters = new SessionTokenMeters();
+  let lastTokenTickAt = 0;
+  const tokenTickInterval = setInterval(() => {
+    const now = Date.now();
+    for (const sp of tokenMeters.activePaths()) {
+      // Gateway 这类轻事件链没有 turn_start，run 开始时上下文用量可能还没就绪；
+      // 上行估算在首个真实 output 出现前持续刷新。
+      if (tokenMeters.needsInputEstimate(sp)) tokenMeters.refreshInputEstimateIfNeeded(sp, contextInputEstimate(sp));
+      const snapshot = tokenMeters.sample(sp, false, now);
+      if (snapshot) broadcastTokenMeter(sp, snapshot);
+    }
+  }, 140);
+  tokenTickInterval.unref?.();
+
+  function broadcastTokenMeter(sessionPath, meter) {
+    broadcast({ type: "token_meter", sessionPath, meter });
+  }
+
+  function contextInputEstimate(sessionPath) {
+    try {
+      const usage =
+        engine.getSessionContextUsage?.(sessionPath) ||
+        engine.getSessionByPath(sessionPath)?.getContextUsage?.();
+      const tokens = usage?.tokens;
+      return typeof tokens === "number" && Number.isFinite(tokens)
+        ? Math.max(0, Math.round(tokens))
+        : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function beginMeterRequest(sessionPath) {
+    const session = engine.getSessionByPath(sessionPath);
+    tokenMeters.beginRequestUnlessActive(sessionPath, {
+      inputEstimate: contextInputEstimate(sessionPath),
+      model: session?.model
+        ? `${session.model.provider ?? ""}/${session.model.id ?? ""}`
+        : null,
+    });
+  }
+
+  /** 懒启动计量请求时使用的上下文（Gateway 轻事件链没有 turn_start）。 */
+  function meterRequestContext(sessionPath) {
+    const session = engine.getSessionByPath(sessionPath);
+    return {
+      inputEstimate: tokenMeters.needsInputEstimate(sessionPath) ? contextInputEstimate(sessionPath) : null,
+      model: session?.model
+        ? `${session.model.provider ?? ""}/${session.model.id ?? ""}`
+        : null,
+    };
+  }
 
   // 所有 WS 分支的身份入口：解析一次，失败就地回错，成功的结果由 handler 直接消费。
   function requireWsSessionContext(msg, ws) {
@@ -388,7 +534,9 @@ export function createChatRoute(engine: any, hub: any, {
     if (!sessionPath) return null;
     try {
       const sessionId = engine.getSessionIdForPath?.(sessionPath);
-      return typeof sessionId === "string" && sessionId.trim() ? sessionId.trim() : null;
+      return typeof sessionId === "string" && sessionId.trim()
+        ? sessionId.trim()
+        : null;
     } catch {
       return null;
     }
@@ -401,7 +549,11 @@ export function createChatRoute(engine: any, hub: any, {
   function getState(sessionPath) {
     if (!sessionPath) return null;
     const key = sessionStateKey(sessionPath);
-    if (key !== sessionPath && sessionState.has(sessionPath) && !sessionState.has(key)) {
+    if (
+      key !== sessionPath &&
+      sessionState.has(sessionPath) &&
+      !sessionState.has(key)
+    ) {
       sessionState.set(key, sessionState.get(sessionPath));
       sessionState.delete(sessionPath);
     }
@@ -456,7 +608,11 @@ export function createChatRoute(engine: any, hub: any, {
   function getExistingState(sessionPath) {
     if (!sessionPath) return null;
     const key = sessionStateKey(sessionPath);
-    if (key !== sessionPath && sessionState.has(sessionPath) && !sessionState.has(key)) {
+    if (
+      key !== sessionPath &&
+      sessionState.has(sessionPath) &&
+      !sessionState.has(key)
+    ) {
       sessionState.set(key, sessionState.get(sessionPath));
       sessionState.delete(sessionPath);
     }
@@ -470,7 +626,10 @@ export function createChatRoute(engine: any, hub: any, {
 
   const clients = new Map();
 
-  function createInitialWsClientRecord(requestContext, { assumeLocalOwner = false } = {}) {
+  function createInitialWsClientRecord(
+    requestContext,
+    { assumeLocalOwner = false } = {},
+  ) {
     return createWsClientRecord({
       principal: assumeLocalOwner
         ? {
@@ -517,9 +676,10 @@ export function createChatRoute(engine: any, hub: any, {
     // sessionId（如 createSessionStreamEventWsMessage 产出的流事件）优先用它，
     // 否则按 sessionPath 现查一次。只用于 wsClientCanReceiveEvent 的匹配，
     // 不写回 hardenedMsg —— 出站 wire payload 保持原样，本机桌面端行为不变。
-    const resolvedSessionId = hardenedMsg?.sessionPath && !hardenedMsg?.sessionId
-      ? sessionIdForPath(hardenedMsg.sessionPath)
-      : null;
+    const resolvedSessionId =
+      hardenedMsg?.sessionPath && !hardenedMsg?.sessionId
+        ? sessionIdForPath(hardenedMsg.sessionPath)
+        : null;
     // 同一条消息发给 N 个 client 时只序列化一次。lazy：没有任何 client
     // 能收到时连 JSON.stringify 都省掉。
     let serialized = null;
@@ -535,12 +695,13 @@ export function createChatRoute(engine: any, hub: any, {
   const agentReviewTurns = new AgentReviewTurnCoordinator({
     engine,
     submitSessionMessage: submitDesktopSessionMessage,
-    emitStatus: (status, sessionPath) => broadcast({
-      type: "agent_review_status",
-      sessionId: status.reviewedSessionId,
-      sessionPath,
-      ...status,
-    }),
+    emitStatus: (status, sessionPath) =>
+      broadcast({
+        type: "agent_review_status",
+        sessionId: status.reviewedSessionId,
+        sessionPath,
+        ...status,
+      }),
   });
 
   // 浏览器缩略图 30s 定时刷新（browser 活跃时）
@@ -549,48 +710,58 @@ export function createChatRoute(engine: any, hub: any, {
     if (_browserThumbTimer) return;
     _browserThumbTimer = setInterval(async () => {
       const browser = BrowserManager.instance();
-      if (!browser.hasAnyRunning) { stopBrowserThumbPoll(); return; }
-      await Promise.all(browser.runningSessions.map(async (sp) => {
-        const wasRunning = browser.isRunning(sp);
-        const thumbnail = await browser.thumbnail(sp);
-        if (thumbnail) {
-          const url = browser.currentUrl(sp);
-          broadcast({
-            type: "browser_status",
-            running: true,
-            url,
-            thumbnail,
-            thumbnailCapturedAt: Date.now(),
-            thumbnailUrl: url,
-            sessionPath: sp,
-          });
-        } else if (wasRunning && !browser.isRunning(sp)) {
-          broadcast({
-            type: "browser_status",
-            running: false,
-            url: browser.currentUrl(sp),
-            error: browser.sessionUnavailableReason?.(sp) || null,
-            sessionPath: sp,
-          });
-        }
-      }));
+      if (!browser.hasAnyRunning) {
+        stopBrowserThumbPoll();
+        return;
+      }
+      await Promise.all(
+        browser.runningSessions.map(async (sp) => {
+          const wasRunning = browser.isRunning(sp);
+          const thumbnail = await browser.thumbnail(sp);
+          if (thumbnail) {
+            const url = browser.currentUrl(sp);
+            broadcast({
+              type: "browser_status",
+              running: true,
+              url,
+              thumbnail,
+              thumbnailCapturedAt: Date.now(),
+              thumbnailUrl: url,
+              sessionPath: sp,
+            });
+          } else if (wasRunning && !browser.isRunning(sp)) {
+            broadcast({
+              type: "browser_status",
+              running: false,
+              url: browser.currentUrl(sp),
+              error: browser.sessionUnavailableReason?.(sp) || null,
+              sessionPath: sp,
+            });
+          }
+        }),
+      );
       if (!browser.hasAnyRunning) stopBrowserThumbPoll();
     }, 30_000);
   }
   function stopBrowserThumbPoll() {
-    if (_browserThumbTimer) { clearInterval(_browserThumbTimer); _browserThumbTimer = null; }
+    if (_browserThumbTimer) {
+      clearInterval(_browserThumbTimer);
+      _browserThumbTimer = null;
+    }
   }
 
   function emitStreamEvent(sessionPath, ss, event) {
     const entry = appendSessionStreamEvent(ss, event);
     // Phase 4: 始终广播所有事件，前端按 sessionPath 路由到对应 panel
-    broadcast(createSessionStreamEventWsMessage({
-      sessionPath,
-      sessionId: sessionIdForPath(sessionPath),
-      sessionEvent: event,
-      streamId: entry.streamId,
-      seq: entry.seq,
-    }));
+    broadcast(
+      createSessionStreamEventWsMessage({
+        sessionPath,
+        sessionId: sessionIdForPath(sessionPath),
+        sessionEvent: event,
+        streamId: entry.streamId,
+        seq: entry.seq,
+      }),
+    );
     return entry;
   }
 
@@ -598,7 +769,11 @@ export function createChatRoute(engine: any, hub: any, {
     const events = [];
 
     if (event.status === "success") {
-      for (const block of enrichSessionFileBlocks(deferredResultFileBlocks(event.result, event.taskId), engine, sessionPath)) {
+      for (const block of enrichSessionFileBlocks(
+        deferredResultFileBlocks(event.result, event.taskId),
+        engine,
+        sessionPath,
+      )) {
         events.push({ type: "content_block", block });
       }
     } else {
@@ -615,7 +790,12 @@ export function createChatRoute(engine: any, hub: any, {
     }
   }
 
-  function queueOrEmitDeferredContentEvents(sessionPath, ss, events, { delayUntilTurnEnd = ss.isStreaming } = {}) {
+  function queueOrEmitDeferredContentEvents(
+    sessionPath,
+    ss,
+    events,
+    { delayUntilTurnEnd = ss.isStreaming } = {},
+  ) {
     if (!events.length) return;
     if (delayUntilTurnEnd) {
       ss.pendingDeferredContentEvents.push(...events);
@@ -638,23 +818,37 @@ export function createChatRoute(engine: any, hub: any, {
   }
 
   function discardQueuedBranchTaskEvents(ss, taskIds) {
-    const discarded = new Set(Array.isArray(taskIds) ? taskIds.filter(Boolean) : []);
+    const discarded = new Set(
+      Array.isArray(taskIds) ? taskIds.filter(Boolean) : [],
+    );
     if (!discarded.size) return;
-    ss.pendingDeferredContentEvents = (ss.pendingDeferredContentEvents || []).filter((event) => {
+    ss.pendingDeferredContentEvents = (
+      ss.pendingDeferredContentEvents || []
+    ).filter((event) => {
       const taskId = deferredContentEventTaskId(event);
       return !taskId || !discarded.has(taskId);
     });
-    ss.pendingTurnInputConsumptions = (ss.pendingTurnInputConsumptions || []).filter((item) => {
-      const taskId = textOrNull(item?.input?.taskId) || textOrNull(item?.block?.taskId);
+    ss.pendingTurnInputConsumptions = (
+      ss.pendingTurnInputConsumptions || []
+    ).filter((item) => {
+      const taskId =
+        textOrNull(item?.input?.taskId) || textOrNull(item?.block?.taskId);
       return !taskId || !discarded.has(taskId);
     });
-    ss.consumedTurnInputsForCurrentTurn = (ss.consumedTurnInputsForCurrentTurn || []).filter((item) => {
-      const taskId = textOrNull(item?.input?.taskId) || textOrNull(item?.block?.taskId);
+    ss.consumedTurnInputsForCurrentTurn = (
+      ss.consumedTurnInputsForCurrentTurn || []
+    ).filter((item) => {
+      const taskId =
+        textOrNull(item?.input?.taskId) || textOrNull(item?.block?.taskId);
       return !taskId || !discarded.has(taskId);
     });
   }
 
-  function beginStreamingTurnState(sessionPath, ss, { streamId = null, flushDeferred = false } = {}) {
+  function beginStreamingTurnState(
+    sessionPath,
+    ss,
+    { streamId = null, flushDeferred = false } = {},
+  ) {
     if (flushDeferred) flushPendingDeferredContentEvents(sessionPath, ss);
     ss.pendingTurnCompletionNotification = null;
     ss.lastStreamActivityAt = Date.now();
@@ -695,18 +889,23 @@ export function createChatRoute(engine: any, hub: any, {
     const key = turnInputConsumptionKey(item);
     if (!key) return false;
     if (ss.flushedTurnInputConsumptionKeys?.has?.(key)) return true;
-    return (ss.pendingTurnInputConsumptions || []).some((queued) => (
-      turnInputConsumptionKey(queued) === key
-    ));
+    return (ss.pendingTurnInputConsumptions || []).some(
+      (queued) => turnInputConsumptionKey(queued) === key,
+    );
   }
 
   function buildPreReplyInterludeBlock(sessionPath, presentation) {
-    if (presentation?.kind !== "pre_reply_interlude" || !presentation.taskId) return null;
+    if (presentation?.kind !== "pre_reply_interlude" || !presentation.taskId)
+      return null;
     const task = engine.deferredResults?.query?.(presentation.taskId) || null;
-    const taskStatus = task?.status === "failed" || task?.status === "aborted"
-      ? task.status
-      : presentation.status;
-    const status = taskStatus === "failed" || taskStatus === "aborted" ? taskStatus : "success";
+    const taskStatus =
+      task?.status === "failed" || task?.status === "aborted"
+        ? task.status
+        : presentation.status;
+    const status =
+      taskStatus === "failed" || taskStatus === "aborted"
+        ? taskStatus
+        : "success";
     const meta = {
       ...(task?.meta || {}),
       type: presentation.resultType || task?.meta?.type || "background-task",
@@ -715,23 +914,26 @@ export function createChatRoute(engine: any, hub: any, {
       ? presentation.result
       : task?.result;
     const reason = presentation.reason || task?.reason || null;
-    return buildDeferredResultInterludeBlock({
-      taskId: presentation.taskId,
-      deliveryId: presentation.deliveryId || null,
-      status,
-      result,
-      reason,
-      meta,
-    }, {
-      receiverName: resolveDeferredReceiverName(engine, sessionPath),
-    });
+    return buildDeferredResultInterludeBlock(
+      {
+        taskId: presentation.taskId,
+        deliveryId: presentation.deliveryId || null,
+        status,
+        result,
+        reason,
+        meta,
+      },
+      {
+        receiverName: resolveDeferredReceiverName(engine, sessionPath),
+      },
+    );
   }
 
   function isUiOnlyMediaTurnInput(presentation) {
     const resultType = presentation?.resultType || "";
-    return presentation?.status === "success" && (
-      resultType === "image-generation" ||
-      resultType === "video-generation"
+    return (
+      presentation?.status === "success" &&
+      (resultType === "image-generation" || resultType === "video-generation")
     );
   }
 
@@ -739,10 +941,15 @@ export function createChatRoute(engine: any, hub: any, {
     if (message?.role !== "custom") return null;
     if (message.display !== false) return null;
     if (message.customType !== DEFERRED_RESULT_MESSAGE_TYPE) return null;
-    const event = buildTurnInputPresentationEvent(message, { deliveryMode: "consumed" });
+    const event = buildTurnInputPresentationEvent(message, {
+      deliveryMode: "consumed",
+    });
     const presentation = event?.presentation;
     if (!presentation || isUiOnlyMediaTurnInput(presentation)) return null;
-    const details = message.details && typeof message.details === "object" ? message.details : null;
+    const details =
+      message.details && typeof message.details === "object"
+        ? message.details
+        : null;
     const entryId = textOrNull(message.id);
     const deliveryId =
       textOrNull(presentation.deliveryId) ||
@@ -753,7 +960,10 @@ export function createChatRoute(engine: any, hub: any, {
       deliveryId,
       deliveryMode: "consumed",
     };
-    const block = buildPreReplyInterludeBlock(sessionPath, normalizedPresentation);
+    const block = buildPreReplyInterludeBlock(
+      sessionPath,
+      normalizedPresentation,
+    );
     if (!block) return null;
     return {
       kind: normalizedPresentation.kind,
@@ -766,7 +976,9 @@ export function createChatRoute(engine: any, hub: any, {
         taskId: normalizedPresentation.taskId,
         status: normalizedPresentation.status,
         resultType: normalizedPresentation.resultType,
-        ...(textOrNull(message.timestamp) ? { timestamp: textOrNull(message.timestamp) } : {}),
+        ...(textOrNull(message.timestamp)
+          ? { timestamp: textOrNull(message.timestamp) }
+          : {}),
       },
       block,
     };
@@ -775,7 +987,10 @@ export function createChatRoute(engine: any, hub: any, {
   function queueConsumedTurnInput(sessionPath, ss, message) {
     const item = buildTurnInputConsumptionItem(sessionPath, message);
     if (!item || turnInputConsumptionAlreadyQueued(ss, item)) return;
-    ss.pendingTurnInputConsumptions = [...(ss.pendingTurnInputConsumptions || []), item];
+    ss.pendingTurnInputConsumptions = [
+      ...(ss.pendingTurnInputConsumptions || []),
+      item,
+    ];
   }
 
   function emitTurnInputConsumption(sessionPath, ss, item) {
@@ -785,23 +1000,30 @@ export function createChatRoute(engine: any, hub: any, {
   }
 
   function persistedConsumptionEntryIds(sessionPath, item, fallbackIds) {
-    const branch = engine.getSessionByPath?.(sessionPath)?.sessionManager?.getBranch?.();
-    const deliveryId = textOrNull(item?.deliveryId) || textOrNull(item?.input?.deliveryId);
+    const branch = engine
+      .getSessionByPath?.(sessionPath)
+      ?.sessionManager?.getBranch?.();
+    const deliveryId =
+      textOrNull(item?.deliveryId) || textOrNull(item?.input?.deliveryId);
     const eventEntryId = textOrNull(item?.input?.entryId);
     const inputEntry = Array.isArray(branch)
-      ? [...branch].reverse().find((entry) => (
-          entry?.type === "custom_message"
-          && (
-            (deliveryId && textOrNull(entry.details?.deliveryId) === deliveryId)
-            || (eventEntryId && entry.id === eventEntryId)
-          )
-        )) || null
+      ? [...branch]
+          .reverse()
+          .find(
+            (entry) =>
+              entry?.type === "custom_message" &&
+              ((deliveryId &&
+                textOrNull(entry.details?.deliveryId) === deliveryId) ||
+                (eventEntryId && entry.id === eventEntryId)),
+          ) || null
       : null;
-    const inputEntryId = inputEntry?.id || fallbackIds?.turnInputEntryId || eventEntryId || null;
+    const inputEntryId =
+      inputEntry?.id || fallbackIds?.turnInputEntryId || eventEntryId || null;
     const assistantEntryId = fallbackIds?.assistantEntryId || null;
-    const assistantEntry = Array.isArray(branch) && assistantEntryId
-      ? branch.find((entry) => entry?.id === assistantEntryId) || null
-      : null;
+    const assistantEntry =
+      Array.isArray(branch) && assistantEntryId
+        ? branch.find((entry) => entry?.id === assistantEntryId) || null
+        : null;
     return {
       inputEntryId,
       assistantEntryId,
@@ -812,24 +1034,35 @@ export function createChatRoute(engine: any, hub: any, {
   }
 
   function persistTurnInputConsumption(sessionPath, item, fallbackIds) {
-    const recordCustomEntry = typeof engine.recordSessionCustomEntry === "function"
-      ? engine.recordSessionCustomEntry.bind(engine)
-      : typeof engine.recordCustomEntry === "function"
-        ? engine.recordCustomEntry.bind(engine)
-        : null;
+    const recordCustomEntry =
+      typeof engine.recordSessionCustomEntry === "function"
+        ? engine.recordSessionCustomEntry.bind(engine)
+        : typeof engine.recordCustomEntry === "function"
+          ? engine.recordCustomEntry.bind(engine)
+          : null;
     if (!sessionPath || !recordCustomEntry) return;
-    const persisted = persistedConsumptionEntryIds(sessionPath, item, fallbackIds);
+    const persisted = persistedConsumptionEntryIds(
+      sessionPath,
+      item,
+      fallbackIds,
+    );
     if (!persisted.assistantEntryId) return;
     const record = buildTurnInputConsumptionRecord({
       input: {
         ...(item?.input || {}),
         ...(persisted.inputEntryId ? { entryId: persisted.inputEntryId } : {}),
-        ...(persisted.inputTimestamp ? { timestamp: persisted.inputTimestamp } : {}),
+        ...(persisted.inputTimestamp
+          ? { timestamp: persisted.inputTimestamp }
+          : {}),
       },
       assistant: {
         entryId: persisted.assistantEntryId,
-        ...(persisted.assistantParentId ? { parentId: persisted.assistantParentId } : {}),
-        ...(persisted.assistantTimestamp ? { timestamp: persisted.assistantTimestamp } : {}),
+        ...(persisted.assistantParentId
+          ? { parentId: persisted.assistantParentId }
+          : {}),
+        ...(persisted.assistantTimestamp
+          ? { timestamp: persisted.assistantTimestamp }
+          : {}),
       },
       presentation: item?.presentation,
       block: item?.block,
@@ -845,15 +1078,21 @@ export function createChatRoute(engine: any, hub: any, {
   function persistConsumedTurnInputs(sessionPath, ss, persistedIds) {
     const consumed = ss.consumedTurnInputsForCurrentTurn || [];
     ss.consumedTurnInputsForCurrentTurn = [];
-    for (const item of consumed) persistTurnInputConsumption(sessionPath, item, persistedIds);
+    for (const item of consumed)
+      persistTurnInputConsumption(sessionPath, item, persistedIds);
   }
 
-  function takePendingTurnInputConsumptionsForAssistant(ss, assistantMessage = null) {
+  function takePendingTurnInputConsumptionsForAssistant(
+    ss,
+    assistantMessage = null,
+  ) {
     const pending = ss.pendingTurnInputConsumptions || [];
     if (!pending.length) return { items: [], remaining: [] };
     const parentId = textOrNull(assistantMessage?.parentId);
     if (!parentId) return { items: pending, remaining: [] };
-    const matchIndex = pending.findIndex((item) => item?.input?.entryId === parentId);
+    const matchIndex = pending.findIndex(
+      (item) => item?.input?.entryId === parentId,
+    );
     if (matchIndex < 0) return { items: [], remaining: pending };
     return {
       items: pending.slice(0, matchIndex + 1),
@@ -861,8 +1100,15 @@ export function createChatRoute(engine: any, hub: any, {
     };
   }
 
-  function flushPendingTurnInputConsumptions(sessionPath, ss, assistantMessage = null) {
-    const { items, remaining } = takePendingTurnInputConsumptionsForAssistant(ss, assistantMessage);
+  function flushPendingTurnInputConsumptions(
+    sessionPath,
+    ss,
+    assistantMessage = null,
+  ) {
+    const { items, remaining } = takePendingTurnInputConsumptionsForAssistant(
+      ss,
+      assistantMessage,
+    );
     if (!items.length) return [];
     ss.pendingTurnInputConsumptions = remaining;
     if (!(ss.flushedTurnInputConsumptionKeys instanceof Set)) {
@@ -916,11 +1162,16 @@ export function createChatRoute(engine: any, hub: any, {
       if (!isSessionRuntimeStreaming(sessionPath)) return;
       ss.isAborted = true;
       const reason = "turn_stall_timeout";
-      Promise.resolve(hub.abort?.(sessionPath, { reason })).then((aborted) => {
-        if (aborted === false) return engine.abortSessionByPath?.(sessionPath, { reason });
-      }).catch((err) => {
-        log.warn(`turn stall abort failed for ${path.basename(sessionPath)}: ${err.message}`);
-      });
+      Promise.resolve(hub.abort?.(sessionPath, { reason }))
+        .then((aborted) => {
+          if (aborted === false)
+            return engine.abortSessionByPath?.(sessionPath, { reason });
+        })
+        .catch((err) => {
+          log.warn(
+            `turn stall abort failed for ${path.basename(sessionPath)}: ${err.message}`,
+          );
+        });
     }, delay);
     ss.turnStallTimer.unref?.();
   }
@@ -936,78 +1187,103 @@ export function createChatRoute(engine: any, hub: any, {
 
     const session = engine.getSessionByPath(sessionPath);
     const messages = Array.isArray(session?.messages) ? session.messages : [];
-    const userMsgCount = messages.filter(m => m.role === "user").length;
+    const userMsgCount = messages.filter((m) => m.role === "user").length;
     if (userMsgCount !== 1) return;
 
-    const assistantMsg = messages.find(m => m.role === "assistant");
-    const assistantText = (ss.titlePreview || extractText(assistantMsg?.content)).trim();
+    const assistantMsg = messages.find((m) => m.role === "assistant");
+    const assistantText = (
+      ss.titlePreview || extractText(assistantMsg?.content)
+    ).trim();
     if (!assistantText) return;
 
     ss.titleRequested = true;
     generateSessionTitle(engine, broadcast, {
       sessionPath,
       assistantTextHint: assistantText,
-    }).then((ok) => {
-      if (!ok) ss.titleRequested = false;
-    }).catch((err) => {
-      ss.titleRequested = false;
-      log.error(`generateSessionTitle error: ${err.message}`);
-    });
+    })
+      .then((ok) => {
+        if (!ok) ss.titleRequested = false;
+      })
+      .catch((err) => {
+        ss.titleRequested = false;
+        log.error(`generateSessionTitle error: ${err.message}`);
+      });
   }
 
   function resolveChatNotificationIdentity(sessionPath) {
     const sessionId = engine.getSessionIdForPath?.(sessionPath) || null;
-    const manifest = sessionId ? engine.getSessionManifest?.(sessionId) || null : null;
+    const manifest = sessionId
+      ? engine.getSessionManifest?.(sessionId) || null
+      : null;
     if (!manifest) {
-      log.warn(`chat completion notification skipped: session manifest missing for ${path.basename(sessionPath || "")}`);
+      log.warn(
+        `chat completion notification skipped: session manifest missing for ${path.basename(sessionPath || "")}`,
+      );
       return null;
     }
     if (manifest.domain !== "desktop" || manifest.kind !== "chat") {
-      log.log(`chat completion notification skipped: ${manifest.domain || "unknown"}/${manifest.kind || "unknown"} session`);
+      log.log(
+        `chat completion notification skipped: ${manifest.domain || "unknown"}/${manifest.kind || "unknown"} session`,
+      );
       return null;
     }
     const session = engine.getSessionByPath?.(sessionPath) || null;
     const agent = session?.agent || null;
-    const agentId = typeof manifest.ownerAgentId === "string" && manifest.ownerAgentId
-      ? manifest.ownerAgentId
-      : typeof session?.agentId === "string" && session.agentId
-        ? session.agentId
-        : typeof agent?.id === "string" && agent.id
-          ? agent.id
-          : null;
-    const agentName = typeof session?.agentName === "string" && session.agentName
-      ? session.agentName
-      : typeof agent?.agentName === "string" && agent.agentName
-        ? agent.agentName
-        : typeof agent?.name === "string" && agent.name
-          ? agent.name
-          : null;
+    const agentId =
+      typeof manifest.ownerAgentId === "string" && manifest.ownerAgentId
+        ? manifest.ownerAgentId
+        : typeof session?.agentId === "string" && session.agentId
+          ? session.agentId
+          : typeof agent?.id === "string" && agent.id
+            ? agent.id
+            : null;
+    const agentName =
+      typeof session?.agentName === "string" && session.agentName
+        ? session.agentName
+        : typeof agent?.agentName === "string" && agent.agentName
+          ? agent.agentName
+          : typeof agent?.name === "string" && agent.name
+            ? agent.name
+            : null;
     return { agentId, agentName, sessionId };
   }
 
-  function maybeDeliverTurnCompletionNotification(sessionPath, { wasAborted, wasSuccessful, streamId }) {
+  function maybeDeliverTurnCompletionNotification(
+    sessionPath,
+    { wasAborted, wasSuccessful, streamId },
+  ) {
     if (!sessionPath || wasAborted || !wasSuccessful) return;
     try {
       const prefs = engine.getNotificationPreferences?.();
-      if (prefs?.chatCompletion !== "when_unfocused" && prefs?.chatCompletion !== "when_session_unfocused") return;
+      if (
+        prefs?.chatCompletion !== "when_unfocused" &&
+        prefs?.chatCompletion !== "when_session_unfocused"
+      )
+        return;
       if (typeof engine.deliverNotification !== "function") return;
 
       const identity = resolveChatNotificationIdentity(sessionPath);
       if (!identity) return;
       const { agentId, agentName, sessionId } = identity;
-      const idempotencyKey = streamId ? `chat-completion:${sessionId}:${streamId}` : null;
-      const delivery = engine.deliverNotification({
-        title: agentName || "HanaAgent",
-        body: t("notification.chatCompletionBody"),
-        channels: ["desktop"],
-        desktopFocusPolicy: prefs.chatCompletion === "when_session_unfocused"
-          ? "when_session_unfocused"
-          : "when_unfocused",
-        sessionPath,
-        ...(idempotencyKey ? { idempotencyKey } : {}),
-      }, {
-        agentId,
-      });
+      const idempotencyKey = streamId
+        ? `chat-completion:${sessionId}:${streamId}`
+        : null;
+      const delivery = engine.deliverNotification(
+        {
+          title: agentName || "HanaAgent",
+          body: t("notification.chatCompletionBody"),
+          channels: ["desktop"],
+          desktopFocusPolicy:
+            prefs.chatCompletion === "when_session_unfocused"
+              ? "when_session_unfocused"
+              : "when_unfocused",
+          sessionPath,
+          ...(idempotencyKey ? { idempotencyKey } : {}),
+        },
+        {
+          agentId,
+        },
+      );
       delivery?.catch?.((err) => {
         log.warn(`chat completion notification failed: ${err.message}`);
       });
@@ -1049,6 +1325,14 @@ export function createChatRoute(engine: any, hub: any, {
 
   // 单订阅：事件只写入一次，再按需广播到所有连接中的客户端。
   hub.subscribe((event, sessionPath) => {
+    if(event.type==='enigma_event'){
+      const events=['run_start','dialog','dialog_closed','approval','model_selection','new_context','code_fork','workspace_changed','guardian_update','memory_dream'];
+      const settled=event.event==='refresh'&&['settled','cancelled','settings','branch'].includes(event.data?.event);
+      if(sessionPath&&(events.includes(event.event)||settled))broadcast({type:'enigma_event',sessionPath,sessionId:event.sessionId,event:settled?'settled':event.event});
+      // Side operations must not reset the model stream's stall timer or emit
+      // raw tool payloads to clients. They only invalidate the relevant view.
+      return;
+    }
     // Non-session-scoped events: handle before session resolution
     const appEventMessage = toAppEventWsMessage(event);
     if (appEventMessage) {
@@ -1090,15 +1374,24 @@ export function createChatRoute(engine: any, hub: any, {
         switch (cEvt.type) {
           case "text":
             ss.titlePreview += cEvt.data || "";
-            emitStreamEvent(sessionPath, ss, { type: "text_delta", delta: cEvt.data });
+            emitStreamEvent(sessionPath, ss, {
+              type: "text_delta",
+              delta: cEvt.data,
+            });
             maybeGenerateFirstTurnTitle(sessionPath, ss);
             break;
           case "card_start":
             ss._cardEmitted = true;
-            emitStreamEvent(sessionPath, ss, { type: "card_start", attrs: cEvt.attrs });
+            emitStreamEvent(sessionPath, ss, {
+              type: "card_start",
+              attrs: cEvt.attrs,
+            });
             break;
           case "card_text":
-            emitStreamEvent(sessionPath, ss, { type: "card_text", delta: cEvt.data });
+            emitStreamEvent(sessionPath, ss, {
+              type: "card_text",
+              delta: cEvt.data,
+            });
             break;
           case "card_end":
             emitStreamEvent(sessionPath, ss, { type: "card_end" });
@@ -1114,7 +1407,10 @@ export function createChatRoute(engine: any, hub: any, {
         } else if (evt.type === "mood_start") {
           emitStreamEvent(sessionPath, ss, { type: "mood_start" });
         } else if (evt.type === "mood_text") {
-          emitStreamEvent(sessionPath, ss, { type: "mood_text", delta: evt.data });
+          emitStreamEvent(sessionPath, ss, {
+            type: "mood_text",
+            delta: evt.data,
+          });
         } else if (evt.type === "mood_end") {
           emitStreamEvent(sessionPath, ss, { type: "mood_end" });
         }
@@ -1128,7 +1424,10 @@ export function createChatRoute(engine: any, hub: any, {
       }
       ss.thinkTagParser.flush((tEvt) => {
         if (tEvt.type === "think_text") {
-          emitStreamEvent(sessionPath, ss, { type: "thinking_delta", delta: tEvt.data });
+          emitStreamEvent(sessionPath, ss, {
+            type: "thinking_delta",
+            delta: tEvt.data,
+          });
         } else if (tEvt.type === "think_end") {
           emitStreamEvent(sessionPath, ss, { type: "thinking_end" });
         } else if (tEvt.type === "text") {
@@ -1139,17 +1438,29 @@ export function createChatRoute(engine: any, hub: any, {
         if (evt.type === "text") {
           feedCardPipeline(evt.data);
         } else if (evt.type === "mood_text") {
-          emitStreamEvent(sessionPath, ss, { type: "mood_text", delta: evt.data });
+          emitStreamEvent(sessionPath, ss, {
+            type: "mood_text",
+            delta: evt.data,
+          });
         }
       });
       ss.cardParser.flush((cEvt) => {
         if (cEvt.type === "text") {
-          emitStreamEvent(sessionPath, ss, { type: "text_delta", delta: cEvt.data });
+          emitStreamEvent(sessionPath, ss, {
+            type: "text_delta",
+            delta: cEvt.data,
+          });
         } else if (cEvt.type === "card_text") {
-          emitStreamEvent(sessionPath, ss, { type: "card_text", delta: cEvt.data });
+          emitStreamEvent(sessionPath, ss, {
+            type: "card_text",
+            delta: cEvt.data,
+          });
         } else if (cEvt.type === "card_start") {
           ss._cardEmitted = true;
-          emitStreamEvent(sessionPath, ss, { type: "card_start", attrs: cEvt.attrs });
+          emitStreamEvent(sessionPath, ss, {
+            type: "card_start",
+            attrs: cEvt.attrs,
+          });
         } else if (cEvt.type === "card_end") {
           emitStreamEvent(sessionPath, ss, { type: "card_end" });
         }
@@ -1157,13 +1468,15 @@ export function createChatRoute(engine: any, hub: any, {
     };
 
     const phaseTextBuffer = () => {
-      if (!(ss.pendingPhaseTextByIndex instanceof Map)) ss.pendingPhaseTextByIndex = new Map();
+      if (!(ss.pendingPhaseTextByIndex instanceof Map))
+        ss.pendingPhaseTextByIndex = new Map();
       return ss.pendingPhaseTextByIndex;
     };
 
-    const textEventBufferKey = (subEvent) => (
-      Number.isInteger(subEvent?.contentIndex) ? String(subEvent.contentIndex) : "__default"
-    );
+    const textEventBufferKey = (subEvent) =>
+      Number.isInteger(subEvent?.contentIndex)
+        ? String(subEvent.contentIndex)
+        : "__default";
 
     const textBlockFromEvent = (subEvent) => {
       const partialContent = subEvent?.partial?.content;
@@ -1182,16 +1495,30 @@ export function createChatRoute(engine: any, hub: any, {
 
     const shouldBufferPhaseText = (subEvent) => {
       const message = subEvent?.partial || event.message || {};
-      const api = typeof message?.api === "string" ? message.api.toLowerCase() : "";
-      const provider = typeof message?.provider === "string" ? message.provider.toLowerCase() : "";
-      return provider === "openai-codex"
-        || api === "openai-codex-responses"
-        || api === "openai-responses"
-        || api === "azure-openai-responses";
+      const api =
+        typeof message?.api === "string" ? message.api.toLowerCase() : "";
+      const provider =
+        typeof message?.provider === "string"
+          ? message.provider.toLowerCase()
+          : "";
+      if(includesCompatibleResponseText(message))return false;
+      const phase = getAssistantTextPhase(textBlockFromEvent(subEvent));
+      if (phase) return phase === 'commentary';
+      // Codex may attach its phase at text_end. Ordinary Responses APIs use
+      // text deltas directly; buffering all of them made Gateway appear frozen.
+      return provider === 'openai-codex' || api === 'openai-codex-responses';
     };
 
     const thinkingDeltaFromEvent = (subEvent) => {
-      for (const key of ["delta", "reasoning_content", "reasoning_text", "thinking", "thinking_text", "reasoning", "text"]) {
+      for (const key of [
+        "delta",
+        "reasoning_content",
+        "reasoning_text",
+        "thinking",
+        "thinking_text",
+        "reasoning",
+        "text",
+      ]) {
         const value = subEvent?.[key];
         if (typeof value === "string" && value.length > 0) return value;
       }
@@ -1215,7 +1542,10 @@ export function createChatRoute(engine: any, hub: any, {
             emitStreamEvent(sessionPath, ss, { type: "thinking_start" });
             break;
           case "think_text":
-            emitStreamEvent(sessionPath, ss, { type: "thinking_delta", delta: tEvt.data });
+            emitStreamEvent(sessionPath, ss, {
+              type: "thinking_delta",
+              delta: tEvt.data,
+            });
             break;
           case "think_end":
             emitStreamEvent(sessionPath, ss, { type: "thinking_end" });
@@ -1231,22 +1561,28 @@ export function createChatRoute(engine: any, hub: any, {
     if (event.type === "message_update") {
       if (!ss) return;
       const sub = event.assistantMessageEvent?.type;
+      // provider SSE 中可能先于末包回传部分 usage（如 Anthropic message_start 的 input）
+      tokenMeters.applyLiveUsage(sessionPath, event.message?.usage);
 
       if (sub === "text_delta") {
         const subEvent = event.assistantMessageEvent;
         const delta = subEvent.delta || "";
+        tokenMeters.addDelta(sessionPath, delta, 'writing', Date.now(), meterRequestContext(sessionPath));
         if (shouldBufferPhaseText(subEvent)) {
           const pending = phaseTextBuffer();
           const key = textEventBufferKey(subEvent);
           pending.set(key, `${pending.get(key) || ""}${delta}`);
           return;
         }
-        emitVisibleTextDelta(delta);
+        const pending = phaseTextBuffer(), key = textEventBufferKey(subEvent);
+        const prefix = pending.get(key) || '';
+        pending.delete(key);
+        emitVisibleTextDelta(prefix + delta);
       } else if (sub === "text_end") {
         const subEvent = event.assistantMessageEvent;
-        if (!shouldBufferPhaseText(subEvent)) return;
         const pending = phaseTextBuffer();
         const key = textEventBufferKey(subEvent);
+        if (!pending.has(key)) return;
         const block = textBlockFromEvent(subEvent);
         const buffered = pending.get(key);
         pending.delete(key);
@@ -1263,16 +1599,30 @@ export function createChatRoute(engine: any, hub: any, {
           type: "thinking_delta",
           delta: thinkingDeltaFromEvent(event.assistantMessageEvent),
         });
+        tokenMeters.addDelta(
+          sessionPath,
+          thinkingDeltaFromEvent(event.assistantMessageEvent),
+          "thinking",
+          Date.now(),
+          meterRequestContext(sessionPath),
+        );
+      } else if (sub === 'toolcall_delta') {
+        tokenMeters.addDelta(sessionPath, event.assistantMessageEvent.delta, 'writing', Date.now(), meterRequestContext(sessionPath));
       } else if (sub === "toolcall_start") {
         // 不在这里关闭 thinking 状态
       } else if (sub === "error") {
         ss.hasError = true;
-        broadcast({ type: "error", message: event.assistantMessageEvent.error || "Unknown error", sessionPath });
+        broadcast({
+          type: "error",
+          message: event.assistantMessageEvent.error || "Unknown error",
+          sessionPath,
+        });
       }
     } else if (event.type === "tool_execution_start") {
       if (!ss) return;
       flushPendingTurnInputConsumptions(sessionPath, ss, event.message);
       ss.hasToolCall = true;
+      tokenMeters.markTool(sessionPath);
       if (ss.isThinking) {
         ss.isThinking = false;
         emitStreamEvent(sessionPath, ss, { type: "thinking_end" });
@@ -1331,7 +1681,8 @@ export function createChatRoute(engine: any, hub: any, {
         }
         emitStreamEvent(sessionPath, ss, statusMsg);
         if (statusMsg.running) startBrowserThumbPoll();
-        else if (!BrowserManager.instance().hasAnyRunning) stopBrowserThumbPoll();
+        else if (!BrowserManager.instance().hasAnyRunning)
+          stopBrowserThumbPoll();
       }
     } else if (event.type === "jian_update") {
       broadcast({ type: "jian_update", content: event.content });
@@ -1354,7 +1705,12 @@ export function createChatRoute(engine: any, hub: any, {
       if (statusMsg.running) startBrowserThumbPoll();
       else if (!BrowserManager.instance().hasAnyRunning) stopBrowserThumbPoll();
     } else if (event.type === "browser_bg_status") {
-      broadcast({ type: "browser_bg_status", running: event.running, url: event.url, sessionPath });
+      broadcast({
+        type: "browser_bg_status",
+        running: event.running,
+        url: event.url,
+        sessionPath,
+      });
     } else if (event.type === "computer_overlay") {
       if (!ss) return;
       emitStreamEvent(sessionPath, ss, event);
@@ -1381,12 +1737,18 @@ export function createChatRoute(engine: any, hub: any, {
       emitStreamEvent(sessionPath, ss, {
         type: "content_block",
         block: {
-          type: "settings_confirm", confirmId: event.confirmId,
-          settingKey: event.settingKey, cardType: event.cardType,
-          currentValue: event.currentValue, proposedValue: event.proposedValue,
-          options: event.options, optionLabels: event.optionLabels || null,
-          label: event.label, description: event.description,
-          frontend: event.frontend, status: "pending",
+          type: "settings_confirm",
+          confirmId: event.confirmId,
+          settingKey: event.settingKey,
+          cardType: event.cardType,
+          currentValue: event.currentValue,
+          proposedValue: event.proposedValue,
+          options: event.options,
+          optionLabels: event.optionLabels || null,
+          label: event.label,
+          description: event.description,
+          frontend: event.frontend,
+          status: "pending",
         },
       });
     } else if (event.type === "confirmation_resolved") {
@@ -1414,6 +1776,7 @@ export function createChatRoute(engine: any, hub: any, {
       // actual hidden custom_message once the SDK consumes it for an assistant turn.
     } else if (event.type === "turn_start") {
       if (!ss) return;
+      beginMeterRequest(sessionPath);
       if (!ss.turnActive) {
         const statusStreamId = beginStreamingTurnState(sessionPath, ss);
         broadcast({
@@ -1438,7 +1801,13 @@ export function createChatRoute(engine: any, hub: any, {
     } else if (event.type === "bridge_message") {
       broadcast({ type: "bridge_message", message: event.message });
     } else if (event.type === "bridge_status") {
-      broadcast({ type: "bridge_status", platform: event.platform, status: event.status, error: event.error, agentId: event.agentId || null });
+      broadcast({
+        type: "bridge_status",
+        platform: event.platform,
+        status: event.status,
+        error: event.error,
+        agentId: event.agentId || null,
+      });
     } else if (event.type === "session_branch_reset") {
       if (!ss) return;
       discardQueuedBranchTaskEvents(ss, event.discardedTaskIds);
@@ -1451,7 +1820,9 @@ export function createChatRoute(engine: any, hub: any, {
         projectionMessageId: event.projectionMessageId || null,
         clientMessageId: event.clientMessageId || null,
         todos: Array.isArray(event.todos) ? event.todos : [],
-        sessionFiles: Array.isArray(event.sessionFiles) ? event.sessionFiles : [],
+        sessionFiles: Array.isArray(event.sessionFiles)
+          ? event.sessionFiles
+          : [],
       });
     } else if (event.type === "session_user_message") {
       if (!ss) return;
@@ -1475,10 +1846,22 @@ export function createChatRoute(engine: any, hub: any, {
       });
     } else if (event.type === "session_status") {
       let statusStreamId = null;
+      if (event.isStreaming) {
+        tokenMeters.activateLifecycle(sessionPath);
+        const warm = tokenMeters.sample(sessionPath, true);
+        if (warm) broadcastTokenMeter(sessionPath, warm);
+      } else {
+        const finalMeter = tokenMeters.finishRun(
+          sessionPath,
+          event.aborted ? "aborted" : "done",
+        );
+        if (finalMeter) broadcastTokenMeter(sessionPath, finalMeter);
+      }
       if (ss) {
-        const eventStreamId = typeof event.streamId === "string" && event.streamId.trim()
-          ? event.streamId
-          : null;
+        const eventStreamId =
+          typeof event.streamId === "string" && event.streamId.trim()
+            ? event.streamId
+            : null;
         if (event.isStreaming) {
           statusStreamId = beginStreamingTurnState(sessionPath, ss, {
             streamId: eventStreamId,
@@ -1501,7 +1884,8 @@ export function createChatRoute(engine: any, hub: any, {
         streamId: statusStreamId,
       };
       if (event.aborted !== undefined) payload.aborted = !!event.aborted;
-      if (typeof event.reason === "string" && event.reason.trim()) payload.reason = event.reason.trim();
+      if (typeof event.reason === "string" && event.reason.trim())
+        payload.reason = event.reason.trim();
       broadcast(payload);
       if (ss && !event.isStreaming) {
         flushPendingDeferredContentEvents(sessionPath, ss);
@@ -1525,10 +1909,18 @@ export function createChatRoute(engine: any, hub: any, {
       broadcast({
         type: "session_metadata_updated",
         sessionPath,
-        metadata: event.metadata && typeof event.metadata === "object" ? event.metadata : {},
+        metadata:
+          event.metadata && typeof event.metadata === "object"
+            ? event.metadata
+            : {},
       });
     } else if (event.type === "permission_mode") {
-      broadcast({ type: "permission_mode", mode: event.mode, readOnly: event.readOnly === true, sessionPath });
+      broadcast({
+        type: "permission_mode",
+        mode: event.mode,
+        readOnly: event.readOnly === true,
+        sessionPath,
+      });
     } else if (event.type === "access_mode") {
       broadcast({
         type: "access_mode",
@@ -1538,7 +1930,12 @@ export function createChatRoute(engine: any, hub: any, {
         sessionPath,
       });
     } else if (event.type === "plan_mode") {
-      broadcast({ type: "plan_mode", enabled: event.enabled, mode: event.mode, sessionPath });
+      broadcast({
+        type: "plan_mode",
+        enabled: event.enabled,
+        mode: event.mode,
+        sessionPath,
+      });
     } else if (event.type === "notification") {
       broadcast(toNotificationWsMessage(event, sessionPath));
     } else if (event.type === "channel_new_message") {
@@ -1557,10 +1954,19 @@ export function createChatRoute(engine: any, hub: any, {
     } else if (event.type === "dm_new_message") {
       broadcast({ type: "dm_new_message", from: event.from, to: event.to });
     } else if (event.type === "conversation_agent_activity") {
-      broadcast({ type: "conversation_agent_activity", activity: event.activity });
+      broadcast({
+        type: "conversation_agent_activity",
+        activity: event.activity,
+      });
     } else if (event.type === "message_end") {
       // Provider 级别错误（超时、连接断开等）通过 message_end 传递，不经过 message_update
       if (!ss) return;
+      if (event.message?.role === "assistant") {
+        tokenMeters.endRequest(sessionPath, event.message?.usage,Date.now(),event.message?.provider&&event.message?.model?`${event.message.provider}/${event.message.model}`:undefined);
+        tokenMeters.scheduleIdleFinish(sessionPath, "done", (finalMeter) => {
+          if (finalMeter) broadcastTokenMeter(sessionPath, finalMeter);
+        });
+      }
       if (event.message?.role === "custom" && event.message.display === false) {
         queueConsumedTurnInput(sessionPath, ss, event.message);
       }
@@ -1568,7 +1974,11 @@ export function createChatRoute(engine: any, hub: any, {
         const blocks = normalizePluginChatSurfaceBlocks(
           dropUninstalledPluginCards(
             enrichSessionFileBlocks(
-              extractBlocks(event.message.customType, event.message.details, event.message),
+              extractBlocks(
+                event.message.customType,
+                event.message.details,
+                event.message,
+              ),
               engine,
               sessionPath,
             ),
@@ -1582,9 +1992,16 @@ export function createChatRoute(engine: any, hub: any, {
       }
       if (event.message?.stopReason === "error") {
         ss.hasError = true;
-        broadcast({ type: "error", message: event.message.errorMessage || "Unknown error", sessionPath });
+        broadcast({
+          type: "error",
+          message: event.message.errorMessage || "Unknown error",
+          sessionPath,
+        });
       }
-      if (event.message?.role === "assistant" && typeof event.message.stopReason === "string") {
+      if (
+        event.message?.role === "assistant" &&
+        typeof event.message.stopReason === "string"
+      ) {
         ss.assistantStopReason = event.message.stopReason;
       }
     } else if (event.type === "turn_end") {
@@ -1595,27 +2012,47 @@ export function createChatRoute(engine: any, hub: any, {
       const turnWasTruncated = ss.assistantStopReason === "length";
       const turnStreamId = ss.streamId || null;
       flushTerminalParsers();
+      // 兜底：没有 session_status(false) 包裹的宿主路径也能在回合安静后收尾。
+      // 轻事件链（Gateway mood_*）没有 turn_start/message_end，在此结束当前请求。
+      tokenMeters.endRequest(sessionPath, null);
+      tokenMeters.scheduleIdleFinish(
+        sessionPath,
+        turnWasAborted ? "aborted" : "done",
+        (finalMeter) => {
+          if (finalMeter) broadcastTokenMeter(sessionPath, finalMeter);
+        },
+      );
 
       // 空回复检测：本轮没有文本输出也没有工具调用，提示用户检查配置
       // 被 abort 的 turn 不弹此提示（用户主动停止 / WS 断开 / 连接超时）；
       // 合成中止事件同样豁免
-      const truncatedWithoutVisibleResult = turnWasTruncated && !ss.hasOutput && !ss.hasToolCall;
+      const truncatedWithoutVisibleResult =
+        turnWasTruncated && !ss.hasOutput && !ss.hasToolCall;
       if (
-        ((!ss.hasOutput && !ss.hasToolCall && !ss.hasThinking) || truncatedWithoutVisibleResult)
-        && !ss.hasError
-        && !turnWasAborted
+        ((!ss.hasOutput && !ss.hasToolCall && !ss.hasThinking) ||
+          truncatedWithoutVisibleResult) &&
+        !ss.hasError &&
+        !turnWasAborted
       ) {
         ss.hasError = true;
-        broadcast({ type: "error", message: t("error.modelNoResponse"), sessionPath });
+        broadcast({
+          type: "error",
+          message: t("error.modelNoResponse"),
+          sessionPath,
+        });
       }
-      const turnWasSuccessful = !turnWasAborted && !ss.hasError && (ss.hasOutput || ss.hasToolCall || ss.hasThinking);
+      const turnWasSuccessful =
+        !turnWasAborted &&
+        !ss.hasError &&
+        (ss.hasOutput || ss.hasToolCall || ss.hasThinking);
 
       const persistedEntries = persistedTurnEntryIds(engine, sessionPath);
 
       // ── token usage 事件（供插件监听做用量统计）──
       // 中止的 turn 没落盘任何 assistant 时跳过记账：branch 里最后一条 assistant
       // 属于上一轮，它的 usage 在上一轮 turn_end 已经记过一次，重复记会双计。
-      const skipUsageAccounting = event.aborted === true && !persistedEntries.assistantEntryId;
+      const skipUsageAccounting =
+        event.aborted === true && !persistedEntries.assistantEntryId;
       if (!skipUsageAccounting) {
         try {
           const sess = engine.getSessionByPath(sessionPath);
@@ -1631,15 +2068,20 @@ export function createChatRoute(engine: any, hub: any, {
                 usage,
                 costRates: model?.cost,
               } as any);
-              hub.eventBus.emit({
-                type: "token_usage",
-                usage,
-                modelId: model?.id ?? null,
-                modelProvider: model?.provider ?? null,
-              }, sessionPath);
+              hub.eventBus.emit(
+                {
+                  type: "token_usage",
+                  usage,
+                  modelId: model?.id ?? null,
+                  modelProvider: model?.provider ?? null,
+                },
+                sessionPath,
+              );
             }
           }
-        } catch (_) { /* 统计失败不阻塞主流程 */ }
+        } catch (_) {
+          /* 统计失败不阻塞主流程 */
+        }
       }
 
       persistConsumedTurnInputs(sessionPath, ss, persistedEntries);
@@ -1681,7 +2123,8 @@ export function createChatRoute(engine: any, hub: any, {
       // Retry fences discarded task IDs in DeferredResultStore before emitting
       // session_branch_reset. Ignore any delayed bus callback that observes the
       // old branch after that fence was installed.
-      if (engine.deferredResults?.query?.(event.taskId)?.deliverySuppressed) return;
+      if (engine.deferredResults?.query?.(event.taskId)?.deliverySuppressed)
+        return;
       const delayVisibleBlocks = ss.turnActive === true;
       emitStreamEvent(sessionPath, ss, {
         type: "deferred_result",
@@ -1700,6 +2143,8 @@ export function createChatRoute(engine: any, hub: any, {
     }
   });
 
+  registerSessionTimingRoute(restRoute, engine, (sessionPath:string)=>tokenMeters.snapshot(sessionPath));
+
   // ── 后台任务终止 ──
 
   restRoute.post("/task/:taskId/abort", async (c) => {
@@ -1708,13 +2153,15 @@ export function createChatRoute(engine: any, hub: any, {
     if (!registry) return c.json({ error: "registry unavailable" }, 500);
     const result = registry.abort(taskId);
     if (result === "not_found") return c.json({ error: "task not found" }, 404);
-    if (result === "no_handler") return c.json({ error: "task type does not support abort" }, 400);
+    if (result === "no_handler")
+      return c.json({ error: "task type does not support abort" }, 400);
     return c.json({ ok: true, status: result });
   });
 
   // ── WebSocket 路由（挂载在 wsRoute，由 index.js 挂到根路径） ──
 
-  wsRoute.get("/ws",
+  wsRoute.get(
+    "/ws",
     upgradeWebSocket((c) => {
       let closed = false;
       const requestContext = createRequestContext(c, engine);
@@ -1723,9 +2170,12 @@ export function createChatRoute(engine: any, hub: any, {
       return {
         onOpen(event, ws) {
           activeWsClients++;
-          clients.set(ws, createInitialWsClientRecord(requestContext, {
-            assumeLocalOwner: isAdapterWithoutHttpRequest,
-          }));
+          clients.set(
+            ws,
+            createInitialWsClientRecord(requestContext, {
+              assumeLocalOwner: isAdapterWithoutHttpRequest,
+            }),
+          );
           cancelDisconnectAbort();
           debugLog()?.log("ws", "client connected");
         },
@@ -1738,7 +2188,11 @@ export function createChatRoute(engine: any, hub: any, {
             assumeLocalOwner: isAdapterWithoutHttpRequest,
           });
           if (!wsClientCanSendMessage(client, msg)) {
-            wsSend(ws, { type: "error", message: "insufficient_scope", sessionPath: msg.sessionPath });
+            wsSend(ws, {
+              type: "error",
+              message: "insufficient_scope",
+              sessionPath: msg.sessionPath,
+            });
             return;
           }
           if (msg.sessionPath && requestContext.studioId) {
@@ -1753,16 +2207,22 @@ export function createChatRoute(engine: any, hub: any, {
           // Wrap the async handler with error handling (replaces wrapWsHandler)
           (async () => {
             if (msg.type === "abort") {
-              const abortTarget = requireWsSessionContext(msg, ws); if (!abortTarget) return;
+              const abortTarget = requireWsSessionContext(msg, ws);
+              if (!abortTarget) return;
               const abortPath = abortTarget.sessionPath;
               const abortSs = getState(abortPath);
-              const requestedStreamId = typeof msg.streamId === "string" && msg.streamId.trim()
-                ? msg.streamId.trim()
-                : null;
-              const activeStreamId = typeof abortSs?.streamId === "string" && abortSs.streamId.trim()
-                ? abortSs.streamId.trim()
-                : null;
-              if (requestedStreamId && (!activeStreamId || requestedStreamId !== activeStreamId)) {
+              const requestedStreamId =
+                typeof msg.streamId === "string" && msg.streamId.trim()
+                  ? msg.streamId.trim()
+                  : null;
+              const activeStreamId =
+                typeof abortSs?.streamId === "string" && abortSs.streamId.trim()
+                  ? abortSs.streamId.trim()
+                  : null;
+              if (
+                requestedStreamId &&
+                (!activeStreamId || requestedStreamId !== activeStreamId)
+              ) {
                 wsSend(ws, {
                   type: "abort_result",
                   status: "rejected",
@@ -1781,14 +2241,21 @@ export function createChatRoute(engine: any, hub: any, {
                 });
                 return;
               }
-              const abortReason = typeof msg.reason === "string" && msg.reason.trim()
-                ? msg.reason.trim()
-                : "user_abort";
+              const abortReason =
+                typeof msg.reason === "string" && msg.reason.trim()
+                  ? msg.reason.trim()
+                  : "user_abort";
               if (abortSs) abortSs.isAborted = true;
               let abortAccepted = false;
               try {
-                abortAccepted = !!(await agentReviewTurns.cancelByParent(abortTarget.sessionId, abortReason));
-                if (!abortAccepted) abortAccepted = !!(await hub.abort(abortPath, { reason: abortReason }));
+                abortAccepted = !!(await agentReviewTurns.cancelByParent(
+                  abortTarget.sessionId,
+                  abortReason,
+                ));
+                if (!abortAccepted)
+                  abortAccepted = !!(await hub.abort(abortPath, {
+                    reason: abortReason,
+                  }));
               } catch {}
               if (!abortAccepted) {
                 const abortStreamId = abortSs?.streamId || null;
@@ -1814,7 +2281,8 @@ export function createChatRoute(engine: any, hub: any, {
 
             if (msg.type === "steer" && msg.text) {
               debugLog()?.log("ws", `steer (${msg.text.length} chars)`);
-              const steerTarget = requireWsSessionContext(msg, ws); if (!steerTarget) return;
+              const steerTarget = requireWsSessionContext(msg, ws);
+              if (!steerTarget) return;
               const steerPath = steerTarget.sessionPath;
               if (steerTarget.agentDeleted) {
                 rejectDeletedAgentSession(ws, steerPath);
@@ -1832,52 +2300,68 @@ export function createChatRoute(engine: any, hub: any, {
 
             // session 切回时，前端请求补发离屏期间的流式内容
             if (msg.type === "resume_stream") {
-              const resumeTarget = requireWsSessionContext(msg, ws); if (!resumeTarget) return;
+              const resumeTarget = requireWsSessionContext(msg, ws);
+              if (!resumeTarget) return;
               const currentPath = resumeTarget.sessionPath;
               const currentSessionId = resumeTarget.sessionId;
               const ss = getExistingState(currentPath);
-              const runtimeIsStreaming = typeof engine.isSessionStreaming === "function"
-                ? !!engine.isSessionStreaming(currentPath)
-                : !!ss?.isStreaming;
+              const runtimeIsStreaming =
+                typeof engine.isSessionStreaming === "function"
+                  ? !!engine.isSessionStreaming(currentPath)
+                  : !!ss?.isStreaming;
               if (ss) {
                 const resumed = resumeSessionStream(ss, {
                   streamId: msg.streamId,
                   sinceSeq: msg.sinceSeq,
                 });
-                wsSend(ws, createStreamResumeWsMessage({
-                  sessionPath: currentPath,
-                  ...(currentSessionId ? { sessionId: currentSessionId } : {}),
-                  streamId: resumed.streamId,
-                  sinceSeq: resumed.sinceSeq,
-                  nextSeq: resumed.nextSeq,
-                  reset: resumed.reset,
-                  truncated: resumed.truncated,
-                  isStreaming: resumed.isStreaming,
-                  runtimeIsStreaming,
-                  events: resumed.events,
-                }));
+                wsSend(
+                  ws,
+                  createStreamResumeWsMessage({
+                    sessionPath: currentPath,
+                    ...(currentSessionId
+                      ? { sessionId: currentSessionId }
+                      : {}),
+                    streamId: resumed.streamId,
+                    sinceSeq: resumed.sinceSeq,
+                    nextSeq: resumed.nextSeq,
+                    reset: resumed.reset,
+                    truncated: resumed.truncated,
+                    isStreaming: resumed.isStreaming,
+                    runtimeIsStreaming,
+                    events: resumed.events,
+                  }),
+                );
               } else {
-                wsSend(ws, createStreamResumeWsMessage({
-                  sessionPath: currentPath,
-                  ...(currentSessionId ? { sessionId: currentSessionId } : {}),
-                  streamId: null,
-                  sinceSeq: Number.isFinite(msg.sinceSeq) ? Math.max(0, Math.floor(msg.sinceSeq)) : 0,
-                  nextSeq: 1,
-                  reset: false,
-                  truncated: false,
-                  isStreaming: false,
-                  runtimeIsStreaming,
-                  events: [],
-                }));
+                wsSend(
+                  ws,
+                  createStreamResumeWsMessage({
+                    sessionPath: currentPath,
+                    ...(currentSessionId
+                      ? { sessionId: currentSessionId }
+                      : {}),
+                    streamId: null,
+                    sinceSeq: Number.isFinite(msg.sinceSeq)
+                      ? Math.max(0, Math.floor(msg.sinceSeq))
+                      : 0,
+                    nextSeq: 1,
+                    reset: false,
+                    truncated: false,
+                    isStreaming: false,
+                    runtimeIsStreaming,
+                    events: [],
+                  }),
+                );
               }
               return;
             }
 
             if (msg.type === "context_usage") {
-              const usageCtx = requireWsSessionContext(msg, ws); if (!usageCtx) return;
+              const usageCtx = requireWsSessionContext(msg, ws);
+              if (!usageCtx) return;
               const usagePath = usageCtx.sessionPath;
-              const usage = engine.getSessionContextUsage?.(usagePath)
-                || engine.getSessionByPath(usagePath)?.getContextUsage?.();
+              const usage =
+                engine.getSessionContextUsage?.(usagePath) ||
+                engine.getSessionByPath(usagePath)?.getContextUsage?.();
               wsSend(ws, {
                 type: "context_usage",
                 sessionPath: usagePath,
@@ -1885,11 +2369,14 @@ export function createChatRoute(engine: any, hub: any, {
                 contextWindow: usage?.contextWindow ?? null,
                 percent: usage?.percent ?? null,
               });
+              const lastMeter = tokenMeters.snapshot(usagePath);
+              if (lastMeter) wsSend(ws, { type: 'token_meter', sessionPath: usagePath, meter: lastMeter });
               return;
             }
 
             if (msg.type === "slash" && typeof msg.text === "string") {
-              const slashCtx = requireWsSessionContext(msg, ws); if (!slashCtx) return;
+              const slashCtx = requireWsSessionContext(msg, ws);
+              if (!slashCtx) return;
               const sp = slashCtx.sessionPath;
               if (slashCtx.agentDeleted) {
                 rejectDeletedAgentSession(ws, sp);
@@ -1897,7 +2384,11 @@ export function createChatRoute(engine: any, hub: any, {
               }
               const dispatcher = engine.slashDispatcher;
               if (!dispatcher) {
-                wsSend(ws, { type: "error", message: "slash system not ready", sessionPath: sp });
+                wsSend(ws, {
+                  type: "error",
+                  message: "slash system not ready",
+                  sessionPath: sp,
+                });
                 return;
               }
               const agentId = slashCtx.agentId;
@@ -1913,7 +2404,12 @@ export function createChatRoute(engine: any, hub: any, {
                 return;
               }
               const sendReply = async (text) => {
-                wsSend(ws, { type: "slash_result", sessionPath: sp, text, level: "success" });
+                wsSend(ws, {
+                  type: "slash_result",
+                  sessionPath: sp,
+                  text,
+                  level: "success",
+                });
               };
               const res = await dispatcher.tryDispatch(msg.text.trim(), {
                 sessionRef: buildDesktopSlashSessionRef(engine, agentId, sp),
@@ -1923,7 +2419,12 @@ export function createChatRoute(engine: any, hub: any, {
                 reply: sendReply,
               });
               if (!res.handled) {
-                wsSend(ws, { type: "slash_result", sessionPath: sp, text: t("chat.unknownCommand", { text: msg.text }), level: "error" });
+                wsSend(ws, {
+                  type: "slash_result",
+                  sessionPath: sp,
+                  text: t("chat.unknownCommand", { text: msg.text }),
+                  level: "error",
+                });
               }
               return;
             }
@@ -1939,9 +2440,14 @@ export function createChatRoute(engine: any, hub: any, {
                 });
                 return;
               }
-              const { sessionId: compactSessionId, sessionPath: compactPath } = compactTarget;
-              const requestedMethod = msg.method == null ? null : String(msg.method);
-              if (requestedMethod !== null && requestedMethod !== INSTANT_SIMPLE_COMPACTION_METHOD) {
+              const { sessionId: compactSessionId, sessionPath: compactPath } =
+                compactTarget;
+              const requestedMethod =
+                msg.method == null ? null : String(msg.method);
+              if (
+                requestedMethod !== null &&
+                requestedMethod !== INSTANT_SIMPLE_COMPACTION_METHOD
+              ) {
                 wsSend(ws, {
                   type: "error",
                   code: "invalid_compaction_method",
@@ -1951,44 +2457,65 @@ export function createChatRoute(engine: any, hub: any, {
                 });
                 return;
               }
-              const instantSimple = requestedMethod === INSTANT_SIMPLE_COMPACTION_METHOD;
+              const instantSimple =
+                requestedMethod === INSTANT_SIMPLE_COMPACTION_METHOD;
               const compactionMode = instantSimple
                 ? INSTANT_SIMPLE_COMPACTION_RUNTIME_MODE
                 : getResolvedCompactionMode(engine.preferences);
-              const compactResult = (status, details: Record<string, any> = {}) => wsSend(ws, {
-                type: "compaction_result",
-                sessionId: compactSessionId,
-                sessionPath: compactPath,
-                mode: compactionMode,
+              const compactResult = (
                 status,
-                ...details,
-              });
+                details: Record<string, any> = {},
+              ) =>
+                wsSend(ws, {
+                  type: "compaction_result",
+                  sessionId: compactSessionId,
+                  sessionPath: compactPath,
+                  mode: compactionMode,
+                  status,
+                  ...details,
+                });
               if (
-                instantSimple
-                && getResolvedInstantSimpleCompactionEnabled(engine.preferences) !== true
+                instantSimple &&
+                getResolvedInstantSimpleCompactionEnabled(
+                  engine.preferences,
+                ) !== true
               ) {
                 compactResult("failed", {
                   reason: "experiment_disabled",
-                  message: "Instant simple compaction is disabled in Experiments",
+                  message:
+                    "Instant simple compaction is disabled in Experiments",
                 });
                 return;
               }
               if (isDeletedAgentSessionPath(compactPath)) {
-                compactResult("failed", { reason: "agent_deleted", message: "agent_deleted" });
+                compactResult("failed", {
+                  reason: "agent_deleted",
+                  message: "agent_deleted",
+                });
                 return;
               }
-              let session = engine.getSessionByPath(compactPath)
-                || await engine.ensureSessionLoaded?.(compactPath);
+              let session =
+                engine.getSessionByPath(compactPath) ||
+                (await engine.ensureSessionLoaded?.(compactPath));
               if (!session) {
-                compactResult("failed", { reason: "session_unavailable", message: t("error.noActiveSession") });
+                compactResult("failed", {
+                  reason: "session_unavailable",
+                  message: t("error.noActiveSession"),
+                });
                 return;
               }
               if (session.isCompacting) {
-                compactResult("failed", { reason: "already_compacting", message: t("error.compacting") });
+                compactResult("failed", {
+                  reason: "already_compacting",
+                  message: t("error.compacting"),
+                });
                 return;
               }
               if (engine.isSessionStreaming(compactPath)) {
-                compactResult("failed", { reason: "session_streaming", message: t("error.waitForReply") });
+                compactResult("failed", {
+                  reason: "session_streaming",
+                  message: t("error.waitForReply"),
+                });
                 return;
               }
               wsSend(ws, {
@@ -1999,20 +2526,28 @@ export function createChatRoute(engine: any, hub: any, {
               });
               try {
                 if (instantSimple) {
-                  if (typeof engine.getLossyLocalCompactionSummarySource !== "function") {
-                    throw new Error("Instant simple compaction summary resolver is unavailable");
+                  if (
+                    typeof engine.getLossyLocalCompactionSummarySource !==
+                    "function"
+                  ) {
+                    throw new Error(
+                      "Instant simple compaction summary resolver is unavailable",
+                    );
                   }
                   await runInstantSimpleCompaction(session, {
-                    getSummarySource: () => engine.getLossyLocalCompactionSummarySource(compactPath),
+                    getSummarySource: () =>
+                      engine.getLossyLocalCompactionSummarySource(compactPath),
                     lifecycleReason: "manual",
                   });
                 } else {
-                  const compacted = await compactSessionWithCachePreservationRecoveringRuntime({
-                    session,
-                    sessionPath: compactPath,
-                    customInstructions: undefined,
-                    reloadSessionRuntime: (path) => engine.reloadSessionRuntime?.(path),
-                  });
+                  const compacted =
+                    await compactSessionWithCachePreservationRecoveringRuntime({
+                      session,
+                      sessionPath: compactPath,
+                      customInstructions: undefined,
+                      reloadSessionRuntime: (path) =>
+                        engine.reloadSessionRuntime?.(path),
+                    });
                   session = compacted.session;
                 }
                 compactResult("succeeded");
@@ -2020,7 +2555,10 @@ export function createChatRoute(engine: any, hub: any, {
                 const errMsg = err.message || "";
                 const noopReason = compactionNoopReason(errMsg);
                 if (noopReason) {
-                  compactResult("noop", { reason: noopReason, message: errMsg });
+                  compactResult("noop", {
+                    reason: noopReason,
+                    message: errMsg,
+                  });
                 } else {
                   compactResult("failed", {
                     reason: "compaction_failed",
@@ -2031,26 +2569,47 @@ export function createChatRoute(engine: any, hub: any, {
               return;
             }
 
-            if ((msg.type === "prompt" || msg.type === "interject") && (msg.text || msg.images?.length || msg.videos?.length || msg.audios?.length)) {
+            if (
+              (msg.type === "prompt" || msg.type === "interject") &&
+              (msg.text ||
+                msg.images?.length ||
+                msg.videos?.length ||
+                msg.audios?.length)
+            ) {
               const interject = msg.type === "interject";
               // 身份先解析：媒体校验的错误回包也要报在解析后的会话上，而且一条没有身份的
               // 消息不值得先把几 MB base64 量一遍再拒。
-              const promptTarget = requireWsSessionContext(msg, ws); if (!promptTarget) return;
+              const promptTarget = requireWsSessionContext(msg, ws);
+              if (!promptTarget) return;
               const promptSessionPath = promptTarget.sessionPath;
               // 图片校验：最多 10 张，单张 ≤ 20MB，仅允许常见图片 MIME
               if (msg.images?.length) {
                 const MAX_IMAGES = 10;
                 if (msg.images.length > MAX_IMAGES) {
-                  wsSend(ws, { type: "error", message: t("error.maxImages", { max: MAX_IMAGES }), sessionPath: promptSessionPath });
+                  wsSend(ws, {
+                    type: "error",
+                    message: t("error.maxImages", { max: MAX_IMAGES }),
+                    sessionPath: promptSessionPath,
+                  });
                   return;
                 }
                 for (const img of msg.images) {
                   if (!img?.mimeType || !isAllowedChatImageMime(img.mimeType)) {
-                    wsSend(ws, { type: "error", message: t("error.unsupportedImageFormat", { mime: img?.mimeType || "unknown" }), sessionPath: promptSessionPath });
+                    wsSend(ws, {
+                      type: "error",
+                      message: t("error.unsupportedImageFormat", {
+                        mime: img?.mimeType || "unknown",
+                      }),
+                      sessionPath: promptSessionPath,
+                    });
                     return;
                   }
                   if (img.data && !isChatImageBase64WithinLimit(img.data)) {
-                    wsSend(ws, { type: "error", message: t("error.imageTooLarge"), sessionPath: promptSessionPath });
+                    wsSend(ws, {
+                      type: "error",
+                      message: t("error.imageTooLarge"),
+                      sessionPath: promptSessionPath,
+                    });
                     return;
                   }
                 }
@@ -2058,16 +2617,33 @@ export function createChatRoute(engine: any, hub: any, {
               if (msg.videos?.length) {
                 const MAX_VIDEOS = 3;
                 if (msg.videos.length > MAX_VIDEOS) {
-                  wsSend(ws, { type: "error", message: t("error.maxVideos", { max: MAX_VIDEOS }), sessionPath: promptSessionPath });
+                  wsSend(ws, {
+                    type: "error",
+                    message: t("error.maxVideos", { max: MAX_VIDEOS }),
+                    sessionPath: promptSessionPath,
+                  });
                   return;
                 }
                 for (const video of msg.videos) {
-                  if (!video?.mimeType || !isAllowedChatVideoMime(video.mimeType)) {
-                    wsSend(ws, { type: "error", message: t("error.unsupportedVideoFormat", { mime: video?.mimeType || "unknown" }), sessionPath: promptSessionPath });
+                  if (
+                    !video?.mimeType ||
+                    !isAllowedChatVideoMime(video.mimeType)
+                  ) {
+                    wsSend(ws, {
+                      type: "error",
+                      message: t("error.unsupportedVideoFormat", {
+                        mime: video?.mimeType || "unknown",
+                      }),
+                      sessionPath: promptSessionPath,
+                    });
                     return;
                   }
                   if (video.data && !isChatVideoBase64WithinLimit(video.data)) {
-                    wsSend(ws, { type: "error", message: t("error.videoTooLarge"), sessionPath: promptSessionPath });
+                    wsSend(ws, {
+                      type: "error",
+                      message: t("error.videoTooLarge"),
+                      sessionPath: promptSessionPath,
+                    });
                     return;
                   }
                 }
@@ -2075,16 +2651,33 @@ export function createChatRoute(engine: any, hub: any, {
               if (msg.audios?.length) {
                 const MAX_AUDIOS = 3;
                 if (msg.audios.length > MAX_AUDIOS) {
-                  wsSend(ws, { type: "error", message: t("error.maxAudios", { max: MAX_AUDIOS }), sessionPath: promptSessionPath });
+                  wsSend(ws, {
+                    type: "error",
+                    message: t("error.maxAudios", { max: MAX_AUDIOS }),
+                    sessionPath: promptSessionPath,
+                  });
                   return;
                 }
                 for (const audio of msg.audios) {
-                  if (!audio?.mimeType || !isAllowedChatAudioMime(audio.mimeType)) {
-                    wsSend(ws, { type: "error", message: t("error.unsupportedAudioFormat", { mime: audio?.mimeType || "unknown" }), sessionPath: promptSessionPath });
+                  if (
+                    !audio?.mimeType ||
+                    !isAllowedChatAudioMime(audio.mimeType)
+                  ) {
+                    wsSend(ws, {
+                      type: "error",
+                      message: t("error.unsupportedAudioFormat", {
+                        mime: audio?.mimeType || "unknown",
+                      }),
+                      sessionPath: promptSessionPath,
+                    });
                     return;
                   }
                   if (audio.data && !isChatAudioBase64WithinLimit(audio.data)) {
-                    wsSend(ws, { type: "error", message: t("error.audioTooLarge"), sessionPath: promptSessionPath });
+                    wsSend(ws, {
+                      type: "error",
+                      message: t("error.audioTooLarge"),
+                      sessionPath: promptSessionPath,
+                    });
                     return;
                   }
                 }
@@ -2093,32 +2686,51 @@ export function createChatRoute(engine: any, hub: any, {
               let promptText = msg.text || "";
               // Skill invocation tags
               if (msg.skills?.length) {
-                const skillNote = msg.skills.map(s => `[Use skill: ${s}]`).join('\n');
+                const skillNote = msg.skills
+                  .map((s) => `[Use skill: ${s}]`)
+                  .join("\n");
                 promptText = `${skillNote}\n${promptText}`;
               }
-              debugLog()?.log("ws", `user message (${promptText.length} chars, ${msg.images?.length || 0} images, ${msg.videos?.length || 0} videos, ${msg.audios?.length || 0} audios)`);
+              debugLog()?.log(
+                "ws",
+                `user message (${promptText.length} chars, ${msg.images?.length || 0} images, ${msg.videos?.length || 0} videos, ${msg.audios?.length || 0} audios)`,
+              );
               // agentDeleted 门禁只挂在会写入会话的分支（steer / slash / prompt / compact）；
               // abort、resume_stream、context_usage 是停止和只读，删除态照常放行，与改动前一致。
               if (promptTarget.agentDeleted) {
                 rejectDeletedAgentSession(ws, promptSessionPath);
                 return;
               }
-              if (!interject && (
-                engine.isSessionStreaming(promptSessionPath)
-                || agentReviewTurns.hasPendingParent(promptTarget.sessionId)
-              )) {
-                wsSend(ws, { type: "error", message: t("error.stillStreaming", { name: engine.agentName }), sessionPath: promptSessionPath });
+              if (
+                !interject &&
+                (engine.isSessionStreaming(promptSessionPath) ||
+                  agentReviewTurns.hasPendingParent(promptTarget.sessionId))
+              ) {
+                wsSend(ws, {
+                  type: "error",
+                  message: t("error.stillStreaming", {
+                    name: engine.agentName,
+                  }),
+                  sessionPath: promptSessionPath,
+                });
                 return;
               }
               // Reject prompt while model switch is in progress
               if (engine.isSessionSwitching(promptSessionPath)) {
-                wsSend(ws, { type: "error", message: t("chat.modelSwitching"), sessionPath: promptSessionPath });
+                wsSend(ws, {
+                  type: "error",
+                  message: t("chat.modelSwitching"),
+                  sessionPath: promptSessionPath,
+                });
                 return;
               }
               const reviewRequests = Array.isArray(msg.agentReviewRequests)
-                ? msg.agentReviewRequests.filter(request => (
-                  request && typeof request.agentId === "string" && request.agentId.trim()
-                ))
+                ? msg.agentReviewRequests.filter(
+                    (request) =>
+                      request &&
+                      typeof request.agentId === "string" &&
+                      request.agentId.trim(),
+                  )
                 : [];
               if (interject && reviewRequests.length > 0) {
                 wsSend(ws, {
@@ -2143,12 +2755,20 @@ export function createChatRoute(engine: any, hub: any, {
                     displayMessage: msg.displayMessage,
                     sessionFileRefs: msg.sessionFileRefs,
                   });
-                  wsSend(ws, { type: "steered", sessionPath: promptSessionPath });
+                  wsSend(ws, {
+                    type: "steered",
+                    sessionPath: promptSessionPath,
+                  });
                 } catch (err) {
-                  const errMessage = err.message === "session_busy"
-                    ? t("error.stillStreaming", { name: engine.agentName })
-                    : err.message;
-                  wsSend(ws, { type: "error", message: errMessage, sessionPath: promptSessionPath });
+                  const errMessage =
+                    err.message === "session_busy"
+                      ? t("error.stillStreaming", { name: engine.agentName })
+                      : err.message;
+                  wsSend(ws, {
+                    type: "error",
+                    message: errMessage,
+                    sessionPath: promptSessionPath,
+                  });
                 }
                 return;
               }
@@ -2167,7 +2787,8 @@ export function createChatRoute(engine: any, hub: any, {
                   wsSend(ws, {
                     type: "error",
                     code: "session_id_required_for_agent_review",
-                    message: "A stable Session ID is required for @Agent review.",
+                    message:
+                      "A stable Session ID is required for @Agent review.",
                     sessionPath: promptSessionPath,
                   });
                   return;
@@ -2177,14 +2798,20 @@ export function createChatRoute(engine: any, hub: any, {
                 // ctx.agentId：那个为了让草稿能跑，会退到路径推导甚至客户端声明。评审的
                 // 规则是"评审者不能就是会话属主本人"，属主认错了等于让 agent 自己审自己，
                 // 所以这一处宁可在属主查不出时放行创建，也不拿宽松来源当权威。
-                const ownerAgentId = engine.getSessionManifest?.(promptTarget.sessionId)?.ownerAgentId || null;
-                if (!engine.getAgent?.(reviewerAgentId) || reviewerAgentId === ownerAgentId) {
+                const ownerAgentId =
+                  engine.getSessionManifest?.(promptTarget.sessionId)
+                    ?.ownerAgentId || null;
+                if (
+                  !engine.getAgent?.(reviewerAgentId) ||
+                  reviewerAgentId === ownerAgentId
+                ) {
                   wsSend(ws, {
                     type: "error",
                     code: "invalid_review_agent",
-                    message: reviewerAgentId === ownerAgentId
-                      ? "The reviewing Agent must be different from the current Session Agent."
-                      : `Agent not found: ${reviewerAgentId}`,
+                    message:
+                      reviewerAgentId === ownerAgentId
+                        ? "The reviewing Agent must be different from the current Session Agent."
+                        : `Agent not found: ${reviewerAgentId}`,
                     sessionPath: promptSessionPath,
                   });
                   return;
@@ -2195,7 +2822,10 @@ export function createChatRoute(engine: any, hub: any, {
                   reviewedSessionPath: promptSessionPath,
                   reviewer: {
                     agentId: reviewerAgentId,
-                    label: typeof reviewRequests[0].label === "string" ? reviewRequests[0].label : reviewerAgentId,
+                    label:
+                      typeof reviewRequests[0].label === "string"
+                        ? reviewRequests[0].label
+                        : reviewerAgentId,
                   },
                   text: promptText,
                   displayMessage: msg.displayMessage,
@@ -2210,7 +2840,8 @@ export function createChatRoute(engine: any, hub: any, {
                 return;
               }
               const sessionRefBlock = buildSessionReferenceBlock(sessionRefs);
-              if (sessionRefBlock) promptText = `${promptText}\n\n${sessionRefBlock}`;
+              if (sessionRefBlock)
+                promptText = `${promptText}\n\n${sessionRefBlock}`;
               try {
                 await hub.send(promptText, {
                   sessionId: promptTarget.sessionId,
@@ -2224,25 +2855,37 @@ export function createChatRoute(engine: any, hub: any, {
                   sessionFileRefs: msg.sessionFileRefs,
                 });
               } catch (err) {
-                const isUserAbort = err.name === 'AbortError'
-                  || (err.message === 'This operation was aborted')
-                  || (err.type === 'aborted');
+                const isUserAbort =
+                  err.name === "AbortError" ||
+                  err.message === "This operation was aborted" ||
+                  err.type === "aborted";
                 if (!isUserAbort) {
-                  const errMessage = err.message === "session_busy"
-                    ? t("error.stillStreaming", { name: engine.agentName })
-                    : err.message;
-                  wsSend(ws, { type: "error", message: errMessage, sessionPath: promptSessionPath });
+                  const errMessage =
+                    err.message === "session_busy"
+                      ? t("error.stillStreaming", { name: engine.agentName })
+                      : err.message;
+                  wsSend(ws, {
+                    type: "error",
+                    message: errMessage,
+                    sessionPath: promptSessionPath,
+                  });
                 }
               }
             }
           })().catch((err) => {
             const appErr = AppError.wrap(err);
             errorBus.report(appErr, { context: { wsMessageType: msg.type } });
-            const isUserAbort = appErr.name === 'AbortError'
-              || appErr.message === 'This operation was aborted'
-              || (appErr as any).type === 'aborted';
+            const isUserAbort =
+              appErr.name === "AbortError" ||
+              appErr.message === "This operation was aborted" ||
+              (appErr as any).type === "aborted";
             if (!isUserAbort) {
-              wsSend(ws, { type: 'error', message: appErr.message || 'Unknown error', error: appErr.toJSON(), sessionPath: msg.sessionPath });
+              wsSend(ws, {
+                type: "error",
+                message: appErr.message || "Unknown error",
+                error: appErr.toJSON(),
+                sessionPath: msg.sessionPath,
+              });
             }
           });
         },
@@ -2269,14 +2912,15 @@ export function createChatRoute(engine: any, hub: any, {
           }
         },
       };
-    })
+    }),
   );
 
   return { restRoute, wsRoute };
 }
 
 function enrichSessionFileBlocks(blocks: any, engine: any, sessionPath: any) {
-  if (!Array.isArray(blocks) || blocks.length === 0 || !sessionPath) return blocks || [];
+  if (!Array.isArray(blocks) || blocks.length === 0 || !sessionPath)
+    return blocks || [];
   return blocks.map((block) => {
     const patch = sessionFileBlockPatch(block, engine, sessionPath);
     if (!patch) return block;
@@ -2295,13 +2939,18 @@ function sessionFileBlockPatch(block: any, engine: any, sessionPath: any) {
   if (block.fileId && typeof engine?.getSessionFile === "function") {
     file = engine.getSessionFile(block.fileId, { sessionPath });
   }
-  if (!file && block.filePath && typeof engine?.getSessionFileByPath === "function") {
+  if (
+    !file &&
+    block.filePath &&
+    typeof engine?.getSessionFileByPath === "function"
+  ) {
     file = engine.getSessionFileByPath(block.filePath, { sessionPath });
   }
   if (!file) return null;
-  const serialized = typeof engine?.serializeSessionFile === "function"
-    ? engine.serializeSessionFile(file)
-    : file;
+  const serialized =
+    typeof engine?.serializeSessionFile === "function"
+      ? engine.serializeSessionFile(file)
+      : file;
   return sessionFileFields(serialized || file);
 }
 
@@ -2311,7 +2960,9 @@ function sessionFileFields(file: any) {
   return {
     ...(fileId ? { fileId } : {}),
     ...(file.filePath ? { filePath: file.filePath } : {}),
-    ...(file.label || file.displayName || file.filename ? { label: file.label || file.displayName || file.filename } : {}),
+    ...(file.label || file.displayName || file.filename
+      ? { label: file.label || file.displayName || file.filename }
+      : {}),
     ...(file.ext !== undefined ? { ext: file.ext } : {}),
     ...(file.mime ? { mime: file.mime } : {}),
     ...(file.kind ? { kind: file.kind } : {}),
@@ -2330,29 +2981,40 @@ function sessionFileFields(file: any) {
  * 所以取标题素材前必须先投影回用户真正打的那段文字：既喂给摘要模型，也用于
  * 模型不可用时的截断兜底，否则标题会变成信封字面量。
  */
-export async function generateSessionTitle(engine: any, notify: any, opts: any = {}) {
+export async function generateSessionTitle(
+  engine: any,
+  notify: any,
+  opts: any = {},
+) {
   try {
     const sessionPath = opts.sessionPath;
     if (!sessionPath) return false;
 
     // 检查是否已有标题（避免重复生成）
     const sessions = await engine.listSessions();
-    const current = sessions.find(s => s.path === sessionPath);
+    const current = sessions.find((s) => s.path === sessionPath);
     if (current?.title) return true;
 
     const session = engine.getSessionByPath(sessionPath);
     const messages = Array.isArray(session?.messages) ? session.messages : [];
-    const userMsg = messages.find(m => m.role === "user");
-    const assistantMsg = messages.find(m => m.role === "assistant");
+    const userMsg = messages.find((m) => m.role === "user");
+    const assistantMsg = messages.find((m) => m.role === "assistant");
     if (!userMsg && !opts.userTextHint) return false;
 
-    const userText = visiblePromptText(opts.userTextHint || extractText(userMsg?.content));
-    const assistantText = (opts.assistantTextHint || extractText(assistantMsg?.content)).trim();
+    const userText = visiblePromptText(
+      opts.userTextHint || extractText(userMsg?.content),
+    );
+    const assistantText = (
+      opts.assistantTextHint || extractText(assistantMsg?.content)
+    ).trim();
     // 纯附件消息剥完信封什么都不剩：跳过生成，侧边栏回退到同样剥离过的首条消息
     if (!userText || !assistantText) return false;
 
     // 超时由 callText 内部的 AbortSignal 统一控制：超时即取消 Pi SDK 连接，无空跑
-    let title = await engine.summarizeTitle(userText, assistantText, { timeoutMs: 15_000, sessionPath });
+    let title = await engine.summarizeTitle(userText, assistantText, {
+      timeoutMs: 15_000,
+      sessionPath,
+    });
 
     // API 失败时，用用户第一条消息截取作为 fallback 标题
     if (!title) {

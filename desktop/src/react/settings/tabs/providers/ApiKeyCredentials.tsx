@@ -194,7 +194,8 @@ export function ApiKeyCredentials({ providerId, summary, providerConfig: _provid
         });
         const testData = await testRes.json();
         if (!testData.ok) {
-          showToast(t('settings.providers.verifyFailed'), 'error');
+          const reason=typeof testData.error==='string'&&testData.error.trim()?`: ${testData.error.trim()}`:'';
+          showToast(t('settings.providers.verifyFailed')+reason, 'error');
           return;
         }
       }

@@ -52,6 +52,7 @@ import { createWebSocketAuthRoute } from "../routes/ws-auth.ts";
 import { createStudioWorkspacesRoute } from "../routes/studio-workspaces.ts";
 import { createMobileStaticRoute, resolveMobileStaticRouteOptions } from "../routes/mobile-static.ts";
 import { createHtmlPreviewRoute } from "../routes/html-preview.ts";
+import { createOfficePreviewRoute } from '../routes/office-preview.ts';
 import { createAccessRoute } from "../routes/access.ts";
 import { createSpeechRecognitionRoute } from "../routes/speech-recognition.ts";
 import { createMemoryDreamRoute } from "../routes/memory-dream.ts";
@@ -82,7 +83,8 @@ export function registerOpenRoutes(app: Hono, ctx: CompositionContext): void {
 
   const { restRoute: chatRestRoute, wsRoute: chatWsRoute } = createChatRoute(engine, hub, { upgradeWebSocket });
   app.route("", createMobileStaticRoute(decideMobileStaticRouteOptions()));
-  app.route("", createHtmlPreviewRoute());
+  app.route("", createHtmlPreviewRoute({engine}));
+  app.route('/api', createOfficePreviewRoute(engine));
   app.route("/api", chatRestRoute);
   app.route("", chatWsRoute);
   app.route("/api", createWebSocketAuthRoute({ ticketService: wsTicketService }));

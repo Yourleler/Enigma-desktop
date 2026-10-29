@@ -26,6 +26,8 @@ export const YUAN_METADATA: Readonly<Record<string, Readonly<YuanMetadata>>> = O
   butter: Object.freeze({ yuan: "butter", thinkingBlock: "PULSE" }),
   ming: Object.freeze({ yuan: "ming", thinkingBlock: "沉思" }),
   kong: Object.freeze({ yuan: "kong", thinkingBlock: null }),
+  // Enigma 产品的工程 agent：思考区块是行动前的工程判断 WORK，而非情绪 MOOD。
+  enigma: Object.freeze({ yuan: "enigma", thinkingBlock: "WORK" }),
 });
 
 /**

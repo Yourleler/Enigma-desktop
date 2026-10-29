@@ -20,8 +20,9 @@ export async function projectOverview(workspace: Workspace, options: { task?: st
     new Delegations(workspace).list(options.task),
     new Experiments(workspace).list(options.task),
   ]);
-  const deliveries = await Promise.all(events.map(async event => ({ event, delivery: await new TaskEvents(workspace).delivery(event), sourceCurrent: JSON.stringify(event.observation) === JSON.stringify(await workspace.observe()) })));
+  const observed=events.length?JSON.stringify(await workspace.observe()):null;
+  const deliveries = await Promise.all(events.map(async event => ({ event, delivery: await new TaskEvents(workspace).delivery(event), sourceCurrent: JSON.stringify(event.observation) === observed })));
   return { at: new Date().toISOString(), repositories: workspace.config.repos, checks: workspace.config.checks, plan: plan ?? null, services, background, waits,
-    events: deliveries, artifacts, delegates, experiments, childRequests: { knownSdkCalls: delegates.filter(child => child.spec.target === 'pi').reduce((total, child) => total + child.state.requests, 0), unavailable: delegates.filter(child => child.spec.target === 'codex').map(child => child.spec.id) }, blockers: [...plan?.gaps ?? [], ...background.filter(run => run.state.status === 'unknown').map(run => `Unknown command effects: ${run.spec.id}`), ...delegates.filter(child => child.status === 'unknown').map(child => `Unknown child task execution: ${child.spec.id}`)],
+    events: deliveries, artifacts, delegates, experiments, childRequests: { knownSdkCalls: delegates.filter(child => child.spec.target === 'pi').reduce((total, child) => total + child.state.requests, 0), unavailable: delegates.filter(child => child.spec.target === 'codex').map(child => child.spec.id) }, blockers: [...plan?.gaps ?? [], ...background.filter(run => run.state.status === 'unknown'&&!run.reconciled).map(run => `Unknown command effects: ${run.spec.id}`), ...delegates.filter(child => child.status === 'unknown').map(child => `Unknown child task execution: ${child.spec.id}`)],
     note: 'This is an observation snapshot, not an automatic completion verdict. Ready services, finished jobs and passing checks remain distinct.' };
 }

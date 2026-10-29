@@ -20,6 +20,7 @@ import { createModuleLogger } from "../lib/debug-log.ts";
 import { USER_PROFILE_FILENAME } from "../lib/user-profile-store.ts";
 import { isValidAgentId } from "../shared/agent-id.ts";
 import { PUBLIC_PERSONA_FILE_NAME, PUBLIC_PERSONA_TEMPLATE_DIR } from "./persona-source.ts";
+import {isEnigmaProduct} from '../shared/enigma-product.cjs';
 
 const log = createModuleLogger("first-run");
 
@@ -52,6 +53,7 @@ export interface FirstRunReport {
  * @param {string} productDir - 产品模板目录（lib/）
  */
 export function ensureFirstRun(hanakoHome, productDir): FirstRunReport {
+  const defaultAgentId=isEnigmaProduct()?'enigma':DEFAULT_AGENT_ID;
   // 1. 确保目录结构存在
   const userDir = path.join(hanakoHome, "user");
   fs.mkdirSync(path.join(hanakoHome, "agents"), { recursive: true });
@@ -67,7 +69,7 @@ export function ensureFirstRun(hanakoHome, productDir): FirstRunReport {
   let defaultAgentState: "valid" | "invalid_id" | "config_missing" | "config_unreadable" | null = null;
   for (const entry of agentEntries) {
     const cls = classifyAgentDirectoryForStartup(agentsDir, entry.name);
-    if (entry.name === DEFAULT_AGENT_ID) {
+    if (entry.name === defaultAgentId) {
       defaultAgentState = cls.status === "valid" ? "valid" : cls.reason;
       if (cls.status === "valid") validAgentIds.add(entry.name);
       continue;
@@ -95,13 +97,25 @@ export function ensureFirstRun(hanakoHome, productDir): FirstRunReport {
   let defaultConfigBackupPath: string | null = null;
   if (!hasAgent || needsDefaultAgentRepair) {
     if (defaultAgentState === "config_unreadable") {
-      defaultConfigBackupPath = backupUnreadableDefaultConfig(agentsDir);
+      defaultConfigBackupPath = backupUnreadableDefaultConfig(agentsDir,defaultAgentId);
       log.warn(`默认助手 config.yaml 无法解析，已备份到 ${defaultConfigBackupPath}`);
     }
     log.log(needsDefaultAgentRepair ? "默认助手数据不完整，正在补齐..." : "首次启动，正在创建默认助手...");
-    seedDefaultAgent(agentsDir, productDir, userDir);
+    seedDefaultAgent(agentsDir, productDir, userDir,defaultAgentId);
     repairedDefaultAgent = true;
-    validAgentIds.add(DEFAULT_AGENT_ID);
+    validAgentIds.add(defaultAgentId);
+  }
+
+  // Earlier Enigma desktop builds bypassed the CLI profile seeder. Correct
+  // only the untouched stock identity; retain its ID, conversations and settings.
+  if(isEnigmaProduct()&&validAgentIds.has('hanako')){
+    const configPath=path.join(agentsDir,'hanako','config.yaml'),raw=YAML.load(fs.readFileSync(configPath,'utf8')) as any;
+    const avatarDir=path.join(agentsDir,'hanako','avatars');
+    const customAvatar=fs.existsSync(avatarDir)&&fs.readdirSync(avatarDir).some(name=>/^agent\.(png|jpe?g|webp)$/i.test(name));
+    if(raw?.agent?.name==='Hanako'&&raw.agent.yuan==='hanako'&&!customAvatar){
+      const backup=configPath+'.before-enigma-branding';if(!fs.existsSync(backup))fs.copyFileSync(configPath,backup);
+      raw.agent={...raw.agent,name:'Enigma',yuan:'enigma'};writeSecretFileSync(configPath,YAML.dump(raw,{lineWidth:-1}));
+    }
   }
 
   // 3. 同步 skills：从 skills2set/ 复制到 ~/.hanako/skills/
@@ -126,7 +140,7 @@ export function ensureFirstRun(hanakoHome, productDir): FirstRunReport {
     fs.writeFileSync(
       prefsPath,
       JSON.stringify({
-        primaryAgent: "hanako",
+        primaryAgent: validAgentIds.has(defaultAgentId)?defaultAgentId:[...validAgentIds][0],
       }, null, 2) + "\n",
       "utf-8",
     );
@@ -156,8 +170,8 @@ function classifyAgentDirectoryForStartup(agentsDir, agentId): AgentDirClassific
 }
 
 /** 默认 agent 的 config 解析失败时，把原文件改名备份，让播种写出干净的新 config */
-function backupUnreadableDefaultConfig(agentsDir): string {
-  const cfgPath = path.join(agentsDir, DEFAULT_AGENT_ID, "config.yaml");
+function backupUnreadableDefaultConfig(agentsDir,defaultAgentId=DEFAULT_AGENT_ID): string {
+  const cfgPath = path.join(agentsDir, defaultAgentId, "config.yaml");
   const stamp = new Date().toISOString().replace(/[:.]/g, "-");
   const backupPath = `${cfgPath}.broken-${stamp}`;
   fs.renameSync(cfgPath, backupPath);
@@ -167,8 +181,7 @@ function backupUnreadableDefaultConfig(agentsDir): string {
 /**
  * 从模板播种默认 agent（与 engine.createAgent 相同逻辑，但纯同步、无依赖）
  */
-function seedDefaultAgent(agentsDir, productDir, userDir) {
-  const agentId = "hanako";
+function seedDefaultAgent(agentsDir, productDir, userDir,agentId=DEFAULT_AGENT_ID) {
   const agentDir = path.join(agentsDir, agentId);
 
   // 创建目录结构
@@ -187,15 +200,19 @@ function seedDefaultAgent(agentsDir, productDir, userDir) {
   fs.copyFileSync(configSrc, cfgDest);
   // 写入默认工作台（per-agent，不存全局）
   const raw = fs.existsSync(cfgDest) ? YAML.load(fs.readFileSync(cfgDest, "utf-8")) || {} : {};
+  const enigma=agentId==='enigma';
+  if(enigma){raw.agent={...raw.agent,name:'Enigma',yuan:'enigma'};raw.locale='zh-CN';raw.experience={...raw.experience,enabled:false};}
+  const workspace=enigma?path.join(path.dirname(userDir),'workspaces'):ensureDefaultWorkspace();
+  if(enigma)fs.mkdirSync(workspace,{recursive:true});
   raw.desk = {
     ...(raw.desk || {}),
-    home_folder: ensureDefaultWorkspace(),
+    home_folder: workspace,
     heartbeat_enabled: false,
     heartbeat_interval: DEFAULT_HEARTBEAT_INTERVAL_MINUTES,
   };
   raw.memory = {
     ...(raw.memory || {}),
-    enabled: true,
+    enabled: !enigma,
   };
   writeSecretFileSync(cfgDest, YAML.dump(raw, { indent: 2, lineWidth: -1, sortKeys: false, quotingType: '"' }));
 

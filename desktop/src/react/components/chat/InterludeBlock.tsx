@@ -166,7 +166,7 @@ export const InterludeBlock = memo(function InterludeBlock({ block }: { block: I
             width: position.width,
             maxHeight: position.maxHeight,
           }}
-          role="dialog"
+          role="dialog" data-glass-frame="preview"
         >
           {(previewSessionPath || previewSessionId) && block.taskId ? (
             <SubagentSessionPreview

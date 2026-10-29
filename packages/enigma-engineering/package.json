@@ -21,7 +21,10 @@
       "./dist/src/pi-reuse.js",
       "./dist/src/pi-collaboration.js",
       "./dist/src/pi-learning.js",
-      "./dist/src/pi-change-reading.js"
+      "./dist/src/pi-change-reading.js",
+      "./dist/src/pi-memory-dream.js",
+      "./dist/src/pi-documentation.js",
+      "./dist/src/pi-task-acceptance.js"
     ]
   },
   "type": "module",
@@ -48,6 +51,9 @@
     "./pi-collaboration": "./dist/src/pi-collaboration.js",
     "./pi-learning": "./dist/src/pi-learning.js",
     "./pi-memory": "./dist/src/pi-memory.js",
+    "./pi-memory-dream": "./dist/src/pi-memory-dream.js",
+    "./pi-documentation": "./dist/src/pi-documentation.js",
+    "./pi-task-acceptance": "./dist/src/pi-task-acceptance.js",
     "./pi-observer": "./dist/src/pi-observer.js",
     "./pi-handoff": "./dist/src/pi-handoff.js",
     "./pi-review": "./dist/src/pi-review.js",

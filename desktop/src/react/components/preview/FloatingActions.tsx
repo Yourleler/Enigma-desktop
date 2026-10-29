@@ -19,6 +19,7 @@ import {
   normalizeWorkbenchContentRef,
 } from '../../utils/remote-file-preview';
 import { refreshPreviewDocumentTarget } from '../../utils/preview-document-refresh';
+import {previewCopyText} from '../../utils/preview-copy';
 import type {
   MarkdownCoverImageInput,
   MarkdownCoverTargetInput,
@@ -231,13 +232,13 @@ export function FloatingActions({
   }, [contentType, coverTarget]);
 
   const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(content).then(() => {
+    navigator.clipboard.writeText(previewCopyText(content,contentType)).then(() => {
       const _t = window.t ?? ((p: string) => p);
       setCopyLabel(_t('attach.copied'));
       if (timerRef.current) clearTimeout(timerRef.current);
       timerRef.current = setTimeout(() => setCopyLabel(null), 1500);
-    });
-  }, [content]);
+    }).catch(()=>{setCopyLabel('复制失败，请重试');});
+  }, [content,contentType]);
 
   const handleScreenshot = useCallback(async () => {
     const { takeArticleScreenshot } = await import('../../utils/screenshot');

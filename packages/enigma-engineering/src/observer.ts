@@ -37,6 +37,13 @@ export async function processIdentity(pid: number): Promise<{ state: 'alive' | '
 
 /** Bounded, best-effort mirror. The writer never owns the workspace operation lock. */
 export class RunObserver {
+  private static active = new Map<string,RunObserver>();
+  private registrations: string[] = [];
+  /** Native UI adapters use a separate Workspace instance from Pi extensions.
+   * Deliver to the session's existing observer instead of creating a rival stream. */
+  static recordForSession(root:string,session:string,event:ActivityEvent) {
+    RunObserver.active.get(JSON.stringify([resolve(root),session]))?.record(event);
+  }
   readonly state: ObserverSnapshot;
   readonly directory: string;
   private pending: ObservedEvent[] = [];
@@ -63,6 +70,8 @@ export class RunObserver {
     const observer = new RunObserver(canonical, session, options.sessionFile, options.secrets ?? [], process.identity);
     await mkdir(observer.directory, { mode: 0o700 });
     await observer.flush();
+    observer.registrations=[...new Set([canonical,resolve(root)])].map(directory=>JSON.stringify([directory,session]));
+    for(const key of observer.registrations)RunObserver.active.set(key,observer);
     observer.interval = setInterval(() => { void observer.flush(); }, options.heartbeatMs ?? 1000); observer.interval.unref();
     return observer;
   }
@@ -158,6 +167,7 @@ export class RunObserver {
   async close(): Promise<void> {
     if (this.stopped) return;
     this.stopped = true; if (this.interval) clearInterval(this.interval); if (this.timer) clearTimeout(this.timer);
+    for(const key of this.registrations)if(RunObserver.active.get(key)===this)RunObserver.active.delete(key);
     this.state.state = 'closed'; await this.flush();
   }
 }
@@ -166,6 +176,7 @@ const labels: Record<string, string> = {
   'context': '准备上下文', 'model': '等待模型可见响应', 'model.stream': '接收模型响应', 'tool': '执行工具',
   'process': '运行命令', 'approval': '等待用户确认', 'snapshot': '采集代码快照', 'fingerprints': '核对代码版本',
   'verification': '执行验收', 'settling': '整理与收尾', 'reading': '分析源码', 'workspace.operation': '工作区操作', 'compaction': '压缩会话',
+  'reading.capture':'冻结变更版本','reading.analyze':'分析源码关系','reading.explain':'生成源码讲解','workbench':'执行工作台操作',
 };
 
 export async function readObserverStatus(root: string, selectedId?: string, sourceSession?: string) {
@@ -203,7 +214,8 @@ export async function readObserverStatus(root: string, selectedId?: string, sour
   const stages = snapshot.active.map(stage => ({ ...stage, label: labels[stage.stage] ?? stage.stage, elapsedMs: Math.max(0, now - Date.parse(stage.startedAt)) }));
   const leafStages = stages.filter(stage => !stages.some(child => child.parent === stage.id));
   const primary = leafStages.at(-1);
-  const explanations = [primary ? `${primary.label}${primary.repo ? `（${primary.repo}）` : ''}，持续 ${Math.round(primary.elapsedMs / 1000)} 秒。` : `会话状态：${snapshot.state}。`];
+  const stateLabel={idle:'空闲',running:'正在执行',settling:'正在收尾',completed:'已结束',aborted:'已停止',error:'执行失败',closed:'采集已关闭'}[snapshot.state];
+  const explanations = [primary ? `${primary.label}${primary.repo ? `（${primary.repo}）` : ''}，持续 ${Math.round(primary.elapsedMs / 1000)} 秒。` : `会话状态：${stateLabel}。`];
   if (observation === 'stale') explanations.push('观测已停止更新；当前无法确认执行是否有进展，不能仅据此判断卡死。');
   if (observation === 'source-stopped') explanations.push('原观察进程已终止或 PID 已被复用；遗留活动阶段不代表任务仍在执行。');
   if (primary?.stage === 'model') explanations.push('等待模型的可见响应；没有服务端遥测，无法区分排队、内部计算或网络等待。');

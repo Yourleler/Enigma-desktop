@@ -11,6 +11,9 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const { app, dialog } = require("electron");
+const {productIdentity,isEnigmaProduct}=require('../shared/enigma-product.cjs');
+const productMetadata=(()=>{try{return require('../package.json');}catch{return {};}})();
+if(isEnigmaProduct(process.env,productMetadata)){process.env.ENIGMA_DESKTOP_PRODUCT='1';if(!process.env.HANA_HOME)process.env.HANA_HOME=productIdentity(process.env,productMetadata).home;app.setName('Enigma');}
 
 let diagnosticsDir = path.join(os.tmpdir(), "hanako-desktop-launch");
 let launchIntegrity = null;

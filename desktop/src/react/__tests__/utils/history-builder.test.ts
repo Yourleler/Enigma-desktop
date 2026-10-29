@@ -2,6 +2,17 @@ import { describe, expect, it } from 'vitest';
 import { buildItemsFromHistory } from '../../utils/history-builder';
 
 describe('buildItemsFromHistory user image restoration', () => {
+  it('restores turn timing on a history page without the original input', () => {
+    const [item] = buildItemsFromHistory({ messages: [{
+      id: '2', entryId: 'assistant-entry', role: 'assistant', content: 'done',
+      turnInputEntryId: 'hidden-input', turnStartedAt: '2026-05-07T05:42:00.000Z',
+      timestamp: '2026-05-07T05:43:00.000Z',
+    }] });
+    expect(item).toMatchObject({ type: 'message', data: {
+      turnStartedAt: Date.parse('2026-05-07T05:42:00.000Z'),
+      timestamp: Date.parse('2026-05-07T05:43:00.000Z'),
+    } });
+  });
   it('restores tool outcomes by toolCallId instead of tool name', () => {
     const items = buildItemsFromHistory({
       messages: [{

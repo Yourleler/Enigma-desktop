@@ -1,0 +1,6 @@
+.enigma-page-dialog {margin:16px;padding:18px;background:var(--bg-card,#f8f7fc);color:var(--text,#222);border:1px solid var(--eg-stroke,#bbb);border-radius:14px;box-shadow:0 12px 40px #0002;overflow:auto;max-height:75vh;font:13px/1.6 system-ui;}
+.enigma-page-dialog small {color:var(--text-muted,#666);}
+.enigma-page-dialog p {white-space:pre-wrap;overflow-wrap:anywhere;}
+.enigma-page-dialog input {box-sizing:border-box;width:100%;padding:8px;border:1px solid var(--eg-stroke,#aaa);border-radius:7px;background:transparent;color:inherit;}
+.enigma-page-dialog>div {display:flex;justify-content:flex-end;gap:8px;margin-top:12px;}
+.enigma-page-dialog button {padding:6px 14px;border-radius:8px;border:1px solid var(--eg-stroke,#bbb);background:var(--overlay-light,#e5dff2);color:inherit;cursor:pointer;}

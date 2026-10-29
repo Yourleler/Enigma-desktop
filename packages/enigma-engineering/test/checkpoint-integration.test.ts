@@ -50,3 +50,11 @@ test('integration detects conflicting edits, changed child, changed acceptance a
     assert.equal(await readFile(join(root,'library/index.js'),'utf8'),'export function greet() { return "v1"; }\n');
   }finally{await rm(root,{recursive:true,force:true});}
 });
+test('unresolved child effects introduced after preview block integration even if source bytes have not changed',async()=>{
+ const {root,workspace}=await fixture();try{
+  const baseline=await workspace.checkpoint('source'),child=await workspace.forkCheckpoint(baseline.id,join(root,'worker'));
+  await writeFile(join(child.repo('library').root,'index.js'),'Worker result\n');const store=new CheckpointIntegrations(workspace),preview=await store.preview({owner:'manager',worker:'worker',childRoot:child.root,baseline:baseline.id,writeRepos:['library']});
+  await writeFile(join(child.data,'operations','pending.json'),JSON.stringify({schema:1,id:'pending',status:'unknown',operation:'command'}));
+  await assert.rejects(store.apply(preview.id,'manager',['library']),/unresolved effects/);assert((await readFile(join(root,'library/index.js'),'utf8')).includes('v1'));
+ }finally{await rm(root,{recursive:true,force:true});}
+});

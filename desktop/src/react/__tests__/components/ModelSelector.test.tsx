@@ -20,10 +20,10 @@ const storeState = {
 };
 
 vi.mock('../../stores', () => ({
-  useStore: {
+  useStore: Object.assign((selector: (state:typeof storeState)=>unknown)=>selector(storeState),{
     getState: () => storeState,
     setState: vi.fn(),
-  },
+  }),
 }));
 
 vi.mock('../../hooks/use-hana-fetch', () => ({

@@ -15,10 +15,13 @@ function walk(dir, out = []) {
 }
 
 describe("preview naming contract", () => {
-  it("uses Preview naming for the current preview surface, leaving Artifact only to legacy protocol blocks", () => {
+  it("uses Preview naming for file previews independently of the engineering artifact registry", () => {
     const productionFiles = walk(root);
     const artifactNamedFiles = productionFiles
       .map((file) => path.relative(root, file))
+      // Engineering artifacts are saved, versioned task outputs with their
+      // own registry and download routes; they are not the legacy preview UI.
+      .filter((file) => !file.startsWith('engineering/'))
       .filter((file) => /artifact/i.test(file));
 
     expect(artifactNamedFiles).toEqual([]);

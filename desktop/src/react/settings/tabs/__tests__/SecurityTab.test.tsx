@@ -111,6 +111,13 @@ describe('SecurityTab Windows sandbox network control', () => {
     expect(await screen.findByText('Archived conversations window')).toBeTruthy();
     expect(screen.getByText('No archived conversations')).toBeTruthy();
   });
+  it('keeps engineering listeners off until explicitly selected and explains project-controlled bind scope',async()=>{
+    useSettingsStore.setState({platformName:'darwin',settingsConfig:{sandbox:true,sandbox_network:true,locale:'zh',file_backup:{enabled:false}}} as never);render(React.createElement(SecurityTab));
+    expect(screen.getByText(/绑定所有地址可能被局域网访问/)).toBeTruthy();const toggle=screen.getByRole('switch',{name:'工程开发服务器'}) as HTMLButtonElement;expect(toggle.getAttribute('aria-checked')).toBe('false');fireEvent.click(toggle);expect(autoSaveConfigMock).toHaveBeenCalledWith({engineering_local_servers:true},{silent:true});
+  });
+  it('keeps the Mac engineering option discoverable from the Web workbench',()=>{
+    useSettingsStore.setState({platformName:'web',settingsConfig:{sandbox:true,sandbox_network:true,locale:'zh'}} as never);render(React.createElement(SecurityTab));expect(screen.getByText('工程开发服务器')).toBeTruthy();expect(screen.getByText(/仅用于 Mac 工程命令/)).toBeTruthy();
+  });
 
   it('does not render optimistic sandbox or backup states before settings config is ready', () => {
     useSettingsStore.setState({
@@ -121,7 +128,7 @@ describe('SecurityTab Windows sandbox network control', () => {
     render(React.createElement(SecurityTab));
 
     const switches = screen.getAllByRole('switch') as HTMLButtonElement[];
-    expect(switches).toHaveLength(3);
+    expect(switches).toHaveLength(4);
     for (const item of switches) {
       expect(item.getAttribute('aria-checked')).toBe('mixed');
       expect(item.getAttribute('aria-busy')).toBe('true');

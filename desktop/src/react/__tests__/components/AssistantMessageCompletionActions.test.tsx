@@ -120,7 +120,7 @@ describe('AssistantMessage completion actions', () => {
     expect(within(footer).getByTitle('选择消息')).toBeInTheDocument();
 
     const ordered = Array.from(footer.children).map(child => (
-      child.textContent?.trim() || child.getAttribute('title') || ''
+      child.tagName === 'TIME' ? child.querySelector('span')?.textContent : child.textContent?.trim() || child.getAttribute('title') || ''
     ));
 
     expect(ordered).toEqual([
@@ -142,7 +142,7 @@ describe('AssistantMessage completion actions', () => {
     );
   });
 
-  it('does not render a footer unless the caller marks the assistant message as turn completion', () => {
+  it('shows a time hint but no completion actions for an intermediate reply', () => {
     render(
       <AssistantMessage
         agentDisplay={{ id: 'hana', displayName: 'Hana', avatarUrl: null, fallbackAvatar: null, yuan: 'hana', isUser: false }}
@@ -156,7 +156,7 @@ describe('AssistantMessage completion actions', () => {
       />,
     );
 
-    expect(screen.queryByText('05:43')).not.toBeInTheDocument();
+    expect(screen.getByText('05:43')).toBeInTheDocument();
     expect(screen.queryByTestId('assistant-completion-actions')).not.toBeInTheDocument();
     expect(screen.queryByTitle('重新生成')).not.toBeInTheDocument();
   });
@@ -197,7 +197,7 @@ describe('AssistantMessage completion actions', () => {
     expect(screen.getByTitle('选择消息')).toBeInTheDocument();
   });
 
-  it('hides the assistant footer while the assistant reply is still streaming', () => {
+  it('shows reception time without completion actions while streaming', () => {
     render(
       <AssistantMessage
         agentDisplay={{ id: 'hana', displayName: 'Hana', avatarUrl: null, fallbackAvatar: null, yuan: 'hana', isUser: false }}
@@ -212,7 +212,7 @@ describe('AssistantMessage completion actions', () => {
       />,
     );
 
-    expect(screen.queryByText('05:43')).not.toBeInTheDocument();
+    expect(screen.getByText('05:43')).toBeInTheDocument();
     expect(screen.queryByTestId('assistant-completion-actions')).not.toBeInTheDocument();
     expect(screen.queryByTitle('重新生成')).not.toBeInTheDocument();
   });

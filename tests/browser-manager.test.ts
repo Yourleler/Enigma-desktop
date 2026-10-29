@@ -903,6 +903,18 @@ describe("BrowserManager multi-instance", () => {
     expect(manager._sessions.has(SP1)).toBe(false);
   });
 
+  it('retains runtime tracking while the user is reading a visible side preview', async () => {
+    const manager = new BrowserManager();
+    manager._sendCmd = vi.fn().mockResolvedValue({});
+    manager._saveColdWorkspace = vi.fn();
+    await manager.launch(SP1);
+    const entry = manager._sessions.get(SP1);
+    manager._sendCmd = vi.fn().mockResolvedValue({keptVisible: true});
+    await manager.suspendForSession(SP1);
+    expect(manager.isRunning(SP1)).toBe(true);
+    expect(manager._sessions.get(SP1)).toBe(entry);
+  });
+
   it("closeBrowserForSession on running session delegates to close()", async () => {
     const manager = new BrowserManager();
     manager._sendCmd = vi.fn().mockResolvedValue({});

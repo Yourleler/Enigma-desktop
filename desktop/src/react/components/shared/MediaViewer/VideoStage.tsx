@@ -36,6 +36,7 @@ export function VideoStage({ file, viewport, onReady, onError }: Props) {
           controls
           autoPlay={false}
           onLoadedData={onReady}
+          onError={() => onError?.(new Error(`video decode failed: ${file.name}`))}
           className={styles.videoEl}
           data-testid="video-stage-video"
         />

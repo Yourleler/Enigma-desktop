@@ -1,5 +1,4 @@
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import type { PointerEvent as ReactPointerEvent } from 'react';
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { useStore } from '../../stores';
 import { sessionScopedListIncludes, sessionScopedValue } from '../../stores/session-slice';
 import { loadMoreMessages, reconcileCurrentSessionMessages } from '../../stores/session-actions';
@@ -18,9 +17,6 @@ const EMPTY_ITEMS: ChatListItem[] = [];
 const EMPTY_TIMELINE_ANCHORS: TimelineAnchor[] = [];
 const LOAD_MORE_THRESHOLD = 200;
 const SCROLL_THRESHOLD = 50;
-const TIMELINE_HOVER_ZONE_PX = 64;
-const TIMELINE_TOP_OFFSET_PX = 76;
-const TIMELINE_HEIGHT_RATIO = 0.5;
 
 export interface ChatScrollButtonState {
   el: HTMLElement | null;
@@ -50,17 +46,24 @@ export const ChatMessageSurface = memo(function ChatMessageSurface({
   const ref = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const messageElementsRef = useRef(new Map<string, HTMLDivElement>());
-  const [timelineRailVisible, setTimelineRailVisible] = useState(false);
-  const [timelinePrepared, setTimelinePrepared] = useState(false);
   const bottomScroll = useContinuousBottomScroll({
     scrollRef: ref,
     contentRef,
     active,
     stickyThreshold: SCROLL_THRESHOLD,
   });
-  const timelineAnchors = useMemo(() => (
-    active && timelinePrepared ? buildTimelineAnchors(items) : EMPTY_TIMELINE_ANCHORS
-  ), [active, items, timelinePrepared]);
+  const anchorsCache = useRef<TimelineAnchor[]>(EMPTY_TIMELINE_ANCHORS);
+  const timelineAnchors = useMemo(() => {
+    const next = active ? buildTimelineAnchors(items) : EMPTY_TIMELINE_ANCHORS;
+    // Streaming assistant tokens do not move the prompt landmarks. Keep their
+    // identity stable so every token does not trigger a full layout measurement.
+    if (next.length === anchorsCache.current.length && next.every((anchor, i) => {
+      const previous = anchorsCache.current[i];
+      return anchor.messageId === previous.messageId && anchor.preview === previous.preview && anchor.timestamp === previous.timestamp;
+    })) return anchorsCache.current;
+    anchorsCache.current = next;
+    return next;
+  }, [active, items]);
   const emitScrollButton = useCallback((state: ChatScrollButtonState) => {
     onScrollButtonChange?.(state);
   }, [onScrollButtonChange]);
@@ -83,26 +86,6 @@ export const ChatMessageSurface = memo(function ChatMessageSurface({
   // 已按 surface 统一捕获（主窗口 + 每个拆窗子窗各注册一次，且查询各自 document 的
   // 原生选区）。组件层再挂一份既冗余、又会在子窗口里误查主窗口 document。这里只需
   // 标注 data-chat-selection-root / data-session-path 供 document lifecycle 定位。
-  const handleShellPointerMove = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const xFromRight = rect.right - event.clientX;
-    const yFromTop = event.clientY - rect.top;
-    const inRailX = xFromRight >= 0 && xFromRight <= TIMELINE_HOVER_ZONE_PX;
-    const inRailY = yFromTop >= TIMELINE_TOP_OFFSET_PX
-      && yFromTop <= TIMELINE_TOP_OFFSET_PX + rect.height * TIMELINE_HEIGHT_RATIO;
-    setTimelineRailVisible(inRailX && inRailY);
-    if (active && inRailX && inRailY) setTimelinePrepared(true);
-  }, [active]);
-  const handleShellPointerLeave = useCallback(() => {
-    setTimelineRailVisible(false);
-  }, []);
-
-  useEffect(() => {
-    if (active) return;
-    setTimelineRailVisible(false);
-    setTimelinePrepared(false);
-  }, [active]);
-
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -384,8 +367,6 @@ export const ChatMessageSurface = memo(function ChatMessageSurface({
     <div
       className={shellClassName}
       data-active={active ? 'true' : 'false'}
-      onPointerMove={handleShellPointerMove}
-      onPointerLeave={handleShellPointerLeave}
       style={{
         visibility: active ? 'visible' : 'hidden',
         zIndex: active ? 1 : 0,
@@ -394,7 +375,7 @@ export const ChatMessageSurface = memo(function ChatMessageSurface({
     >
       <div
         ref={ref}
-        className={styles.sessionPanel}
+        className={`${styles.sessionPanel}${timelineAnchors.length ? ` ${styles.withConversationRail}` : ''}`}
         data-chat-selection-root=""
         data-session-path={sessionPath}
         onPointerDown={boxSelection.onPointerDown}
@@ -406,7 +387,7 @@ export const ChatMessageSurface = memo(function ChatMessageSurface({
         >
           {hasMore && (
             <div className={styles.loadMoreHint}>
-              {loadingMore ? '...' : ''}
+              <button disabled={loadingMore} data-tooltip="加载更早的消息，并保留当前阅读位置" onClick={() => void loadMoreMessages(sessionPath)}>{loadingMore ? '正在加载更早的消息…' : '加载更早的消息'}</button>
             </div>
           )}
           <ChatTranscript
@@ -429,7 +410,12 @@ export const ChatMessageSurface = memo(function ChatMessageSurface({
         contentRef={contentRef}
         messageElementsRef={messageElementsRef}
         active={active}
-        railVisible={timelineRailVisible}
+        railVisible
+        onBeforeJump={bottomScroll.cancelFollow}
+        hasMore={hasMore}
+        loadingMore={loadingMore}
+        onLoadMore={() => void loadMoreMessages(sessionPath)}
+        onFind={variant === 'card' ? undefined : () => useStore.getState().openChatFind(sessionPath)}
       />
       {boxSelection.box && (
         <div

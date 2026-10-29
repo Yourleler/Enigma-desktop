@@ -1,0 +1,15 @@
+.onboarding-skip {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  flex-shrink: 0;
+  margin-bottom: 18px;
+  -webkit-app-region: no-drag;
+}
+.onboarding-skip .ob-btn { padding: 8px 12px; font-size: 13px; }
+.onboarding-skip small { color: var(--text-secondary); font-size: 12px; }
+.onboarding:has(.onboarding-skip) .onboarding-progress { margin-bottom: 16px; }
+@media (max-height: 640px) { .onboarding-skip small { display:none; } .onboarding-skip {margin-bottom: 8px;} }

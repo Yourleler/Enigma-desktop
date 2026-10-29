@@ -25,6 +25,7 @@ test('isolated branch comparison uses actual common checks, rejects stale/tamper
     const first = await delegates.start(input('variant-good')), second = await delegates.start(input('variant-bad')); ids.push(first.spec.id, second.spec.id);
     const [good, bad] = await Promise.all(ids.map(id => delegates.wait(id, { timeoutMs: 30000 }))); assert.equal(good!.state.status, 'completed', JSON.stringify(good)); assert.equal(bad!.state.status, 'completed', JSON.stringify(bad));
     const experiment = await experiments.create({ goal: 'Application returns v2', task: 'experiment-task', checks: ['joint'], candidates: [{ id: 'good', delegation: first.spec.id }, { id: 'bad', delegation: second.spec.id }] });
+    await assert.rejects(experiments.create({goal:'Do not compare an implementation to itself',task:'experiment-task',checks:['joint'],candidates:[{id:'first',delegation:first.spec.id},{id:'duplicate',delegation:first.spec.id}]}),/不同的独立子任务/);
     await writeFile(join(root, 'app', 'USER.txt'), 'Concurrent user change');
     const report = await experiments.evaluate(experiment.id, { task: 'experiment-task' }); assert.equal(report.candidates.find(item => item.id === 'good')?.status, 'passed'); assert.equal(report.candidates.find(item => item.id === 'bad')?.status, 'failed');
     await assert.rejects(experiments.select(experiment.id, 'bad', { task: 'experiment-task' }), /currently verified/);

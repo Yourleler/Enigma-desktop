@@ -29,6 +29,56 @@ function makeRunner(handler: any) {
 }
 
 describe("macos Cua provider", () => {
+  it.each(['No window with window_id 123 exists.','App with pid 123 is not running or not accessible.'])('reports a disappeared target without calling it a driver crash: %s',async(message)=>{
+    const {runner}=makeRunner(()=>({stdout:JSON.stringify({isError:true,content:[{type:'text',text:message}]}),stderr:'',exitCode:1}));
+    const provider=createMacosCuaProvider({platform:'darwin',command:'/tmp/cua-driver',runner});
+    await expect(provider.listApps()).rejects.toMatchObject({code:COMPUTER_USE_ERRORS.TARGET_NOT_FOUND});
+  });
+  it('reports release failure instead of hiding it behind the original cancellation',async()=>{
+    const {runner}=makeRunner((_command,args,options)=>{
+      if(args[0]==='drag_foreground')options.onStderr('ENIGMA_FOREGROUND_POINTER_DOWN\n');
+      return {stdout:'',stderr:'native command failed',exitCode:1};
+    });
+    const provider=createMacosCuaProvider({platform:'darwin',command:'/tmp/hana-computer-use-helper',runner,autoStartDaemon:false,cursorStyle:null});
+    await expect(provider.performAction({}, {providerState:{pid:42,windowId:24}}, {type:'drag',foreground:true,fromX:10,fromY:10,toX:20,toY:30,snapshotDisplay:{width:100,height:100}})).rejects.toMatchObject({code:COMPUTER_USE_ERRORS.INPUT_RELEASE_FAILED});
+  });
+  it('releases only input owned by a crashed foreground helper before returning failure',async()=>{
+    for(const owned of [false,true]) {
+      const {runner,calls}=makeRunner((_command,args,options)=>{
+        if(args[0]==='drag_foreground') {
+          if(owned)options.onStderr('ENIGMA_FOREGROUND_POINTER_DOWN\n');
+          return {stdout:'',stderr:'',exitCode:null,signal:'SIGTRAP'};
+        }
+        return rawResult({ok:true});
+      });
+      const provider=createMacosCuaProvider({platform:'darwin',command:'/tmp/hana-computer-use-helper',runner,autoStartDaemon:false,cursorStyle:null});
+      await expect(provider.performAction({}, {providerState:{pid:42,windowId:24}}, {type:'drag',foreground:true,fromX:10,fromY:10,toX:20,toY:30,snapshotDisplay:{width:100,height:100}})).rejects.toMatchObject({code:COMPUTER_USE_ERRORS.PROVIDER_CRASHED});
+      expect(calls.some(call=>call.args[0]==='release_foreground_input')).toBe(owned);
+    }
+  });
+  it('routes explicit foreground drag with exact window, image dimensions and cancellation signal',async()=>{
+    const {runner,calls}=makeRunner((_command,args)=>args[0]==='status'?{stdout:'ready',stderr:'',exitCode:0}:rawResult({ok:true}));
+    const provider=createMacosCuaProvider({platform:'darwin',command:'/tmp/hana-computer-use-helper',runner,autoStartDaemon:false,cursorStyle:null});
+    const signal=new AbortController().signal;
+    await provider.performAction({signal},{providerState:{pid:42,windowId:24}},{type:'drag',foreground:true,fromX:100,fromY:150,toX:250,toY:450,durationMs:800,snapshotDisplay:{width:1000,height:1200}});
+    const call=calls.find(call=>call.args[0]==='drag_foreground');
+    expect(JSON.parse(call.args[1])).toMatchObject({pid:42,window_id:24,from_x:100,from_y:150,to_x:250,to_y:450,screenshot_width:1000,screenshot_height:1200,duration_ms:800});
+    expect(call.options.signal).toBe(signal);
+    expect(calls.some(call=>call.args[0]==='drag')).toBe(false);
+  });
+  it('binds an explicit window across matching processes and never falls back to an unrelated window',async()=>{
+    const {runner,calls}=makeRunner((_command,args)=>{
+      if(args[0]==='list_apps')return rawResult({apps:[{pid:101,bundle_id:'app.test',name:'Test'},{pid:202,bundle_id:'app.test',name:'Test'}]});
+      if(args[0]==='list_windows')return rawResult({windows:[{window_id:JSON.parse(args[1]).pid===101?11:22,title:'Test window',bounds:{width:800,height:600}}]});
+      throw new Error('Unexpected mutation');
+    });
+    const provider=createMacosCuaProvider({platform:'darwin',command:'/tmp/cua-driver',runner});
+    const lease=await provider.createLease({}, {appId:'app.test',windowId:'22'});
+    expect(lease).toMatchObject({windowId:'22',providerState:{pid:202,windowId:22}});
+    await expect(provider.createLease({}, {appId:'app.test',windowId:'99'})).rejects.toMatchObject({code:COMPUTER_USE_ERRORS.TARGET_NOT_FOUND});
+    expect(calls.some(call=>call.args[0]==='launch_app')).toBe(false);
+  });
+
   it("resolves a configured Cua Driver command before common locations", () => {
     const command = resolveCuaDriverCommand({
       env: { HANA_CUA_DRIVER_PATH: "/opt/cua-driver" },
@@ -247,9 +297,9 @@ describe("macos Cua provider", () => {
       windowId: "10725",
       providerState: { pid: 844, windowId: 10725, bundleId: "com.apple.calculator" },
     });
-    expect(lease.allowedActions).not.toContain("click_point");
-    expect(lease.allowedActions).not.toContain("double_click");
-    expect(lease.allowedActions).not.toContain("drag");
+    expect(lease.allowedActions).toContain("click_point");
+    expect(lease.allowedActions).toContain("double_click");
+    expect(lease.allowedActions).toContain("drag");
     expect(lease.allowedActions).toContain("click_element");
   });
 
@@ -626,7 +676,7 @@ describe("macos Cua provider", () => {
     expect(helperCalls[1].args[1]).toBe(JSON.stringify({ pid: 844, key: "return" }));
   });
 
-  it("rejects aggressive pixel actions by default before invoking Cua", async () => {
+  it("routes observed window pixels without double-scaling and rejects out-of-bounds input", async () => {
     const { runner, calls } = makeRunner(() => rawResult({ ok: true }));
     const provider = createMacosCuaProvider({ platform: "darwin", command: "/tmp/cua-driver", runner });
     const lease = {
@@ -643,30 +693,44 @@ describe("macos Cua provider", () => {
       scaleFactor: 2,
     };
 
-    await expect(provider.performAction({}, lease, { type: "click_point", x: 125, y: 80, snapshotDisplay }))
-      .rejects.toMatchObject({ code: COMPUTER_USE_ERRORS.CAPABILITY_UNSUPPORTED });
-    await expect(provider.performAction({}, lease, {
+    await provider.performAction({}, lease, { type: "click_point", x: 125, y: 80, snapshotDisplay });
+    await provider.performAction({}, lease, {
       type: "drag",
       fromX: 10,
       fromY: 20,
       toX: 300,
       toY: 120,
       snapshotDisplay,
-    })).rejects.toMatchObject({ code: COMPUTER_USE_ERRORS.CAPABILITY_UNSUPPORTED });
-    await expect(provider.performAction({}, lease, { type: "double_click", elementId: "14" }))
-      .rejects.toMatchObject({ code: COMPUTER_USE_ERRORS.CAPABILITY_UNSUPPORTED });
+    });
+    await provider.performAction({}, lease, { type: "double_click", elementId: "14" });
 
     const helperCalls = calls.filter((c) => c.command === "/tmp/cua-driver");
-    expect(helperCalls).toHaveLength(0);
+    expect(helperCalls.map(call=>call.args[0])).toEqual(['click','drag','double_click']);
+    expect(JSON.parse(helperCalls[0].args[1])).toEqual({pid:844,window_id:10725,x:125,y:80});
+    expect(JSON.parse(helperCalls[1].args[1])).toMatchObject({pid:844,window_id:10725,from_x:10,from_y:20,to_x:300,to_y:120});
+    await expect(provider.performAction({},lease,{type:'click_point',x:1001,y:2,snapshotDisplay})).rejects.toMatchObject({code:COMPUTER_USE_ERRORS.TARGET_NOT_FOUND});
+    await expect(provider.performAction({},lease,{type:'click_point',x:1,y:2})).rejects.toMatchObject({code:COMPUTER_USE_ERRORS.STALE_SNAPSHOT});
+    expect(calls).toHaveLength(3);
+  });
+
+  it('preserves key modifiers and the explicitly observed target window/control',async()=>{
+    const {runner,calls}=makeRunner(()=>rawResult({ok:true}));
+    const provider=createMacosCuaProvider({command:'/tmp/cua-driver',platform:'darwin',runner,cursorEnabled:false,autoStartDaemon:false});
+    const lease={leaseId:'new-test',providerState:{pid:844,windowId:10725}};
+    await provider.performAction({},lease,{type:'press_key',key:'Meta+a',elementId:'4',modifiers:['shift']});
+    expect(JSON.parse(calls.at(-1).args[1])).toEqual({pid:844,key:'a',modifiers:['cmd','shift'],window_id:10725,element_index:4});
+    await provider.performAction({},lease,{type:'press_key',key:'Enter',modifiers:['cmd']});
+    expect(JSON.parse(calls.at(-1).args[1])).toEqual({pid:844,key:'return',modifiers:['cmd']});
+    await expect(provider.performAction({},lease,{type:'press_key',key:'BadModifier+a'})).rejects.toThrow('supported modifiers');
   });
 
   it("declares clean AX-first capabilities by default", async () => {
     const { runner } = makeRunner(() => rawResult({ ok: true }));
     const provider = createMacosCuaProvider({ platform: "darwin", command: "/tmp/cua-driver", runner });
 
-    expect(provider.capabilities.elementDoubleClick).toBe(false);
-    expect(provider.capabilities.pointClick).toBe("unsupported");
-    expect(provider.capabilities.drag).toBe("unsupported");
+    expect(provider.capabilities.elementDoubleClick).toBe(true);
+    expect(provider.capabilities.pointClick).toBe("pidScoped");
+    expect(provider.capabilities.drag).toBe("pidScoped");
     expect(provider.capabilities.requiresForegroundForInput).toBe(false);
   });
 
@@ -905,5 +969,25 @@ describe("macos Cua provider", () => {
       code: COMPUTER_USE_ERRORS.PROVIDER_CRASHED,
       message: expect.stringContaining("No cached AX state"),
     });
+  });
+
+  it.each([0,1])('classifies a structured screenshot TCC denial as an OS permission error (exit %i)',async(exitCode)=>{
+    const {runner}=makeRunner(()=>({stdout:JSON.stringify({isError:true,content:[{type:'text',text:'Screenshot failed: 用户拒绝了应用程序、窗口、显示器捕捉的TCC'}]}),stderr:'',exitCode}));
+    const provider=createMacosCuaProvider({platform:'darwin',command:'/tmp/cua-driver',runner});
+    await expect(provider.listApps()).rejects.toMatchObject({code:COMPUTER_USE_ERRORS.OS_PERMISSION_DENIED});
+  });
+
+  it.each([0,1])('distinguishes a locked screen from missing permission or driver crash (exit %i)',async(exitCode)=>{
+    const message='SCREEN_LOCKED: The Mac is locked. No input was dispatched.';
+    const {runner}=makeRunner(()=>({stdout:exitCode?'':JSON.stringify({isError:true,content:[{type:'text',text:message}]}),stderr:exitCode?message:'',exitCode}));
+    const provider=createMacosCuaProvider({platform:'darwin',command:'/tmp/cua-driver',runner});
+    await expect(provider.listApps()).rejects.toMatchObject({code:COMPUTER_USE_ERRORS.SCREEN_LOCKED,message:expect.stringContaining('No input was dispatched')});
+  });
+  it('does not treat an empty success exit or a swallowed helper error as successful input',async()=>{
+    for(const stderr of ['', 'TARGET_NOT_FOUND: requested window unavailable']) {
+      const {runner}=makeRunner(()=>({stdout:'',stderr,exitCode:0}));
+      const provider=createMacosCuaProvider({platform:'darwin',command:'/tmp/cua-driver',runner});
+      await expect(provider.listApps()).rejects.toMatchObject({code:stderr?COMPUTER_USE_ERRORS.TARGET_NOT_FOUND:COMPUTER_USE_ERRORS.PROVIDER_CRASHED});
+    }
   });
 });

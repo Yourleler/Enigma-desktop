@@ -116,6 +116,11 @@ describe("auto-updater", () => {
     mod.initAutoUpdater(win, opts);
     return win;
   }
+  it('redacts response header credentials before errors reach renderer state',()=>{
+    initWithMockWindow();handlers['checking-for-update']();
+    handlers.error(new Error('Request failed '+JSON.stringify({'set-cookie':['session=fixture-cookie'],'authorization':'Basic fixture-authorization'})));
+    expect(mod.getState().error).not.toContain('fixture-cookie');expect(mod.getState().error).not.toContain('fixture-authorization');
+  });
 
   function createDestroyedWindow() {
     const win = {

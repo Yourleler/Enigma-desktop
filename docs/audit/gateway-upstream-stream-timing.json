@@ -1,0 +1,367 @@
+[
+  {
+    "ms": 2610,
+    "type": "response.created"
+  },
+  {
+    "ms": 2610,
+    "type": "response.in_progress"
+  },
+  {
+    "ms": 2610,
+    "type": "response.output_item.added"
+  },
+  {
+    "ms": 2610,
+    "type": "response.content_part.added"
+  },
+  {
+    "ms": 2610,
+    "type": "response.output_text.delta",
+    "chars": 2
+  },
+  {
+    "ms": 2659,
+    "type": "response.output_text.delta",
+    "chars": 1
+  },
+  {
+    "ms": 2659,
+    "type": "response.output_text.delta",
+    "chars": 1
+  },
+  {
+    "ms": 2659,
+    "type": "response.output_text.delta",
+    "chars": 2
+  },
+  {
+    "ms": 2659,
+    "type": "response.output_text.delta",
+    "chars": 1
+  },
+  {
+    "ms": 2659,
+    "type": "response.output_text.delta",
+    "chars": 2
+  },
+  {
+    "ms": 2659,
+    "type": "response.output_text.delta",
+    "chars": 2
+  },
+  {
+    "ms": 2659,
+    "type": "response.output_text.delta",
+    "chars": 1
+  },
+  {
+    "ms": 2659,
+    "type": "response.output_text.delta",
+    "chars": 1
+  },
+  {
+    "ms": 2659,
+    "type": "response.output_text.delta",
+    "chars": 2
+  },
+  {
+    "ms": 2659,
+    "type": "response.output_text.delta",
+    "chars": 2
+  },
+  {
+    "ms": 2659,
+    "type": "response.output_text.delta",
+    "chars": 2
+  },
+  {
+    "ms": 2659,
+    "type": "response.output_text.delta",
+    "chars": 2
+  },
+  {
+    "ms": 2659,
+    "type": "response.output_text.delta",
+    "chars": 1
+  },
+  {
+    "ms": 2659,
+    "type": "response.output_text.delta",
+    "chars": 1
+  },
+  {
+    "ms": 2659,
+    "type": "response.output_text.delta",
+    "chars": 1
+  },
+  {
+    "ms": 2659,
+    "type": "response.output_text.delta",
+    "chars": 2
+  },
+  {
+    "ms": 2659,
+    "type": "response.output_text.delta",
+    "chars": 3
+  },
+  {
+    "ms": 2667,
+    "type": "response.output_text.delta",
+    "chars": 3
+  },
+  {
+    "ms": 2667,
+    "type": "response.output_text.delta",
+    "chars": 4
+  },
+  {
+    "ms": 2667,
+    "type": "response.output_text.delta",
+    "chars": 2
+  },
+  {
+    "ms": 2671,
+    "type": "response.output_text.delta",
+    "chars": 2
+  },
+  {
+    "ms": 2793,
+    "type": "response.output_text.delta",
+    "chars": 3
+  },
+  {
+    "ms": 2795,
+    "type": "response.output_text.delta",
+    "chars": 3
+  },
+  {
+    "ms": 2909,
+    "type": "response.output_text.delta",
+    "chars": 4
+  },
+  {
+    "ms": 2912,
+    "type": "response.output_text.delta",
+    "chars": 5
+  },
+  {
+    "ms": 3088,
+    "type": "response.output_text.delta",
+    "chars": 4
+  },
+  {
+    "ms": 3088,
+    "type": "response.output_text.delta",
+    "chars": 5
+  },
+  {
+    "ms": 3209,
+    "type": "response.output_text.delta",
+    "chars": 4
+  },
+  {
+    "ms": 3209,
+    "type": "response.output_text.delta",
+    "chars": 6
+  },
+  {
+    "ms": 3321,
+    "type": "response.output_text.delta",
+    "chars": 4
+  },
+  {
+    "ms": 3323,
+    "type": "response.output_text.delta",
+    "chars": 6
+  },
+  {
+    "ms": 3443,
+    "type": "response.output_text.delta",
+    "chars": 6
+  },
+  {
+    "ms": 3443,
+    "type": "response.output_text.delta",
+    "chars": 8
+  },
+  {
+    "ms": 3560,
+    "type": "response.output_text.delta",
+    "chars": 8
+  },
+  {
+    "ms": 3560,
+    "type": "response.output_text.delta",
+    "chars": 8
+  },
+  {
+    "ms": 3724,
+    "type": "response.output_text.delta",
+    "chars": 4
+  },
+  {
+    "ms": 3724,
+    "type": "response.output_text.delta",
+    "chars": 7
+  },
+  {
+    "ms": 3808,
+    "type": "response.output_text.delta",
+    "chars": 7
+  },
+  {
+    "ms": 3810,
+    "type": "response.output_text.delta",
+    "chars": 1
+  },
+  {
+    "ms": 3938,
+    "type": "response.output_text.delta",
+    "chars": 7
+  },
+  {
+    "ms": 3938,
+    "type": "response.output_text.delta",
+    "chars": 2
+  },
+  {
+    "ms": 4094,
+    "type": "response.output_text.delta",
+    "chars": 6
+  },
+  {
+    "ms": 4462,
+    "type": "response.output_text.delta",
+    "chars": 4
+  },
+  {
+    "ms": 4462,
+    "type": "response.output_text.delta",
+    "chars": 10
+  },
+  {
+    "ms": 4503,
+    "type": "response.output_text.delta",
+    "chars": 8
+  },
+  {
+    "ms": 4505,
+    "type": "response.output_text.delta",
+    "chars": 9
+  },
+  {
+    "ms": 4505,
+    "type": "response.output_text.delta",
+    "chars": 5
+  },
+  {
+    "ms": 4600,
+    "type": "response.output_text.delta",
+    "chars": 6
+  },
+  {
+    "ms": 4600,
+    "type": "response.output_text.delta",
+    "chars": 13
+  },
+  {
+    "ms": 4729,
+    "type": "response.output_text.delta",
+    "chars": 1
+  },
+  {
+    "ms": 4829,
+    "type": "response.output_text.delta",
+    "chars": 8
+  },
+  {
+    "ms": 4953,
+    "type": "response.output_text.delta",
+    "chars": 7
+  },
+  {
+    "ms": 5068,
+    "type": "response.output_text.delta",
+    "chars": 9
+  },
+  {
+    "ms": 5187,
+    "type": "response.output_text.delta",
+    "chars": 10
+  },
+  {
+    "ms": 5305,
+    "type": "response.output_text.delta",
+    "chars": 2
+  },
+  {
+    "ms": 5484,
+    "type": "response.output_text.delta",
+    "chars": 6
+  },
+  {
+    "ms": 5484,
+    "type": "response.output_text.delta",
+    "chars": 5
+  },
+  {
+    "ms": 5606,
+    "type": "response.output_text.delta",
+    "chars": 13
+  },
+  {
+    "ms": 5725,
+    "type": "response.output_text.delta",
+    "chars": 6
+  },
+  {
+    "ms": 5725,
+    "type": "response.output_text.delta",
+    "chars": 2
+  },
+  {
+    "ms": 5837,
+    "type": "response.output_text.delta",
+    "chars": 8
+  },
+  {
+    "ms": 5959,
+    "type": "response.output_text.delta",
+    "chars": 11
+  },
+  {
+    "ms": 6089,
+    "type": "response.output_text.delta",
+    "chars": 2
+  },
+  {
+    "ms": 6167,
+    "type": "response.output_text.delta",
+    "chars": 9
+  },
+  {
+    "ms": 6200,
+    "type": "response.output_text.done"
+  },
+  {
+    "ms": 6200,
+    "type": "response.content_part.done"
+  },
+  {
+    "ms": 6200,
+    "type": "response.output_item.done"
+  },
+  {
+    "ms": 6200,
+    "type": "response.output_item.added"
+  },
+  {
+    "ms": 6200,
+    "type": "response.output_item.done"
+  },
+  {
+    "ms": 6200,
+    "type": "response.completed"
+  }
+]

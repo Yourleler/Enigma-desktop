@@ -44,6 +44,11 @@ import { LinkContextMenu, type LinkContextMenuState } from '../shared/LinkContex
 import { DocumentReferencesBlock, MarkdownPropertiesBlock } from './MarkdownChrome';
 import type { PreviewItem } from '../../types';
 import previewStyles from '../Preview.module.css';
+import { SidebarBrowser } from './SidebarBrowser';
+import { MediaPreview } from './MediaPreview';
+import { sanitizeMarkdownPreviewHtml } from '../../utils/markdown-html-sanitizer';
+import { workbenchMarkdownOptions } from '../../utils/workbench-markdown';
+import { resolveServerConnection } from '../../services/server-connection';
 
 declare function t(key: string, vars?: Record<string, string | number>): string;
 
@@ -110,6 +115,29 @@ function MissingPreviewTarget({ previewItem }: { previewItem: PreviewItem }) {
   );
 }
 
+function UnavailablePreviewTarget({previewItem}: {previewItem: PreviewItem}) {
+  const [loading, setLoading] = useState(false);
+  const retry = async () => {
+    setLoading(true);
+    try {
+      const {hydratePersistedPreviewItems} = await import('../../stores/workspace-ui-state-actions');
+      const items = await hydratePersistedPreviewItems(useStore.getState().deskBasePath || '/', {previewTabs: [{...previewItem, remoteContentRef: isRemoteWorkbenchContentRef(previewItem.remoteContentRef) ? previewItem.remoteContentRef : undefined}]});
+      if (items[0]) upsertPreviewItem(items[0]);
+    } finally {setLoading(false);}
+  };
+  return <div className={previewStyles.previewUnavailable} role="alert"><p>{previewItem.loadError || '暂时无法加载预览'}</p><span>{previewItem.title}</span><button disabled={loading} onClick={() => void retry()}>{loading ? '正在重试…' : '重新加载'}</button></div>;
+}
+
+function OfficePreview({previewItem}: {previewItem: PreviewItem}) {
+  const markup=useMemo(()=>({__html:sanitizeMarkdownPreviewHtml(previewItem.content)}),[previewItem.content]);
+  return <div className={previewItem.type==='docx'?'preview-docx md-content':'preview-csv'} onClick={event=>{
+    const link=(event.target as HTMLElement).closest('a[href]');
+    if(!link)return;
+    const href=link.getAttribute('href');if(!href)return;
+    event.preventDefault();void openInternalLink(href,{origin:'desk',baseFilePath:previewItem.filePath});
+  }} dangerouslySetInnerHTML={markup}/>;
+}
+
 // ── HtmlPreview ──
 // HTML 内容由 server 注册为 token 化短期文档；右侧 Preview 只承载本地
 // artifact/file-backed HTML，用 DOM iframe 渲染，外部网页访问交给内置浏览器。
@@ -117,6 +145,9 @@ function MissingPreviewTarget({ previewItem }: { previewItem: PreviewItem }) {
 function HtmlPreview({ previewItem }: { previewItem: PreviewItem }) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
+  const ref=previewItem.remoteContentRef;
+  const sourceKey=isRemoteWorkbenchContentRef(ref)?JSON.stringify({kind:ref.kind,mountId:ref.mountId,rootId:ref.rootId,subdir:ref.subdir,name:ref.name}):'';
 
   useEffect(() => {
     let cancelled = false;
@@ -124,6 +155,7 @@ function HtmlPreview({ previewItem }: { previewItem: PreviewItem }) {
     setError(null);
 
     hanaFetch('/api/preview/html', {
+      throwOnHttpError: false,
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -131,12 +163,13 @@ function HtmlPreview({ previewItem }: { previewItem: PreviewItem }) {
         content: previewItem.content,
         sourceFilePath: previewItem.filePath,
         sourceRootPath: previewItem.sourceRootPath,
+        ...(sourceKey ? {remoteContentRef: JSON.parse(sourceKey)} : {}),
       }),
     })
       .then(async (res) => {
         const data = await res.json().catch(() => null);
-        if (!data || typeof data.previewUrl !== 'string' || !data.previewUrl) {
-          throw new Error('invalid html preview response');
+        if (!res.ok || !data || typeof data.previewUrl !== 'string' || !data.previewUrl) {
+          throw new Error(data?.error || '无法加载 HTML 预览，请确认文件仍存在后重试');
         }
         if (!cancelled) setPreviewUrl(data.previewUrl);
       })
@@ -148,13 +181,14 @@ function HtmlPreview({ previewItem }: { previewItem: PreviewItem }) {
     return () => {
       cancelled = true;
     };
-  }, [previewItem.content, previewItem.filePath, previewItem.sourceRootPath, previewItem.title]);
+  }, [previewItem.content, previewItem.filePath, previewItem.sourceRootPath, sourceKey, previewItem.title, attempt]);
 
   if (error) {
-    return <pre className="preview-code">{error}</pre>;
+    return <div className={previewStyles.previewUnavailable} role="alert"><p>{error}</p><button onClick={() => setAttempt(value => value + 1)}>重新加载</button></div>;
   }
 
   return (
+    <div style={{height: '100%', position: 'relative'}}>
     <iframe
       className="preview-html-frame"
       data-html-preview-frame=""
@@ -163,6 +197,8 @@ function HtmlPreview({ previewItem }: { previewItem: PreviewItem }) {
       sandbox="allow-scripts"
       referrerPolicy="no-referrer"
     />
+    {!previewUrl && <div className={previewStyles.previewUnavailable} role="status" style={{position: 'absolute', inset: 0}}>正在加载 HTML 预览…</div>}
+    </div>
   );
 }
 
@@ -498,10 +534,21 @@ function MarkdownPreview({ previewItem }: { previewItem: PreviewItem }) {
   const cover = useMemo(() => parseMarkdownCover(previewItem.content), [previewItem.content]);
   const coverTarget = useMemo(() => markdownCoverTargetForPreviewItem(previewItem), [previewItem]);
   const body = useMemo(() => stripMarkdownFrontMatterForPreview(previewItem.content), [previewItem.content]);
+  const serverPort = useStore(s => s.serverPort);
+  const serverToken = useStore(s => s.serverToken);
+  const activeServerConnectionId = useStore(s => s.activeServerConnectionId);
+  const activeServerConnection = useStore(s => s.activeServerConnection);
+  const serverConnections = useStore(s => s.serverConnections);
+  const connection = useMemo(() => resolveServerConnection({serverPort,serverToken,activeServerConnectionId,activeServerConnection,serverConnections}),
+    [serverPort,serverToken,activeServerConnectionId,activeServerConnection,serverConnections]);
+  const remoteRef = !previewItem.filePath && isRemoteWorkbenchContentRef(previewItem.remoteContentRef) ? previewItem.remoteContentRef : null;
+  const markdownOptions = useMemo(() => remoteRef && connection ? workbenchMarkdownOptions(remoteRef, connection)
+    : {filePath:previewItem.filePath,getFileUrl:window.platform?.getFileUrl}, [remoteRef,connection,previewItem.filePath]);
   const linkContext = useMemo<LinkOpenContext>(() => ({
     origin: 'desk',
     baseFilePath: previewItem.filePath,
-  }), [previewItem.filePath]);
+    ...(remoteRef && connection ? {workbenchScope:{ref:remoteRef,baseUrl:connection.baseUrl}} : {}),
+  }), [previewItem.filePath,remoteRef,connection]);
 
   const findAnchor = useCallback((event: MouseEvent): HTMLAnchorElement | null => {
     const root = divRef.current;
@@ -572,10 +619,7 @@ function MarkdownPreview({ previewItem }: { previewItem: PreviewItem }) {
               onClick={handleLinkClick}
               onContextMenu={handleLinkContextMenu}
               dangerouslySetInnerHTML={{
-                __html: renderMarkdownPreview(body, {
-                  filePath: previewItem.filePath,
-                  getFileUrl: window.platform?.getFileUrl,
-                }),
+                __html: renderMarkdownPreview(body, markdownOptions),
               }}
             />
             <DocumentReferencesBlock previewItem={previewItem} />
@@ -589,10 +633,7 @@ function MarkdownPreview({ previewItem }: { previewItem: PreviewItem }) {
               onClick={handleLinkClick}
               onContextMenu={handleLinkContextMenu}
               dangerouslySetInnerHTML={{
-                __html: renderMarkdownPreview(body, {
-                  filePath: previewItem.filePath,
-                  getFileUrl: window.platform?.getFileUrl,
-                }),
+                __html: renderMarkdownPreview(body, markdownOptions),
               }}
             />
             <DocumentReferencesBlock previewItem={previewItem} />
@@ -649,7 +690,7 @@ function CsvPreview({ content }: { content: string }) {
 
 function appendPdfViewerHash(url: string): string {
   if (!url || url === 'about:blank') return url;
-  const params = 'toolbar=0&navpanes=0';
+  const params = 'toolbar=1&navpanes=0';
   const hashIndex = url.indexOf('#');
   if (hashIndex < 0) return `${url}#${params}`;
   const prefix = url.slice(0, hashIndex + 1);
@@ -658,6 +699,21 @@ function appendPdfViewerHash(url: string): string {
 }
 
 function PdfPreview({ previewItem }: { previewItem: PreviewItem }) {
+  const [inspection,setInspection]=useState<{pages?:number;error?:string}|null>(null);
+  const [attempt,setAttempt]=useState(0);
+  const sourceKey=JSON.stringify({sourceFilePath:previewItem.filePath,remoteContentRef:previewItem.remoteContentRef,resourceId:previewItem.contentResourceId});
+  const inspectable=!!(previewItem.filePath||previewItem.remoteContentRef||previewItem.contentResourceId);
+  useEffect(()=>{
+    if(!inspectable)return;
+    let cancelled=false;setInspection(null);
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),20000);
+    void hanaFetch('/api/preview/pdf',{throwOnHttpError:false,method:'POST',headers:{'Content-Type':'application/json'},body:sourceKey,signal:controller.signal}).then(async response=>{
+      const data=await response.json();if(!response.ok)throw new Error(data.error||'PDF 无法加载');
+      if(!cancelled)setInspection({pages:data.pages});
+    }).catch(error=>{if(!cancelled)setInspection({error:error.name==='AbortError'?'PDF 检查超时，请重试或使用系统应用打开':error.message});}).finally(()=>clearTimeout(timer));
+    return()=>{cancelled=true;clearTimeout(timer);controller.abort();};
+  },[sourceKey,inspectable,attempt]);
   const source = useMemo(() => {
     if (previewItem.sourceUrl) {
       return { url: previewItem.sourceUrl, revoke: false };
@@ -665,7 +721,9 @@ function PdfPreview({ previewItem }: { previewItem: PreviewItem }) {
     if (!previewItem.content) {
       return { url: 'about:blank', revoke: false };
     }
-    const raw = atob(previewItem.content);
+    let raw;
+    try{raw=atob(previewItem.content);}catch{return {url:'about:blank',revoke:false,error:'PDF 数据已损坏'};}
+    if(!raw.slice(0,1024).includes('%PDF-'))return {url:'about:blank',revoke:false,error:'PDF 数据格式不正确'};
     const bytes = new Uint8Array(raw.length);
     for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
     if (typeof URL.createObjectURL !== 'function') {
@@ -680,7 +738,13 @@ function PdfPreview({ previewItem }: { previewItem: PreviewItem }) {
     };
   }, [source]);
 
-  return <iframe className="preview-pdf" src={appendPdfViewerHash(source.url)} />;
+  const error=inspection?.error||source.error;
+  if(error)return <div className={previewStyles.previewUnavailable} role="alert"><p>{error}</p><button onClick={()=>setAttempt(value=>value+1)}>重新加载</button>{previewItem.filePath&&<button onClick={()=>window.platform.openFile(previewItem.filePath!)}>系统打开</button>}</div>;
+  if(inspectable&&!inspection)return <div className={previewStyles.previewUnavailable} role="status">正在检查 PDF…</div>;
+  return <div style={{display:'flex',flexDirection:'column',height:'100%',minHeight:0}}>
+    <small style={{padding:'6px 10px',color:'var(--text-muted)'}}>PDF{inspection?.pages?` · ${inspection.pages} 页`:''} · 使用下方工具栏翻页、缩放和搜索</small>
+    <iframe key={attempt} className="preview-pdf" style={{flex:1,minHeight:0}} title={previewItem.title || 'PDF 预览'} src={appendPdfViewerHash(source.url)} />
+  </div>;
 }
 
 // ── FileInfoPreview ──
@@ -714,11 +778,16 @@ function FileInfoPreview({ previewItem }: { previewItem: PreviewItem }) {
 // ── PreviewRenderer ──
 
 export function PreviewRenderer({ previewItem }: PreviewRendererProps) {
+  if (previewItem.status === 'unavailable') return <UnavailablePreviewTarget previewItem={previewItem}/>;
   if (previewItem.status === 'missing') {
     return <MissingPreviewTarget previewItem={previewItem} />;
   }
 
   switch (previewItem.type) {
+    case 'media':
+      return <MediaPreview key={previewItem.id} previewItem={previewItem}/>;
+    case 'browser':
+      return <SidebarBrowser key={previewItem.id} sessionPath={previewItem.browserSessionPath} />;
     case 'html':
       return <HtmlPreview previewItem={previewItem} />;
 
@@ -747,20 +816,8 @@ export function PreviewRenderer({ previewItem }: PreviewRendererProps) {
       return <PdfPreview previewItem={previewItem} />;
 
     case 'docx':
-      return (
-        <div
-          className="preview-docx md-content"
-          dangerouslySetInnerHTML={{ __html: previewItem.content }}
-        />
-      );
-
     case 'xlsx':
-      return (
-        <div
-          className="preview-csv"
-          dangerouslySetInnerHTML={{ __html: previewItem.content }}
-        />
-      );
+      return <OfficePreview previewItem={previewItem}/>;
 
     case 'file-info':
       return <FileInfoPreview previewItem={previewItem} />;

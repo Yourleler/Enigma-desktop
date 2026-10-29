@@ -27,6 +27,24 @@ describe('SelectWidget scroll-close scope', () => {
     cleanup();
   });
 
+  it('scrolls its inner list while the material shell stays fixed and keyboard selection remains reachable', () => {
+    const onChange = vi.fn();
+    const many = Array.from({length:40},(_,i)=>({value:String(i),label:`Model ${i}`,group:i<2?'Primary':'Catalog'}));
+    const {container} = render(<SelectWidget options={many} value="0" onChange={onChange}/>);
+    openPopup(container);
+    const popup = getPopup() as HTMLElement;
+    const scroll = popup.querySelector<HTMLElement>('[data-select-widget-scroll]')!;
+    expect(scroll).not.toBeNull();
+    expect(scroll.hasAttribute('data-liquid')).toBe(false);
+    scroll.scrollTop = 100;
+    fireEvent.scroll(scroll);
+    expect(popup.scrollTop).toBe(0);
+    expect(getPopup()).toBe(popup);
+    fireEvent.keyDown(screen.getByRole('option',{name:'Model 0'}),{key:'End'});
+    expect(document.activeElement).toBe(screen.getByRole('option',{name:'Model 39'}));
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
   it('stays open when an unrelated container (not an ancestor of the trigger) scrolls', () => {
     const { container } = render(
       <SelectWidget options={options} value="a" onChange={() => {}} />,

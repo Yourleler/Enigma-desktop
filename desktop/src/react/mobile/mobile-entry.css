@@ -1317,7 +1317,7 @@ body.resizing .jian-sidebar-inner {
 
 .ob-btn-primary {
     background: var(--accent);
-    color: white;
+    color: var(--eg-on-accent, #fff);
 }
 
 .ob-btn-primary:hover {

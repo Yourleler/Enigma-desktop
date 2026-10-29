@@ -254,9 +254,9 @@
 
 .settings-search-result-title {
     min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+
+    overflow-wrap: anywhere;
+    white-space: normal;
     font-size: var(--fs-ui);
     font-weight: 600;
     color: inherit;
@@ -265,9 +265,9 @@
 
 .settings-search-result-path {
     min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+
+    overflow-wrap: anywhere;
+    white-space: normal;
     color: var(--text-muted);
     font-size: var(--fs-hint);
     letter-spacing: 0;
@@ -333,7 +333,7 @@
 .settings-main > .settings-tab-heading,
 .settings-main > [data-settings-page] {
     width: 100%;
-    max-width: 100%;
+    max-width: 860px;
     min-width: 0;
     overflow-x: hidden;
 }
@@ -957,7 +957,7 @@
 
 .agent-create-confirm {
     background: var(--accent);
-    color: #fff;
+    color: var(--eg-on-accent, #fff);
 }
 
 .agent-create-confirm:hover {
@@ -1080,7 +1080,7 @@
     background: #f6f0e7;
     color: #203d46;
     padding: var(--space-24) 28px;
-    font-family: "Songti SC", "STSong", serif;
+    font-family: var(--font-ui);
     font-size: var(--fs-ui);
     text-align: center;
 }
@@ -1093,7 +1093,7 @@
     background: #f4efe4;
     display: grid;
     grid-template-rows: var(--character-card-preview-card-width) minmax(0, 1fr);
-    font-family: "Songti SC", "STSong", serif;
+    font-family: var(--font-ui);
 }
 
 .character-card-back {
@@ -1113,7 +1113,7 @@
     place-items: center;
     width: 100%;
     height: 100%;
-    font-family: "Songti SC", "STSong", serif;
+    font-family: var(--font-ui);
     font-size: 1.35rem;
     color: rgba(31, 56, 65, 0.62);
 }
@@ -1145,7 +1145,7 @@
     place-items: center;
     width: 100%;
     height: 100%;
-    font-family: "Songti SC", "STSong", serif;
+    font-family: var(--font-ui);
     font-size: 2.6rem;
     color: rgba(45, 70, 78, 0.4);
 }
@@ -1172,7 +1172,7 @@
 }
 
 .character-card-title-row h3 {
-    font-family: "Songti SC", "STSong", serif;
+    font-family: var(--font-ui);
     font-size: var(--fs-title);
     font-weight: 600;
     line-height: 1.08;
@@ -1183,7 +1183,7 @@
 .character-card-title-row p {
     margin: 0;
     color: rgba(31, 56, 65, 0.72);
-    font-family: "Songti SC", "STSong", serif;
+    font-family: var(--font-ui);
     font-size: 0.56rem;
     line-height: 1.38;
     overflow: hidden;
@@ -1198,7 +1198,7 @@
     border-radius: 8px;
     background: #f6f0e7;
     color: rgba(31, 56, 65, 0.74);
-    font-family: "Songti SC", "STSong", serif;
+    font-family: var(--font-ui);
     font-size: 0.62rem;
     line-height: 1;
     cursor: default;
@@ -1232,7 +1232,7 @@
 }
 
 .character-card-face-label {
-    font-family: "Songti SC", "STSong", serif;
+    font-family: var(--font-ui);
     color: rgba(31, 56, 65, 0.72);
     font-size: 0.56rem;
     letter-spacing: 0.18em;
@@ -1252,7 +1252,7 @@
     align-self: center;
     justify-content: center;
     gap: 6px;
-    font-family: "Songti SC", "STSong", serif;
+    font-family: var(--font-ui);
     font-size: var(--fs-hint);
     line-height: 1.22;
     color: #203d46;
@@ -1376,7 +1376,7 @@
 
 .character-card-primary-action {
     background: var(--accent);
-    color: #fff;
+    color: var(--eg-on-accent, #fff);
 }
 
 .character-card-secondary-action {
@@ -1453,7 +1453,7 @@
 
 .character-card-detail-hero h3,
 .character-card-detail-grid h4 {
-    font-family: "Songti SC", "STSong", serif;
+    font-family: var(--font-ui);
     margin: 0;
     color: #1f3841;
 }
@@ -1505,7 +1505,7 @@
 }
 
 .character-card-memory-detail-block strong {
-    font-family: "Songti SC", "STSong", serif;
+    font-family: var(--font-ui);
     font-size: var(--fs-ui);
     color: #1f3841;
 }
@@ -1514,14 +1514,14 @@
     margin: 0;
     white-space: pre-wrap;
     word-break: break-word;
-    font-family: "Songti SC", "STSong", serif;
+    font-family: var(--font-ui);
     font-size: var(--fs-caption);
     line-height: 1.55;
     color: rgba(31, 56, 65, 0.76);
 }
 
 .character-card-detail-bundle strong {
-    font-family: "Songti SC", "STSong", serif;
+    font-family: var(--font-ui);
 }
 
 .character-card-detail-bundle span {
@@ -1916,7 +1916,7 @@
     font-family: inherit;
     font-size: var(--fs-ui);
     line-height: 1;
-    color: white;
+    color: var(--eg-on-accent, #fff);
     background: color-mix(in srgb, var(--accent) 70%, transparent);
     border: 1px solid rgba(var(--accent-rgb), 0.25);
     border-radius: var(--radius-card, 8px);
@@ -1930,7 +1930,7 @@
 
 .agent-name-save-btn:hover {
     background: var(--accent);
-    color: white;
+    color: var(--eg-on-accent, #fff);
     border-color: var(--accent);
 }
 
@@ -1941,30 +1941,32 @@
 
 /* 胶囊控件：标签 + 输入/选框合为一体 */
 .model-capsule {
-    display: inline-flex;
+    display: flex;
+    flex-direction: column;
     align-items: stretch;
     border: 1px solid var(--overlay-medium, rgba(0,0,0,0.1));
     border-radius: 8px;
     overflow: hidden;
-    width: 240px;
+    width: min(420px, 100%);
     margin: 0 auto;
 }
 
 .model-capsule-label {
     display: flex;
     align-items: center;
-    padding: 0 14px;
+    padding: 6px 12px;
     font-size: var(--fs-caption);
     color: var(--text-muted);
     background: var(--bg-card-alt, var(--overlay-light, rgba(0,0,0,0.03)));
     white-space: nowrap;
-    border-right: 1px solid var(--overlay-medium, rgba(0,0,0,0.1));
+    border-bottom: 1px solid var(--overlay-medium, rgba(0,0,0,0.1));
     letter-spacing: 0.02em;
 }
 
 .model-capsule-select {
     flex: 1;
     min-width: 0;
+    max-width: none;
 }
 
 .model-capsule-trigger {
@@ -2002,9 +2004,8 @@
 .model-capsule-value {
     flex: 1;
     min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
+    white-space: normal;
 }
 
 .model-capsule-arrow {
@@ -2734,7 +2735,7 @@
 .skill-bundle-dialog-actions .skill-bundle-dialog-primary {
     border-color: var(--accent);
     background: var(--accent);
-    color: white;
+    color: var(--eg-on-accent, #fff);
 }
 
 :global(.hana-toggle.bundle-mixed) {
@@ -3331,173 +3332,17 @@
     outline-color: var(--accent);
 }
 
-/* 暖纸：用暖纸主题的真实配色 */
-.theme-card[data-theme="warm-paper"] {
-    background: #F8F4ED;
-}
-
-.theme-card[data-theme="warm-paper"] .theme-card-name {
-    color: #3B3D3F;
-}
-
-.theme-card[data-theme="warm-paper"] .theme-card-mode {
-    color: #537D96;
-}
-
-/* 青夜：用青夜主题的真实配色 */
-.theme-card[data-theme="midnight"] {
-    background: #3B4A54;
-}
-
-.theme-card[data-theme="midnight"] .theme-card-name {
-    color: #E1EAF0;
-}
-
-.theme-card[data-theme="midnight"] .theme-card-mode {
-    color: #C99AAF;
-}
-
-/* 素白（高对比）：用高对比主题的真实配色 */
-.theme-card[data-theme="high-contrast"] {
-    background: #FAF8F7;
-}
-
-.theme-card[data-theme="high-contrast"] .theme-card-name {
-    color: #1A1C1E;
-}
-
-.theme-card[data-theme="high-contrast"] .theme-card-mode {
-    color: #3A6B85;
-}
-
-/* 草香：Butter 青草绿 */
-.theme-card[data-theme="grass-aroma"] {
-    background: #F5F8F3;
-}
-
-.theme-card[data-theme="grass-aroma"] .theme-card-name {
-    color: #2E3832;
-}
-
-.theme-card[data-theme="grass-aroma"] .theme-card-mode {
-    color: #5BA88C;
-}
-
-/* 沉思：Ming 灰蓝 */
-.theme-card[data-theme="contemplation"] {
-    background: #F3F5F7;
-}
-
-.theme-card[data-theme="contemplation"] .theme-card-name {
-    color: #2C3238;
-}
-
-.theme-card[data-theme="contemplation"] .theme-card-mode {
-    color: #7E99A8;
-}
-
-/* Absolutely：暖奶油底 + 哑光赤陶 */
-.theme-card[data-theme="absolutely"] {
-    background: #F4F3EE;
-}
-
-.theme-card[data-theme="absolutely"] .theme-card-name {
-    color: #2D2B28;
-}
-
-.theme-card[data-theme="absolutely"] .theme-card-mode {
-    color: #B5846E;
-}
-
-/* Delve：ChatGPT 冷白 + 哑光绿 */
-.theme-card[data-theme="delve"] {
-    background: #FFFFFF;
-}
-
-.theme-card[data-theme="delve"] .theme-card-name {
-    color: #1A1A1A;
-}
-
-.theme-card[data-theme="delve"] .theme-card-mode {
-    color: #1A1A1A;
-}
-
-/* Deep Think：DeepSeek 白底 + 电光蓝 */
-.theme-card[data-theme="deep-think"] {
-    background: #FCFCFD;
-}
-
-.theme-card[data-theme="deep-think"] .theme-card-name {
-    color: #1D1D1F;
-}
-
-.theme-card[data-theme="deep-think"] .theme-card-mode {
-    color: #636AE8;
-}
-
-/* 新暖纸：手账宣纸 + 印章青蓝 */
-.theme-card[data-theme="new-warm-paper"] {
-    background: #F5EFE4;
-}
-
-.theme-card[data-theme="new-warm-paper"] .theme-card-name {
-    color: #2A2622;
-}
-
-.theme-card[data-theme="new-warm-paper"] .theme-card-mode {
-    color: #537D96;
-}
-
-/* 青夜高对比：更深青蓝 + 亮玫瑰 */
-.theme-card[data-theme="midnight-contrast"] {
-    background: #26343D;
-}
-
-.theme-card[data-theme="midnight-contrast"] .theme-card-name {
-    color: #F0F6FA;
-}
-
-.theme-card[data-theme="midnight-contrast"] .theme-card-mode {
-    color: #E6B1C4;
-}
-
-/* 自动：左暖纸右蓝调，硬拼色 */
-.theme-card[data-theme="auto"] {
-    background: #F8F4ED;
-}
-
-.theme-card[data-theme="auto"]::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 50%;
-    height: 100%;
-    background: #171C2A;
-    border-radius: 0 var(--radius-card, 8px) var(--radius-card, 8px) 0;
-}
-
-.theme-card[data-theme="auto"] .theme-card-name,
-.theme-card[data-theme="auto"] .theme-card-mode {
-    position: relative;
-    z-index: 1;
-}
-
-.theme-card[data-theme="auto"] .theme-card-name {
-    color: #3B3D3F;
-    background: linear-gradient(90deg, #3B3D3F 40%, #CDD5E0 60%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-.theme-card[data-theme="auto"] .theme-card-mode {
-    color: #537D96;
-    background: linear-gradient(90deg, #537D96 40%, #D4915A 60%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
+.theme-card[data-design-theme] { min-height: 138px; gap: 6px; background: var(--eg-card, var(--bg-card)); color: var(--text); align-items: flex-start; padding: 12px; border-radius: 10px; text-align: left; }
+.theme-card[data-design-theme] .theme-card-name { color: var(--text); font: 500 13px var(--font-ui); }
+.theme-card[data-design-theme] .theme-card-mode { color: var(--text-muted); font: 11px/1.4 var(--font-ui); }
+.design-theme-preview { position: relative; display: block; width: 100%; height: 64px; border-radius: 6px; background: #fff; border: 1px solid #dedee0; overflow: hidden; margin-bottom: 4px; }
+.design-theme-preview i { position: absolute; inset: 0 auto 0 0; width: 27%; background: #f1f1f2; border-right: 1px solid #e5e5e6; }
+.design-theme-preview b { position: absolute; top: 15px; left: 36%; height: 4px; width: 50%; border-radius: 3px; background: #d9d9dc; }
+.design-theme-preview b:last-child { top: 26px; width: 34%; }
+.theme-card[data-design-theme="dark"] .design-theme-preview { background: #1f2023; border-color: #404145; }
+.theme-card[data-design-theme="dark"] .design-theme-preview i { background: #141517; border-color: #333437; }
+.theme-card[data-design-theme="dark"] .design-theme-preview b { background: #626368; }
+.theme-card[data-design-theme="auto"] .design-theme-preview { background: linear-gradient(90deg, #ffffff 50%, #1f2023 50%); }
 
 .theme-card-name {
     font-size: var(--fs-body);
@@ -3605,7 +3450,7 @@
 
 .settings-btn-primary:hover {
     background: var(--accent);
-    color: white;
+    color: var(--eg-on-accent, #fff);
     transform: translateY(-1px);
 }
 
@@ -3644,7 +3489,7 @@
     padding: 0.4rem var(--space-16);
     font-family: inherit;
     font-size: var(--fs-ui);
-    color: white;
+    color: var(--eg-on-accent, #fff);
     background: color-mix(in srgb, var(--accent) 70%, transparent);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
@@ -3658,7 +3503,7 @@
 
 .settings-save-btn-sm:hover {
     background: var(--accent);
-    color: white;
+    color: var(--eg-on-accent, #fff);
     border-color: var(--accent);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
@@ -3734,7 +3579,7 @@
 
 .thinking-level-option.active {
     background: var(--accent);
-    color: white;
+    color: var(--eg-on-accent, #fff);
 }
 
 /* 搜索验证按钮 */
@@ -3753,7 +3598,7 @@
 
 .search-verify-btn:hover {
     background: var(--accent);
-    color: white;
+    color: var(--eg-on-accent, #fff);
 }
 
 .search-verify-btn:disabled {
@@ -4314,7 +4159,7 @@ a.about-link:hover {
     padding: 4px 14px;
     font-family: inherit;
     font-size: var(--fs-caption);
-    color: #fff;
+    color: var(--eg-on-accent, #fff);
     background: var(--accent);
     border: none;
     border-radius: var(--radius-input, 6px);
@@ -5148,7 +4993,7 @@ a.about-link:hover {
 }
 
 .pv-add-overlay-title {
-    font-family: "Songti SC", "STSong", serif;
+    font-family: var(--font-ui);
     font-size: var(--fs-title);
     font-weight: 600;
     color: var(--text);
@@ -5189,7 +5034,7 @@ a.about-link:hover {
 
 .pv-add-form-btn.primary {
     background: var(--accent);
-    color: #fff;
+    color: var(--eg-on-accent, #fff);
     border-color: transparent;
 }
 
@@ -5233,7 +5078,7 @@ a.about-link:hover {
     font-size: var(--fs-ui);
     padding: 6px 20px;
     background: var(--accent);
-    color: #fff;
+    color: var(--eg-on-accent, #fff);
     border: none;
     border-radius: var(--radius-input, 6px);
     cursor: default;
@@ -5394,7 +5239,7 @@ a.about-link:hover {
     font-size: var(--fs-hint);
     padding: 3px 10px;
     background: var(--accent);
-    color: #fff;
+    color: var(--eg-on-accent, #fff);
     border: none;
     border-radius: var(--radius-input, 6px);
     cursor: default;
@@ -5420,7 +5265,7 @@ a.about-link:hover {
 
 .pv-verify-connection-btn:hover {
     background: var(--accent);
-    color: #fff;
+    color: var(--eg-on-accent, #fff);
 }
 
 .pv-cred-save, .pv-cred-cancel {
@@ -5435,7 +5280,7 @@ a.about-link:hover {
     white-space: nowrap;
 }
 
-.pv-cred-save { background: var(--accent); color: #fff; border-color: transparent; }
+.pv-cred-save { background: var(--accent); color: var(--eg-on-accent, #fff); border-color: transparent; }
 
 .pv-oauth-status {
     display: flex;
@@ -6453,7 +6298,7 @@ a.about-link:hover {
     font-size: var(--fs-ui);
     border: none;
     border-radius: var(--radius-card, 8px);
-    background: var(--coral);
+    background: var(--danger);
     color: white;
     cursor: default;
     transition: all var(--duration-fast) var(--ease-out);
@@ -6469,7 +6314,7 @@ a.about-link:hover {
     border: none;
     border-radius: var(--radius-card, 8px);
     background: var(--accent);
-    color: white;
+    color: var(--eg-on-accent, #fff);
     cursor: default;
     transition: all var(--duration-fast) var(--ease-out);
 }
@@ -7140,7 +6985,7 @@ a.about-link:hover {
 
 .crop-btn-confirm {
     background: var(--accent);
-    color: #fff;
+    color: var(--eg-on-accent, #fff);
 }
 
 .crop-btn-confirm:hover {
@@ -7561,7 +7406,7 @@ a.about-link:hover {
 
 .cml-edit-panel-btn.primary {
     background: var(--accent);
-    color: white;
+    color: var(--eg-on-accent, #fff);
 }
 
 .cml-edit-panel-btn.primary:hover {
@@ -7814,7 +7659,7 @@ a.about-link:hover {
 
 .mdw-custom-confirm:hover {
     background: var(--accent);
-    color: white;
+    color: var(--eg-on-accent, #fff);
 }
 
 .mdw-empty {
@@ -8066,3 +7911,5 @@ a.about-link:hover {
 .settings-toast {
     -webkit-app-region: no-drag;
 }
+
+.theme-card[data-design-theme]::after { display: none; }

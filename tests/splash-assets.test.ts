@@ -34,6 +34,7 @@ function makeSrcFixture(root: string) {
 
   fs.mkdirSync(path.join(srcDir, "assets"), { recursive: true });
   for (const visual of Object.values(YUAN_VISUALS)) {
+    fs.mkdirSync(path.dirname(path.join(srcDir,'assets',visual.avatar)),{recursive:true});
     fs.writeFileSync(path.join(srcDir, "assets", visual.avatar), `fake-png-bytes-${visual.avatar}`);
   }
   // An unrelated asset (e.g. a character card image) that splash never

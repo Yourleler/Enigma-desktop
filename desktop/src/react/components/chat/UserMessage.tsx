@@ -263,6 +263,8 @@ export const UserMessage = memo(function UserMessage({
         <MessageFooterActions
           align="right"
           timeText={timeText}
+          timestamp={message.timestamp}
+          timeKind="sent"
           leadingActions={footerActions}
           visible={editing}
           actions={messageActions}

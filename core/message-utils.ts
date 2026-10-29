@@ -20,7 +20,7 @@ import {
   TURN_INPUT_PRESENTATION_EVENT_TYPE,
 } from "../lib/turn-input-presentation.ts";
 import { repairOversizedSessionEntriesInFile } from "./session-jsonl-file.ts";
-import { isAssistantCommentaryTextBlock } from "../shared/text-signature.ts";
+import { includesCompatibleResponseText, isAssistantCommentaryTextBlock } from "../shared/text-signature.ts";
 import { TOOL_ARG_SUMMARY_KEYS, summarizeToolArgs } from "../shared/tool-arg-summary.ts";
 import { projectSessionMessageForDisplay } from "./session-reminders.ts";
 import { isKnownLegacyHanaToolFailure } from "../shared/tool-outcome.ts";
@@ -44,7 +44,7 @@ export function stripThinkTags(raw) {
  * content 可能是 string 或 [{type: "text", text: "..."}, {type: "thinking", thinking: "..."}, ...]
  * 返回 { text, thinking, toolUses, images }
  */
-export function extractTextContent(content, { stripThink = false } = {}) {
+export function extractTextContent(content, { stripThink = false, includeCommentary = false } = {}) {
   if (typeof content === "string") {
     if (stripThink) {
       const { text, thinkContent } = stripThinkTags(content);
@@ -54,7 +54,7 @@ export function extractTextContent(content, { stripThink = false } = {}) {
   }
   if (!Array.isArray(content)) return { text: "", thinking: "", toolUses: [], images: [] };
   const rawText = content
-    .filter(block => block.type === "text" && block.text && !isAssistantCommentaryTextBlock(block))
+    .filter(block => block.type === "text" && block.text && (includeCommentary || !isAssistantCommentaryTextBlock(block)))
     .map(block => block.text)
     .join("");
   const images = content
@@ -321,7 +321,7 @@ export async function loadLatestAssistantSummaryFromSessionFile(sessionPath, opt
         const entry = JSON.parse(line);
         const msg = entry?.message;
         if (entry?.type !== "message" || msg?.role !== "assistant") continue;
-        const { text } = extractTextContent(msg.content, { stripThink: true });
+        const { text } = extractTextContent(msg.content, { stripThink: true, includeCommentary: includesCompatibleResponseText(msg) });
         return text ? text.slice(0, summaryLimit) : null;
       } catch {
         // 跳过损坏行，继续向前扫描

@@ -946,6 +946,11 @@
         },
         {
           "root": "server-bootstrap",
+          "from": "plugins/enigma/memory-host.ts",
+          "kind": "import-statement"
+        },
+        {
+          "root": "server-bootstrap",
           "from": "core/vision-bridge.ts",
           "kind": "import-statement"
         },
@@ -1015,7 +1020,7 @@
           "kind": "import-statement"
         }
       ],
-      "reason": "Reached via esbuild source module graph, imported by plugins/enigma/guardian-host.ts (import-statement); core/vision-bridge.ts (import-statement); core/llm-utils.ts (import-statement); +12 more importer(s)."
+      "reason": "Reached via esbuild source module graph, imported by plugins/enigma/guardian-host.ts (import-statement); plugins/enigma/memory-host.ts (import-statement); core/vision-bridge.ts (import-statement); +13 more importer(s)."
     },
     {
       "path": "core/llm-request-policy.ts",
@@ -1507,6 +1512,16 @@
       "provenance": [
         {
           "root": "server-bootstrap",
+          "from": "plugins/enigma/guardian-host.ts",
+          "kind": "import-statement"
+        },
+        {
+          "root": "server-bootstrap",
+          "from": "plugins/enigma/memory-host.ts",
+          "kind": "import-statement"
+        },
+        {
+          "root": "server-bootstrap",
           "from": "lib/approval-gateway.ts",
           "kind": "import-statement"
         },
@@ -1581,7 +1596,7 @@
           "kind": "import-statement"
         }
       ],
-      "reason": "Reached via esbuild source module graph, imported by lib/approval-gateway.ts (import-statement); core/execution-router.ts (import-statement); core/model-manager.ts (import-statement); +12 more importer(s)."
+      "reason": "Reached via esbuild source module graph, imported by plugins/enigma/guardian-host.ts (import-statement); plugins/enigma/memory-host.ts (import-statement); lib/approval-gateway.ts (import-statement); +14 more importer(s)."
     },
     {
       "path": "core/model-image-preprocess.ts",
@@ -3012,6 +3027,16 @@
       "provenance": [
         {
           "root": "server-bootstrap",
+          "from": "plugins/enigma/guardian-host.ts",
+          "kind": "import-statement"
+        },
+        {
+          "root": "server-bootstrap",
+          "from": "plugins/enigma/memory-host.ts",
+          "kind": "import-statement"
+        },
+        {
+          "root": "server-bootstrap",
           "from": "plugins/enigma/host.ts",
           "kind": "import-statement"
         },
@@ -3082,6 +3107,11 @@
         },
         {
           "root": "server-bootstrap",
+          "from": "server/routes/enigma.ts",
+          "kind": "import-statement"
+        },
+        {
+          "root": "server-bootstrap",
           "from": "server/routes/preferences.ts",
           "kind": "import-statement"
         },
@@ -3101,7 +3131,7 @@
           "kind": "import-statement"
         }
       ],
-      "reason": "Reached via esbuild source module graph, imported by plugins/enigma/host.ts (import-statement); core/migrations.ts (import-statement); core/preferences-manager.ts (import-statement); +15 more importer(s)."
+      "reason": "Reached via esbuild source module graph, imported by plugins/enigma/guardian-host.ts (import-statement); plugins/enigma/memory-host.ts (import-statement); plugins/enigma/host.ts (import-statement); +18 more importer(s)."
     },
     {
       "path": "core/session-project-catalog-store.ts",
@@ -6285,6 +6315,23 @@
         }
       ],
       "reason": "core/persona-source.ts KIND_CONFIG falls back to path.join(productDir, \"identity.example.md\")."
+    },
+    {
+      "path": "lib/isolated-file-watcher.ts",
+      "inputType": "source-graph",
+      "provenance": [
+        {
+          "root": "server-bootstrap",
+          "from": "lib/resource-io/resource-watch-registry.ts",
+          "kind": "import-statement"
+        },
+        {
+          "root": "server-bootstrap",
+          "from": "lib/file-history/workspace-watcher.ts",
+          "kind": "import-statement"
+        }
+      ],
+      "reason": "Reached via esbuild source module graph, imported by lib/resource-io/resource-watch-registry.ts (import-statement); lib/file-history/workspace-watcher.ts (import-statement)."
     },
     {
       "path": "lib/known-model-fallbacks.json",
@@ -72075,6 +72122,17 @@
       "reason": "server/index.ts's startServer() reads fromRoot(\"package.json\") via fs.readFileSync for version display."
     },
     {
+      "path": "packages/enigma-engineering/dist/src/artifact-presentation.js",
+      "inputType": "nft-runtime-trace",
+      "provenance": [
+        {
+          "root": "nft-server-bundle",
+          "kind": "nft-trace"
+        }
+      ],
+      "reason": "nft-runtime-trace via nft-server-bundle (see roots[] for the full explanation)"
+    },
+    {
       "path": "packages/enigma-engineering/dist/src/artifacts.js",
       "inputType": "nft-runtime-trace",
       "provenance": [
@@ -72109,6 +72167,17 @@
     },
     {
       "path": "packages/enigma-engineering/dist/src/browser-validation.js",
+      "inputType": "nft-runtime-trace",
+      "provenance": [
+        {
+          "root": "nft-server-bundle",
+          "kind": "nft-trace"
+        }
+      ],
+      "reason": "nft-runtime-trace via nft-server-bundle (see roots[] for the full explanation)"
+    },
+    {
+      "path": "packages/enigma-engineering/dist/src/change-reading-trigger.js",
       "inputType": "nft-runtime-trace",
       "provenance": [
         {
@@ -72207,6 +72276,39 @@
       "reason": "nft-runtime-trace via nft-server-bundle (see roots[] for the full explanation)"
     },
     {
+      "path": "packages/enigma-engineering/dist/src/dependency-checkpoint.js",
+      "inputType": "nft-runtime-trace",
+      "provenance": [
+        {
+          "root": "nft-server-bundle",
+          "kind": "nft-trace"
+        }
+      ],
+      "reason": "nft-runtime-trace via nft-server-bundle (see roots[] for the full explanation)"
+    },
+    {
+      "path": "packages/enigma-engineering/dist/src/differential-handoff.js",
+      "inputType": "nft-runtime-trace",
+      "provenance": [
+        {
+          "root": "nft-server-bundle",
+          "kind": "nft-trace"
+        }
+      ],
+      "reason": "nft-runtime-trace via nft-server-bundle (see roots[] for the full explanation)"
+    },
+    {
+      "path": "packages/enigma-engineering/dist/src/documentation.js",
+      "inputType": "nft-runtime-trace",
+      "provenance": [
+        {
+          "root": "nft-server-bundle",
+          "kind": "nft-trace"
+        }
+      ],
+      "reason": "nft-runtime-trace via nft-server-bundle (see roots[] for the full explanation)"
+    },
+    {
       "path": "packages/enigma-engineering/dist/src/execution-boundary.js",
       "inputType": "nft-runtime-trace",
       "provenance": [
@@ -72229,7 +72331,29 @@
       "reason": "nft-runtime-trace via nft-server-bundle (see roots[] for the full explanation)"
     },
     {
+      "path": "packages/enigma-engineering/dist/src/git-blobs.js",
+      "inputType": "nft-runtime-trace",
+      "provenance": [
+        {
+          "root": "nft-server-bundle",
+          "kind": "nft-trace"
+        }
+      ],
+      "reason": "nft-runtime-trace via nft-server-bundle (see roots[] for the full explanation)"
+    },
+    {
       "path": "packages/enigma-engineering/dist/src/go-reader.js",
+      "inputType": "nft-runtime-trace",
+      "provenance": [
+        {
+          "root": "nft-server-bundle",
+          "kind": "nft-trace"
+        }
+      ],
+      "reason": "nft-runtime-trace via nft-server-bundle (see roots[] for the full explanation)"
+    },
+    {
+      "path": "packages/enigma-engineering/dist/src/guardian-actions.js",
       "inputType": "nft-runtime-trace",
       "provenance": [
         {
@@ -72295,7 +72419,29 @@
       "reason": "nft-runtime-trace via nft-server-bundle (see roots[] for the full explanation)"
     },
     {
+      "path": "packages/enigma-engineering/dist/src/memory-dream.js",
+      "inputType": "nft-runtime-trace",
+      "provenance": [
+        {
+          "root": "nft-server-bundle",
+          "kind": "nft-trace"
+        }
+      ],
+      "reason": "nft-runtime-trace via nft-server-bundle (see roots[] for the full explanation)"
+    },
+    {
       "path": "packages/enigma-engineering/dist/src/memory.js",
+      "inputType": "nft-runtime-trace",
+      "provenance": [
+        {
+          "root": "nft-server-bundle",
+          "kind": "nft-trace"
+        }
+      ],
+      "reason": "nft-runtime-trace via nft-server-bundle (see roots[] for the full explanation)"
+    },
+    {
+      "path": "packages/enigma-engineering/dist/src/merge-request-source.js",
       "inputType": "nft-runtime-trace",
       "provenance": [
         {
@@ -72318,6 +72464,17 @@
     },
     {
       "path": "packages/enigma-engineering/dist/src/observer.js",
+      "inputType": "nft-runtime-trace",
+      "provenance": [
+        {
+          "root": "nft-server-bundle",
+          "kind": "nft-trace"
+        }
+      ],
+      "reason": "nft-runtime-trace via nft-server-bundle (see roots[] for the full explanation)"
+    },
+    {
+      "path": "packages/enigma-engineering/dist/src/operation-history.js",
       "inputType": "nft-runtime-trace",
       "provenance": [
         {
@@ -72372,6 +72529,17 @@
       "reason": "nft-runtime-trace via nft-server-bundle (see roots[] for the full explanation)"
     },
     {
+      "path": "packages/enigma-engineering/dist/src/pi-documentation.js",
+      "inputType": "nft-runtime-trace",
+      "provenance": [
+        {
+          "root": "nft-server-bundle",
+          "kind": "nft-trace"
+        }
+      ],
+      "reason": "nft-runtime-trace via nft-server-bundle (see roots[] for the full explanation)"
+    },
+    {
       "path": "packages/enigma-engineering/dist/src/pi-extension.js",
       "inputType": "nft-runtime-trace",
       "provenance": [
@@ -72395,6 +72563,17 @@
     },
     {
       "path": "packages/enigma-engineering/dist/src/pi-learning.js",
+      "inputType": "nft-runtime-trace",
+      "provenance": [
+        {
+          "root": "nft-server-bundle",
+          "kind": "nft-trace"
+        }
+      ],
+      "reason": "nft-runtime-trace via nft-server-bundle (see roots[] for the full explanation)"
+    },
+    {
+      "path": "packages/enigma-engineering/dist/src/pi-memory-dream.js",
       "inputType": "nft-runtime-trace",
       "provenance": [
         {
@@ -72472,6 +72651,17 @@
     },
     {
       "path": "packages/enigma-engineering/dist/src/pi-session.js",
+      "inputType": "nft-runtime-trace",
+      "provenance": [
+        {
+          "root": "nft-server-bundle",
+          "kind": "nft-trace"
+        }
+      ],
+      "reason": "nft-runtime-trace via nft-server-bundle (see roots[] for the full explanation)"
+    },
+    {
+      "path": "packages/enigma-engineering/dist/src/pi-task-acceptance.js",
       "inputType": "nft-runtime-trace",
       "provenance": [
         {
@@ -72681,6 +72871,17 @@
     },
     {
       "path": "packages/enigma-engineering/dist/src/storage.js",
+      "inputType": "nft-runtime-trace",
+      "provenance": [
+        {
+          "root": "nft-server-bundle",
+          "kind": "nft-trace"
+        }
+      ],
+      "reason": "nft-runtime-trace via nft-server-bundle (see roots[] for the full explanation)"
+    },
+    {
+      "path": "packages/enigma-engineering/dist/src/task-acceptance.js",
       "inputType": "nft-runtime-trace",
       "provenance": [
         {
@@ -73371,9 +73572,14 @@
           "root": "server-bootstrap",
           "from": "plugins/enigma/host.ts",
           "kind": "import-statement"
+        },
+        {
+          "root": "server-bootstrap",
+          "from": "server/routes/enigma.ts",
+          "kind": "import-statement"
         }
       ],
-      "reason": "Reached via esbuild source module graph, imported by plugins/enigma/host.ts (import-statement)."
+      "reason": "Reached via esbuild source module graph, imported by plugins/enigma/host.ts (import-statement); server/routes/enigma.ts (import-statement)."
     },
     {
       "path": "plugins/enigma/guardian-host.ts",
@@ -73405,9 +73611,31 @@
           "root": "server-bootstrap",
           "from": "server/routes/enigma.ts",
           "kind": "import-statement"
+        },
+        {
+          "root": "server-bootstrap",
+          "from": "server/session-timing.ts",
+          "kind": "import-statement"
+        },
+        {
+          "root": "server-bootstrap",
+          "from": "server/index.ts",
+          "kind": "dynamic-import"
         }
       ],
-      "reason": "Reached via esbuild source module graph, imported by core/session-coordinator.ts (import-statement); core/engine.ts (import-statement); server/routes/enigma.ts (import-statement)."
+      "reason": "Reached via esbuild source module graph, imported by core/session-coordinator.ts (import-statement); core/engine.ts (import-statement); server/routes/enigma.ts (import-statement); +2 more importer(s)."
+    },
+    {
+      "path": "plugins/enigma/memory-host.ts",
+      "inputType": "source-graph",
+      "provenance": [
+        {
+          "root": "server-bootstrap",
+          "from": "plugins/enigma/host.ts",
+          "kind": "import-statement"
+        }
+      ],
+      "reason": "Reached via esbuild source module graph, imported by plugins/enigma/host.ts (import-statement)."
     },
     {
       "path": "plugins/enigma/model-policy.ts",
@@ -73698,6 +73926,11 @@
         },
         {
           "root": "server-bootstrap",
+          "from": "server/session-timing.ts",
+          "kind": "import-statement"
+        },
+        {
+          "root": "server-bootstrap",
           "from": "server/routes/chat.ts",
           "kind": "import-statement"
         },
@@ -73723,11 +73956,16 @@
         },
         {
           "root": "server-bootstrap",
+          "from": "server/routes/usage.ts",
+          "kind": "import-statement"
+        },
+        {
+          "root": "server-bootstrap",
           "from": "server/routes/studio-workspaces.ts",
           "kind": "import-statement"
         }
       ],
-      "reason": "Reached via esbuild source module graph, imported by server/routes/mobile-workbench.ts (import-statement); server/routes/enigma.ts (import-statement); server/routes/chat.ts (import-statement); +5 more importer(s)."
+      "reason": "Reached via esbuild source module graph, imported by server/routes/mobile-workbench.ts (import-statement); server/routes/enigma.ts (import-statement); server/session-timing.ts (import-statement); +7 more importer(s)."
     },
     {
       "path": "server/http/capability-guard.ts",
@@ -73795,6 +74033,11 @@
         },
         {
           "root": "server-bootstrap",
+          "from": "server/routes/usage.ts",
+          "kind": "import-statement"
+        },
+        {
+          "root": "server-bootstrap",
           "from": "server/routes/ws-auth.ts",
           "kind": "import-statement"
         },
@@ -73809,7 +74052,7 @@
           "kind": "import-statement"
         }
       ],
-      "reason": "Reached via esbuild source module graph, imported by server/http/security-audit.ts (import-statement); server/routes/config.ts (import-statement); server/routes/providers.ts (import-statement); +12 more importer(s)."
+      "reason": "Reached via esbuild source module graph, imported by server/http/security-audit.ts (import-statement); server/routes/config.ts (import-statement); server/routes/providers.ts (import-statement); +13 more importer(s)."
     },
     {
       "path": "server/http/cors-policy.ts",
@@ -74692,6 +74935,30 @@
       "reason": "Reached via esbuild source module graph, imported by server/index.ts (import-statement)."
     },
     {
+      "path": "server/session-timing.ts",
+      "inputType": "source-graph",
+      "provenance": [
+        {
+          "root": "server-bootstrap",
+          "from": "server/routes/chat.ts",
+          "kind": "import-statement"
+        }
+      ],
+      "reason": "Reached via esbuild source module graph, imported by server/routes/chat.ts (import-statement)."
+    },
+    {
+      "path": "server/session-token-meter.ts",
+      "inputType": "source-graph",
+      "provenance": [
+        {
+          "root": "server-bootstrap",
+          "from": "server/routes/chat.ts",
+          "kind": "import-statement"
+        }
+      ],
+      "reason": "Reached via esbuild source module graph, imported by server/routes/chat.ts (import-statement)."
+    },
+    {
       "path": "server/suggestion-blocks.ts",
       "inputType": "source-graph",
       "provenance": [
@@ -74719,6 +74986,30 @@
         }
       ],
       "reason": "Reached via esbuild source module graph, imported by server/index.ts (import-statement)."
+    },
+    {
+      "path": "server/transport-status-filter.ts",
+      "inputType": "source-graph",
+      "provenance": [
+        {
+          "root": "server-bootstrap",
+          "from": "server/session-token-meter.ts",
+          "kind": "import-statement"
+        }
+      ],
+      "reason": "Reached via esbuild source module graph, imported by server/session-token-meter.ts (import-statement)."
+    },
+    {
+      "path": "server/usage-summary.ts",
+      "inputType": "source-graph",
+      "provenance": [
+        {
+          "root": "server-bootstrap",
+          "from": "server/routes/usage.ts",
+          "kind": "import-statement"
+        }
+      ],
+      "reason": "Reached via esbuild source module graph, imported by server/routes/usage.ts (import-statement)."
     },
     {
       "path": "server/utils/path-security.ts",
@@ -75321,6 +75612,18 @@
         }
       ],
       "reason": "Reached via esbuild source module graph, imported by core/preferences-manager.ts (import-statement)."
+    },
+    {
+      "path": "shared/enigma-product.cjs",
+      "inputType": "source-graph",
+      "provenance": [
+        {
+          "root": "server-bootstrap",
+          "from": "core/first-run.ts",
+          "kind": "import-statement"
+        }
+      ],
+      "reason": "Reached via esbuild source module graph, imported by core/first-run.ts (import-statement)."
     },
     {
       "path": "shared/error-bus.ts",
@@ -76139,17 +76442,17 @@
         },
         {
           "root": "server-bootstrap",
+          "from": "core/model-execution-config.ts",
+          "kind": "import-statement"
+        },
+        {
+          "root": "server-bootstrap",
           "from": "core/provider-auth-migration.ts",
           "kind": "import-statement"
         },
         {
           "root": "server-bootstrap",
           "from": "core/local-provider-plugin-store.ts",
-          "kind": "import-statement"
-        },
-        {
-          "root": "server-bootstrap",
-          "from": "core/model-execution-config.ts",
           "kind": "import-statement"
         },
         {
@@ -76178,7 +76481,7 @@
           "kind": "import-statement"
         }
       ],
-      "reason": "Reached via esbuild source module graph, imported by lib/llm/provider-client.ts (import-statement); core/llm-client.ts (import-statement); core/provider-auth-migration.ts (import-statement); +7 more importer(s)."
+      "reason": "Reached via esbuild source module graph, imported by lib/llm/provider-client.ts (import-statement); core/llm-client.ts (import-statement); core/model-execution-config.ts (import-statement); +7 more importer(s)."
     },
     {
       "path": "shared/provider-model-validation.ts",
@@ -76738,6 +77041,28 @@
       "reason": "Reached via esbuild source module graph, imported by core/session-project-catalog-store.ts (import-statement); core/engine.ts (import-statement)."
     },
     {
+      "path": "shared/session-timing.ts",
+      "inputType": "source-graph",
+      "provenance": [
+        {
+          "root": "server-bootstrap",
+          "from": "plugins/enigma/conductor.ts",
+          "kind": "import-statement"
+        },
+        {
+          "root": "server-bootstrap",
+          "from": "server/session-timing.ts",
+          "kind": "import-statement"
+        },
+        {
+          "root": "server-bootstrap",
+          "from": "server/routes/chat.ts",
+          "kind": "import-statement"
+        }
+      ],
+      "reason": "Reached via esbuild source module graph, imported by plugins/enigma/conductor.ts (import-statement); server/session-timing.ts (import-statement); server/routes/chat.ts (import-statement)."
+    },
+    {
       "path": "shared/sidebar-ui-state.ts",
       "inputType": "source-graph",
       "provenance": [
@@ -76871,6 +77196,35 @@
         }
       ],
       "reason": "Reached via esbuild source module graph, imported by lib/pi-sdk/tool-outcome-adapter.ts (import-statement); core/message-utils.ts (import-statement); server/routes/chat.ts (import-statement); +1 more importer(s)."
+    },
+    {
+      "path": "shared/usage-retention.ts",
+      "inputType": "source-graph",
+      "provenance": [
+        {
+          "root": "server-bootstrap",
+          "from": "lib/llm/usage-ledger.ts",
+          "kind": "import-statement"
+        },
+        {
+          "root": "server-bootstrap",
+          "from": "server/routes/usage.ts",
+          "kind": "import-statement"
+        }
+      ],
+      "reason": "Reached via esbuild source module graph, imported by lib/llm/usage-ledger.ts (import-statement); server/routes/usage.ts (import-statement)."
+    },
+    {
+      "path": "shared/usage-summary.ts",
+      "inputType": "source-graph",
+      "provenance": [
+        {
+          "root": "server-bootstrap",
+          "from": "server/usage-summary.ts",
+          "kind": "import-statement"
+        }
+      ],
+      "reason": "Reached via esbuild source module graph, imported by server/usage-summary.ts (import-statement)."
     },
     {
       "path": "shared/video-mime.ts",
@@ -77067,11 +77421,11 @@
     }
   ],
   "stats": {
-    "totalFiles": 6367,
+    "totalFiles": 6391,
     "byInputType": {
-      "source-graph": 684,
+      "source-graph": 694,
       "runtime-asset": 11,
-      "nft-runtime-trace": 5672
+      "nft-runtime-trace": 5686
     }
   }
 }

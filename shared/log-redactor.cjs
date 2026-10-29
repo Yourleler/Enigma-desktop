@@ -25,6 +25,9 @@ function redactLogText(value, options = {}) {
   text = redactKnownPaths(text, options);
 
   text = text.replace(/data:([^;,]+);base64,[A-Za-z0-9+/=]+/gi, "data:$1;base64,[redacted]");
+  // HTTP clients often embed pretty-printed response headers in Error.message.
+  // Redact a quoted header value or its multiline string array as one field.
+  text = text.replace(/("(?:authorization|cookie|set-cookie)"\s*:\s*)(?:"(?:\\.|[^"\\])*"|\[(?:\s*"(?:\\.|[^"\\])*"\s*,?)*\s*\])/gi, '$1"[redacted]"');
   text = text.replace(/(https?:\/\/)([^:@\s/?#]+):([^@\s/?#]+)@/gi, "$1[credentials]@");
   text = text.replace(URL_SECRET_QUERY_RE, "$1[redacted]");
   text = text.replace(/\b(Authorization\s*[:=]\s*Bearer\s+)[^\s,;]+/gi, "$1[redacted]");

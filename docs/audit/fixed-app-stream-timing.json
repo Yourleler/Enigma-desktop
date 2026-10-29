@@ -1,0 +1,3044 @@
+{
+  "session": "sess_0mvp997wm_1d584588152368e51646",
+  "frames": [
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": null,
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 0,
+      "requests": 0,
+      "up": {
+        "tokens": 0,
+        "estimated": false
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": false
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019195857,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 210,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019196067,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 352,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019196209,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 493,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019196350,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 634,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019196491,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 775,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019196632,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 917,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019196774,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 1058,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019196915,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 1200,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019197057,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 1341,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019197198,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 1482,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019197339,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 1763,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019197620,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 1904,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019197761,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 2045,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019197902,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 2185,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019198042,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 2326,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019198183,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 2467,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019198324,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 2748,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019198605,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 2889,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019198746,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 3030,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019198887,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 3171,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019199028,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 3314,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019199171,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 3454,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019199311,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 3595,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019199452,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 3736,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019199593,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 3877,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019199734,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 4019,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019199876,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 4160,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019200017,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 4303,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019200160,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 4443,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019200300,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 4585,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019200442,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 4727,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019200584,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 4869,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019200726,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 5011,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019200868,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 5152,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019201009,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 5292,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019201149,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 5432,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019201289,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 5572,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019201429,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 5713,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019201570,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 5854,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019201711,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 5995,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019201852,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 6137,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019201994,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 6277,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019202134,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 6418,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019202275,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 6559,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019202416,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 6700,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019202557,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 6840,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019202697,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 6982,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019202839,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 7123,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019202980,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 7264,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019203121,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 7406,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019203263,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 7546,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019203403,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 7687,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019203544,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 7829,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019203686,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 7969,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019203826,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 8110,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019203967,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 8250,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019204107,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 8392,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019204249,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 8532,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019204389,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 8674,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019204531,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 8815,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019204672,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 8956,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019204813,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 9096,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019204953,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 9238,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019205095,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 9379,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019205236,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "upload",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 9519,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 0,
+        "estimated": true
+      },
+      "rate": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019205376,
+      "firstOutputAt": null
+    },
+    {
+      "state": "running",
+      "phase": "writing",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 9661,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 49,
+        "estimated": true
+      },
+      "rate": 123,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019205518,
+      "firstOutputAt": 1793019205400
+    },
+    {
+      "state": "running",
+      "phase": "writing",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 9802,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 52,
+        "estimated": true
+      },
+      "rate": 130,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019205659,
+      "firstOutputAt": 1793019205400
+    },
+    {
+      "state": "running",
+      "phase": "writing",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 9943,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 64,
+        "estimated": true
+      },
+      "rate": 160,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019205800,
+      "firstOutputAt": 1793019205400
+    },
+    {
+      "state": "running",
+      "phase": "writing",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 10086,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 82,
+        "estimated": true
+      },
+      "rate": 135,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019205943,
+      "firstOutputAt": 1793019205400
+    },
+    {
+      "state": "running",
+      "phase": "writing",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 10226,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 89,
+        "estimated": true
+      },
+      "rate": 135,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019206083,
+      "firstOutputAt": 1793019205400
+    },
+    {
+      "state": "running",
+      "phase": "writing",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 10368,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 105,
+        "estimated": true
+      },
+      "rate": 135,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019206225,
+      "firstOutputAt": 1793019205400
+    },
+    {
+      "state": "running",
+      "phase": "writing",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 10509,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 112,
+        "estimated": true
+      },
+      "rate": 119,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019206366,
+      "firstOutputAt": 1793019205400
+    },
+    {
+      "state": "running",
+      "phase": "writing",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 10650,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 120,
+        "estimated": true
+      },
+      "rate": 119,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019206507,
+      "firstOutputAt": 1793019205400
+    },
+    {
+      "state": "running",
+      "phase": "writing",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 10792,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 129,
+        "estimated": true
+      },
+      "rate": 119,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019206649,
+      "firstOutputAt": 1793019205400
+    },
+    {
+      "state": "running",
+      "phase": "writing",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 10935,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 153,
+        "estimated": true
+      },
+      "rate": 105,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019206792,
+      "firstOutputAt": 1793019205400
+    },
+    {
+      "state": "running",
+      "phase": "writing",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 11075,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 160,
+        "estimated": true
+      },
+      "rate": 105,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019206932,
+      "firstOutputAt": 1793019205400
+    },
+    {
+      "state": "running",
+      "phase": "writing",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 11216,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 167,
+        "estimated": true
+      },
+      "rate": 105,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019207073,
+      "firstOutputAt": 1793019205400
+    },
+    {
+      "state": "running",
+      "phase": "writing",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 11357,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 173,
+        "estimated": true
+      },
+      "rate": 90,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019207214,
+      "firstOutputAt": 1793019205400
+    },
+    {
+      "state": "running",
+      "phase": "writing",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 11498,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 183,
+        "estimated": true
+      },
+      "rate": 90,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019207355,
+      "firstOutputAt": 1793019205400
+    },
+    {
+      "state": "running",
+      "phase": "writing",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 11639,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 192,
+        "estimated": true
+      },
+      "rate": 90,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019207496,
+      "firstOutputAt": 1793019205400
+    },
+    {
+      "state": "running",
+      "phase": "writing",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 11781,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 192,
+        "estimated": true
+      },
+      "rate": 90,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019207638,
+      "firstOutputAt": 1793019205400
+    },
+    {
+      "state": "running",
+      "phase": "writing",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 11923,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 207,
+        "estimated": true
+      },
+      "rate": 75,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019207780,
+      "firstOutputAt": 1793019205400
+    },
+    {
+      "state": "running",
+      "phase": "writing",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 12065,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 222,
+        "estimated": true
+      },
+      "rate": 75,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019207922,
+      "firstOutputAt": 1793019205400
+    },
+    {
+      "state": "running",
+      "phase": "writing",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 12205,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 237,
+        "estimated": true
+      },
+      "rate": 75,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019208062,
+      "firstOutputAt": 1793019205400
+    },
+    {
+      "state": "running",
+      "phase": "writing",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 12345,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 252,
+        "estimated": true
+      },
+      "rate": 85,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019208202,
+      "firstOutputAt": 1793019205400
+    },
+    {
+      "state": "running",
+      "phase": "writing",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 12486,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 260,
+        "estimated": true
+      },
+      "rate": 85,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019208343,
+      "firstOutputAt": 1793019205400
+    },
+    {
+      "state": "running",
+      "phase": "writing",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 12627,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 269,
+        "estimated": true
+      },
+      "rate": 85,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019208484,
+      "firstOutputAt": 1793019205400
+    },
+    {
+      "state": "running",
+      "phase": "writing",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 12768,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 277,
+        "estimated": true
+      },
+      "rate": 82,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019208625,
+      "firstOutputAt": 1793019205400
+    },
+    {
+      "state": "running",
+      "phase": "writing",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 12909,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 281,
+        "estimated": true
+      },
+      "rate": 82,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019208766,
+      "firstOutputAt": 1793019205400
+    },
+    {
+      "state": "running",
+      "phase": "writing",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 13049,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 290,
+        "estimated": true
+      },
+      "rate": 82,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019208906,
+      "firstOutputAt": 1793019205400
+    },
+    {
+      "state": "running",
+      "phase": "writing",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 13191,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 301,
+        "estimated": true
+      },
+      "rate": 82,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019209048,
+      "firstOutputAt": 1793019205400
+    },
+    {
+      "state": "running",
+      "phase": "writing",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 13333,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 313,
+        "estimated": true
+      },
+      "rate": 74,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019209190,
+      "firstOutputAt": 1793019205400
+    },
+    {
+      "state": "running",
+      "phase": "writing",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 13474,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 334,
+        "estimated": true
+      },
+      "rate": 74,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019209331,
+      "firstOutputAt": 1793019205400
+    },
+    {
+      "state": "running",
+      "phase": "writing",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 13615,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 354,
+        "estimated": true
+      },
+      "rate": 74,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019209472,
+      "firstOutputAt": 1793019205400
+    },
+    {
+      "state": "running",
+      "phase": "writing",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 13756,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 356,
+        "estimated": true
+      },
+      "rate": 83,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019209613,
+      "firstOutputAt": 1793019205400
+    },
+    {
+      "state": "running",
+      "phase": "writing",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 13896,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 356,
+        "estimated": true
+      },
+      "rate": 83,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019209753,
+      "firstOutputAt": 1793019205400
+    },
+    {
+      "state": "running",
+      "phase": "writing",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 14037,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 356,
+        "estimated": true
+      },
+      "rate": 83,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019209894,
+      "firstOutputAt": 1793019205400
+    },
+    {
+      "state": "running",
+      "phase": "writing",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 14178,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 356,
+        "estimated": true
+      },
+      "rate": 83,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019210035,
+      "firstOutputAt": 1793019205400
+    },
+    {
+      "state": "running",
+      "phase": "writing",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 14319,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 392,
+        "estimated": true
+      },
+      "rate": 56,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019210176,
+      "firstOutputAt": 1793019205400
+    },
+    {
+      "state": "running",
+      "phase": "writing",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 14459,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 400,
+        "estimated": true
+      },
+      "rate": 56,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019210316,
+      "firstOutputAt": 1793019205400
+    },
+    {
+      "state": "running",
+      "phase": "writing",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 14600,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 407,
+        "estimated": true
+      },
+      "rate": 56,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019210457,
+      "firstOutputAt": 1793019205400
+    },
+    {
+      "state": "running",
+      "phase": "writing",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 14742,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 425,
+        "estimated": true
+      },
+      "rate": 84,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019210599,
+      "firstOutputAt": 1793019205400
+    },
+    {
+      "state": "running",
+      "phase": "writing",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 14884,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 434,
+        "estimated": true
+      },
+      "rate": 84,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019210741,
+      "firstOutputAt": 1793019205400
+    },
+    {
+      "state": "running",
+      "phase": "writing",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 15025,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 452,
+        "estimated": true
+      },
+      "rate": 84,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019210882,
+      "firstOutputAt": 1793019205400
+    },
+    {
+      "state": "running",
+      "phase": "writing",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 15167,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 459,
+        "estimated": true
+      },
+      "rate": 90,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019211024,
+      "firstOutputAt": 1793019205400
+    },
+    {
+      "state": "running",
+      "phase": "writing",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 15309,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 467,
+        "estimated": true
+      },
+      "rate": 90,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019211166,
+      "firstOutputAt": 1793019205400
+    },
+    {
+      "state": "running",
+      "phase": "writing",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 15451,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 487,
+        "estimated": true
+      },
+      "rate": 90,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019211308,
+      "firstOutputAt": 1793019205400
+    },
+    {
+      "state": "running",
+      "phase": "writing",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 15592,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 502,
+        "estimated": true
+      },
+      "rate": 91,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019211449,
+      "firstOutputAt": 1793019205400
+    },
+    {
+      "state": "running",
+      "phase": "writing",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 15732,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 508,
+        "estimated": true
+      },
+      "rate": 91,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019211589,
+      "firstOutputAt": 1793019205400
+    },
+    {
+      "state": "running",
+      "phase": "writing",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": null,
+      "elapsedMs": 15873,
+      "requests": 1,
+      "up": {
+        "tokens": 12386,
+        "estimated": true
+      },
+      "down": {
+        "tokens": 525,
+        "estimated": true
+      },
+      "rate": 91,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019211730,
+      "firstOutputAt": 1793019205400
+    },
+    {
+      "state": "done",
+      "phase": "writing",
+      "runId": 1,
+      "model": "gateway/gateway-gpt-6-1-sol",
+      "startedAt": 1793019195857,
+      "endedAt": 1793019211843,
+      "elapsedMs": 15986,
+      "requests": 1,
+      "up": {
+        "tokens": 10460,
+        "estimated": false
+      },
+      "down": {
+        "tokens": 427,
+        "estimated": false
+      },
+      "rate": 93.17087119800405,
+      "cacheRead": 0,
+      "cacheWrite": 0,
+      "sampledAt": 1793019211843,
+      "firstOutputAt": 1793019205400
+    }
+  ],
+  "deltas": [
+    {
+      "ms": 9665,
+      "chars": 5
+    },
+    {
+      "ms": 9667,
+      "chars": 2
+    },
+    {
+      "ms": 9668,
+      "chars": 4
+    },
+    {
+      "ms": 9668,
+      "chars": 1
+    },
+    {
+      "ms": 9669,
+      "chars": 2
+    },
+    {
+      "ms": 9669,
+      "chars": 1
+    },
+    {
+      "ms": 9670,
+      "chars": 1
+    },
+    {
+      "ms": 9670,
+      "chars": 2
+    },
+    {
+      "ms": 9671,
+      "chars": 2
+    },
+    {
+      "ms": 9671,
+      "chars": 1
+    },
+    {
+      "ms": 9671,
+      "chars": 1
+    },
+    {
+      "ms": 9672,
+      "chars": 2
+    },
+    {
+      "ms": 9672,
+      "chars": 1
+    },
+    {
+      "ms": 9672,
+      "chars": 1
+    },
+    {
+      "ms": 9673,
+      "chars": 2
+    },
+    {
+      "ms": 9673,
+      "chars": 3
+    },
+    {
+      "ms": 9674,
+      "chars": 4
+    },
+    {
+      "ms": 9674,
+      "chars": 4
+    },
+    {
+      "ms": 9674,
+      "chars": 4
+    },
+    {
+      "ms": 9675,
+      "chars": 3
+    },
+    {
+      "ms": 9675,
+      "chars": 4
+    },
+    {
+      "ms": 9675,
+      "chars": 6
+    },
+    {
+      "ms": 9675,
+      "chars": 5
+    },
+    {
+      "ms": 9676,
+      "chars": 5
+    },
+    {
+      "ms": 9701,
+      "chars": 4
+    },
+    {
+      "ms": 9726,
+      "chars": 3
+    },
+    {
+      "ms": 9783,
+      "chars": 3
+    },
+    {
+      "ms": 10025,
+      "chars": 6
+    },
+    {
+      "ms": 10025,
+      "chars": 7
+    },
+    {
+      "ms": 10139,
+      "chars": 7
+    },
+    {
+      "ms": 10139,
+      "chars": 1
+    },
+    {
+      "ms": 10140,
+      "chars": 1
+    },
+    {
+      "ms": 10140,
+      "chars": 2
+    },
+    {
+      "ms": 10141,
+      "chars": 2
+    },
+    {
+      "ms": 10142,
+      "chars": 2
+    },
+    {
+      "ms": 10142,
+      "chars": 2
+    },
+    {
+      "ms": 10143,
+      "chars": 2
+    },
+    {
+      "ms": 10144,
+      "chars": 2
+    },
+    {
+      "ms": 10144,
+      "chars": 1
+    },
+    {
+      "ms": 10145,
+      "chars": 2
+    },
+    {
+      "ms": 10324,
+      "chars": 1
+    },
+    {
+      "ms": 10325,
+      "chars": 1
+    },
+    {
+      "ms": 10326,
+      "chars": 1
+    },
+    {
+      "ms": 10326,
+      "chars": 1
+    },
+    {
+      "ms": 10327,
+      "chars": 1
+    },
+    {
+      "ms": 10328,
+      "chars": 2
+    },
+    {
+      "ms": 10435,
+      "chars": 4
+    },
+    {
+      "ms": 10436,
+      "chars": 2
+    },
+    {
+      "ms": 10437,
+      "chars": 4
+    },
+    {
+      "ms": 10438,
+      "chars": 3
+    },
+    {
+      "ms": 10438,
+      "chars": 2
+    },
+    {
+      "ms": 10438,
+      "chars": 3
+    },
+    {
+      "ms": 10577,
+      "chars": 3
+    },
+    {
+      "ms": 10579,
+      "chars": 4
+    },
+    {
+      "ms": 10669,
+      "chars": 4
+    },
+    {
+      "ms": 10670,
+      "chars": 4
+    },
+    {
+      "ms": 10787,
+      "chars": 5
+    },
+    {
+      "ms": 10787,
+      "chars": 5
+    },
+    {
+      "ms": 10924,
+      "chars": 5
+    },
+    {
+      "ms": 10926,
+      "chars": 6
+    },
+    {
+      "ms": 11021,
+      "chars": 7
+    },
+    {
+      "ms": 11022,
+      "chars": 8
+    },
+    {
+      "ms": 11140,
+      "chars": 8
+    },
+    {
+      "ms": 11315,
+      "chars": 7
+    },
+    {
+      "ms": 11316,
+      "chars": 1
+    },
+    {
+      "ms": 11430,
+      "chars": 7
+    },
+    {
+      "ms": 11549,
+      "chars": 7
+    },
+    {
+      "ms": 11550,
+      "chars": 4
+    },
+    {
+      "ms": 11663,
+      "chars": 13
+    },
+    {
+      "ms": 12014,
+      "chars": 11
+    },
+    {
+      "ms": 12015,
+      "chars": 4
+    },
+    {
+      "ms": 12055,
+      "chars": 5
+    },
+    {
+      "ms": 12056,
+      "chars": 3
+    },
+    {
+      "ms": 12075,
+      "chars": 9
+    },
+    {
+      "ms": 12200,
+      "chars": 9
+    },
+    {
+      "ms": 12200,
+      "chars": 3
+    },
+    {
+      "ms": 12312,
+      "chars": 4
+    },
+    {
+      "ms": 12432,
+      "chars": 9
+    },
+    {
+      "ms": 12432,
+      "chars": 7
+    },
+    {
+      "ms": 12548,
+      "chars": 8
+    },
+    {
+      "ms": 12726,
+      "chars": 11
+    },
+    {
+      "ms": 12726,
+      "chars": 1
+    },
+    {
+      "ms": 12841,
+      "chars": 8
+    },
+    {
+      "ms": 12975,
+      "chars": 4
+    },
+    {
+      "ms": 13076,
+      "chars": 9
+    },
+    {
+      "ms": 13078,
+      "chars": 2
+    },
+    {
+      "ms": 13197,
+      "chars": 14
+    },
+    {
+      "ms": 13383,
+      "chars": 10
+    },
+    {
+      "ms": 13384,
+      "chars": 3
+    },
+    {
+      "ms": 13556,
+      "chars": 12
+    },
+    {
+      "ms": 13557,
+      "chars": 9
+    },
+    {
+      "ms": 13734,
+      "chars": 10
+    },
+    {
+      "ms": 13735,
+      "chars": 11
+    },
+    {
+      "ms": 13848,
+      "chars": 3
+    },
+    {
+      "ms": 14353,
+      "chars": 9
+    },
+    {
+      "ms": 14354,
+      "chars": 6
+    },
+    {
+      "ms": 14355,
+      "chars": 15
+    },
+    {
+      "ms": 14428,
+      "chars": 3
+    },
+    {
+      "ms": 14429,
+      "chars": 1
+    },
+    {
+      "ms": 14430,
+      "chars": 5
+    },
+    {
+      "ms": 14498,
+      "chars": 9
+    },
+    {
+      "ms": 14618,
+      "chars": 7
+    },
+    {
+      "ms": 14757,
+      "chars": 11
+    },
+    {
+      "ms": 14862,
+      "chars": 10
+    },
+    {
+      "ms": 14974,
+      "chars": 10
+    },
+    {
+      "ms": 15082,
+      "chars": 20
+    },
+    {
+      "ms": 15208,
+      "chars": 7
+    },
+    {
+      "ms": 15321,
+      "chars": 8
+    },
+    {
+      "ms": 15452,
+      "chars": 5
+    },
+    {
+      "ms": 15561,
+      "chars": 18
+    },
+    {
+      "ms": 15676,
+      "chars": 15
+    },
+    {
+      "ms": 15806,
+      "chars": 6
+    },
+    {
+      "ms": 15918,
+      "chars": 19
+    },
+    {
+      "ms": 16043,
+      "chars": 13
+    },
+    {
+      "ms": 16044,
+      "chars": 9
+    }
+  ],
+  "pathsAndProviderNamesRedacted": true
+}

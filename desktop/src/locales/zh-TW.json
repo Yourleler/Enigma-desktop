@@ -510,6 +510,7 @@
     ]
   },
   "yuan": {
+    "simpleMode": "簡潔模式",
     "types": {
       "hanako": {
         "label": "均衡的助手",
@@ -1058,6 +1059,7 @@
       "noResults": "沒有找到相關設定"
     },
     "tabs": {
+      "usage": "用量統計",
       "interface": "介面",
       "general": "通用",
       "browser": "瀏覽器",
@@ -2744,8 +2746,8 @@
       }
     },
     "jian": {
-      "collapse": "收起箋",
-      "expand": "展開箋"
+      "collapse": "收起資料夾說明",
+      "expand": "展開資料夾說明"
     }
   },
   "desk": {
@@ -2762,7 +2764,10 @@
     "cwdSkillShadowed": "已被覆蓋",
     "deleteSkill": "刪除技能",
     "openInFinder": "打開資料夾",
-    "jianLabel": "箋",
+    "jianLabel": "資料夾說明",
+    "fullPath": "查看完整路徑",
+    "jianHint": "記錄目錄用途與處理要求，內容會自動儲存。開啟工作台巡檢後，助手會讀取這些要求。",
+    "cwdSkillsHelp": "查看目前目錄可用的技能及用途",
     "jianPlaceholder": "寫點什麼，告訴助手這個資料夾裡面的檔案該如何處理...",
     "execLogLabel": "執行記錄",
     "execLogDelete": "刪除此條記錄",

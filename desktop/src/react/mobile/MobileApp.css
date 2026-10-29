@@ -17,6 +17,15 @@ body,
   height: 100%;
 }
 
+/* The web titlebar stays fixed at wide sizes too. The preview tab strip must
+   start below it; the narrow-screen rule already offsets the whole panel. */
+@media (min-width: 861px) {
+  .mobile-desktop-root #previewPanel {
+    box-sizing: border-box;
+    padding-top: var(--titlebar-h, 44px);
+  }
+}
+
 .mobile-update-banner {
   position: fixed;
   top: calc(var(--titlebar-h, 44px) + 8px);

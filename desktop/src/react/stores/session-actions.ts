@@ -334,6 +334,7 @@ function clearSessionRuntimeCaches(path: string): void {
 // ══════════════════════════════════════════════════════
 
 export async function loadMessages(forPath?: string): Promise<void> {
+  const connectionId=useStore.getState().activeServerConnectionId;
   const targetPath = forPath || useStore.getState().currentSessionPath;
   if (!targetPath) return;
   const messageLiveVersionBefore = readMessageLiveVersion(targetPath);
@@ -351,6 +352,7 @@ export async function loadMessages(forPath?: string): Promise<void> {
   try {
     const res = await hanaFetch(sessionMessagesUrl(targetPath));
     const data = await res.json();
+    if(useStore.getState().activeServerConnectionId!==connectionId)return;
     const latestVersion =
       sessionScopedValue(useStore.getState() as Record<string, any>, useStore.getState()._loadMessagesVersion, targetPath) ?? 0;
     if (latestVersion !== myVersion) {
@@ -465,7 +467,7 @@ function buildInflightAssistantMessage(snap: StreamBufferSnapshot): ChatMessage 
     const displayText = snap.text.replace(/<tool_code>[\s\S]*?<\/tool_code>\s*/g, '');
     blocks.push({ type: 'text', html: renderMarkdown(displayText), source: displayText });
   }
-  return { id: snap.messageId || `inflight-${Date.now()}`, role: 'assistant', blocks, timestamp: Date.now() };
+  return { id: snap.messageId || `inflight-${Date.now()}`, role: 'assistant', blocks, timestamp: snap.timestamp };
 }
 
 /** 上滑加载更早的消息（分页） */

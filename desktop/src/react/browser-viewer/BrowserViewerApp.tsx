@@ -8,6 +8,8 @@
 import { useState, useEffect, useMemo, useRef, type WheelEvent } from 'react';
 import type { BrowserViewerTab, BrowserViewerUpdate } from '../types';
 import { initTheme } from '../bootstrap';
+import {BrowserDialog} from '../components/preview/BrowserDialog';
+import type {BrowserPageDialog} from '../types';
 
 declare function t(key: string): string;
 declare function setTheme(name: string): void;
@@ -44,6 +46,7 @@ function tabTitle(tab: BrowserViewerTab) {
 }
 
 export function BrowserViewerApp() {
+  const [dialog,setDialog]=useState<BrowserPageDialog|null>(null);
   const [canBack, setCanBack] = useState(false);
   const [canForward, setCanForward] = useState(false);
   const [sessionPath, setSessionPath] = useState<string | null>(null);
@@ -61,7 +64,8 @@ export function BrowserViewerApp() {
     });
 
     // 接收浏览器状态更新
-    hana?.onBrowserUpdate?.((data: BrowserViewerUpdate) => {
+    const apply=(data: BrowserViewerUpdate) => {
+      if(data.dialog!==undefined)setDialog(data.dialog);
       if (Array.isArray(data.tabs)) setTabs(data.tabs);
       if (data.activeTabId !== undefined) setActiveTabId(data.activeTabId);
       if (data.canGoBack !== undefined) setCanBack(data.canGoBack);
@@ -69,6 +73,7 @@ export function BrowserViewerApp() {
       if (data.sessionPath !== undefined) setSessionPath(data.sessionPath || null);
       if (data.sessionTitle !== undefined) setSessionTitle(data.sessionTitle || null);
       if (data.running === false) {
+        setDialog(null);
         setCanBack(false);
         setCanForward(false);
         setTabs([]);
@@ -76,10 +81,14 @@ export function BrowserViewerApp() {
         setSessionPath(data.sessionPath || null);
         setSessionTitle(data.sessionTitle || null);
       }
-    });
+    };
+    const unsubscribe=hana?.onBrowserUpdate?.(apply);
+    let alive=true;
+    void hana?.browserViewerState?.().then(state=>{if(alive)apply(state);}).catch(()=>{});
 
     // i18n
     window.i18n?.load?.(navigator.language || 'zh');
+    return()=>{alive=false;if(typeof unsubscribe==='function')unsubscribe();};
   }, []);
 
   const hana = window.hana;
@@ -107,6 +116,10 @@ export function BrowserViewerApp() {
 
   return (
     <>
+      {dialog&&<div style={{position:'absolute',top:44,left:0,right:0,zIndex:100}}><BrowserDialog key={dialog.dialogId} dialog={dialog} onRespond={async(accept,text)=>{
+        if(!activeTabId||!hana?.browserHandleDialog)throw new Error('标签页已关闭');
+        await hana.browserHandleDialog({sessionPath,tabId:activeTabId,dialogId:dialog.dialogId,accept,text});setDialog(null);
+      }}/></div>}
       <div className="toolbar">
         <div className="toolbar-left">
           {/* Close */}

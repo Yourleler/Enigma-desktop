@@ -1,0 +1,15 @@
+{
+  "manifestVersion": 1,
+  "id": "browser-control",
+  "name": "浏览器操作",
+  "version": "0.1.0",
+  "description": "在独立浏览器工作区读取网页、操作标签与表单、检查结果；支持暂停和用户接管。",
+  "trust": "full-access",
+  "userToggleable": true,
+  "minAppVersion": "0.452.70",
+  "contributes": {
+    "nativeTools": {
+      "browser": "native-tools/browser.ts"
+    }
+  }
+}

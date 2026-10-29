@@ -23,6 +23,7 @@ vi.mock('../../utils/file-preview', async (importOriginal) => {
 
 describe('remote file preview workbench refs', () => {
   beforeEach(() => {
+    document.documentElement.removeAttribute('data-platform');
     useStore.setState({
       previewItems: [],
       openTabs: [],
@@ -136,6 +137,26 @@ describe('remote file preview workbench refs', () => {
     expect(item.remoteContentRef?.version).toEqual({ mtimeMs: 1781989413542, size: 8 });
   });
 
+  it('refreshes office previews through the converter instead of replacing HTML with ZIP bytes', async () => {
+    const {refreshPreviewItemsFromRemoteWorkbenchTarget}=await import('../../utils/remote-file-preview');
+    const target: RemoteWorkbenchContentRef={kind:'workbench-file',mountId:'docs',subdir:'',name:'new.xlsx',contentPath:'/api/workbench/content?mountId=docs&name=new.xlsx'};
+    useStore.setState({previewItems:[{id:'office',type:'xlsx',title:'new.xlsx',content:'<table>old</table>',remoteContentRef:target}]});
+    mockHanaFetch.mockResolvedValueOnce(new Response(JSON.stringify({html:'<table><tr><td>新内容</td></tr></table>',version:{size:20,mtimeMs:2}}),{status:200,headers:{'content-type':'application/json'}}));
+    await refreshPreviewItemsFromRemoteWorkbenchTarget(target);
+    expect(mockHanaFetch).toHaveBeenCalledWith('/api/preview/office',expect.objectContaining({method:'POST'}));
+    expect(useStore.getState().previewItems[0].content).toContain('<td>新内容</td>');
+  });
+
+  it('refreshes media metadata without loading binary content into the preview state',async()=>{
+    const {refreshPreviewItemsFromRemoteWorkbenchTarget}=await import('../../utils/remote-file-preview');
+    const target:RemoteWorkbenchContentRef={kind:'workbench-file',mountId:'media',subdir:'',name:'new.wav',contentPath:'/api/workbench/content?mountId=media&name=new.wav'};
+    useStore.setState({previewItems:[{id:'audio',type:'media',title:'new.wav',content:'',remoteContentRef:target}]});
+    mockHanaFetch.mockResolvedValueOnce(new Response(null,{status:200,headers:{'X-Hana-File-MtimeMs':'2000','X-Hana-File-Size':'32000'}}));
+    await refreshPreviewItemsFromRemoteWorkbenchTarget(target);
+    expect(mockHanaFetch).toHaveBeenCalledWith(target.contentPath,{method:'HEAD'});
+    expect(useStore.getState().previewItems[0]).toMatchObject({content:'',fileVersion:{mtimeMs:2000,size:32000}});
+  });
+
   it('does not downgrade a remote workbench refresh to a stale target version', async () => {
     const { refreshPreviewItemsFromRemoteWorkbenchTarget } = await import('../../utils/remote-file-preview');
     const staleVersion = { mtimeMs: 1000, size: 0 };
@@ -196,6 +217,15 @@ describe('remote file preview workbench refs', () => {
       sourceRootPath: '/Users/me/project',
     });
     expect(mockHanaFetch).not.toHaveBeenCalled();
+  });
+
+  it('uses content routes in a browser even when the browser has local-owner credentials', async () => {
+    const { openWorkbenchFilePreview } = await import('../../utils/remote-file-preview');
+    document.documentElement.setAttribute('data-platform', 'web');
+    mockHanaFetch.mockResolvedValueOnce(new Response('# Web document', {status: 200}));
+    await openWorkbenchFilePreview({subdir: '', localRootPath: '/local/project', file: {name: 'readme.md', isDir: false}});
+    expect(mockOpenFilePreview).not.toHaveBeenCalled();
+    expect(useStore.getState().previewItems[0]).toMatchObject({type: 'markdown', content: '# Web document'});
   });
 
   it('opens remote default workbench documents through ResourceIO content even in desktop runtime', async () => {

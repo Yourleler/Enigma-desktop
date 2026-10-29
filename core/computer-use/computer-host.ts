@@ -9,6 +9,7 @@ const ACTION_CAPABILITY = {
   click_element: "elementActions",
   double_click: "pointClick",
   type_text: "elementActions",
+  set_value: "elementActions",
   press_key: "keyboardInput",
   scroll: "elementActions",
   click_point: "pointClick",
@@ -79,6 +80,7 @@ function capabilityKeyForAction(capabilities, action: any = {}) {
 }
 
 export class ComputerHost {
+  _operations: Promise<any> = Promise.resolve();
   declare _defaultProviderId: any;
   declare _getAccessMode: any;
   declare _getPrimaryAgentId: any;
@@ -147,7 +149,36 @@ export class ComputerHost {
     return await provider.listApps(ctx);
   }
 
-  async createLease(ctx, target: any = {}) {
+  async listWindows(ctx: any, appId: string, providerId = null) {
+    this._assertRuntimeAllowed(ctx);assertComputerUseModelSupported(ctx.model);
+    if(!appId)throw computerUseError(COMPUTER_USE_ERRORS.TARGET_NOT_FOUND,'Choose an appId before listing its windows.');
+    const provider=this._providers.require(this._resolveProviderId(ctx,{providerId}));
+    if(provider.listWindows)return provider.listWindows(ctx,appId);
+    const apps=await provider.listApps(ctx);
+    return apps.filter(app=>app.appId===appId).flatMap(app=>app.windows||[]);
+  }
+
+  _exclusive<T>(ctx: any, operation: () => Promise<T> | T, drainOnAbort = false): Promise<T> {
+    let started = false;
+    const work=this._operations.catch(()=>{}).then(()=>{ctx?.signal?.throwIfAborted();started=true;return operation();});
+    this._operations=work.catch(()=>{});
+    if(!ctx?.signal)return work;
+    return new Promise<T>((resolve,reject)=>{
+      const abort=()=>{
+        // Foreground input owns a physical mouse-down. Its command handles
+        // cancellation by releasing it; do not report completion before that
+        // cleanup exits. A still-queued call can cancel immediately.
+        if(drainOnAbort && started)return;
+        ctx.signal.removeEventListener('abort',abort);reject(ctx.signal.reason||new Error('Computer operation cancelled'));
+      };
+      ctx.signal.addEventListener('abort',abort,{once:true});
+      work.then(value=>{ctx.signal.removeEventListener('abort',abort);resolve(value);},error=>{ctx.signal.removeEventListener('abort',abort);reject(error);});
+      if(ctx.signal.aborted)abort();
+    });
+  }
+
+  createLease(ctx, target: any = {}) { return this._exclusive(ctx,()=>this._createLease(ctx,target)); }
+  async _createLease(ctx, target: any = {}) {
     this._assertRuntimeAllowed(ctx);
     assertComputerUseModelSupported(ctx.model);
     const providerId = this._resolveProviderId(ctx, target);
@@ -173,12 +204,15 @@ export class ComputerHost {
     return this._leases.releaseLease(ctx, leaseId);
   }
 
-  async getAppState(ctx, leaseId) {
+  getAppState(ctx, leaseId) { return this._exclusive(ctx,()=>this._getAppState(ctx,leaseId)); }
+  async _getAppState(ctx, leaseId) {
     this._assertRuntimeAllowed(ctx);
     assertComputerUseModelSupported(ctx.model);
     const lease = this._resolveActiveLease(ctx, leaseId);
     const provider = this._providers.require(lease.providerId);
+    this._leases.invalidateSnapshot(ctx,lease.leaseId);
     const raw = await provider.getAppState(ctx, lease);
+    ctx?.signal?.throwIfAborted();
     return this._leases.recordSnapshot(ctx, lease.leaseId, {
       ...raw,
       leaseId: lease.leaseId,
@@ -189,7 +223,10 @@ export class ComputerHost {
     });
   }
 
-  async performAction(ctx, leaseId, action) {
+  performAction(ctx, leaseId, action) {
+    return this._exclusive(ctx,()=>this._performAction(ctx,leaseId,action),action?.type==='drag'&&action?.foreground===true);
+  }
+  async _performAction(ctx, leaseId, action) {
     this._assertRuntimeAllowed(ctx);
     assertComputerUseModelSupported(ctx.model);
     const lease = this._resolveActiveLease(ctx, leaseId);
@@ -218,8 +255,11 @@ export class ComputerHost {
           { leaseId: lease.leaseId, snapshotId, elementId: action.elementId },
         );
       }
+      if(snapshotElement.enabled===false)throw computerUseError(COMPUTER_USE_ERRORS.ACTION_BLOCKED_BY_POLICY,'The observed element is disabled.',{elementId:action.elementId});
       providerAction.snapshotElement = snapshotElement;
     }
+    this._leases.invalidateSnapshot(ctx,lease.leaseId);
+    ctx?.signal?.throwIfAborted();
     return await provider.performAction(ctx, lease, providerAction);
   }
 
@@ -247,8 +287,9 @@ export class ComputerHost {
       : this._leases.getActiveLeaseFor?.(ctx);
     if (!lease) return false;
     const provider = this._providers.require(lease.providerId);
-    await provider.stop?.(ctx, lease);
-    return this._leases.releaseLease(ctx, lease.leaseId);
+    this._leases.releaseLease(ctx, lease.leaseId);
+    await this._exclusive({},()=>provider.stop?.(ctx, lease));
+    return true;
   }
 
   async dispose() {

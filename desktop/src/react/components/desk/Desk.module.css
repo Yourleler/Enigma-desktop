@@ -19,7 +19,7 @@
 .sectionTitle {
     padding: var(--space-4) var(--space-8) var(--space-4);
     flex: 0 0 auto;
-    font-family: "Songti SC", "Noto Serif CJK SC", serif;
+    font-family: var(--font-ui);
     justify-content: flex-start;
     padding-left: var(--space-16);
 }
@@ -623,10 +623,11 @@
 }
 
 .cwdDescText {
-    font-size: 0.6rem;
+    font-size: var(--fs-caption);
     color: var(--text-muted);
-    opacity: 0.6;
-    white-space: nowrap;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+    white-space: normal;
 }
 
 .cwdPanelWrap.closing .cwdPanel {
@@ -641,15 +642,15 @@
 }
 
 .cwdHint {
-    font-size: 0.62rem;
+    font-size: var(--fs-caption);
     color: var(--text-muted);
-    opacity: 0.5;
+    opacity: 1;
     text-align: center;
     padding-bottom: 0.2rem;
 }
 
 .cwdGroupLabel {
-    font-size: 0.62rem;
+    font-size: var(--fs-caption);
     color: var(--text-muted);
     font-weight: 600;
     padding: 0.25rem 0 0.1rem;
@@ -672,14 +673,15 @@
 .cwdSkillName {
     font-size: var(--fs-hint);
     color: var(--text);
+    overflow-wrap: anywhere;
 }
 
 .cwdSkillDesc {
-    font-size: 0.6rem;
+    font-size: var(--fs-caption);
     color: var(--text-muted);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    white-space: normal;
 }
 
 /* 子目录导航 */
@@ -814,8 +816,9 @@
 
 .editorInput {
     flex: 1;
+    min-height: 50px;
     width: 100%;
-    padding: var(--space-8) var(--space-16);
+    padding: var(--space-8) var(--space-12);
     font-size: var(--fs-hint);
     line-height: 1.55;
     color: var(--text);
@@ -829,5 +832,9 @@
 
 .editorInput::placeholder {
     color: var(--text-muted);
-    opacity: 0.5;
+    opacity: 1;
 }
+
+/* Inline workspace details participate in layout instead of covering files. */
+.cwdPanelInline { flex: 0 0 auto; z-index: auto; margin-bottom: 8px; }
+.cwdPanelInline .cwdPanel { position: relative; min-height: 0; max-height: min(200px, 28vh); box-shadow: none; }

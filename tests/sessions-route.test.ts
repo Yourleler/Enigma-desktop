@@ -2924,6 +2924,7 @@ describe("sessions route", () => {
       { id: "entry-visible-assistant", role: "assistant", content: "first reply" },
       {
         id: "entry-hidden-input",
+        timestamp: "2026-05-07T05:42:00.000Z",
         role: "custom",
         customType: "hana-background-result",
         content: hiddenInput,
@@ -2950,6 +2951,7 @@ describe("sessions route", () => {
     });
     expect(data.messages.find((message) => message.entryId === "entry-background-assistant")).toMatchObject({
       turnInputEntryId: "entry-hidden-input",
+      turnStartedAt: "2026-05-07T05:42:00.000Z",
       turnInputVisible: false,
     });
     expect(data.messages.find((message) => message.entryId === "entry-background-work")).toMatchObject({
@@ -3039,6 +3041,17 @@ describe("sessions route", () => {
       content: "",
       thinking: "",
     }]);
+  });
+
+  it("keeps compatible Responses text that was visible while streaming when history is reopened", async () => {
+    const {createSessionsRoute}=await import('../server/routes/sessions.ts');
+    const msgUtils=await import('../core/message-utils.ts');const app=new Hono();
+    vi.mocked(msgUtils.loadSessionHistoryMessages).mockResolvedValueOnce([{role:'assistant',provider:'gateway',api:'openai-responses',content:[{type:'text',text:'Persisted answer',textSignature:JSON.stringify({phase:'commentary'})}]}]);
+    vi.mocked(msgUtils.extractTextContent).mockReturnValueOnce({text:'Persisted answer',images:[],thinking:'',toolUses:[]});
+    const engine={agentsDir:'/tmp/agents',deferredResults:null};app.route('/api',createSessionsRoute(engine));
+    const response=await app.request('/api/sessions/messages');const body=await response.json();
+    expect(body.messages).toHaveLength(1);expect(body.messages[0].content).toBe('Persisted answer');
+    expect(msgUtils.extractTextContent).toHaveBeenLastCalledWith(expect.any(Array),{stripThink:true,includeCommentary:true});
   });
 
   it("does not return OpenAI commentary-only history messages as visible text", async () => {

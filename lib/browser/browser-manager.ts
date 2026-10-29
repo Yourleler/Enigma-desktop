@@ -23,6 +23,7 @@
  * 给交互元素注入 data-hana-ref 属性。
  */
 import crypto from "crypto";
+import { AsyncLocalStorage } from 'node:async_hooks';
 import os from "os";
 import path from "path";
 import fs from "fs";
@@ -153,6 +154,7 @@ export class BrowserManager {
   declare _headless: any;
   declare _lruOrder: any;
   declare _pending: any;
+  _operationContext = new AsyncLocalStorage<{signal?: AbortSignal}>();
   declare _browserPreferences: any;
   declare _getSessionIdForPath: any;
   declare _sessions: any;
@@ -714,6 +716,8 @@ export class BrowserManager {
         });
       } else {
         transport.detach();
+        for(const pending of this._pending.values())pending.reject(new Error('Browser transport disconnected'));
+        this._pending.clear();
       }
     }
   }
@@ -863,20 +867,40 @@ export class BrowserManager {
    * @returns {Promise<any>}
    */
   _sendCmd(cmd, params: any = {}, timeoutMs = 30000): Promise<any> {
+    if(params.sessionPath)params={...params,sessionId:this._sessionKeyForPath(params.sessionPath)};
+    const signal = this._operationContext.getStore()?.signal;
+    signal?.throwIfAborted();
     if (!this._transport.connected) {
       throw new Error(t("error.browserDesktopOnly"));
     }
     return new Promise((resolve, reject) => {
       const id = crypto.randomUUID();
+      const cleanup = () => { clearTimeout(timer); signal?.removeEventListener('abort', abort); };
+      const cancelHost = () => { try { this._transport.send({type:'browser-cancel',id}); } catch {} };
+      const abort = () => {
+        this._pending.delete(id); cleanup(); cancelHost();
+        reject(signal.reason || new Error('Browser operation cancelled'));
+      };
       const timer = setTimeout(() => {
         if (this._pending.has(id)) {
           this._pending.delete(id);
+          cleanup(); cancelHost();
           reject(new Error(t("error.browserCmdTimeout", { cmd })));
         }
       }, timeoutMs);
-      this._pending.set(id, { resolve, reject, timer });
-      this._transport.send({ type: "browser-cmd", id, cmd, params });
+      this._pending.set(id, {
+        resolve: value => { cleanup(); resolve(value); },
+        reject: error => { cleanup(); reject(error); }, timer,
+      });
+      signal?.addEventListener('abort', abort, {once:true});
+      try { this._transport.send({ type: "browser-cmd", id, cmd, params }); }
+      catch (error) { this._pending.delete(id); cleanup(); reject(error); }
     });
+  }
+
+  runWithSignal<T>(signal: AbortSignal | undefined, operation: () => Promise<T>): Promise<T> {
+    signal?.throwIfAborted?.();
+    return this._operationContext.run({signal}, operation);
   }
 
   // ════════════════════════════
@@ -956,7 +980,10 @@ export class BrowserManager {
 
     this._saveColdWorkspace(sessionPath, entry);
     log.log(`挂起浏览器 ${sessionPath}`);
-    try { await this._sendCmd("suspend", { sessionPath, keepViewerVisible }); } catch {}
+    try {
+      const result = await this._sendCmd("suspend", { sessionPath, keepViewerVisible });
+      if (result?.keptVisible) { this._touchUserActivity(sessionPath); return; }
+    } catch {}
 
     // 挂起完成，冷状态已写磁盘，从 Map 中移除避免僵尸条目累积
     this._deleteSessionEntry(sessionPath);
@@ -1154,6 +1181,34 @@ export class BrowserManager {
     return tab ? cloneBrowserTab(tab) : null;
   }
 
+  async refreshTabs(sessionPath) {
+    if(!this.isRunning(sessionPath))return this.getTabs(sessionPath);
+    const result = await this._sendSessionCmd('listTabs', {sessionPath});
+    if (Array.isArray(result?.tabs) && result.tabs.length === 0) {
+      this._setSessionEntry(sessionPath, {...this._getSessionEntry(sessionPath), running:result.running === true, tabs:[],activeTabId:null,url:null});
+    } else this._applyWorkspaceResult(sessionPath,result);
+    return this.getTabs(sessionPath);
+  }
+
+  async history(action: 'back' | 'forward' | 'reload', sessionPath, tabId) {
+    const result = await this._sendSessionCmd(action, {sessionPath,tabId});
+    this._updateActiveTabFromResult(sessionPath,result,tabId);
+    this._saveColdWorkspace(sessionPath,this._getSessionEntry(sessionPath));
+    return result.text;
+  }
+  async frames(sessionPath, tabId) {
+    return (await this._sendSessionCmd('frames',{sessionPath,tabId})).frames;
+  }
+  async dialog(sessionPath, params) {
+    return this._sendSessionCmd(params.action==='handle_dialog'?'handleDialog':'dialog',{...params,sessionPath});
+  }
+  async drag(sessionPath, params) {
+    return (await this._sendSessionCmd('drag',{...params,sessionPath})).text;
+  }
+  async frameAction(sessionPath, params) {
+    return (await this._sendSessionCmd('frameAction',{...params,sessionPath})).text;
+  }
+
   async newTab(sessionPath, url = undefined) {
     if (!this.isRunning(sessionPath)) await this.launch(sessionPath);
     const params: any = { sessionPath, url };
@@ -1210,8 +1265,14 @@ export class BrowserManager {
    * @returns {Promise<{ url: string, title: string, snapshot: string }>}
    */
   async navigate(url, sessionPath, options: any = {}) {
+    if(!this.isRunning(sessionPath)) {
+      const ready=this.resumeReadinessForSession(sessionPath);
+      if(ready.canResume)await this.resumeForSessionIfAvailable(sessionPath);
+      else await this.launch(sessionPath);
+    }
     let tabId = typeof options.tabId === "string" && options.tabId ? options.tabId : null;
-    if (!tabId && this._browserPreferences.agentOpenBehavior === "new_tab" && this.isRunning(sessionPath)) {
+    const activeUrl=this.currentUrl(sessionPath);
+    if (!tabId && this._browserPreferences.agentOpenBehavior === "new_tab" && activeUrl && activeUrl !== 'about:blank') {
       const tab = await this.newTab(sessionPath);
       tabId = tab?.tabId || null;
     }
@@ -1299,12 +1360,40 @@ export class BrowserManager {
    * @param {string} sessionPath
    * @returns {Promise<string>} 新的 snapshot
    */
-  async click(ref, sessionPath, tabId = null) {
-    const params: any = { ref, sessionPath };
+  async click(ref, sessionPath, tabId = null, snapshotId = null) {
+    const params: any = { ref, sessionPath, snapshotId };
     if (tabId) params.tabId = tabId;
     const result = await this._sendSessionCmd("click", params);
     this._updateActiveTabFromResult(sessionPath, result, tabId);
     return result.text;
+  }
+
+  async pointerAction(action: 'hover' | 'double_click' | 'right_click', ref, sessionPath, tabId, snapshotId) {
+    const result=await this._sendSessionCmd(action,{ref,sessionPath,tabId,snapshotId});
+    this._updateActiveTabFromResult(sessionPath,result,tabId);return result.text;
+  }
+
+  async upload(files, ref, sessionPath, tabId, snapshotId) {
+    const result=await this._sendSessionCmd('upload',{files,ref,sessionPath,tabId,snapshotId});
+    this._updateActiveTabFromResult(sessionPath,result,tabId);return result.text;
+  }
+
+  async downloads(sessionPath,tabId=null) {
+    return (await this._sendSessionCmd('downloads',{sessionPath,tabId})).downloads || [];
+  }
+
+  downloadScope(sessionPath) { return this._sessionKeyForPath(sessionPath); }
+
+  async download(url,sessionPath,tabId,timeout=10000) {
+    return (await this._sendSessionCmd('download',{url,sessionPath,tabId,timeout},Math.max(15000,timeout+5000))).download;
+  }
+
+  async waitDownload(downloadId,sessionPath,timeout=10000) {
+    return (await this._sendSessionCmd('waitDownload',{downloadId,sessionPath,timeout},Math.max(15000,timeout+2000))).download;
+  }
+
+  async cancelDownload(downloadId,sessionPath) {
+    return this._sendSessionCmd('cancelDownload',{downloadId,sessionPath});
   }
 
   /**
@@ -1314,8 +1403,8 @@ export class BrowserManager {
    * @param {string} sessionPath
    * @returns {Promise<string>} 新的 snapshot
    */
-  async type(text, ref, { pressEnter = false } = {}, sessionPath, tabId = null) {
-    const params: any = { text, ref, pressEnter, sessionPath };
+  async type(text, ref, { pressEnter = false, snapshotId = null, mode = 'replace' } = {}, sessionPath, tabId = null) {
+    const params: any = { text, ref, pressEnter, sessionPath, snapshotId, mode };
     if (tabId) params.tabId = tabId;
     const result = await this._sendSessionCmd("type", params);
     this._updateActiveTabFromResult(sessionPath, result, tabId);
@@ -1342,8 +1431,8 @@ export class BrowserManager {
    * @param {string} sessionPath
    * @returns {Promise<string>} 新的 snapshot
    */
-  async select(ref, value, sessionPath, tabId = null) {
-    const params: any = { ref, value, sessionPath };
+  async select(ref, value, sessionPath, tabId = null, snapshotId = null) {
+    const params: any = { ref, value, sessionPath, snapshotId };
     if (tabId) params.tabId = tabId;
     const result = await this._sendSessionCmd("select", params);
     this._updateActiveTabFromResult(sessionPath, result, tabId);
@@ -1355,8 +1444,8 @@ export class BrowserManager {
    * @param {string} sessionPath
    * @returns {Promise<string>} 新的 snapshot
    */
-  async pressKey(key, sessionPath, tabId = null) {
-    const params: any = { key, sessionPath };
+  async pressKey(key, sessionPath, tabId = null, snapshotId = null) {
+    const params: any = { key, sessionPath, snapshotId };
     if (tabId) params.tabId = tabId;
     const result = await this._sendSessionCmd("pressKey", params);
     this._updateActiveTabFromResult(sessionPath, result, tabId);
@@ -1377,7 +1466,7 @@ export class BrowserManager {
     if (tabId) params.tabId = tabId;
     const result = await this._sendSessionCmd("wait", params);
     this._updateActiveTabFromResult(sessionPath, result, tabId);
-    return result.text;
+    return result.diagnostics?.wait?.timedOut ? `${result.text}\n\nWait timed out before the requested condition was observed. Completion is not confirmed.` : result.text;
   }
 
   /**

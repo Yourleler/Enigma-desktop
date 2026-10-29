@@ -1243,6 +1243,11 @@ function mockPermissionDefault(mode = 'ask') {
   });
 
   describe('loadMessages 竞态护栏', () => {
+    it('a late history response cannot populate a different server connection',async()=>{
+      let finish!:(r:Response)=>void;mockFetch.mockImplementationOnce(()=>new Promise(r=>{finish=r;}));mockState.activeServerConnectionId='original';
+      const pending=loadMessages('/same-path');mockState.activeServerConnectionId='new-server';finish(jsonResponse({messages:[{text:'old-server-content'}],blocks:[],todos:[],sessionFiles:[]}));await pending;
+      expect(JSON.stringify(mockState.chatSessions)).not.toContain('old-server-content');expect(JSON.stringify(mockState.sessionRegistryFilesByPath)).not.toContain('same-path');
+    });
     it('stale 响应不覆盖新状态：v1 fetch 在飞，v2 bump 后到达时丢弃 v1', async () => {
       // 两次 fetch：第一次慢，第二次快。第一次返回的 messages 必须被丢弃。
       let resolveFirst!: (r: Response) => void;

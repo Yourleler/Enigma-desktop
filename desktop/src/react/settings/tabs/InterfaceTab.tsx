@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSettingsStore } from '../store';
 import { hanaFetch } from '../api';
-import { t, VALID_THEMES, autoSaveConfig } from '../helpers';
+import { t, autoSaveConfig } from '../helpers';
 import { SelectWidget, Toggle } from '@/ui';
 import { SettingsGrid } from '../components/SettingsPrimitives';
 import { SettingsSection } from '../components/SettingsSection';
@@ -23,10 +23,6 @@ import {
   type EditorMarkdownContentWidth,
   type EditorMarkdownTypography,
 } from '../../editor/typography';
-import {
-  isPaperTextureBlockedTheme,
-  isPaperTextureEnabled,
-} from '../../../shared/appearance-preferences';
 import { persistAppearancePreferences } from '../../services/appearance-sync';
 import {
   FOLLOW_READING_FONT_ID,
@@ -43,19 +39,25 @@ import {
 } from '../../../../../shared/sidebar-ui-state.ts';
 import styles from '../Settings.module.css';
 import registry from '../../../shared/theme-registry';
+import {useMaterialPreferences} from '../../ui/material-preferences';
+import { GlassClarityControl } from '../../ui/GlassClarityControl';
+import { BackgroundPicker } from '../../ui/BackgroundPicker';
+import { GlassSelection } from '../../ui/GlassSelection';
 
 const platform = window.platform;
 const i18n = window.i18n;
 
-const THEME_NAME_KEYS: Record<string, string> = Object.fromEntries([
-  ...Object.entries(registry.THEMES).map(([id, t]: [string, any]) => [id, t.i18nName]),
-  [registry.AUTO_OPTION.id, registry.AUTO_OPTION.i18nName],
-]);
-
-const THEME_MODE_KEYS: Record<string, string> = Object.fromEntries([
-  ...Object.entries(registry.THEMES).map(([id, t]: [string, any]) => [id, t.i18nMode]),
-  [registry.AUTO_OPTION.id, registry.AUTO_OPTION.i18nMode],
-]);
+const DESIGN_THEMES = [
+  { id: registry.AUTO_LIGHT_DEFAULT, label: '浅色', tone: 'light', description: '白色底色与淡紫通透材质' },
+  { id: registry.AUTO_DARK_DEFAULT, label: '深色', tone: 'dark', description: '黑色底色与通透材质' },
+  { id: 'auto', label: '跟随系统', tone: 'auto', description: '随系统外观自动切换' },
+];
+function designThemeSelection(theme: string) {
+  if (theme === 'auto') return theme;
+  const color = registry.THEMES[theme as keyof typeof registry.THEMES]?.backgroundColor || '#ffffff';
+  const rgb = [1, 3, 5].map(start => parseInt(color.slice(start, start + 2), 16));
+  return rgb[0] * .2126 + rgb[1] * .7152 + rgb[2] * .0722 < 128 ? registry.AUTO_DARK_DEFAULT : registry.AUTO_LIGHT_DEFAULT;
+}
 
 const VOICE_RECORD_SHORTCUT_MAC = ['⌘', '⇧', 'M'];
 const VOICE_RECORD_SHORTCUT_DEFAULT = ['Ctrl', 'Shift', 'M'];
@@ -67,19 +69,12 @@ type ReadingContentWidth = EditorMarkdownContentWidth | ChatLayoutContentWidth;
 interface AppearancePrefs {
   currentTheme: string;
   serifEnabled: boolean;
-  paperTextureEnabled: boolean;
-  paperTextureBlocked: boolean;
-  leavesOverlayEnabled: boolean;
 }
 
 function readAppearancePrefs(): AppearancePrefs {
-  const concreteTheme = document.documentElement.getAttribute('data-theme');
   return {
     currentTheme: registry.migrateSavedTheme(localStorage.getItem(registry.STORAGE_KEY)),
     serifEnabled: localStorage.getItem('hana-font-serif') !== '0',
-    paperTextureEnabled: isPaperTextureEnabled(localStorage),
-    paperTextureBlocked: isPaperTextureBlockedTheme(concreteTheme),
-    leavesOverlayEnabled: localStorage.getItem('hana-leaves-overlay') === '1',
   };
 }
 
@@ -113,6 +108,7 @@ function formatBodyFontSizeOffset(offset: number): string {
 }
 
 export function InterfaceTab() {
+  const [material,setMaterial]=useMaterialPreferences();
   const settingsConfig = useSettingsStore(s => s.settingsConfig);
   const platformName = useSettingsStore(s => s.platformName);
   const showToast = useSettingsStore(s => s.showToast);
@@ -129,9 +125,6 @@ export function InterfaceTab() {
   const {
     currentTheme,
     serifEnabled,
-    paperTextureEnabled,
-    paperTextureBlocked,
-    leavesOverlayEnabled,
   } = appearancePrefs;
   const readingFontPresetId = fontPresetIdFromSerif(serifEnabled);
   const editorTypography = useMemo(
@@ -302,12 +295,15 @@ export function InterfaceTab() {
   return (
     <div className={`${styles['settings-tab-content']} ${styles['active']}`} data-tab="interface">
       <SettingsSection title={t('settings.appearance.theme')} surface="plain">
-        <SettingsGrid columns={3} className={styles['theme-options']}>
-          {VALID_THEMES.map(theme => (
+        <SettingsGrid columns={3} className={styles['theme-options']} data-glass-segmented="">
+          <GlassSelection selection={designThemeSelection(currentTheme)}/>
+          {DESIGN_THEMES.map(({id: theme, label, tone, description}) => (
             <button
               key={theme}
-              className={`${styles['theme-card']}${currentTheme === theme ? ' ' + styles['active'] : ''}`}
-              data-theme={theme}
+              className={`${styles['theme-card']}${designThemeSelection(currentTheme) === theme ? ' ' + styles['active'] : ''}`}
+              data-theme-choice={theme}
+              data-design-theme={tone}
+              aria-pressed={designThemeSelection(currentTheme) === theme}
               onClick={() => {
                 window.setTheme?.(theme);
                 platform?.settingsChanged?.('theme-changed', { theme });
@@ -315,11 +311,20 @@ export function InterfaceTab() {
                 refreshAppearancePrefs();
               }}
             >
-              <div className={styles['theme-card-name']}>{t(THEME_NAME_KEYS[theme])}</div>
-              <div className={styles['theme-card-mode']}>{t(THEME_MODE_KEYS[theme])}</div>
+              <span className={styles['design-theme-preview']} aria-hidden="true"><i/><b/><b/></span>
+              <div className={styles['theme-card-name']}>{label}</div>
+              <div className={styles['theme-card-mode']}>{description}</div>
             </button>
           ))}
         </SettingsGrid>
+      </SettingsSection>
+      <SettingsSection title="背景" description="深浅模式分别记住选择；切换背景不改变玻璃效果。" surface="plain">
+        <BackgroundPicker/>
+      </SettingsSection>
+      <SettingsSection title="玻璃与动效">
+        <SettingsRow label="液态玻璃" hint="让背景透过输入框和导航，显示折射边缘与反光。" control={<Toggle ariaLabel="液态玻璃" on={material.glass} onChange={glass=>setMaterial({...material,glass})}/>}/>
+        <SettingsRow label="界面动效" hint="背景流动、面板过渡与指针反光；关闭后保持静态显示。" control={<Toggle ariaLabel="界面动效" on={material.motion} onChange={motion=>setMaterial({...material,motion})}/>}/>
+        <GlassClarityControl/>
       </SettingsSection>
 
       <SettingsSection
@@ -327,7 +332,8 @@ export function InterfaceTab() {
         description={t('settings.appearance.fontHint')}
         surface="plain"
       >
-        <SettingsGrid columns={2} className={styles['font-options']} aria-label={t('settings.appearance.font')}>
+        <SettingsGrid columns={2} className={styles['font-options']} aria-label={t('settings.appearance.font')} data-glass-segmented="">
+          <GlassSelection selection={readingFontPresetId}/>
           {READING_FONT_PRESETS.map(preset => (
             <button
               key={preset.id}
@@ -381,45 +387,6 @@ export function InterfaceTab() {
             }
           />
         </SettingsSection.Card>
-      </SettingsSection>
-
-      <SettingsSection title={t('settings.appearance.title')}>
-        <SettingsRow
-          label={t('settings.appearance.paperTexture')}
-          hint={paperTextureBlocked
-            ? t('settings.appearance.paperTextureDarkDisabledHint')
-            : t('settings.appearance.paperTextureHint')}
-          control={
-            <Toggle
-              on={paperTextureBlocked ? false : paperTextureEnabled}
-              disabled={paperTextureBlocked}
-              onChange={(next) => {
-                window.setPaperTexture?.(next);
-                platform?.settingsChanged?.('paper-texture-changed', { enabled: next });
-                syncAppearancePrefs({ paperTexture: next });
-                refreshAppearancePrefs();
-              }}
-            />
-          }
-        />
-        <SettingsRow
-          label={t('settings.appearance.leavesOverlay')}
-          hint={t('settings.appearance.leavesOverlayHint')}
-          control={
-            <Toggle
-              on={leavesOverlayEnabled}
-              onChange={(next) => {
-                localStorage.setItem('hana-leaves-overlay', next ? '1' : '0');
-                window.dispatchEvent(new CustomEvent('hana-settings', {
-                  detail: { type: 'leaves-overlay-changed', enabled: next },
-                }));
-                platform?.settingsChanged?.('leaves-overlay-changed', { enabled: next });
-                syncAppearancePrefs({ leavesOverlay: next });
-                refreshAppearancePrefs();
-              }}
-            />
-          }
-        />
       </SettingsSection>
 
       <SettingsSection title={t('settings.interface.system')}>

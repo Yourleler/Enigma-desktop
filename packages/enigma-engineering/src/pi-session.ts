@@ -8,12 +8,36 @@ import type { HandoffInspection, ContextNote } from './handoff.js';
 
 type ReadonlySessionManager = ExtensionContext['sessionManager'];
 
+function presentationText(entry:any,entries:Pick<Map<string,any>,'get'>,raw:string):string {
+  let parent=entry.parentId;
+  for(let depth=0;parent&&depth<16;depth++){
+    const current=entries.get(parent);if(!current)break;
+    if(current.type==='message'&&current.message?.role!=='system'||current.type==='custom_message')break;
+    if(current.type==='custom'&&current.customType==='hana-message-presentation'){
+      const text=current.data?.displayText;
+      if(typeof text!=='string'||!text.trim()||!raw.endsWith(text))break;
+      let prefix=raw.slice(0,raw.length-text.length).trim();
+      // Strip only a complete envelope preceding the exact recorded input.
+      // Never filter words from the user's own displayText by tag matching.
+      while(prefix){
+        const start=/^\[hana_(reminder(?: at \d{4}-\d{2}-\d{2} \d{2}:\d{2})?|reference)\]\r?\n/.exec(prefix);if(!start)return raw;
+        const end=start[1]!.startsWith('reminder')?'[/hana_reminder]':'[/hana_reference]';
+        const index=prefix.indexOf('\n'+end,start[0].length-1);if(index<0)return raw;
+        prefix=prefix.slice(index+1+end.length).trim();
+      }
+      return text;
+    }
+    parent=current.parentId;
+  }
+  return raw;
+}
+
 export function collectUserNotes(manager: ReadonlySessionManager): Map<string, UserNote> {
-  const notes = new Map<string, UserNote>();
-  for (const entry of manager.getEntries()) if (entry.type === 'message' && entry.message.role === 'user') {
+  const notes = new Map<string, UserNote>(),entries=manager.getEntries(),byId=new Map(entries.map(entry=>[entry.id,entry]));
+  for (const entry of entries) if (entry.type === 'message' && entry.message.role === 'user') {
     const content = entry.message.content;
     const text = typeof content === 'string' ? content : content.filter(part => part.type === 'text').map(part => part.text).join('\n');
-    notes.set(entry.id, { id: entry.id, text });
+    notes.set(entry.id, { id: entry.id, text:presentationText(entry,byId,text) });
   }
   return notes;
 }
@@ -50,7 +74,8 @@ export function selectedPiNotes(manager: ReadonlySessionManager, selected: { id:
     if (!entry) throw new Error(`Selected source entry unavailable: ${id}`);
     if (entry.type === 'message' && (entry.message.role === 'user' || entry.message.role === 'assistant')) {
       const content = entry.message.content;
-      const text = typeof content === 'string' ? content : content.filter(part => part.type === 'text').map(part => part.text).join('\n');
+      const raw = typeof content === 'string' ? content : content.filter(part => part.type === 'text').map(part => part.text).join('\n');
+      const text=entry.message.role==='user'?presentationText(entry,{get:id=>manager.getEntry(id)},raw):raw;
       return { role: entry.message.role, kind: kind ?? 'background', text, reference: `pi:${manager.getSessionId()}:${id}` };
     }
     if (entry.type === 'custom_message') {

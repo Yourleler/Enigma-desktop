@@ -1,3 +1,4 @@
+import { EnigmaDesign } from './react/ui/EnigmaDesign';
 /**
  * viewer-window-entry.tsx — 派生 Viewer 窗口的 React 入口
  *
@@ -193,5 +194,5 @@ export function ViewerApp() {
 // Mount
 const rootEl = document.getElementById('react-root');
 if (rootEl) {
-  createRoot(rootEl).render(<ViewerApp />);
+  createRoot(rootEl).render(<><EnigmaDesign /><ViewerApp /></>);
 }

@@ -5,6 +5,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render } from '@testing-library/react';
 import { useSidebarResize } from '../../hooks/use-sidebar-resize';
+import { useStore } from '../../stores';
+import { CHAT_MIN_WIDTH } from '../../layout-constants';
 
 function Harness() {
   useSidebarResize();
@@ -49,6 +51,20 @@ function installResizeDom() {
 }
 
 describe('useSidebarResize', () => {
+  it('keeps chat space after native window shrinking and restores the preferred panel width',()=>{
+    installResizeDom();
+    useStore.setState({previewOpen:true,sidebarOpen:false,jianOpen:false,currentTab:'chat'});
+    document.documentElement.style.setProperty('--preview-panel-width','580px');
+    Object.defineProperty(window,'innerWidth',{configurable:true,value:1200});
+    const {unmount}=render(<Harness/>);
+    Object.defineProperty(window,'innerWidth',{configurable:true,value:740});
+    fireEvent(window,new Event('resize'));
+    expect(Number.parseInt(document.documentElement.style.getPropertyValue('--preview-panel-width'))).toBeLessThanOrEqual(740-CHAT_MIN_WIDTH);
+    Object.defineProperty(window,'innerWidth',{configurable:true,value:1200});
+    fireEvent(window,new Event('resize'));
+    expect(document.documentElement.style.getPropertyValue('--preview-panel-width')).toBe('580px');
+    unmount();useStore.setState({previewOpen:false});
+  });
   beforeEach(() => {
     installResizeDom();
   });

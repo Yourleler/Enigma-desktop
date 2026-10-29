@@ -59,7 +59,7 @@ function ReleaseDigestEntry({ digest }: { digest: ReleaseDigest | null | undefin
         className={styles.digestDialog}
         zIndex={1400}
       >
-        <section role="dialog" aria-modal="true" aria-labelledby={titleId} className={styles.digestPanel}>
+        <section role="dialog" aria-modal="true" aria-labelledby={titleId} className={styles.digestPanel} data-glass-frame="sheet">
           <div className={styles.digestHeader}>
             <div>
               <div className={styles.digestEyebrow}>{digest.tag}</div>

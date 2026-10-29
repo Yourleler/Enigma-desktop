@@ -268,6 +268,42 @@
       "exemption": null
     },
     {
+      "id": "browser-downloads",
+      "ownerModule": "shared/browser-downloads.cjs",
+      "pathPattern": "cache/browser-downloads/{sessionHash}/",
+      "pathPatterns": [
+        "cache/browser-downloads/{sessionHash}/"
+      ],
+      "pathExclusions": [],
+      "pathKind": "tree",
+      "format": "mixed-directory",
+      "schemaSource": {
+        "kind": "directory-contract",
+        "module": "shared/browser-downloads.cjs",
+        "contract": "Managed download files plus an atomic array index; UUID filenames, owning session hash, completed/interrupted/cancelled/missing states"
+      },
+      "schemaContract": {
+        "kind": "protocol",
+        "source": "shared/browser-downloads.cjs",
+        "compatibility": "New additive managed-download directory. Existing browser cold-state schema and files remain unchanged."
+      },
+      "openEntry": [
+        "BrowserDownloads constructor"
+      ],
+      "migrationEntry": [],
+      "protocolModules": [],
+      "firstPossibleOpenPhase": "engine_construct",
+      "firstPossibleWritePhase": "runtime_ready",
+      "epochPolicy": "compatible",
+      "checkpointPolicy": "Retain completed downloads as user-visible artifacts; do not checkpoint an in-progress transfer as completed.",
+      "restorePolicy": "Reconcile the index with existing files; interrupted transfers never become completed by restoring metadata alone.",
+      "affectedByEpochMigration": false,
+      "bootstrapSafety": null,
+      "preCoordinatorReadProjection": null,
+      "identityContract": "Each profile/session hash has its own transfer ledger; UUID and validated filename determine the only allowed path.",
+      "exemption": null
+    },
+    {
       "id": "channels",
       "ownerModule": "lib/channels/channel-store.ts",
       "pathPattern": "channels/{channelId}.yaml",
@@ -1047,7 +1083,7 @@
       "schemaContract": {
         "kind": "runtime-source",
         "source": "plugins/enigma/host.ts",
-        "compatibility": "An additive plugin-owned file; existing Hana stores and DATA_EPOCH remain unchanged."
+        "compatibility": "An additive plugin-owned file; existing Hana stores and DATA_EPOCH remain unchanged. Material search returns query/count metadata over HTTP without changing these schema 1 bindings or their restore semantics."
       },
       "openEntry": [
         "EngineeringHost.load",
@@ -1403,6 +1439,43 @@
       "bootstrapSafety": null,
       "preCoordinatorReadProjection": null,
       "identityContract": "core/mcp owns plugin-data/mcp exclusively.",
+      "exemption": null
+    },
+    {
+      "id": "model-capability-observations",
+      "ownerModule": "core/model-capability-observations.ts",
+      "pathPattern": "model-capability-observations.json",
+      "pathPatterns": [
+        "model-capability-observations.json"
+      ],
+      "pathExclusions": [],
+      "pathKind": "file",
+      "format": "json",
+      "schemaSource": {
+        "kind": "runtime-contract",
+        "module": "core/model-capability-observations.ts",
+        "contract": "Array of verified image-readback records keyed by provider/model and endpoint/declaration signature; observations expire after 30 days"
+      },
+      "schemaContract": {
+        "kind": "runtime-source",
+        "source": "core/model-capability-observations.ts",
+        "compatibility": "New optional file. Missing, expired, or unmatched records leave model declarations unchanged. No existing model configuration is migrated."
+      },
+      "openEntry": [
+        "ModelCapabilityObservations.apply",
+        "ModelCapabilityObservations.recordImageSupport"
+      ],
+      "migrationEntry": [],
+      "protocolModules": [],
+      "firstPossibleOpenPhase": "engine_construct",
+      "firstPossibleWritePhase": "runtime_ready",
+      "epochPolicy": "compatible",
+      "checkpointPolicy": "Optional capability cache; never contains credentials or input images.",
+      "restorePolicy": "Drop incompatible observations; original provider declarations remain authoritative until a new probe succeeds.",
+      "affectedByEpochMigration": false,
+      "bootstrapSafety": null,
+      "preCoordinatorReadProjection": null,
+      "identityContract": "Profile-local provider/model signature with proof image digest and observation time.",
       "exemption": null
     },
     {
@@ -2462,7 +2535,9 @@
         "core/preferences-manager.ts unreadable-source preservation",
         "core/migrations.ts runMigrations"
       ],
-      "protocolModules": [],
+      "protocolModules": [
+        "shared/workspace-ui-state.ts"
+      ],
       "firstPossibleOpenPhase": "desktop_bootstrap",
       "firstPossibleWritePhase": "first_run_seed",
       "epochPolicy": "epoch-managed",
@@ -3268,6 +3343,15 @@
     {
       "sourceFile": "core/first-run.ts",
       "kind": "copy-file",
+      "excerpt": "fs.copyFileSync(configPath,backup)",
+      "reason": "First-run seeds several registered stores from packaged templates. Flow-sensitive attribution moves into the future coordinator; this exact composition file is not ignored by directory.",
+      "storeId": null,
+      "exemptionId": "cross-store-first-run-bootstrap",
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "core/first-run.ts",
+      "kind": "copy-file",
       "excerpt": "fs.copyFileSync(configSrc, cfgDest)",
       "reason": "First-run seeds several registered stores from packaged templates. Flow-sensitive attribution moves into the future coordinator; this exact composition file is not ignored by directory.",
       "storeId": null,
@@ -3366,6 +3450,15 @@
     },
     {
       "sourceFile": "core/first-run.ts",
+      "kind": "mkdir",
+      "excerpt": "fs.mkdirSync(workspace,{recursive:true})",
+      "reason": "First-run seeds several registered stores from packaged templates. Flow-sensitive attribution moves into the future coordinator; this exact composition file is not ignored by directory.",
+      "storeId": null,
+      "exemptionId": "cross-store-first-run-bootstrap",
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "core/first-run.ts",
       "kind": "rename",
       "excerpt": "fs.renameSync(cfgPath, backupPath)",
       "reason": "First-run seeds several registered stores from packaged templates. Flow-sensitive attribution moves into the future coordinator; this exact composition file is not ignored by directory.",
@@ -3384,8 +3477,17 @@
     },
     {
       "sourceFile": "core/first-run.ts",
+      "kind": "secret-write",
+      "excerpt": "writeSecretFileSync(configPath,YAML.dump(raw,{lineWidth:-1}))",
+      "reason": "First-run seeds several registered stores from packaged templates. Flow-sensitive attribution moves into the future coordinator; this exact composition file is not ignored by directory.",
+      "storeId": null,
+      "exemptionId": "cross-store-first-run-bootstrap",
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "core/first-run.ts",
       "kind": "write-file",
-      "excerpt": "fs.writeFileSync( prefsPath, JSON.stringify({ primaryAgent: \"hanako\", }, null, 2) + \"\\n\", \"utf-8\", )",
+      "excerpt": "fs.writeFileSync( prefsPath, JSON.stringify({ primaryAgent: validAgentIds.has(defaultAgentId)?defaultAgentId:[...validAgentIds][0], }, null, 2) + \"\\n\", \"utf-8\", )",
       "reason": "First-run seeds several registered stores from packaged templates. Flow-sensitive attribution moves into the future coordinator; this exact composition file is not ignored by directory.",
       "storeId": null,
       "exemptionId": "cross-store-first-run-bootstrap",
@@ -4335,6 +4437,15 @@
       "storeId": null,
       "exemptionId": "cross-store-legacy-migrations",
       "ordinal": 3
+    },
+    {
+      "sourceFile": "core/model-capability-observations.ts",
+      "kind": "secret-write",
+      "excerpt": "writeSecretFileSync(this.file,JSON.stringify(next,null,2)+'\\n')",
+      "reason": "Writes a verified, bounded-age capability observation through the private file writer.",
+      "storeId": "model-capability-observations",
+      "exemptionId": null,
+      "ordinal": 0
     },
     {
       "sourceFile": "core/model-sync.ts",
@@ -6634,7 +6745,7 @@
     {
       "sourceFile": "lib/llm/usage-ledger.ts",
       "kind": "atomic-write",
-      "excerpt": "atomicWriteSync(storagePath, `${JSON.stringify({ version: STORAGE_VERSION, entries, }, null, 2)}\\n`)",
+      "excerpt": "atomicWriteSync(storagePath, `${JSON.stringify({ version: STORAGE_VERSION, maxEntries, entries, }, null, 2)}\\n`)",
       "reason": "Writes the usage ledger.",
       "storeId": "usage-ledger",
       "exemptionId": null,
@@ -8389,7 +8500,7 @@
     {
       "sourceFile": "plugins/enigma/conductor.ts",
       "kind": "atomic-write",
-      "excerpt": "writeJson(this.file,value)",
+      "excerpt": "writeJson(this.file, value)",
       "reason": "Writes only the manager ledger and its containing directory.",
       "storeId": "enigma-conductor-ledgers",
       "exemptionId": null,
@@ -8398,7 +8509,7 @@
     {
       "sourceFile": "plugins/enigma/conductor.ts",
       "kind": "mkdir",
-      "excerpt": "fs.mkdir(path.dirname(file),{recursive:true})",
+      "excerpt": "fs.mkdir(path.dirname(file), { recursive: true })",
       "reason": "Writes a bounded report under the explicit engineering workspace's approved runs result directory; Artifacts owns its immutable version. This external project content must not be traversed by Hana epoch rollback.",
       "storeId": null,
       "exemptionId": "external-enigma-conductor-reports",
@@ -8407,7 +8518,7 @@
     {
       "sourceFile": "plugins/enigma/conductor.ts",
       "kind": "mkdir",
-      "excerpt": "fs.mkdir(path.dirname(root),{recursive:true})",
+      "excerpt": "fs.mkdir(path.dirname(root), { recursive: true })",
       "reason": "Creates only the parent of a manager-owned worker workspace.",
       "storeId": "enigma-managed-workspace-roots",
       "exemptionId": null,
@@ -8416,7 +8527,7 @@
     {
       "sourceFile": "plugins/enigma/conductor.ts",
       "kind": "mkdir",
-      "excerpt": "fs.mkdir(path.dirname(this.file),{recursive:true})",
+      "excerpt": "fs.mkdir(path.dirname(this.file), { recursive: true })",
       "reason": "Writes only the manager ledger and its containing directory.",
       "storeId": "enigma-conductor-ledgers",
       "exemptionId": null,
@@ -8425,7 +8536,7 @@
     {
       "sourceFile": "plugins/enigma/conductor.ts",
       "kind": "write-file",
-      "excerpt": "fs.writeFile(file,redact(text,workspace.secrets),{mode:0o600})",
+      "excerpt": "fs.writeFile(file, redact(text, workspace.secrets), { mode: 0o600 })",
       "reason": "Writes a bounded report under the explicit engineering workspace's approved runs result directory; Artifacts owns its immutable version. This external project content must not be traversed by Hana epoch rollback.",
       "storeId": null,
       "exemptionId": "external-enigma-conductor-reports",
@@ -8434,7 +8545,7 @@
     {
       "sourceFile": "plugins/enigma/execution-policy.ts",
       "kind": "mkdir",
-      "excerpt": "fs.mkdir(directory,{recursive:true})",
+      "excerpt": "fs.mkdir(directory, { recursive: true })",
       "reason": "Writes only immutable, application-owned native execution profiles.",
       "storeId": "enigma-execution-policies",
       "exemptionId": null,
@@ -8443,7 +8554,7 @@
     {
       "sourceFile": "plugins/enigma/execution-policy.ts",
       "kind": "write-file",
-      "excerpt": "fs.writeFile(file,contents,{mode:0o600,flag:'wx'})",
+      "excerpt": "fs.writeFile(file, contents, { mode: 0o600, flag: \"wx\" })",
       "reason": "Writes only immutable, application-owned native execution profiles.",
       "storeId": "enigma-execution-policies",
       "exemptionId": null,
@@ -8452,7 +8563,7 @@
     {
       "sourceFile": "plugins/enigma/host.ts",
       "kind": "atomic-write",
-      "excerpt": "writeJson(path.join(fork.data, `session-${safeId(manager.getSessionId())}.json`), { ...previous, sessionFile: targetPath })",
+      "excerpt": "writeJson( path.join( workspace.data, `session-${safeId(target.getSessionId())}.json`, ), { schema: 1, mode: \"managed\", requirements, requirementEntries: requirementEntries.filter((id) => surviving.has(id), ), reviewEntries: requirements.ma",
       "reason": "Writes schema-1 engineering state in an explicit external workspace, outside HANA_HOME. Its repository checkpoint, user-requirement and cumulative-budget protocol is independently verified by Enigma; host epoch rollback must not traverse external repositories.",
       "storeId": null,
       "exemptionId": "external-enigma-session-state",
@@ -8461,7 +8572,7 @@
     {
       "sourceFile": "plugins/enigma/host.ts",
       "kind": "atomic-write",
-      "excerpt": "writeJson(path.join(workspace.data, `session-${safeId(target.getSessionId())}.json`), { schema: 1, mode: 'managed', requirements, requirementEntries: requirementEntries.filter(id => surviving.has(id)), reviewEntries: requirements.map((_text",
+      "excerpt": "writeJson( path.join(fork.data, `session-${safeId(manager.getSessionId())}.json`), { ...previous, sessionFile: targetPath }, )",
       "reason": "Writes schema-1 engineering state in an explicit external workspace, outside HANA_HOME. Its repository checkpoint, user-requirement and cumulative-budget protocol is independently verified by Enigma; host epoch rollback must not traverse external repositories.",
       "storeId": null,
       "exemptionId": "external-enigma-session-state",
@@ -8470,7 +8581,43 @@
     {
       "sourceFile": "plugins/enigma/host.ts",
       "kind": "atomic-write",
-      "excerpt": "writeJson(statePath, { schema: 1, requirements: [], requirementEntries: [], reviewEntries: [], evidence: [], requests: 0, corrections: 0, mode: 'managed', lastVerification: 'unverified', planFile: `active-plan-${safeId(nativeManager.getSess",
+      "excerpt": "writeJson(originPath,{...origin,piSession:session})",
+      "reason": "Writes schema-1 engineering state in an explicit external workspace, outside HANA_HOME. Its repository checkpoint, user-requirement and cumulative-budget protocol is independently verified by Enigma; host epoch rollback must not traverse external repositories.",
+      "storeId": null,
+      "exemptionId": "external-enigma-session-state",
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "plugins/enigma/host.ts",
+      "kind": "atomic-write",
+      "excerpt": "writeJson(path.join(workspace.data,'session-start.json'),{schema:1,...session})",
+      "reason": "Writes schema-1 engineering state in an explicit external workspace, outside HANA_HOME. Its repository checkpoint, user-requirement and cumulative-budget protocol is independently verified by Enigma; host epoch rollback must not traverse external repositories.",
+      "storeId": null,
+      "exemptionId": "external-enigma-session-state",
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "plugins/enigma/host.ts",
+      "kind": "atomic-write",
+      "excerpt": "writeJson(statePath, { schema: 1, requirements: [], requirementEntries: [], reviewEntries: [], evidence: [], requests: 0, corrections: 0, mode: \"managed\", lastVerification: \"unverified\", planFile: `active-plan-${safeId(nativeManager.getSess",
+      "reason": "Writes schema-1 engineering state in an explicit external workspace, outside HANA_HOME. Its repository checkpoint, user-requirement and cumulative-budget protocol is independently verified by Enigma; host epoch rollback must not traverse external repositories.",
+      "storeId": null,
+      "exemptionId": "external-enigma-session-state",
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "plugins/enigma/host.ts",
+      "kind": "atomic-write",
+      "excerpt": "writeJson(statePath,{...previous,requirements:[...new Set([...(previous.requirements||[]),...sourceNotes.map(note=>note.text)])]})",
+      "reason": "Writes schema-1 engineering state in an explicit external workspace, outside HANA_HOME. Its repository checkpoint, user-requirement and cumulative-budget protocol is independently verified by Enigma; host epoch rollback must not traverse external repositories.",
+      "storeId": null,
+      "exemptionId": "external-enigma-session-state",
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "plugins/enigma/host.ts",
+      "kind": "atomic-write",
+      "excerpt": "writeJson(statePath,{...state,sessionFile:targetPath})",
       "reason": "Writes schema-1 engineering state in an explicit external workspace, outside HANA_HOME. Its repository checkpoint, user-requirement and cumulative-budget protocol is independently verified by Enigma; host epoch rollback must not traverse external repositories.",
       "storeId": null,
       "exemptionId": "external-enigma-session-state",
@@ -8497,9 +8644,18 @@
     {
       "sourceFile": "plugins/enigma/host.ts",
       "kind": "atomic-write",
-      "excerpt": "writeJson(this.configPath,value)",
+      "excerpt": "writeJson(this.configPath, value)",
       "reason": "Writes the native engineering binding map only.",
       "storeId": "enigma-session-bindings",
+      "exemptionId": null,
+      "ordinal": 1
+    },
+    {
+      "sourceFile": "plugins/enigma/host.ts",
+      "kind": "write-file",
+      "excerpt": "fs.writeFile(targetPath,await fs.readFile(start.sessionFile),{flag:'wx',mode:0o600})",
+      "reason": "Copies a restored Pi session into its owning native session directory with exclusive creation and verified identity; preserves the native Pi schema.",
+      "storeId": "session-jsonl",
       "exemptionId": null,
       "ordinal": 0
     },
@@ -9539,6 +9695,60 @@
       "ordinal": 0
     },
     {
+      "sourceFile": "shared/browser-downloads.cjs",
+      "kind": "mkdir",
+      "excerpt": "fs.mkdirSync(this.directory,{recursive:true})",
+      "reason": "Creates managed downloads and atomically replaces their session-scoped index.",
+      "storeId": "browser-downloads",
+      "exemptionId": null,
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "shared/browser-downloads.cjs",
+      "kind": "remove-path",
+      "excerpt": "fs.unlinkSync(expected)",
+      "reason": "Creates managed downloads and atomically replaces their session-scoped index.",
+      "storeId": "browser-downloads",
+      "exemptionId": null,
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "shared/browser-downloads.cjs",
+      "kind": "remove-path",
+      "excerpt": "fs.unlinkSync(record.path)",
+      "reason": "Creates managed downloads and atomically replaces their session-scoped index.",
+      "storeId": "browser-downloads",
+      "exemptionId": null,
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "shared/browser-downloads.cjs",
+      "kind": "remove-path",
+      "excerpt": "fs.unlinkSync(temp)",
+      "reason": "Creates managed downloads and atomically replaces their session-scoped index.",
+      "storeId": "browser-downloads",
+      "exemptionId": null,
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "shared/browser-downloads.cjs",
+      "kind": "rename",
+      "excerpt": "fs.renameSync(temp,this.indexPath)",
+      "reason": "Creates managed downloads and atomically replaces their session-scoped index.",
+      "storeId": "browser-downloads",
+      "exemptionId": null,
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "shared/browser-downloads.cjs",
+      "kind": "write-file",
+      "excerpt": "fs.writeFileSync(temp,JSON.stringify([...this.records.values()].slice(-100)))",
+      "reason": "Creates managed downloads and atomically replaces their session-scoped index.",
+      "storeId": "browser-downloads",
+      "exemptionId": null,
+      "ordinal": 0
+    },
+    {
       "sourceFile": "shared/data-epoch.cjs",
       "kind": "atomic-write",
       "excerpt": "durableWriteJson(dataEpochJournalPath(homeDir), journal)",
@@ -10138,7 +10348,7 @@
         "write-file",
         "mkdir"
       ],
-      "linePattern": "(?:file,redact|path\\.dirname\\(file\\))"
+      "linePattern": "(?:file,\\s*redact|path\\.dirname\\(file\\))"
     },
     {
       "id": "external-enigma-session-state",
@@ -10149,7 +10359,7 @@
       "kinds": [
         "atomic-write"
       ],
-      "linePattern": "statePath|workspace\\.data|fork\\.data"
+      "linePattern": "statePath|workspace\\.data|fork\\.data|originPath,\\{\\.\\.\\.origin,piSession"
     },
     {
       "id": "external-file-ref-io",

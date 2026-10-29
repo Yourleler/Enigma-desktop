@@ -44,6 +44,7 @@ test('real child processes run independently, return owned results and merge onl
     assert(api.maximum >= 2, 'Both real worker requests must overlap');
     await assert.rejects(access(join(root, 'library', 'MODULE.md')), /ENOENT/); await assert.rejects(delegates.status(first.spec.id, 'other-task'), /ownership/);
     const preview = await delegates.preview(first.spec.id, 'parent-task'); assert(preview.applyAllowed); assert(preview.changes.some(change => change.file === 'MODULE.md'));
+    assert.match(preview.changes.find(change => change.file === 'MODULE.md')?.patch || '', /\+Prepared in the isolated child/);
     const merged = await delegates.merge(preview.id, { task: 'parent-task' }); assert.equal(merged.verification.status, 'verified');
     assert.equal(await readFile(join(root, 'library', 'MODULE.md'), 'utf8'), 'Prepared in the isolated child.\n'); assert.equal(await readFile(join(root, 'app', 'USER.txt'), 'utf8'), 'Parent concurrent edit'); assert.equal((await new PlanStore(workspace).current())?.id, plan.id);
     await assert.rejects(delegates.merge(preview.id, { task: 'parent-task' }), /External edits|differ/);
@@ -81,8 +82,12 @@ test('merge previews reject overlapping parent edits and child changes after pre
     await writeFile(join(root, 'library', 'MODULE.md'), 'User changed the same line\n'); const conflict = await delegates.preview(id); assert.equal(conflict.applyAllowed, false); assert(conflict.conflicts.length);
     await assert.rejects(delegates.merge(conflict.id), /conflicting/); assert.equal(await readFile(join(root, 'library', 'MODULE.md'), 'utf8'), 'User changed the same line\n');
     await writeFile(join(root, 'library', 'MODULE.md'), 'Original document\n'); const preview = await delegates.preview(id); assert(preview.applyAllowed);
+    assert(!(await workspace.checkpoints()).some(point=>point.id===preview.proposed));
+    await writeFile(join(done.spec.workspace,'.enigma-next','operations','pending.json'),JSON.stringify({schema:1,id:'pending',status:'unknown',operation:'command'}));
+    await assert.rejects(delegates.merge(preview.id),/unresolved effects/);await rm(join(done.spec.workspace,'.enigma-next','operations','pending.json'));
     const child = (await import('../src/workspace.js')).Workspace; const isolated = await child.open(done.spec.workspace); await writeFile(join(isolated.repo('library').root, 'MODULE.md'), 'Child changed after review\n');
     await assert.rejects(delegates.merge(preview.id), /Child changed/);
+    const latest=await delegates.preview(id);await workspace.addCheck({id:'late-check',repo:'app',argv:[process.execPath,'-e','process.exit(0)']});await assert.rejects(delegates.merge(latest.id),/Acceptance changed/);
   } finally { try { if (id) { await delegates.cancel(id).catch(() => {}); const drained = await delegates.drain(id); assert(drained.drained, JSON.stringify(drained)); } } finally { await api.close(); await rm(root, { recursive: true, force: true }); } }
 });
 
@@ -96,6 +101,8 @@ test('three-way merge preserves independent edits within one file and runs curre
     await writeFile(join(root, 'library', 'MODULE.md'), parentText);
     await workspace.exclusive(() => workspace.addCheck({ id: 'both-edits', repo: 'library', argv: [process.execPath, '-e', 'const s=require("fs").readFileSync("MODULE.md","utf8");if(!s.includes("child-first")||!s.includes("user-last"))process.exit(1)'] }));
     const preview = await delegates.preview(id); assert(preview.applyAllowed); assert(preview.changes.some(change => change.state === 'merged'));
+    const patch = preview.changes.find(change => change.file === 'MODULE.md')?.patch || '';
+    assert.match(patch, /\+child-first/); assert(!patch.includes('-user-last'), 'Review diff must preserve the current parent edit');
     const result = await delegates.merge(preview.id); assert.equal(result.verification.status, 'verified');
     assert.equal(await readFile(join(root, 'library', 'MODULE.md'), 'utf8'), `child-first\n${separators}\nuser-last\n`);
   } finally { try { if (id) { await delegates.cancel(id).catch(() => {}); const drained = await delegates.drain(id); assert(drained.drained, JSON.stringify(drained)); } } finally { await api.close(); await rm(root, { recursive: true, force: true }); } }

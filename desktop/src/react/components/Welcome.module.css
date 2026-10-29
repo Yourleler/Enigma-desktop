@@ -12,12 +12,12 @@
 }
 
 .welcomeAvatar {
-    width: 100px;
-    height: 100px;
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
     object-fit: cover;
     user-select: none;
-    box-shadow: 0 4px 16px var(--shadow);
+    box-shadow: none;
     margin-bottom: var(--space-4);
     cursor: default;
     transition: box-shadow var(--duration-fast);
@@ -28,10 +28,11 @@
 }
 
 .welcomeText {
-    font-size: var(--fs-title);
-    color: var(--text-light);
-    letter-spacing: 0.06em;
-    font-family: var(--font-serif);
+    font-size: 24px;
+    color: var(--text);
+    letter-spacing: -0.02em;
+    font-family: var(--font-ui);
+    font-weight: 500;
 }
 
 /* 文件夹选择按钮 */

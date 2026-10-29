@@ -358,7 +358,9 @@ export async function resolveAndInstallExternalServerDeps({
   runWithTargetNode,
   cachedNpmCli,
   extraPackageNames = [],
-  pinnedTransitiveDeps = ["lru-cache"],
+  // Keep browser detection aligned with the tested root lock instead of
+  // resolving a newly published AWS transitive version during packaging.
+  pinnedTransitiveDeps = ["lru-cache", "bowser"],
   log = (msg) => console.log(msg),
 }) {
   const rootPkg = JSON.parse(fs.readFileSync(path.join(rootDir, "package.json"), "utf-8"));
@@ -537,7 +539,9 @@ export async function pruneServerNodeModulesViaNft({
       nftRoots.map((root) => path.join(outDir, root)),
       {
         base: outDir,
-        conditions: ["node", "import"],
+        // nft selects import/require from each call site. Forcing "import"
+        // also on require() drops conditional CJS exports used by mammoth.
+        conditions: ["node"],
         // Bundled plugins remain as TypeScript source and are loaded through
         // the plugin runtime. nft resolves .ts paths but its parser only
         // accepts JavaScript syntax, so expose a read-only transpiled view for
@@ -608,6 +612,13 @@ export async function pruneServerNodeModulesViaNft({
   }
 
   verifyExternalEntrypoints(outDir, externalPackageNames);
+  const officePackages=['mammoth','exceljs'].filter(name=>externalPackageNames.includes(name));
+  if(officePackages.length) {
+    const smokeScript=path.join(outDir,'.office-runtime-smoke.cjs');
+    fs.writeFileSync(smokeScript,officePackages.map(name=>`require(${JSON.stringify(name)});`).join('\n'));
+    try { runWithTargetNode(path.basename(smokeScript)); }
+    finally { fs.rmSync(smokeScript,{force:true}); }
+  }
 
   if (externalPackageNames.includes("better-sqlite3")) {
     const smokeScript = path.join(outDir, ".better-sqlite3-smoke.mjs");

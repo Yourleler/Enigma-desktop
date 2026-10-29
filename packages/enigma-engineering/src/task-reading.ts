@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises';
+import { readFile,readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import ts from 'typescript';
 import type { Workspace } from './workspace.js';
@@ -9,6 +9,8 @@ import { discoverContracts } from './contracts.js';
 import { ProjectContext } from './project-context.js';
 import { SourceIndex } from './source-index.js';
 import { ensureDir, id, readJson, redact, safeId, writeJson } from './storage.js';
+import type {Observation,Evidence} from './types.js';
+import {emitActivity} from './telemetry.js';
 
 type Role = 'entry' | 'contract' | 'implementation' | 'consumer' | 'test' | 'configuration' | 'documentation';
 export interface TaskReadingInput {
@@ -107,6 +109,7 @@ export class TaskReadingStore {
         const query = queue.shift()!, key = `${query.repo ?? '*'}:${query.symbol}`;
         if (seen.has(key)) continue; seen.add(key);
         if (!query.symbol.trim() || query.symbol.length > 160) continue;
+        emitActivity({kind:'update',stage:'reading.analyze',repo:query.repo,reference:key,count:readings.length+1,detail:`源码查询 ${readings.length+1}/${maxQueries}：${query.symbol}`},this.workspace.activity);
         const reading = await new ReadingStore(this.workspace).update(query.symbol, { repo: query.repo, maxFiles: input.maxFiles, signal });
         readings.push(reading); gaps.push(...reading.diagnostics ?? []); truncated ||= reading.truncated;
         if (!reading.symbols.length) gaps.push(`No resolved source definition for ${key}.`);
@@ -115,7 +118,7 @@ export class TaskReadingStore {
           if (reference.kind === 'outgoing-call' && reference.target) queue.push({ symbol: reference.target.symbol, repo: reference.target.repo });
         }
       }
-      if (queue.length) { truncated = true; gaps.push('Further source expansion remains outside the query budget.'); }
+      if (queue.some(query=>!seen.has(`${query.repo??'*'}:${query.symbol}`))) { truncated = true; gaps.push('Further source expansion remains outside the query budget.'); }
       if (!readings.length) gaps.push('No source query could be derived; provide entry symbols or a diff baseline.');
       const nodes = new Map<string, TaskReading['nodes'][number]>(), edges = new Map<string, TaskReading['edges'][number]>();
       for (const reading of readings) {
@@ -174,18 +177,37 @@ export class TaskReadingStore {
     await writeJson(this.path(report.id, report.revision), safe);
     await writeJson(join(await this.directory(), `${safeId(report.id)}.json`), { revision: report.revision });
   }
-  async open(reportId: string, task?: string) {
+  private async load(reportId:string,task?:string){
     const pointer = await readJson<{ revision: number }>(join(await this.directory(), `${safeId(reportId)}.json`));
     const report = await readJson<TaskReading>(this.path(reportId, pointer.revision));
     if (report.schema !== 1 || report.id !== reportId || report.revision !== pointer.revision || !Array.isArray(report.nodes)) throw new Error('Invalid task reading artifact');
     if (report.task && report.task !== task) throw new Error('Reading belongs to another task');
-    const readerCurrent = report.reader === await new ReadingStore(this.workspace).readerVersion();
-    let current = (await this.workspace.evidenceStatus(report.evidence)).valid && readerCurrent;
+    return report;
+  }
+  async open(reportId: string, task?: string,context?:{reader:string;observation:Observation}) {
+    const report=await this.load(reportId,task),issues:string[]=[];
+    const readerCurrent = report.reader === (context?.reader||await new ReadingStore(this.workspace).readerVersion());
+    let current=false;
+    try{
+      if(context){const evidence=await readJson<Evidence>(join(this.workspace.data,'evidence',safeId(report.evidence)+'.json'));current=evidence.validAtCapture===true&&evidence.configuration===context.observation.configuration&&evidence.environment===context.observation.environment&&JSON.stringify(evidence.fingerprints)===JSON.stringify(context.observation.fingerprints);}
+      else current=(await this.workspace.evidenceStatus(report.evidence)).valid;
+    }catch{issues.push('地图的原始来源证据暂不可读取。');}
+    if(!current)issues.push('源码、环境或配置与生成地图时不一致，使用前请重新生成。');
+    current&&=readerCurrent;
+    if(!readerCurrent)issues.push('代码阅读器已变化，需要重新生成地图。');
     for (const resource of report.resources) try {
       const read = await new ProjectContext(this.workspace).read(resource.id, { task });
-      if (read.resource.revision !== resource.revision || read.current === false) current = false;
-    } catch { current = false; }
-    return { report, current, readerCurrent };
+      if (read.resource.revision !== resource.revision || read.current === false) {current = false;issues.push('地图引用的背景资料已更新。');}
+    } catch { current = false;issues.push('地图引用的背景资料已移除或不可读取。'); }
+    return { report, current, readerCurrent,issues:[...new Set(issues)] };
+  }
+  async list(task?:string){
+    const names=(await readdir(await this.directory())).filter(name=>/^task-reading-[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}\.json$/i.test(name)),records:TaskReading[]=[],unavailable:{id:string;reason:string}[]=[];
+    for(const name of names)try{records.push(await this.load(name.slice(0,-5),task));}catch(error){if(!(error as Error).message.includes('another task'))unavailable.push({id:name.slice(0,-5),reason:'地图记录暂不可读取。'});}
+    records.sort((a,b)=>b.createdAt.localeCompare(a.createdAt));if(!records.length)return {items:[],unavailable,truncated:false};
+    const context={reader:await new ReadingStore(this.workspace).readerVersion(),observation:await this.workspace.observe()},items=[];
+    for(const record of records.slice(0,30))items.push(await this.open(record.id,task,context));
+    return {items,unavailable,truncated:records.length>30};
   }
   async annotate(reportId: string, expectedRevision: number, input: {
     insights?: { title: string; text: string; anchors: string[]; kind: 'explanation' | 'risk' }[];
@@ -227,9 +249,10 @@ export class TaskReadingStore {
   }
   async coverage(reportId: string, evidenceId?: string, task?: string) {
     const opened = await this.open(reportId, task);
-    const evidence = evidenceId ? await this.workspace.evidenceStatus(evidenceId) : undefined;
+    let evidence:Awaited<ReturnType<Workspace['evidenceStatus']>>|undefined,evidenceIssue:string|undefined;
+    if(evidenceId)try{evidence=await this.workspace.evidenceStatus(evidenceId);}catch{evidenceIssue='所选检查证据不可读取，请重新运行或选择当前有效的检查。';}
     const results = evidence?.entry.data as { status?: string; results?: { check: string; status: string }[] } | undefined;
-    return { current: opened.current, requirements: opened.report.requirements.map(requirement => ({ ...requirement,
+    return { map:opened.report.id,goal:opened.report.goal,current: opened.current,evidenceIssue, requirements: opened.report.requirements.map(requirement => ({ ...requirement,
       checksPassed: !!evidence?.valid && evidence.entry.kind === 'check' && results?.status === 'verified' && requirement.checks.length > 0
         && requirement.checks.every(check => results?.results?.some(result => result.check === check && result.status === 'passed')) })),
       note: 'Source assessments are advisory. Passing linked checks proves those executions, not completeness of all requirements.' };

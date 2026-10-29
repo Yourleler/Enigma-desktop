@@ -28,6 +28,7 @@ export function ContextRing() {
   // 从 Zustand store 同步 context 数据（keyed store 优先，compat global 兜底）
   const currentSessionPath = useStore(s => s.currentSessionPath);
   const currentSessionId = useStore(s => s.currentSessionId);
+  const connection=useStore(s=>s.activeServerConnection);
   const addToast = useStore(s => s.addToast);
   const contextEntry = useStore(s => (
     s.currentSessionPath ? sessionScopedValue(s, s.contextBySession, s.currentSessionPath) : null
@@ -56,6 +57,8 @@ export function ContextRing() {
 
   useEffect(() => {
     let disposed = false;
+    setInstantSimpleEnabled(false);
+    if(!connection?.baseUrl)return;
     const applyExperimentValue = (value: unknown) => {
       if (!disposed) setInstantSimpleEnabled(value === true);
     };
@@ -80,14 +83,14 @@ export function ContextRing() {
         applyExperimentValue(experiment?.value);
       })
       .catch((error) => {
-        console.warn('[context-ring] failed to load instant compaction experiment:', error);
+        if(!disposed)console.warn('[context-ring] failed to load instant compaction experiment:', error);
       });
 
     return () => {
       disposed = true;
       window.removeEventListener('hana-settings', onSettings);
     };
-  }, []);
+  }, [connection?.connectionId,connection?.baseUrl,connection?.token]);
 
   const handleClick = useCallback(() => {
     if (busy) return;

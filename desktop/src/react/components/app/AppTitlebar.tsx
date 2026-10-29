@@ -1,3 +1,4 @@
+import { AppIcon } from '../../ui/app-icons';
 import { ChannelTabBar } from '../channels/ChannelTabBar';
 import { WidgetButtons } from '../plugin/WidgetButtons';
 import { WindowControls } from '../WindowControls';
@@ -15,9 +16,6 @@ interface AppTitlebarProps {
   showPreviewToggle?: boolean;
   showChannelTabs?: boolean;
   showWidgetButtons?: boolean;
-  onLeftMouseEnter?: () => void;
-  onRightMouseEnter?: () => void;
-  onToggleMouseLeave?: () => void;
 }
 
 export function AppTitlebar({
@@ -33,9 +31,6 @@ export function AppTitlebar({
   showPreviewToggle = false,
   showChannelTabs = true,
   showWidgetButtons = true,
-  onLeftMouseEnter,
-  onRightMouseEnter,
-  onToggleMouseLeave,
 }: AppTitlebarProps) {
   const t = window.t ?? ((p: string) => p);
 
@@ -46,15 +41,14 @@ export function AppTitlebar({
           className={`tb-toggle tb-toggle-left${sidebarOpen ? ' active' : ''}`}
           id="tbToggleLeft"
           title={t('sidebar.toggle')}
+          aria-label={t('sidebar.toggle')}
+          aria-expanded={sidebarOpen}
+          aria-controls="sidebar"
+          data-tooltip={`${sidebarOpen ? '收起' : '展开'}对话列表 · ⌘ / Ctrl + Shift + S`}
           onMouseDown={(e) => e.preventDefault()}
           onClick={onToggleSidebar}
-          onMouseEnter={onLeftMouseEnter}
-          onMouseLeave={onToggleMouseLeave}
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-            <line x1="9" y1="3" x2="9" y2="21"></line>
-          </svg>
+          <AppIcon name="panelLeft" size={17}/>
         </button>
         {showNewSessionButton && onNewSession && (
           <button
@@ -66,10 +60,7 @@ export function AppTitlebar({
             onMouseDown={(e) => e.preventDefault()}
             onClick={onNewSession}
           >
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
+            <AppIcon name="add" size={17}/>
           </button>
         )}
       </div>
@@ -78,38 +69,34 @@ export function AppTitlebar({
           <span>{centerTitle}</span>
         </div>
       )}
-      {showChannelTabs && <ChannelTabBar />}
       <div className="tb-right-group">
+        {showChannelTabs && <div className="enigma-window-modes"><ChannelTabBar /></div>}
         {showWidgetButtons && <WidgetButtons />}
         {showPreviewToggle && onTogglePreview && (
           <button
             className={`tb-toggle tb-toggle-preview${previewOpen ? ' active' : ''}`}
             id="tbTogglePreview"
             title={t('preview.toggle')}
+            aria-label={t('preview.toggle')}
+            data-tooltip={previewOpen ? '收起文件预览' : '打开文件与产物预览'}
             onMouseDown={(e) => e.preventDefault()}
             onClick={onTogglePreview}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M7 3.5h7l3 3v14H7z"></path>
-              <path d="M14 3.5v3h3"></path>
-              <path d="M9.5 11h5"></path>
-              <path d="M9.5 14.5h5"></path>
-            </svg>
+            <AppIcon name="file" size={17}/>
           </button>
         )}
         <button
           className={`tb-toggle tb-toggle-right${jianOpen ? ' active' : ''}`}
           id="tbToggleRight"
           title={t('sidebar.jian')}
+          aria-label={t('sidebar.jian')}
+          aria-expanded={jianOpen}
+          aria-controls="jianSidebar"
+          data-tooltip={jianOpen ? '收起右侧工作区' : '打开右侧工作区，继续查看工程内容'}
           onMouseDown={(e) => e.preventDefault()}
           onClick={onToggleJian}
-          onMouseEnter={onRightMouseEnter}
-          onMouseLeave={onToggleMouseLeave}
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-            <line x1="15" y1="3" x2="15" y2="21"></line>
-          </svg>
+          <AppIcon name="panelRight" size={17}/>
         </button>
       </div>
       <WindowControls />

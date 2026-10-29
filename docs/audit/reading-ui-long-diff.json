@@ -1,0 +1,16 @@
+{
+  "date": "2026-10-26",
+  "fixture": "enigma-12h/ui-functional-r1",
+  "previewCharacters": 120000,
+  "expandedCharacters": 150179,
+  "lastLineVerified": "LAST_DIFF_LINE",
+  "lineElementCount": 0,
+  "filter": {
+    "query": "navigation-9",
+    "rows": 1,
+    "selected": "docs / navigation-9.txt",
+    "documentHorizontalOverflow": 0
+  },
+  "method": "CUA visible controls and read-only DOM inspection",
+  "pathsAndProviderNamesRedacted": true
+}

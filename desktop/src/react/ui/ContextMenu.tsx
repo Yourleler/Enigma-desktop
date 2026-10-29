@@ -7,6 +7,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import {AppIcon} from './app-icons';
 
 export interface ContextMenuItem {
   label?: string;
@@ -80,6 +81,7 @@ export function ContextMenu({ items, position, onClose }: ContextMenuProps) {
   return createPortal(
     <div
       className="context-menu"
+      data-liquid="menu" data-menu-surface="" data-menu-position="fixed"
       ref={menuRef}
       style={{ left: position.x, top: position.y }}
     >
@@ -93,6 +95,7 @@ export function ContextMenu({ items, position, onClose }: ContextMenuProps) {
           <div
             key={`${item.label || 'item'}-${i}`}
             className={`context-menu-item${item.danger ? ' danger' : ''}${item.disabled ? ' disabled' : ''}${hasSubmenu ? ' has-submenu' : ''}`}
+            data-menu-row="" aria-disabled={item.disabled||undefined}
             onMouseDown={(e) => e.preventDefault()}
             onMouseEnter={() => {
               if (hasSubmenu && !item.disabled) setOpenSubmenuIndex(i);
@@ -114,11 +117,12 @@ export function ContextMenu({ items, position, onClose }: ContextMenuProps) {
             }}
           >
             {item.checked !== undefined && (
-              <span className="context-menu-check" aria-hidden="true">{item.checked ? '✓' : ''}</span>
+              <span className="context-menu-check" aria-hidden="true">{item.checked&&<AppIcon name="check" size={14}/>}</span>
             )}
             <span className={`context-menu-label${item.disabled ? ' disabled' : ''}`}>{item.label || ''}</span>
+            {hasSubmenu&&<AppIcon name="chevronRight" size={14} className="enigma-submenu-chevron"/>}
             {submenuOpen && (
-              <div className={`context-menu-submenu ${submenuSide}`}>
+              <div className={`context-menu-submenu ${submenuSide}`} data-liquid="menu" data-menu-surface="" data-menu-position="absolute">
                 {item.children?.map((child, childIndex) => {
                   if (child.divider) {
                     return <div key={`child-divider-${childIndex}`} className="context-menu-divider" />;
@@ -127,6 +131,7 @@ export function ContextMenu({ items, position, onClose }: ContextMenuProps) {
                     <div
                       key={`${child.label || 'child'}-${childIndex}`}
                       className={`context-menu-item${child.danger ? ' danger' : ''}${child.disabled ? ' disabled' : ''}`}
+                      data-menu-row="" aria-disabled={child.disabled||undefined}
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={(e) => {
                         if (child.disabled) {
@@ -138,7 +143,7 @@ export function ContextMenu({ items, position, onClose }: ContextMenuProps) {
                       }}
                     >
                       {child.checked !== undefined && (
-                        <span className="context-menu-check" aria-hidden="true">{child.checked ? '✓' : ''}</span>
+                        <span className="context-menu-check" aria-hidden="true">{child.checked&&<AppIcon name="check" size={14}/>}</span>
                       )}
                       <span className={`context-menu-label${child.disabled ? ' disabled' : ''}`}>{child.label || ''}</span>
                     </div>

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import {act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { InputArea } from '../../components/InputArea';
@@ -13,6 +13,7 @@ const editorState = vi.hoisted(() => ({
 const editorMocks = vi.hoisted(() => ({
   setContent: vi.fn(),
   clearContent: vi.fn(),
+  setEditable:vi.fn(),
 }));
 
 vi.mock('@tiptap/react', () => ({
@@ -40,6 +41,7 @@ vi.mock('@tiptap/react', () => ({
       editorState.doc = payload as typeof editorState.doc;
     };
     return {
+      setEditable:editorMocks.setEditable,
       commands: {
         focus: vi.fn(),
         clearContent: editorMocks.clearContent,
@@ -280,6 +282,14 @@ describe('InputArea draft sync', () => {
     editorState.doc = paragraphDoc('');
     window.platform = {} as typeof window.platform;
     delete (window as unknown as { hana?: unknown }).hana;
+    useStore.setState({pendingSessionSwitchPath:null});
+  });
+
+  it('locks the composer while switching and restores the target draft before accepting input',()=>{
+    seedSessionComposer('source draft');render(React.createElement(InputArea));
+    act(()=>useStore.setState({pendingSessionSwitchPath:'/target.jsonl'}));expect(editorMocks.setEditable).toHaveBeenLastCalledWith(false);expect(screen.getByTestId('input-control-bar').getAttribute('data-can-send')).toBe('false');
+    act(()=>useStore.setState({currentSessionPath:'/target.jsonl',currentSessionId:null,pendingSessionSwitchPath:null,drafts:{'/target.jsonl':'target draft'},draftDocs:{'/target.jsonl':paragraphDoc('target draft')}}));
+    expect(editorMocks.setEditable).toHaveBeenLastCalledWith(true);expect(editorState.doc).toEqual(paragraphDoc('target draft'));
   });
 
   it('clears the live editor when clearDraft is called externally', async () => {

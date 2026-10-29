@@ -16,7 +16,7 @@ test('running services cannot validate changed code using an older loaded progra
     await new BrowserValidation(workspace).add({ id: 'version', label: 'v2 behavior', service: 'version', steps: [{ action: 'expect', selector: '#result', includes: 'v2' }] });
     await writeFile(file, program('v2')); const stale = await services.status('version'); assert.equal(stale.status, 'source-changed'); assert.equal(stale.ready, false);
     assert((await (await fetch(initial.url)).text()).includes('v1'), 'Actual old process must still serve v1');
-    await assert.rejects(new BrowserValidation(workspace).run('version'), /ready owned/); await assert.rejects(services.start('version'), /restart/);
+    await assert.rejects(new BrowserValidation(workspace).run('version'), /ready owned/); await assert.rejects(services.start('version'), /重启/);
     const restarted = await services.restart('version'); assert(restarted.ready); assert.equal((await new BrowserValidation(workspace).run('version')).status, 'passed');
   } finally { await services.stop('version').catch(() => {}); await rm(root, { recursive: true, force: true }); }
 });

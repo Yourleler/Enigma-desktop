@@ -9,6 +9,10 @@ const {
 } = redactor;
 
 describe("log redaction", () => {
+  it('redacts multiline JSON response cookies embedded inside an error message',()=>{
+    const value='Request failed: 404\n'+JSON.stringify({'set-cookie':['session=short-secret; path=/','other=second-secret; Secure'],authorization:'Basic encoded-user-pass',server:'github'},null,2);
+    const cleaned=redactLogText(value);expect(cleaned).not.toContain('short-secret');expect(cleaned).not.toContain('second-secret');expect(cleaned).not.toContain('encoded-user-pass');expect(cleaned).toContain('github');
+  });
   it("redacts secrets, auth headers, query tokens, and common key prefixes", () => {
     const raw = [
       "Authorization: Bearer demo-key",

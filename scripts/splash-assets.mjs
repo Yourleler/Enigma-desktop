@@ -42,7 +42,10 @@ export function copySplashAssets({ srcDir, outDir }) {
   fs.mkdirSync(localesDestDir, { recursive: true });
   for (const entry of fs.readdirSync(localesSrcDir)) {
     if (!entry.endsWith(".json")) continue;
-    fs.copyFileSync(path.join(localesSrcDir, entry), path.join(localesDestDir, entry));
+    fs.copyFileSync(
+      path.join(localesSrcDir, entry),
+      path.join(localesDestDir, entry),
+    );
     copied.locales.push(entry);
   }
 
@@ -50,7 +53,10 @@ export function copySplashAssets({ srcDir, outDir }) {
   const assetsDestDir = path.join(outDir, "assets");
   fs.mkdirSync(assetsDestDir, { recursive: true });
   for (const visual of Object.values(YUAN_VISUALS)) {
-    fs.copyFileSync(path.join(assetsSrcDir, visual.avatar), path.join(assetsDestDir, visual.avatar));
+    // visual.avatar 可能含子目录（如 enigma/avatar.png），逐段建目录
+    const destPath = path.join(assetsDestDir, visual.avatar);
+    fs.mkdirSync(path.dirname(destPath), { recursive: true });
+    fs.copyFileSync(path.join(assetsSrcDir, visual.avatar), destPath);
     copied.avatars.push(visual.avatar);
   }
 

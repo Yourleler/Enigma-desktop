@@ -1,10 +1,12 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { RefObject } from 'react';
-import { TimelineRailNavigator, type TimelineRailItem } from '../shared/TimelineRailNavigator';
+import { ConversationRail } from './ConversationRail';
+import styles from './Chat.module.css';
 import type { TimelineAnchor } from './timeline-anchors';
 
 interface MarkerLayout {
   targetTop: number;
+  offsetTop: number;
 }
 
 interface Props {
@@ -14,6 +16,11 @@ interface Props {
   messageElementsRef: RefObject<Map<string, HTMLDivElement>>;
   active: boolean;
   railVisible: boolean;
+  onBeforeJump?: () => void;
+  hasMore?: boolean;
+  loadingMore?: boolean;
+  onLoadMore?: () => void;
+  onFind?: () => void;
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -36,7 +43,7 @@ function layoutsEqual(
     const layoutA = a[key];
     const layoutB = b[key];
     if (!layoutB) return false;
-    if (layoutA.targetTop !== layoutB.targetTop) return false;
+    if (layoutA.targetTop !== layoutB.targetTop || layoutA.offsetTop !== layoutB.offsetTop) return false;
   }
   return true;
 }
@@ -47,7 +54,11 @@ export const ChatTimelineNavigator = memo(function ChatTimelineNavigator({
   contentRef,
   messageElementsRef,
   active,
-  railVisible,
+  onBeforeJump,
+  hasMore,
+  loadingMore,
+  onLoadMore,
+  onFind,
 }: Props) {
   const [layouts, setLayouts] = useState<Record<string, MarkerLayout>>({});
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -76,6 +87,7 @@ export const ChatTimelineNavigator = memo(function ChatTimelineNavigator({
       const targetTop = clamp(panelScrollTop + finiteNumber(rect.top) - panelTop - 16, 0, maxScroll);
       next[anchor.messageId] = {
         targetTop,
+        offsetTop: panelScrollTop + finiteNumber(rect.top) - panelTop - 16,
       };
     }
 
@@ -90,11 +102,18 @@ export const ChatTimelineNavigator = memo(function ChatTimelineNavigator({
     }
 
     const threshold = finiteNumber(panel.scrollTop) + 96;
+    const maxScroll = Math.max(0, finiteNumber(panel.scrollHeight) - finiteNumber(panel.clientHeight));
+    // The final prompt may never reach the top in a short last turn. At the
+    // bottom, mark the latest turn instead of an earlier off-screen question.
+    if (maxScroll > 1 && finiteNumber(panel.scrollTop) >= maxScroll - 2) {
+      setActiveId(anchors.at(-1)?.messageId ?? null);
+      return;
+    }
     let nextId = anchors[0]?.messageId ?? null;
     for (const anchor of anchors) {
       const layout = layouts[anchor.messageId];
       if (!layout) continue;
-      if (layout.targetTop <= threshold) {
+      if (layout.offsetTop <= threshold) {
         nextId = anchor.messageId;
       } else {
         break;
@@ -161,8 +180,17 @@ export const ChatTimelineNavigator = memo(function ChatTimelineNavigator({
     const panel = scrollRef.current;
     const layout = layouts[anchor.messageId];
     if (!panel || !layout) return;
-    panel.scrollTo({ top: layout.targetTop, behavior: 'smooth' });
-  }, [layouts, scrollRef]);
+    onBeforeJump?.();
+    const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    panel.scrollTo({ top: layout.targetTop, behavior: reduced ? 'auto' : 'smooth' });
+    const target = messageElementsRef.current?.get(anchor.messageId);
+    if (target) {
+      target.classList.remove(styles.locateFlash);
+      void target.offsetWidth;
+      target.classList.add(styles.locateFlash);
+    }
+    setActiveId(anchor.messageId);
+  }, [layouts, scrollRef, onBeforeJump, messageElementsRef]);
 
   const renderedAnchors = useMemo(
     () => anchors.filter(anchor => layouts[anchor.messageId]),
@@ -171,22 +199,15 @@ export const ChatTimelineNavigator = memo(function ChatTimelineNavigator({
 
   if (!active || anchors.length === 0) return null;
 
-  const railItems: Array<TimelineRailItem<TimelineAnchor>> = renderedAnchors.map(anchor => ({
-    id: anchor.messageId,
-    label: anchor.label,
-    markerWidthEm: anchor.markerWidthEm,
-    payload: anchor,
-  }));
-
   return (
-    <TimelineRailNavigator
-      items={railItems}
-      active={active}
+    <ConversationRail
+      anchors={renderedAnchors}
       activeId={activeId}
-      railVisible={railVisible}
-      ariaLabel={window.t?.('chat.timeline.navAriaLabel') || 'Turn navigation'}
-      jumpLabel={item => (window.t?.('chat.timeline.jumpTo') || 'Jump to {label}').replace('{label}', item.label)}
-      onJump={item => jumpTo(item.payload)}
+      onJump={jumpTo}
+      hasMore={hasMore}
+      loadingMore={loadingMore}
+      onLoadMore={onLoadMore}
+      onFind={onFind}
     />
   );
 });

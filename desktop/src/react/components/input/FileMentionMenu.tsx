@@ -27,7 +27,8 @@ export const FileMentionMenu = memo(function FileMentionMenu({
   }, [selected]);
 
   return (
-    <div className={styles['file-mention-menu']}>
+    <div className={styles['file-mention-menu']} data-liquid="menu" data-menu-surface="" data-menu-position="absolute">
+      <div className={styles['file-mention-scroll']} data-menu-scroll="">
       {items.map((item, i) => (
         <FileMentionButton
           key={item.id}
@@ -39,6 +40,7 @@ export const FileMentionMenu = memo(function FileMentionMenu({
         />
       ))}
       {items.length === 0 && busy && <div className={styles['file-mention-empty']}>...</div>}
+      </div>
     </div>
   );
 });
@@ -64,6 +66,8 @@ function FileMentionButton({
   return (
     <button
       ref={refProp}
+      data-menu-row=""
+      data-current={selected}
       className={`${styles['file-mention-item']}${selected ? ` ${styles.selected}` : ''}`}
       onMouseEnter={onHover}
       onMouseDown={(e) => {

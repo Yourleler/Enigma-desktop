@@ -20,6 +20,7 @@ interface PluginInfo {
   activationEvents?: string[];
   activationError?: string | null;
   source: 'builtin' | 'community';
+  userToggleable?: boolean;
   trust: 'restricted' | 'full-access';
   contributions?: string[];
   error?: string | null;
@@ -115,7 +116,7 @@ function ContributionBadges({ contributions }: { contributions?: string[] }) {
             padding: '1px 6px', borderRadius: 'var(--radius-sm)',
           }}
         >
-          {c}
+          {c === 'native-tools' ? '原生操作' : c}
         </span>
       ))}
     </span>
@@ -173,14 +174,15 @@ export function PluginsTab() {
   const [configSaving, setConfigSaving] = useState(false);
   const [diagnostics, setDiagnostics] = useState<PluginDiagnosticsResponse | null>(null);
   const [diagnosticsLoading, setDiagnosticsLoading] = useState(false);
+  const [changingPlugins, setChangingPlugins] = useState<Set<string>>(new Set());
 
   /* ── data fetchers ── */
 
   const loadPlugins = useCallback(async () => {
     try {
-      const res = await hanaFetch('/api/plugins?source=community');
+      const res = await hanaFetch('/api/plugins');
       const data = await res.json();
-      setPlugins(Array.isArray(data) ? data : []);
+      setPlugins(Array.isArray(data) ? data.filter(p => p.source !== 'builtin' || p.userToggleable) : []);
     } catch (err) {
       console.error('[plugins] load failed:', err);
       setPlugins([]);
@@ -307,14 +309,17 @@ export function PluginsTab() {
 
   /* ── enable / disable ── */
 
-  const togglePlugin = async (id: string, enable: boolean) => {
+  const togglePlugin = async (plugin: PluginInfo, enable: boolean) => {
+    const { id, source } = plugin, key = `${source}:${id}`;
+    if (changingPlugins.has(key)) return;
+    setChangingPlugins(previous => new Set([...previous, key]));
     // Optimistic update
-    setPlugins(prev => prev.map(p => p.id === id ? { ...p, status: enable ? 'loaded' : 'disabled' } as PluginInfo : p));
+    setPlugins(prev => prev.map(p => p.id === id && p.source === source ? { ...p, status: enable ? 'loaded' : 'disabled' } as PluginInfo : p));
     try {
       const res = await hanaFetch(`/api/plugins/${encodeURIComponent(id)}/enabled`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ enabled: enable }),
+        body: JSON.stringify({ enabled: enable, source }),
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
@@ -322,8 +327,10 @@ export function PluginsTab() {
       await loadPlugins();
     } catch (err: unknown) {
       // Revert
-      setPlugins(prev => prev.map(p => p.id === id ? { ...p, status: enable ? 'disabled' : 'loaded' } as PluginInfo : p));
+      setPlugins(prev => prev.map(p => p.id === id && p.source === source ? { ...p, status: plugin.status } : p));
       showToast(t('settings.saveFailed') + ': ' + (err instanceof Error ? err.message : String(err)), 'error');
+    } finally {
+      setChangingPlugins(previous => { const next = new Set(previous); next.delete(key); return next; });
     }
   };
 
@@ -515,7 +522,7 @@ export function PluginsTab() {
 
               return (
                 <div
-                  key={plugin.id}
+                  key={`${plugin.source}:${plugin.id}`}
                   className={styles['skills-list-item']}
                   style={dimmed ? { opacity: 0.55 } : undefined}
                 >
@@ -557,7 +564,7 @@ export function PluginsTab() {
                       </button>
                     )}
                     {/* Delete */}
-                    <button
+                    {plugin.source !== 'builtin' && <button
                       className={styles['skill-card-delete']}
                       title={t('settings.plugins.deleteConfirm', { name: plugin.name })}
                       onClick={() => deletePlugin(plugin)}
@@ -566,13 +573,17 @@ export function PluginsTab() {
                         <line x1="18" y1="6" x2="6" y2="18" />
                         <line x1="6" y1="6" x2="18" y2="18" />
                       </svg>
-                    </button>
+                    </button>}
 
                     {/* Enable/disable toggle */}
                     <button
                       className={`hana-toggle${enabled ? ' on' : ''}`}
-                      disabled={restricted}
-                      onClick={() => togglePlugin(plugin.id, !enabled)}
+                      role="switch"
+                      aria-label={`${plugin.name}插件`}
+                      aria-checked={enabled}
+                      aria-busy={changingPlugins.has(`${plugin.source}:${plugin.id}`)}
+                      disabled={restricted || changingPlugins.has(`${plugin.source}:${plugin.id}`)}
+                      onClick={() => togglePlugin(plugin, !enabled)}
                     />
                   </div>
                 </div>

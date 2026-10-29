@@ -1,0 +1,38 @@
+{
+  "date": "2026-10-27T03:53:07.139Z",
+  "run": "/tmp/enigma-final-domain-audit.log",
+  "result": {
+    "passed": 208,
+    "failed": 0,
+    "skipped": 0
+  },
+  "exclusions": [
+    "browser-validation.test.js",
+    "reuse.test.js",
+    "task-package.test.js",
+    "workbench-content.test.js",
+    "workbench.test.js",
+    "workbench-interface.test.js",
+    "services.test.js"
+  ],
+  "separateServiceRun": {
+    "log": "/tmp/enigma-final-service-domain.log",
+    "passed": 2,
+    "scope": "non-browser HTTP service lifecycle and occupied/unhealthy cases only"
+  },
+  "laterReadingRun": {
+    "log": "/tmp/enigma-iteration60-domain.log",
+    "passed": 6,
+    "scope": "index presentation bounds, historical source availability and schema reading"
+  },
+  "ui": {
+    "log": "/tmp/enigma-iteration60-full-ui.log",
+    "files": 376,
+    "passed": 2659
+  },
+  "limitations": [
+    "Domain suite is not GUI browser interaction proof. Browser scenarios still need purpose-specific acceptance.",
+    "Later code-reading changes use the six scoped regression tests and the full current UI run."
+  ],
+  "pathsAndProviderNamesRedacted": true
+}

@@ -21,43 +21,66 @@
       "producedBy": "build:main",
       "buildConfig": "vite.config.main.js",
       "sourceEntry": "desktop/main.cjs",
-      "sourcePaths": ["desktop/main.cjs"]
+      "sourcePaths": [
+        "desktop/main.cjs"
+      ]
     },
     {
       "builderEntry": "desktop/bootstrap.cjs",
       "kind": "static",
       "producedBy": "static (source-controlled, no build step)",
-      "sourcePaths": ["desktop/bootstrap.cjs"]
+      "sourcePaths": [
+        "desktop/bootstrap.cjs"
+      ]
     },
     {
       "builderEntry": "desktop/src/office-pdf-helper.cjs",
       "kind": "static",
       "producedBy": "static",
-      "sourcePaths": ["desktop/src/office-pdf-helper.cjs"]
+      "sourcePaths": [
+        "desktop/src/office-pdf-helper.cjs"
+      ]
     },
     {
       "builderEntry": "desktop/src/office-pdf-fonts.cjs",
       "kind": "static",
       "producedBy": "static",
-      "sourcePaths": ["desktop/src/office-pdf-fonts.cjs"]
+      "sourcePaths": [
+        "desktop/src/office-pdf-fonts.cjs"
+      ]
     },
     {
       "builderEntry": "desktop/src/shared/launch-integrity.cjs",
       "kind": "static",
       "producedBy": "static",
-      "sourcePaths": ["desktop/src/shared/launch-integrity.cjs"]
+      "sourcePaths": [
+        "desktop/src/shared/launch-integrity.cjs"
+      ]
     },
     {
       "builderEntry": "desktop/src/shared/windows-system-ca.cjs",
       "kind": "static",
       "producedBy": "static",
-      "sourcePaths": ["desktop/src/shared/windows-system-ca.cjs"]
+      "sourcePaths": [
+        "desktop/src/shared/windows-system-ca.cjs"
+      ]
     },
     {
       "builderEntry": "shared/hana-runtime-paths.cjs",
       "kind": "static",
       "producedBy": "static",
-      "sourcePaths": ["shared/hana-runtime-paths.cjs"]
+      "sourcePaths": [
+        "shared/hana-runtime-paths.cjs"
+      ]
+    },
+    {
+      "builderEntry": "shared/enigma-product.cjs",
+      "kind": "static",
+      "producedBy": "static",
+      "sourcePaths": [
+        "shared/enigma-product.cjs"
+      ],
+      "note": "Optional fork identity selected by Enigma launcher/packaged metadata; keeps upstream runtime defaults."
     },
     {
       "builderEntry": "desktop/preload.bundle.cjs",
@@ -65,7 +88,9 @@
       "producedBy": "build:preload",
       "buildConfig": "vite.config.preload.js",
       "sourceEntry": "desktop/preload.cjs",
-      "sourcePaths": ["desktop/preload.cjs"]
+      "sourcePaths": [
+        "desktop/preload.cjs"
+      ]
     },
     {
       "builderEntry": "desktop/dist-splash/**",
@@ -99,20 +124,26 @@
       "builderEntry": "package.json",
       "kind": "static",
       "producedBy": "static (root package.json)",
-      "sourcePaths": ["package.json"],
+      "sourcePaths": [
+        "package.json"
+      ],
       "note": "This is the file app.getVersion() reads inside the packaged asar (electron-builder copies it in, with extraMetadata.main overriding only the `main` field — `version` passes through unmodified). Do not confuse with a hypothetical separate shell-version file; there isn't one, and this ticket does not create one."
     },
     {
       "builderEntry": "release-digest.v1.json",
       "kind": "static",
       "producedBy": "static (hand-authored per release, see AGENTS/CLAUDE release-digest workflow)",
-      "sourcePaths": ["release-digest.v1.json"]
+      "sourcePaths": [
+        "release-digest.v1.json"
+      ]
     },
     {
       "builderEntry": "release-digest.v2.json",
       "kind": "static",
       "producedBy": "static (rolling history file, see scripts/generate-release-digest.mjs --append-history)",
-      "sourcePaths": ["release-digest.v2.json"]
+      "sourcePaths": [
+        "release-digest.v2.json"
+      ]
     },
     {
       "builderEntry": "!packages/**",
@@ -126,7 +157,17 @@
       "builderEntry": "node_modules/ws/**",
       "kind": "vendoredNativeDep",
       "producedBy": "npm install (ws@^8.18.0, see shellNativeDependencies above)",
-      "sourcePaths": ["node_modules/ws"]
+      "sourcePaths": [
+        "node_modules/ws"
+      ]
+    },
+    {
+      "builderEntry": "desktop/src/shared/browser-prompt-preload.cjs",
+      "kind": "static",
+      "producedBy": "static",
+      "sourcePaths": [
+        "desktop/src/shared/browser-prompt-preload.cjs"
+      ]
     }
   ],
   "extraResources": [
@@ -143,14 +184,18 @@
       "platform": "all",
       "kind": "staticDir",
       "producedBy": "static",
-      "sourcePaths": ["desktop/src/screenshot-themes"]
+      "sourcePaths": [
+        "desktop/src/screenshot-themes"
+      ]
     },
     {
       "builderEntry": "desktop/src/assets/ -> assets/",
       "platform": "all",
       "kind": "staticDir",
       "producedBy": "static",
-      "sourcePaths": ["desktop/src/assets"],
+      "sourcePaths": [
+        "desktop/src/assets"
+      ],
       "note": "Same source tree as the asarFiles desktop/src/assets/** entry above; electron-builder ships it both inside the asar and unpacked under Resources/assets/. Not this ticket's concern to redesign — recorded as-is."
     },
     {
@@ -160,7 +205,9 @@
       "producedBy": "build:computer-use-helper",
       "buildScript": "scripts/build-computer-use-helper.mjs",
       "note": "Swift build, mac-only (shouldBuildComputerUseHelper() gates on process.platform === 'darwin'). build:shell runs this step conditionally, mirroring the existing pack/dist scripts.",
-      "sourcePaths": ["scripts/build-computer-use-helper.mjs"]
+      "sourcePaths": [
+        "scripts/build-computer-use-helper.mjs"
+      ]
     },
     {
       "builderEntry": "vendor/mingit -> git",
@@ -168,7 +215,9 @@
       "kind": "vendoredBinary",
       "producedBy": "scripts/download-mingit.js (Windows pack CI)",
       "buildScript": "scripts/download-mingit.js",
-      "sourcePaths": ["scripts/download-mingit.js"],
+      "sourcePaths": [
+        "scripts/download-mingit.js"
+      ],
       "note": "vendor/mingit is gitignored and only extracted by Windows pack CI (build.yml runs download-mingit.js then smoke-mingit.mjs). The forward guard asserts the downloader script exists — never the extracted tree — so plain npm test on windows-latest does not require a provisioned MinGit checkout. scripts/smoke-mingit.mjs documents the runtime contract the extracted tree must satisfy at pack time."
     },
     {
@@ -178,7 +227,9 @@
       "producedBy": "build:windows-sandbox-helper",
       "buildScript": "scripts/build-windows-sandbox-helper.mjs",
       "note": "MSVC (cl.exe) build, win32-only (shouldBuildWindowsSandboxHelper() gates on process.platform === 'win32'). Cannot run on a non-Windows host and is out of scope for the build:shell step list in this ticket (dist:win already builds it as a separate pre-build:client step); recorded here purely for manifest completeness so the guard test's reverse-coverage check passes.",
-      "sourcePaths": ["scripts/build-windows-sandbox-helper.mjs"]
+      "sourcePaths": [
+        "scripts/build-windows-sandbox-helper.mjs"
+      ]
     }
   ],
   "buildHooks": [

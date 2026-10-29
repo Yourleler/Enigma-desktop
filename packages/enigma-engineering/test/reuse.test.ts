@@ -14,6 +14,7 @@ import { createEnigmaExtension } from '../src/pi-extension.js';
 import { createReuseExtension } from '../src/pi-reuse.js';
 import { fixture } from './fixtures.js';
 import { writeJson } from '../src/storage.js';
+import {domainAction,domainData} from '../src/workbench-domain.js';
 
 test('native skill discovery preserves manual-only semantics, Chinese search, version changes and read-only repository grants', async () => {
   const { root, workspace } = await fixture('library');
@@ -28,12 +29,24 @@ test('native skill discovery preserves manual-only semantics, Chinese search, ve
     const selected = search.skills[0]!; assert((await discovery.open(selected.id, selected.version)).content.includes('actual contract'));
     const manual = (await discovery.search('', { includeManual: true })).skills.find(skill => skill.name === 'manual')!;
     await assert.rejects(discovery.open(manual.id, manual.version), /Manual-only/);
+    assert((await discovery.open(manual.id,manual.version,{manualRead:true})).content);
     await writeFile(source, '---\nname: migration\ndescription: 新版接口迁移\n---\nChanged procedure.\n');
     await assert.rejects(discovery.open(selected.id, selected.version), /changed/);
     assert((await discovery.search('新版')).skills.some(skill => skill.name === 'migration'));
     assert.equal(workspace.repo('library').access, 'read');
     await assert.rejects(workspace.exclusive(() => workspace.mutate('library', 'write', () => writeFile(source, 'bypass'))), /read-only/);
   } finally { await rm(root, { recursive: true, force: true }); }
+});
+
+test('a searched skill outside the first thirty alphabetical entries remains directly readable',async()=>{
+ const {root,workspace}=await fixture();try{
+  const directory=join(root,'catalogue');await mkdir(directory);
+  for(let index=0;index<35;index++){const name=`skill-${String(index).padStart(2,'0')}`,folder=join(directory,name);await mkdir(folder);await writeFile(join(folder,'SKILL.md'),`---\nname: ${name}\ndescription: ${index===34?'唯一目标技能':'基础说明'}\n---\nContent ${index}\n`);}
+  await configureSkillPaths(workspace,[directory]);
+  const controller={options:{workspace,agentDir:join(root,'agent')},chat:{session:'skill-task'},runtime:{session:{sessionManager:{getLeafId:()=>null,getBranch:()=>[]}}},snapshot:()=>({memory:false})} as any;
+  const found=await domainData(controller,'skills','唯一目标') as any;const skill=found.catalog.skills.find((skill:any)=>skill.name==='skill-34');assert(skill);
+  const opened=await domainAction(controller,'skills-read',{id:skill.id,version:skill.version},new AbortController().signal) as any;assert(opened.content.includes('Content 34'));
+ }finally{await rm(root,{recursive:true,force:true});}
 });
 
 test('recipe uses literal argv data, real service/browser actions and original joint acceptance, then invalidates changed evidence', { timeout: 60_000 }, async () => {

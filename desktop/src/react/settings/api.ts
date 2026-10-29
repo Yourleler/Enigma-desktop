@@ -10,6 +10,7 @@ import {
 } from '../services/server-connection';
 import { errorWithCode } from '../errors/error-presenter';
 import { normalizeSessionRouteError } from '../../../../shared/error-user-messages.ts';
+import {yuanAvatarAsset} from '../../../../shared/yuan-visuals';
 
 const DEFAULT_TIMEOUT = 30_000;
 
@@ -104,5 +105,5 @@ export function yuanFallbackAvatar(yuan?: string): string {
   const t = window.t || ((k: string) => k);
   const types = (t('yuan.types') || {}) as Record<string, { avatar?: string }>;
   const entry = types[yuan || 'hanako'];
-  return `assets/${entry?.avatar || 'Hanako.png'}`;
+  return `assets/${yuanAvatarAsset(yuan,entry?.avatar)}`;
 }

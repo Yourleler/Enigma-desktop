@@ -4,6 +4,7 @@ import { Workspace } from './workspace.js';
 import { BackgroundRuns } from './background.js';
 import { ensureDir, hash, id, readJson, safeId, writeJson } from './storage.js';
 import type { Observation } from './types.js';
+import type {DependencyVersion} from './dependency-checkpoint.js';
 
 export interface CheckpointIntegrationPreview {
   schema: 1; id: string; owner: string; worker: string; baseline: string;
@@ -22,7 +23,7 @@ const same=(left:unknown,right:unknown)=>JSON.stringify(left)===JSON.stringify(r
 export class CheckpointIntegrations {
   constructor(readonly workspace:Workspace) {}
   private async directory(preview:string){return ensureDir(join(this.workspace.data,'merge-previews',safeId(preview)));}
-  async preview(input:{owner:string;worker:string;childRoot:string;baseline:string;writeRepos:string[]}) {
+  async preview(input:{owner:string;worker:string;childRoot:string;baseline:string;writeRepos:string[];inputs?:DependencyVersion[]}) {
     safeId(input.owner);safeId(input.worker);
     const child=await Workspace.open(input.childRoot);
     const origin=await readJson<{checkpoint:string;sourceWorkspace:string;state:string}>(join(child.data,'fork-origin.json'));
@@ -34,11 +35,15 @@ export class CheckpointIntegrations {
       const observed=await child.observe(),childCheckpoint=await child.exclusive(()=>child.checkpoint('selected worker result'));
       if(!same(observed,await child.observe()))throw new Error('Worker changed during integration preview');
       const expected=await this.workspace.checkpoint('before managed integration'),proposed=structuredClone(expected);
-      proposed.id=id('checkpoint');proposed.label=`managed integration:${input.worker}`;
+      proposed.id=id('checkpoint');proposed.label=`managed integration:${input.worker}`;proposed.purpose='integration-proposal';
       const preview:CheckpointIntegrationPreview={schema:1,id:id('integration'),owner:input.owner,worker:input.worker,baseline:input.baseline,
         childRoot:child.root,child:observed,expected:expected.id,proposed:proposed.id,criteriaHash:hash(JSON.stringify(this.workspace.config.checks)),
         writeRepos:[...input.writeRepos],changes:[],applyAllowed:false,createdAt:new Date().toISOString()};
       if(baseline.repos.length!==childCheckpoint.repos.length)throw new Error('Worker repository set changed');
+      for(const dependency of input.inputs||[]){
+        const current=expected.repos.find(repo=>repo.repo.id===dependency.repo)?.files[dependency.file];
+        if(!same(current,dependency.after))preview.changes.push({repo:dependency.repo,file:dependency.file,state:'conflict',reason:'Upstream input is not selected in the parent, or changed after downstream work started'});
+      }
       for(const base of baseline.repos){
         const ours=proposed.repos.find(repo=>repo.repo.id===base.repo.id),theirs=childCheckpoint.repos.find(repo=>repo.repo.id===base.repo.id);
         if(!ours||!theirs)throw new Error('Worker repository set differs from the current parent');
@@ -71,14 +76,14 @@ export class CheckpointIntegrations {
     if(preview.schema!==1||preview.id!==previewId||preview.owner!==owner||!preview.applyAllowed
       ||preview.changes.some(change=>change.state!=='already-present'&&!writeRepos.includes(change.repo)))throw new Error('Integration is conflicting or outside current ownership/grants');
     const child=await Workspace.open(preview.childRoot);
-    if(!same(preview.child,await child.observe())||(await new BackgroundRuns(child).unresolved()).length)throw new Error('Worker changed or has unresolved effects after preview');
-    return this.workspace.exclusive(async()=>{
+    return this.workspace.exclusive(()=>child.exclusive(async()=>{
       await this.workspace.reload();signal?.throwIfAborted();
+      if(!same(preview.child,await child.observe())||(await child.operations()).some(op=>['pending','unknown'].includes(op.status))||(await new BackgroundRuns(child).unresolved()).length)throw new Error('Worker changed or has unresolved effects after preview');
       if(preview.criteriaHash!==hash(JSON.stringify(this.workspace.config.checks)))throw new Error('Original acceptance definitions changed after preview');
       await this.workspace.restore(preview.proposed,preview.expected);
       const verification=await this.workspace.verify(signal);
       const receipt={schema:1,id:id('integration-result'),owner,worker:preview.worker,preview:preview.id,createdAt:new Date().toISOString(),criteriaHash:preview.criteriaHash,verification};
       await writeJson(join(await this.directory(preview.id),'managed-result.json'),receipt);return receipt;
-    });
+    }));
   }
 }

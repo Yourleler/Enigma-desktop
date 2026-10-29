@@ -18,10 +18,15 @@ import { buildApprovalReviewContext } from "../permission/approval-review-contex
 const MODEL_VISIBLE_COMPUTER_ACTIONS = Object.freeze([
   "status",
   "list_apps",
+  "list_windows",
   "start",
   "get_app_state",
   "click_element",
   "type_text",
+  "set_value",
+  "click_point",
+  "double_click",
+  "drag",
   "press_key",
   "scroll",
   "perform_secondary_action",
@@ -31,17 +36,21 @@ const MODEL_VISIBLE_COMPUTER_ACTION_SET = new Set(MODEL_VISIBLE_COMPUTER_ACTIONS
 const MODEL_VISIBLE_ELEMENT_ACTIONS = Object.freeze([
   "click_element",
   "type_text",
+  "set_value",
+  "double_click",
   "scroll",
   "perform_secondary_action",
 ]);
-const MODEL_HIDDEN_INPUT_ACTIONS = new Set([
-  "click_point",
-  "double_click",
-  "drag",
-]);
 
-function modelVisibleAllowedActions(actions = []) {
-  return (Array.isArray(actions) ? actions : []).filter((action) => MODEL_VISIBLE_COMPUTER_ACTION_SET.has(action));
+function modelVisibleAllowedActions(actions = [], capabilities: any = null) {
+  const supported=value=>['pidScoped','allowed','semantic','focused',true].includes(value);
+  return (Array.isArray(actions) ? actions : []).filter((action) => MODEL_VISIBLE_COMPUTER_ACTION_SET.has(action)).filter(action=>{
+    if(!capabilities)return true;
+    if(action==='click_point')return supported(capabilities.pointClick);
+    if(action==='drag')return supported(capabilities.drag);
+    if(action==='double_click')return capabilities.elementDoubleClick===true||supported(capabilities.pointClick);
+    return true;
+  });
 }
 
 function modelVisibleActionCapabilities(capabilities: Record<string, any> = {}) {
@@ -49,6 +58,9 @@ function modelVisibleActionCapabilities(capabilities: Record<string, any> = {}) 
     backgroundControl: capabilities?.backgroundControl,
     elementActions: capabilities?.elementActions,
     textInput: capabilities?.textInput,
+    pointClick: capabilities?.pointClick,
+    drag: capabilities?.drag,
+    elementDoubleClick: capabilities?.elementDoubleClick,
     keyboardInput: capabilities?.keyboardInput,
     requiresForegroundForInput: capabilities?.requiresForegroundForInput === true,
   };
@@ -63,9 +75,6 @@ function errorResult(err) {
   };
   if (Array.isArray(details.allowedActions)) {
     details.allowedActions = modelVisibleAllowedActions(details.allowedActions);
-  }
-  if (MODEL_HIDDEN_INPUT_ACTIONS.has(details.suggestedAction)) {
-    delete details.suggestedAction;
   }
   return {
     content: [{ type: "text", text: serialized.message }],
@@ -110,6 +119,8 @@ function actionTarget(params) {
   if (params.elementId) {
     return { coordinateSpace: "element", elementId: params.elementId };
   }
+  if(Number.isFinite(params.x)&&Number.isFinite(params.y))return {coordinateSpace:'window',x:params.x,y:params.y};
+  if(Number.isFinite(params.fromX)&&Number.isFinite(params.fromY))return {coordinateSpace:'window',x:params.fromX,y:params.fromY,toX:params.toX,toY:params.toY};
   return undefined;
 }
 
@@ -470,7 +481,7 @@ function elementText(element: Record<string, any> = {}) {
   ].map((value) => String(value || "").trim()).filter(Boolean).join(" · ");
 }
 
-function formatElementSummary(elements = [], { limit = 60 } = {}) {
+function formatElementSummary(elements = [], { limit = 80, query = '', offset = 0 } = {}) {
   const rows = (Array.isArray(elements) ? elements : [])
     .map((element) => ({
       elementId: String(element.elementId || ""),
@@ -479,7 +490,8 @@ function formatElementSummary(elements = [], { limit = 60 } = {}) {
       enabled: element.enabled !== false,
     }))
     .filter((element) => element.elementId && (element.text || element.enabled))
-    .slice(0, limit);
+    .filter(element=>!query||`${element.role} ${element.text}`.toLowerCase().includes(query.toLowerCase()))
+    .slice(offset, offset + limit);
 
   if (!rows.length) return "No labeled UI elements were exposed by this app snapshot.";
   const lines = rows.map((element) => {
@@ -503,25 +515,30 @@ function listActionNames(actions) {
 function buildActionGuidance(snapshot) {
   const allowedActions = Array.isArray(snapshot.allowedActions) ? snapshot.allowedActions : [];
   const hasExplicitActions = allowedActions.length > 0;
-  const elementActions = hasExplicitActions
+  const elementActions = (hasExplicitActions
     ? MODEL_VISIBLE_ELEMENT_ACTIONS.filter((action) => allowedActions.includes(action))
-    : [...MODEL_VISIBLE_ELEMENT_ACTIONS];
+    : [...MODEL_VISIBLE_ELEMENT_ACTIONS]).filter(action=>action!=='double_click'||snapshot.actionCapabilities?.elementDoubleClick===true);
+  const pointAllowed=['pidScoped','allowed',true].includes(snapshot.actionCapabilities?.pointClick);
+  const pointActions=pointAllowed?allowedActions.filter(action=>['click_point','double_click'].includes(action)):[];
+  if(['pidScoped','allowed',true].includes(snapshot.actionCapabilities?.drag)&&allowedActions.includes('drag'))pointActions.push('drag');
+  const pointGuidance=pointActions.length?`\n- Use screenshot coordinates with ${listActionNames(pointActions)} only when an element action is unavailable. Coordinates are pixels in the current window image, origin at its top left; do not guess.`:'';
   if (!elementActions.length) {
-    return "- This provider currently exposes no clean element action for the target. Report that the target cannot be clicked cleanly by this provider.";
+    return "- This provider currently exposes no clean element action for the target." + pointGuidance;
   }
-  return `- Use element ids with ${listActionNames(elementActions)}. If no labeled element matches the target, report that the target cannot be clicked cleanly by this provider.`;
+  return `- Use element ids with ${listActionNames(elementActions)}. Read the returned state after each action; success of an input event does not prove task completion.`+pointGuidance;
 }
 
-function buildAppStateText(snapshot) {
+function buildAppStateText(snapshot, params: any = {}) {
   return [
     "Current Computer Use state:",
     `- leaseId: ${snapshot.leaseId}`,
     `- snapshotId: ${snapshot.snapshotId}`,
     `- appId: ${snapshot.appId || "unknown"}`,
     `- windowId: ${snapshot.windowId || "unknown"}`,
+    `- screenshot: ${snapshot.display?.width || '?'} × ${snapshot.display?.height || '?'} pixels`,
     buildActionGuidance(snapshot),
     "Visible/labeled elements:",
-    formatElementSummary(snapshot.elements),
+    formatElementSummary(snapshot.elements,{limit:Math.max(1,Math.min(200,params.maxElements||80)),query:params.query||'',offset:Math.max(0,params.offset||0)}),
   ].join("\n");
 }
 
@@ -529,7 +546,7 @@ export function createComputerUseTool(options: Record<string, any> = {}) {
   return {
     name: "computer",
     label: "Computer Use",
-    description: "Inspect and control an approved desktop app or window through Hana Computer Use.",
+    description: "Observe and operate an approved app/window. Start a lease, read get_app_state, and use its exact element ids or screenshot pixel coordinates. Prefer element actions. Input actions return a fresh state for verification. Never reuse an expired/changed snapshot or infer success from a click alone. App/system permissions still apply.",
     isEnabledForAgentConfig: options.isEnabledForAgentConfig,
     parameters: Type.Object({
       action: StringEnum(MODEL_VISIBLE_COMPUTER_ACTIONS),
@@ -542,15 +559,28 @@ export function createComputerUseTool(options: Record<string, any> = {}) {
       elementId: Type.Optional(Type.String()),
       x: Type.Optional(Type.Number()),
       y: Type.Optional(Type.Number()),
+      fromX: Type.Optional(Type.Number()),
+      fromY: Type.Optional(Type.Number()),
+      toX: Type.Optional(Type.Number()),
+      toY: Type.Optional(Type.Number()),
+      durationMs: Type.Optional(Type.Number({minimum:100,maximum:2000})),
+      foreground: Type.Optional(Type.Boolean({description:'For drag only: raise the approved target window and use the real pointer. Native drag-and-drop often needs this. Stops on Escape, pointer takeover or focus change. Omit for background input.'})),
+      modifiers: Type.Optional(Type.Array(StringEnum(['cmd','shift','ctrl','option']))),
+      value: Type.Optional(Type.String()),
+      query: Type.Optional(Type.String({description:'For get_app_state: filter element labels/roles.'})),
+      offset: Type.Optional(Type.Number({minimum:0})),
+      maxElements: Type.Optional(Type.Number({minimum:1,maximum:200})),
       text: Type.Optional(Type.String()),
-      key: Type.Optional(Type.String()),
+      key: Type.Optional(Type.String({description:'Single key or shortcut, e.g. Enter, Tab, Cmd+a. On macOS use cmd for shortcuts. Include elementId to send keys to that observed control.'})),
       direction: Type.Optional(StringEnum(["up", "down", "left", "right"])),
-      amount: Type.Optional(Type.Number()),
+      amount: Type.Optional(Type.Number({minimum:1,maximum:50,description:'Scroll steps. Native accessible scroll regions use pages; other targets use keyboard steps.'})),
     }),
 
     execute: async (_toolCallId, params, _signal, _onUpdate, ctx) => {
+      let actionDispatched = false;
       try {
-        const toolCtx = resolveToolCtx(ctx, options);
+        const toolCtx = {...resolveToolCtx(ctx, options),signal:_signal};
+        _signal?.throwIfAborted?.();
         if (options.isAgentToolEnabled && !options.isAgentToolEnabled(toolCtx)) {
           throw computerUseError(
             COMPUTER_USE_ERRORS.DISABLED,
@@ -569,6 +599,10 @@ export function createComputerUseTool(options: Record<string, any> = {}) {
           case "list_apps": {
             const apps = await host.listApps(toolCtx, params.providerId);
             return textResult(JSON.stringify(apps, null, 2), { action: "list_apps", apps });
+          }
+          case 'list_windows': {
+            const windows=await host.listWindows(toolCtx,params.appId,params.providerId);
+            return textResult(JSON.stringify(windows,null,2),{action:'list_windows',windows});
           }
           case "start": {
             const { lease, confirmation, confirmed } = await createLeaseWithAppApproval(options, toolCtx, host, params);
@@ -602,7 +636,7 @@ export function createComputerUseTool(options: Record<string, any> = {}) {
             });
             return {
               content: [
-                { type: "text", text: buildAppStateText(snapshot) },
+                { type: "text", text: buildAppStateText(snapshot,params) },
                 snapshot.screenshot,
               ],
               details: {
@@ -612,7 +646,7 @@ export function createComputerUseTool(options: Record<string, any> = {}) {
                 appId: snapshot.appId,
                 windowId: snapshot.windowId,
                 providerId: snapshot.providerId,
-                allowedActions: modelVisibleAllowedActions(snapshot.allowedActions),
+                allowedActions: modelVisibleAllowedActions(snapshot.allowedActions,snapshot.actionCapabilities),
                 actionCapabilities: modelVisibleActionCapabilities(snapshot.actionCapabilities),
                 elements: snapshot.elements,
                 display: snapshot.display,
@@ -621,27 +655,44 @@ export function createComputerUseTool(options: Record<string, any> = {}) {
           }
           case "click_element":
           case "type_text":
+          case "set_value":
+          case "click_point":
+          case "double_click":
+          case "drag":
           case "press_key":
           case "scroll":
           case "perform_secondary_action": {
             const leaseParams = resolveCurrentLeaseParams(host, toolCtx, params);
-            const presentation = host.getActionPresentation?.(toolCtx, leaseParams.leaseId, params.action) || {};
+            if(!leaseParams.leaseId)throw computerUseError(COMPUTER_USE_ERRORS.LEASE_NOT_FOUND,'Start an approved app lease before interacting.',{action:params.action});
+            if(!leaseParams.snapshotId)throw computerUseError(COMPUTER_USE_ERRORS.STALE_SNAPSHOT,'Read get_app_state before interacting.',{action:params.action});
+            const presentation = params.action === 'drag' && params.foreground === true
+              ? {...(host.getActionPresentation?.(toolCtx, leaseParams.leaseId, params.action) || {}),inputMode:'foreground-input',requiresForeground:true,interruptKey:'Escape'}
+              : host.getActionPresentation?.(toolCtx, leaseParams.leaseId, params.action) || {};
             const result = await withActionOverlay(options, toolCtx, {
               ...params,
               ...leaseParams,
               presentation,
-            }, () => host.performAction(toolCtx, leaseParams.leaseId, {
+            }, async () => {
+              actionDispatched = true;
+              const actionResult = await host.performAction(toolCtx, leaseParams.leaseId, {
               type: params.action,
               snapshotId: leaseParams.snapshotId,
               elementId: params.elementId,
               x: params.x,
               y: params.y,
+              fromX:params.fromX,fromY:params.fromY,toX:params.toX,toY:params.toY,durationMs:params.durationMs,foreground:params.foreground,modifiers:params.modifiers,value:params.value,
               text: params.text,
               key: params.key,
               direction: params.direction,
               amount: params.amount,
-            }));
-            return textResult(`Computer action completed: ${params.action}`, { action: params.action, result });
+              });
+              try { return {actionResult,snapshot:await host.getAppState(toolCtx,leaseParams.leaseId)}; }
+              catch(error) { throw computerUseError(COMPUTER_USE_ERRORS.OBSERVATION_FAILED_AFTER_ACTION,'The input may have applied, but its resulting state could not be read. Inspect the app before retrying.',{mayHaveApplied:true,cause:error.message}); }
+            });
+            return {
+              content:[{type:'text',text:`Input sent: ${params.action}. Verify the resulting state.\n${buildAppStateText(result.snapshot)}`},result.snapshot.screenshot],
+              details:{action:params.action,result:result.actionResult,snapshotId:result.snapshot.snapshotId,leaseId:result.snapshot.leaseId,appId:result.snapshot.appId,windowId:result.snapshot.windowId,display:result.snapshot.display},
+            };
           }
           case "stop": {
             const leaseParams = resolveCurrentLeaseParams(host, toolCtx, params);
@@ -652,13 +703,6 @@ export function createComputerUseTool(options: Record<string, any> = {}) {
             return textResult("Computer Use stopped.", { action: "stop", leaseId: leaseParams.leaseId });
           }
           default: {
-            if (MODEL_HIDDEN_INPUT_ACTIONS.has(params.action)) {
-              throw computerUseError(
-                COMPUTER_USE_ERRORS.CAPABILITY_UNSUPPORTED,
-                `Computer action is not exposed by the clean model interface: ${params.action}`,
-                { action: params.action },
-              );
-            }
             throw computerUseError(
               COMPUTER_USE_ERRORS.CAPABILITY_UNSUPPORTED,
               `Unknown computer action: ${params.action}`,
@@ -667,6 +711,8 @@ export function createComputerUseTool(options: Record<string, any> = {}) {
           }
         }
       } catch (err) {
+        if(err?.code===COMPUTER_USE_ERRORS.INPUT_RELEASE_FAILED)return errorResult(err);
+        if(_signal?.aborted)return errorResult(computerUseError(COMPUTER_USE_ERRORS.CANCELLED,'Computer operation cancelled. Already-dispatched input may have applied; inspect before retrying.',{mayHaveApplied:actionDispatched}));
         return errorResult(err);
       }
     },

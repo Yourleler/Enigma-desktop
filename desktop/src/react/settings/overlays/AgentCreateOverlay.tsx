@@ -6,6 +6,7 @@ import { switchToAgent } from '../actions';
 import { Overlay } from '../../ui';
 import styles from '../Settings.module.css';
 import { CharacterCardPreviewOverlay, type CharacterCardPlan } from './CharacterCardPreviewOverlay';
+import {yuanAvatarAsset} from '../../../../../shared/yuan-visuals';
 
 export function AgentCreateOverlay() {
   const showToast = useSettingsStore(s => s.showToast);
@@ -168,7 +169,7 @@ export function AgentCreateOverlay() {
                   disabled={creating || planning}
                   onClick={() => setYuan(key)}
                 >
-                  <img className="yuan-chip-avatar" src={`assets/${meta.avatar || 'Hanako.png'}`} draggable={false} />
+                  <img className="yuan-chip-avatar" src={`assets/${yuanAvatarAsset(key,meta.avatar)}`} draggable={false} />
                   <div className="yuan-chip-info">
                     <span className="yuan-chip-name">{key}</span>
                     {/* kong 的 label 是为设置页那条 6:1 横幅写的整句，塞进这里 100px

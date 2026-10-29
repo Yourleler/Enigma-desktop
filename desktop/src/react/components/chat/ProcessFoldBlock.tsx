@@ -3,6 +3,7 @@ import { Collapse } from '@/ui';
 import { AgentAvatar, type AgentDisplayInfo } from '../../utils/agent-display';
 import { AssistantMessage } from './AssistantMessage';
 import { MessageFooterActions, formatMessageTime } from './MessageFooterActions';
+import { TurnTiming } from './TurnTiming';
 import { buildProcessFoldSummary, type ProcessFoldRenderItem } from './process-fold';
 import { useSessionNodeActions } from './SessionNodeActions';
 import type {
@@ -124,6 +125,7 @@ export const ProcessFoldBlock = memo(function ProcessFoldBlock({
                 isStreaming={isStreaming}
                 isSelected={selectedIds.includes(entry.item.data.id)}
                 showTurnCompletionTime={turnCompletionAssistantIndexes?.has(entry.originalIndex) ?? false}
+                showTurnTiming={false}
                 assistantTurnSelectionIds={assistantTurnSelectionIdsByCompletionIndex?.get(entry.originalIndex)}
                 turnTarget={assistantTurnTargetsByCompletionIndex?.get(entry.originalIndex) ?? null}
                 retrySourceMessage={assistantTurnRetryMessagesByCompletionIndex?.get(entry.originalIndex) ?? null}
@@ -142,6 +144,10 @@ export const ProcessFoldBlock = memo(function ProcessFoldBlock({
             actions={[]}
             testId="process-fold-completion-actions"
           />
+        )}
+        {turnCompletionEntry && (
+          <TurnTiming message={turnCompletionEntry.item.data}
+            input={assistantTurnRetryMessagesByCompletionIndex?.get(turnCompletionEntry.originalIndex)} />
         )}
       </div>
     </>

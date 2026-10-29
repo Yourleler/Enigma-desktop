@@ -361,3 +361,9 @@ describe('moodLabel', () => {
     expect(moodLabel('unknown')).toContain('MOOD');
   });
 });
+
+it('recognizes the Enigma work block without leaking raw markup into the visible answer',()=>{
+ const parsed=parseMoodFromContent('<work>Read: inspect sources\nPlan: verify</work>\nFinal answer');
+ expect(parsed).toEqual({mood:'Read: inspect sources\nPlan: verify',yuan:'enigma',text:'Final answer'});
+ expect(moodLabel('enigma')).toBe('◈ 工作说明');
+});

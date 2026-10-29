@@ -18,6 +18,7 @@ import { writeZipFromDirectory } from "../zip-writer.ts";
 import { safeCopyDir } from "../../shared/safe-fs.ts";
 import { relativePathInsideBase } from "../../core/message-utils.ts";
 import { fromRoot } from "../../shared/hana-root.ts";
+import {yuanAvatarAsset} from '../../shared/yuan-visuals.ts';
 import { loadSkillBundleStore, recordSkillBundle } from "../skill-bundles/store.ts";
 import { isValidAgentId } from "../../shared/agent-id.ts";
 import {
@@ -408,12 +409,7 @@ function firstNonEmptyLine(text) {
 }
 
 function defaultAvatarForYuan(yuan) {
-  const fileName = {
-    hanako: "Hanako.png",
-    butter: "Butter.png",
-    ming: "Ming.png",
-    kong: "Kong.png",
-  }[yuan] || "Hanako.png";
+  const fileName = yuanAvatarAsset(yuan,yuan==='kong'?'Kong.png':undefined);
   return fromRoot("desktop", "src", "assets", fileName);
 }
 

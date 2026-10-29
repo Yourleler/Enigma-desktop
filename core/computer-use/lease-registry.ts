@@ -43,17 +43,20 @@ export class ComputerLeaseRegistry {
   declare _snapshotIdFactory: () => string;
   declare _leases: Map<string, any>;
   declare _snapshots: Map<string, any>;
+  declare _snapshotMaxAgeMs: number;
 
   constructor({
     now = () => Date.now(),
     idFactory = () => crypto.randomUUID(),
     snapshotIdFactory = () => crypto.randomUUID(),
+    snapshotMaxAgeMs = 120000,
   } = {}) {
     this._now = now;
     this._idFactory = idFactory;
     this._snapshotIdFactory = snapshotIdFactory;
     this._leases = new Map();
     this._snapshots = new Map();
+    this._snapshotMaxAgeMs = snapshotMaxAgeMs;
   }
 
   createLease(ctx, target) {
@@ -134,12 +137,14 @@ export class ComputerLeaseRegistry {
     const lease = this.getLease(ctx, leaseId);
     if (!lease) return false;
     lease.status = "released";
+    this._clearSnapshots(lease);
     return true;
   }
 
   releaseLeaseRecord(lease) {
     if (!lease) return false;
     lease.status = "released";
+    this._clearSnapshots(lease);
     return true;
   }
 
@@ -151,6 +156,7 @@ export class ComputerLeaseRegistry {
 
   recordSnapshot(ctx, leaseId, snapshot) {
     const lease = this.requireActiveLease(ctx, leaseId);
+    this._clearSnapshots(lease);
     const snapshotId = snapshot?.snapshotId || this._snapshotIdFactory();
     const record = {
       ...snapshot,
@@ -160,6 +166,7 @@ export class ComputerLeaseRegistry {
       sessionPath: lease.sessionPath,
       agentId: lease.agentId,
       capturedAt: snapshot?.capturedAt || new Date(this._now()).toISOString(),
+      observedAtMs: this._now(),
     };
     this._snapshots.set(leaseKey(lease.sessionId, lease.sessionPath, lease.agentId, snapshotId), record);
     lease.lastSnapshotId = snapshotId;
@@ -172,6 +179,7 @@ export class ComputerLeaseRegistry {
     if (!snapshot || snapshot.leaseId !== leaseId) {
       throw computerUseError(COMPUTER_USE_ERRORS.STALE_SNAPSHOT, `Snapshot is stale or unknown: ${snapshotId}`, { leaseId, snapshotId });
     }
+    if(this._now()-snapshot.observedAtMs>this._snapshotMaxAgeMs)throw computerUseError(COMPUTER_USE_ERRORS.STALE_SNAPSHOT,'The app observation expired; read a fresh state before interacting.',{leaseId,snapshotId});
     if (lease.lastSnapshotId && lease.lastSnapshotId !== snapshotId) {
       throw computerUseError(COMPUTER_USE_ERRORS.STALE_SNAPSHOT, `Snapshot is not the latest snapshot for lease: ${leaseId}`, {
         leaseId,
@@ -182,10 +190,18 @@ export class ComputerLeaseRegistry {
     return snapshot;
   }
 
+  _clearSnapshots(lease) {
+    for(const [key,record] of this._snapshots)if(record.leaseId===lease.leaseId&&sameLeaseOwner(record,lease))this._snapshots.delete(key);
+    lease.lastSnapshotId=null;
+  }
+
+  invalidateSnapshot(ctx,leaseId) { this._clearSnapshots(this.requireActiveLease(ctx,leaseId)); }
+
   releaseBySession(sessionRef) {
     for (const lease of this._leases.values()) {
       if (sameSessionOwner(lease, sessionRef) && lease.status === "active") {
         lease.status = "released";
+        this._clearSnapshots(lease);
       }
     }
   }

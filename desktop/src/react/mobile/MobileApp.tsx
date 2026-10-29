@@ -7,11 +7,13 @@ import { MainContent } from '../MainContent';
 import { StatusBar } from '../components/StatusBar';
 import { ToastContainer } from '../components/ToastContainer';
 import { toggleSidebar } from '../components/SidebarLayout';
+import { InteractionHints } from '../ui/InteractionHints';
 import { toggleJianSidebar } from '../stores/desk-actions';
 import { togglePreviewPanel } from '../stores/preview-actions';
 import { openSettingsModal } from '../stores/settings-modal-actions';
 import { useStore } from '../stores';
 import { createNewSession, reconcileCurrentSessionMessages } from '../stores/session-actions';
+import {useEngineering} from '../engineering/state';
 import { exchangeLocalWorkbenchCredential } from './local-workbench-login';
 import enigmaAvatar from '../../assets/enigma/avatar.png';
 import {
@@ -146,6 +148,7 @@ export function MobileApp(): React.ReactElement {
 
   return (
     <ErrorBoundary region="mobile">
+      <InteractionHints />
       <MobileDesktopShell
         principal={principal}
         mobileUpdateAvailable={mobileUpdateAvailable}
@@ -174,6 +177,7 @@ function MobileDesktopShell({
   const pendingNewSession = useStore(s => s.pendingNewSession);
   const wsState = useStore(s => s.wsState);
   const isNarrow = useNarrowMobileViewport();
+  const engineeringPane=useEngineering(state=>!!state.snapshot?.connected&&state.paneOpen&&!!state.active);
   const edgeGestureRef = useRef<MobileEdgeGesture | null>(null);
   const previousWsStateRef = useRef(wsState);
   const t = window.t ?? ((p: string) => p);
@@ -189,7 +193,7 @@ function MobileDesktopShell({
   }, []);
 
   useEffect(() => {
-    if (isNarrow) useStore.setState({ sidebarOpen: false, jianOpen: false, previewOpen: false });
+    if (isNarrow) useStore.setState({ sidebarOpen: false, jianOpen: engineeringPane, previewOpen: false });
   }, [isNarrow]);
 
   useEffect(() => {
@@ -234,7 +238,7 @@ function MobileDesktopShell({
     }
   }, [refreshMobileSessions, wsState]);
 
-  const showDrawerScrim = (sidebarOpen || jianOpen) && isNarrow;
+  const showDrawerScrim = (sidebarOpen || jianOpen) && isNarrow && !(engineeringPane&&jianOpen);
   const openMobileDrawerFromGesture = useCallback((edge: MobileEdgeGesture['edge']) => {
     if (edge === 'left') {
       useStore.setState({ jianOpen: false });
@@ -328,11 +332,11 @@ function MobileDesktopShell({
         centerTitle={titlebarTitle}
         onNewSession={() => void createNewSession()}
         onToggleSidebar={() => {
-          if (!sidebarOpen) useStore.setState({ jianOpen: false });
+          if (isNarrow&&!sidebarOpen) useStore.setState({ jianOpen: false });
           toggleSidebar(!sidebarOpen);
         }}
         onToggleJian={() => {
-          if (!jianOpen) useStore.setState({ sidebarOpen: false });
+          if (isNarrow&&!jianOpen) useStore.setState({ sidebarOpen: false });
           toggleJianSidebar(!jianOpen);
         }}
         onTogglePreview={() => {
@@ -400,7 +404,7 @@ function MobileLoadingScreen() {
     <main className="onboarding">
       <section className="onboarding-step active">
         <img className="onboarding-avatar" src={window.location.pathname.startsWith('/desktop') ? enigmaAvatar : './icon.png'} alt="" />
-        <h1 className="onboarding-title">HanaAgent</h1>
+        <h1 className="onboarding-title">Enigma</h1>
         <p className="onboarding-subtitle">{t('mobile.loading')}</p>
       </section>
     </main>

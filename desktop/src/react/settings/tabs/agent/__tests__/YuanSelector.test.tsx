@@ -20,7 +20,7 @@ const zh = JSON.parse(
 );
 
 vi.mock("../../../helpers", () => ({
-  t: (key: string) => (key === "yuan.types" ? zh.yuan.types : key),
+  t: (key: string) => (key.split('.').reduce((value, part) => value?.[part], zh) || key),
 }));
 
 import { YuanSelector } from "../YuanSelector";
@@ -39,13 +39,12 @@ function chipFor(container: HTMLElement, yuan: string): HTMLElement {
 }
 
 describe("YuanSelector", () => {
-  it.each([
-    ["hanako", "MOOD"],
-    ["butter", "PULSE"],
-    ["ming", "沉思"],
-  ])("labels the %s chip with its thinking block", (yuan, block) => {
+  it("keeps Enigma selectable and uses its canonical avatar with legacy locales",()=>{const {container}=renderSelector("enigma");const chip=chipFor(container,"enigma");expect(chip.classList.contains("selected")).toBe(true);expect(chip.querySelector("img")?.getAttribute("src")).toBe("assets/enigma/avatar.png");});
+  it.each(['hanako', 'butter', 'ming'])('explains %s without internal thinking-block codes', yuan => {
     const { container } = renderSelector();
-    expect(chipFor(container, yuan).querySelector(".yuan-chip-tag")?.textContent).toBe(block);
+    const chip = chipFor(container, yuan);
+    expect(chip.querySelector('.yuan-chip-desc')?.textContent).toBeTruthy();
+    expect(chip.querySelector('.yuan-chip-tag')).toBeNull();
   });
 
   it("renders kong as 无 with the neutral description and no tag", () => {
@@ -53,9 +52,9 @@ describe("YuanSelector", () => {
     const banner = container.querySelector(".yuan-kong-banner");
 
     expect(banner).not.toBeNull();
-    expect(banner?.querySelector(".yuan-kong-name")?.textContent).toBe("无");
+    expect(banner?.querySelector(".yuan-kong-name")?.textContent).toBe("简洁模式");
     expect(banner?.querySelector(".yuan-kong-desc")?.textContent).toBe(
-      "无发散思考模块（如 MOOD），和别的 Agent 一致体验。",
+      "直接处理任务，不额外生成情绪或思绪片段。",
     );
     // 描述行已经把这件事说全了，banner 上再挂一个 tag 只是重复
     expect(banner?.querySelector(".yuan-chip-tag")).toBeNull();
@@ -67,6 +66,6 @@ describe("YuanSelector", () => {
       (el) => el.textContent,
     );
     expect(names).not.toContain("kong");
-    expect(names).toEqual(["butter", "hanako", "ming"]);
+    expect(names).toEqual(["enigma", "hanako", "butter", "ming"]);
   });
 });

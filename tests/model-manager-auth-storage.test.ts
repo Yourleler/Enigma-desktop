@@ -205,6 +205,14 @@ describe("ModelManager AuthStorage ownership", () => {
     expect(projectionRaw).not.toContain("acct_123");
   });
 
+  it("keeps isolated OAuth catalogs available when several model managers initialize together",async()=>{
+    const directories=Array.from({length:4},(_,index)=>path.join(tmpDir,`concurrent-${index}`));
+    for(const directory of directories){fs.mkdirSync(directory);fs.writeFileSync(path.join(directory,'added-models.yaml'),YAML.dump({providers:{}}));fs.writeFileSync(path.join(directory,'auth.json'),JSON.stringify({'openai-codex':{type:'oauth',access:'isolated-fixture-access',refresh:'isolated-fixture-refresh',expires:Date.now()+3600_000,accountId:'fixture-account'}}));}
+    const managers=directories.map(hanakoHome=>{const manager=new ModelManager({hanakoHome});manager.init();return manager;});
+    await Promise.all(managers.map(manager=>manager.refreshAvailable()));
+    for(const manager of managers){expect(manager.availableModels.some(model=>model.provider==='openai-codex'&&model.id==='gpt-5.6-sol')).toBe(true);}
+  });
+
   it("keeps Codex models unavailable while logged out", async () => {
     writeAddedModels({});
     writeAuth({});

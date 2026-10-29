@@ -1,3 +1,4 @@
+import { GlassSelection } from '../../ui/GlassSelection';
 import { memo, useEffect, useMemo, useRef, type RefObject } from 'react';
 import type { Agent } from '../../types';
 import type { FileMentionItem } from '../../utils/file-mention-items';
@@ -37,8 +38,8 @@ export const MentionMenu = memo(function MentionMenu({
   }, [selected]);
 
   return (
-    <div className={styles['mention-menu']} role="dialog" aria-label={t('input.mention.title')}>
-      <div className={styles['mention-tabs']} role="tablist">
+    <div className={styles['mention-menu']} data-liquid="menu" data-menu-surface="" data-menu-position="absolute" role="dialog" aria-label={t('input.mention.title')}>
+      <div className={styles['mention-tabs']} role="tablist" data-glass-segmented=""><GlassSelection selection={tab}/>
         {(['files', 'sessions', 'agents'] as MentionTab[]).map(value => (
           <button
             key={value}
@@ -98,6 +99,7 @@ function MentionItemButton({
       type="button"
       role="option"
       aria-selected={selected}
+      data-menu-row=""
       className={`${styles['mention-item']}${selected ? ` ${styles.selected}` : ''}`}
       onMouseEnter={onHover}
       onMouseDown={(event) => {

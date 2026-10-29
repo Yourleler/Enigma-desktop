@@ -1,0 +1,33 @@
+{
+  "verified": true,
+  "sessionId": "sess_0mvpgfk1n_6e0d90ad6f7c23cebd21",
+  "samples": 159,
+  "toolSamples": 54,
+  "toolSpanMs": 9243,
+  "toolRateAlwaysZero": true,
+  "outputLevels": 26,
+  "last": {
+    "state": "done",
+    "phase": "writing",
+    "runId": 1,
+    "model": "gateway/gateway-gpt-6-1-sol",
+    "startedAt": 1793031119373,
+    "endedAt": 1793031145621,
+    "elapsedMs": 26248,
+    "requests": 2,
+    "up": {
+      "tokens": 30094,
+      "estimated": false
+    },
+    "down": {
+      "tokens": 383,
+      "estimated": false
+    },
+    "rate": 72.04583308790151,
+    "cacheRead": 14917,
+    "cacheWrite": 0,
+    "sampledAt": 1793031145621,
+    "firstOutputAt": 1793031123783
+  },
+  "pathsAndProviderNamesRedacted": true
+}

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import '@testing-library/jest-dom/vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChatTranscript } from '../../components/chat/ChatTranscript';
 import { useStore } from '../../stores';
@@ -126,10 +126,10 @@ describe('ChatTranscript turn timestamps', () => {
     );
 
     expect(screen.getByText('08:00')).toBeInTheDocument();
-    expect(screen.queryByText('08:01')).not.toBeInTheDocument();
+    expect(screen.getByText('08:01')).toBeInTheDocument();
     expect(screen.getByText('08:02')).toBeInTheDocument();
     expect(screen.getByText('09:00')).toBeInTheDocument();
-    expect(screen.queryByText('09:01')).not.toBeInTheDocument();
+    expect(screen.getByText('09:01')).toBeInTheDocument();
     expect(screen.getByText('09:02')).toBeInTheDocument();
     expect(screen.getAllByTestId('assistant-completion-actions')).toHaveLength(2);
   });
@@ -149,8 +149,8 @@ describe('ChatTranscript turn timestamps', () => {
     );
 
     expect(screen.getByText('08:00')).toBeInTheDocument();
-    expect(screen.queryByText('08:01')).not.toBeInTheDocument();
-    expect(screen.queryByText('08:02')).not.toBeInTheDocument();
+    expect(screen.getByText('08:01')).toBeInTheDocument();
+    expect(screen.getByText('08:02')).toBeInTheDocument();
     expect(screen.queryByTestId('assistant-completion-actions')).not.toBeInTheDocument();
   });
 
@@ -172,6 +172,58 @@ describe('ChatTranscript turn timestamps', () => {
     fireEvent.click(within(footer).getByTitle('选择消息'));
 
     expect(useStore.getState().selectedIdsBySession[sessionPath]).toEqual(['a1-tool', 'a1-final']);
+  });
+
+  it('retains each completed turn record while the next turn streams and after remount', () => {
+    const items: ChatListItem[] = [
+      user('u1', 100000, '第一轮'),
+      assistant('a1-tool', 105000, [thinking('读文件')]),
+      assistant('a1-final', 139000, [textBlock('第一轮完成')]),
+    ];
+    const view = render(<ChatTranscript items={items} sessionPath={sessionPath} />);
+    expect(screen.getAllByTestId('turn-timing')).toHaveLength(1);
+    expect(screen.getByTestId('turn-timing')).toHaveTextContent('00:39');
+    expect(screen.getByTestId('turn-timing').closest('[data-message-id]')).toHaveAttribute('data-message-id', 'a1-final');
+
+    act(() => useStore.setState({ streamingSessions: [sessionPath] } as never));
+    const next = [...items, user('u2', 200000, '第二轮'), assistant('a2', 210000, [textBlock('正在处理')])];
+    view.rerender(<ChatTranscript items={next} sessionPath={sessionPath} />);
+    expect(screen.getAllByTestId('turn-timing')).toHaveLength(1);
+    expect(screen.getByTestId('turn-timing')).toHaveTextContent('00:39');
+
+    act(() => useStore.setState({ streamingSessions: [] } as never));
+    view.unmount();
+    render(<ChatTranscript items={next} sessionPath={sessionPath} />);
+    expect(screen.getAllByTestId('turn-timing').map(node => node.textContent)).toEqual([
+      expect.stringContaining('00:39'), expect.stringContaining('00:10'),
+    ]);
+  });
+
+  it('keeps the record outside a collapsed process and avoids duplicating it when expanded', () => {
+    const items = [user('u1', 100000, '处理'), ...[1, 2, 3].map(n => assistant(`a${n}`, 100000 + n * 1000, [thinking(`处理${n}`)]))];
+    const view = render(<ChatTranscript items={items} sessionPath={sessionPath} enableProcessFold />);
+    expect(screen.getByTestId('turn-timing')).toBeVisible();
+    expect(screen.getByTestId('turn-timing')).toHaveTextContent('00:03');
+    fireEvent.click(view.container.querySelector('button[aria-expanded]')!);
+    expect(screen.getAllByTestId('turn-timing')).toHaveLength(1);
+  });
+
+  it('does not assign the preceding visible input time to a hidden input', () => {
+    render(<ChatTranscript items={[
+      user('u1', 100000, '处理'),
+      assistant('a1', 139000, [textBlock('后台响应')], 'hidden-input'),
+    ]} sessionPath={sessionPath} />);
+    expect(screen.getByTestId('turn-timing')).toHaveTextContent('本轮历时 未记录');
+  });
+
+  it('displays persisted input time without its user on the page and rejects reversed timestamps', () => {
+    const message = assistant('a1', 139000, [textBlock('响应')], 'earlier-input');
+    if (message.type !== 'message') throw new Error('expected message');
+    message.data.turnStartedAt = 100000;
+    const view = render(<ChatTranscript items={[message]} sessionPath={sessionPath} />);
+    expect(screen.getByTestId('turn-timing')).toHaveTextContent('00:39');
+    view.rerender(<ChatTranscript items={[{...message, data:{...message.data, timestamp:90000}}]} sessionPath={sessionPath} />);
+    expect(screen.getByTestId('turn-timing')).toHaveTextContent('本轮历时 未记录');
   });
 
   it('targets each historical assistant completion by its own persisted entry id', () => {

@@ -166,13 +166,14 @@ export function Overlay({
   const overlay = (
     <div
       ref={backdropRef}
+      data-native-browser-occluder=""
       className={backdropCls}
       style={{ zIndex }}
       tabIndex={-1}
       onMouseDown={handleBackdropClick}
       onKeyDown={handleKeyDown}
     >
-      <div {...contentProps} className={containerCls}>
+      <div data-glass-frame={backdrop !== 'none' && !contentProps?.['data-liquid'] ? 'sheet' : undefined} data-glass-controls="" {...contentProps} className={containerCls}>
         {children}
       </div>
     </div>

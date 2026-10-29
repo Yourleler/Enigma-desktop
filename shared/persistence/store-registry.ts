@@ -118,6 +118,37 @@ function defineStore(input: StoreInput): StoreDescriptor {
 }
 
 export const PERSISTENT_STORES: readonly StoreDescriptor[] = Object.freeze([
+  defineStore({
+    id: 'model-capability-observations',
+    ownerModule: 'core/model-capability-observations.ts',
+    pathPatterns: ['model-capability-observations.json'],
+    format: 'json',
+    schemaSource: runtimeSource('core/model-capability-observations.ts', 'Array of verified image-readback records keyed by provider/model and endpoint/declaration signature; observations expire after 30 days'),
+    openEntry: ['ModelCapabilityObservations.apply', 'ModelCapabilityObservations.recordImageSupport'],
+    epochPolicy: 'compatible',
+    affectedByEpochMigration: false,
+    checkpointPolicy: 'Optional capability cache; never contains credentials or input images.',
+    restorePolicy: 'Drop incompatible observations; original provider declarations remain authoritative until a new probe succeeds.',
+    identityContract: 'Profile-local provider/model signature with proof image digest and observation time.',
+    compatibility: 'New optional file. Missing, expired, or unmatched records leave model declarations unchanged. No existing model configuration is migrated.',
+    siteRules: rules(['core/model-capability-observations.ts'], 'Writes a verified, bounded-age capability observation through the private file writer.'),
+  }),
+  defineStore({
+    id: 'browser-downloads',
+    ownerModule: 'shared/browser-downloads.cjs',
+    pathPatterns: ['cache/browser-downloads/{sessionHash}/'],
+    pathKind: 'tree',
+    format: 'mixed-directory',
+    schemaSource: directorySource('shared/browser-downloads.cjs', 'Managed download files plus an atomic array index; UUID filenames, owning session hash, completed/interrupted/cancelled/missing states'),
+    openEntry: ['BrowserDownloads constructor'],
+    epochPolicy: 'compatible',
+    affectedByEpochMigration: false,
+    checkpointPolicy: 'Retain completed downloads as user-visible artifacts; do not checkpoint an in-progress transfer as completed.',
+    restorePolicy: 'Reconcile the index with existing files; interrupted transfers never become completed by restoring metadata alone.',
+    identityContract: 'Each profile/session hash has its own transfer ledger; UUID and validated filename determine the only allowed path.',
+    compatibility: 'New additive managed-download directory. Existing browser cold-state schema and files remain unchanged.',
+    siteRules: rules(['shared/browser-downloads.cjs'], 'Creates managed downloads and atomically replaces their session-scoped index.'),
+  }),
 
   defineStore({
     id: "enigma-conductor-ledgers",
@@ -156,7 +187,7 @@ export const PERSISTENT_STORES: readonly StoreDescriptor[] = Object.freeze([
     affectedByEpochMigration: false,
     checkpointPolicy: "Bindings identify external engineering workspaces; capture this metadata without traversing or rolling back their repositories.",
     restorePolicy: "Restore only through the schema 1 binding reader; external workspace/code recovery remains an explicit Enigma operation.",
-    compatibility: "An additive plugin-owned file; existing Hana stores and DATA_EPOCH remain unchanged.",
+    compatibility: "An additive plugin-owned file; existing Hana stores and DATA_EPOCH remain unchanged. Material search returns query/count metadata over HTTP without changing these schema 1 bindings or their restore semantics.",
     siteRules: rules(["plugins/enigma/host.ts"], "Writes the native engineering binding map only.", ["atomic-write"], "this\\.configPath"),
     identityContract: "Hana sessionId owns one current workspace binding; sessionPath is only a locator for a not-yet-registered session.",
   }),
@@ -458,6 +489,7 @@ export const PERSISTENT_STORES: readonly StoreDescriptor[] = Object.freeze([
     pathPatterns: ["user/preferences.json", "user/preferences.json.corrupt-{timestamp}"],
     format: "json",
     schemaSource: runtimeSource("core/preferences-manager.ts", "PreferencesManager defaults, coercion, and _dataVersion migration driver"),
+    protocolModules: ['shared/workspace-ui-state.ts'],
     openEntry: ["new PreferencesManager"],
     migrationEntry: ["core/preferences-manager.ts unreadable-source preservation", "core/migrations.ts runMigrations"],
     firstPossibleOpenPhase: "desktop_bootstrap",
@@ -672,6 +704,7 @@ export const PERSISTENT_STORES: readonly StoreDescriptor[] = Object.freeze([
       ], "Creates, repairs, archives, restores, or appends session JSONL locators."),
       ...rules(["server/routes/sessions.ts"], "Archives, restores, or deletes a session JSONL locator.", ["mkdir", "rename", "remove-path"]),
       ...rules(["core/engine.ts"], "Deletes an expired legacy ephemeral session JSONL locator.", ["remove-path"], "filePath"),
+      ...rules(["plugins/enigma/host.ts"], "Copies a restored Pi session into its owning native session directory with exclusive creation and verified identity; preserves the native Pi schema.", ["write-file"], "targetPath,\\s*await fs\\.readFile\\(start\\.sessionFile\\)"),
     ],
   }),
   defineStore({
@@ -1424,7 +1457,7 @@ export const PERSISTENCE_EXEMPTIONS: readonly PersistenceExemption[] = Object.fr
     "packages/enigma-engineering/src/artifacts.ts",
     "plugins/enigma/conductor.ts",
     "Writes a bounded report under the explicit engineering workspace's approved runs result directory; Artifacts owns its immutable version. This external project content must not be traversed by Hana epoch rollback.",
-    "2026-12-31", ["write-file", "mkdir"], "(?:file,redact|path\\.dirname\\(file\\))",
+    "2026-12-31", ["write-file", "mkdir"], "(?:file,\\s*redact|path\\.dirname\\(file\\))",
   ),
   exemption(
     "external-enigma-session-state",
@@ -1433,7 +1466,7 @@ export const PERSISTENCE_EXEMPTIONS: readonly PersistenceExemption[] = Object.fr
     "Writes schema-1 engineering state in an explicit external workspace, outside HANA_HOME. Its repository checkpoint, user-requirement and cumulative-budget protocol is independently verified by Enigma; host epoch rollback must not traverse external repositories.",
     "2026-12-31",
     ["atomic-write"],
-    "statePath|workspace\\.data|fork\\.data",
+    "statePath|workspace\\.data|fork\\.data|originPath,\\{\\.\\.\\.origin,piSession",
   ),
 
   exemption(

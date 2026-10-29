@@ -265,6 +265,7 @@ export function AgentTab() {
             type="text"
             value={agentName}
             placeholder={t('settings.agent.agentNameHint')}
+            aria-label={t('settings.agent.agentNameHint')}
             onChange={(e) => setAgentName(e.target.value)}
             onKeyDown={(e) => {
               // 回车保存名称（等同下方「保存」按钮）；排除中文输入法组合态，
@@ -275,6 +276,9 @@ export function AgentTab() {
               }
             }}
           />
+          <button className={styles['agent-name-save-btn']} onClick={saveAgentName}>
+            {t('settings.save')}
+          </button>
         </div>
         <div className={`${styles['settings-form-field']} ${styles['settings-form-field-center']}`}>
           <div className={styles['model-capsule']}>
@@ -332,9 +336,7 @@ export function AgentTab() {
           {currentModelUnavailable && (
             <span className={styles['settings-form-hint']}>{t('settings.agent.modelUnavailableHint')}</span>
           )}
-          <button className={styles['agent-name-save-btn']} onClick={saveAgentName}>
-            {t('settings.save')}
-          </button>
+
         </div>
         {/* 图片模型选择器暂时隐藏，后续重新设计 */}
       </SettingsSection>

@@ -5,7 +5,7 @@
  * for non-chat tabs, and overflows into a dropdown when >5 draggable tabs.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useStore } from '../../stores';
 import type { TabType, PluginPageInfo } from '../../types';
 import { toggleSidebar } from '../SidebarLayout';
@@ -15,6 +15,7 @@ import { hydrateCurrentChannelIfNeeded } from '../../stores/channel-actions';
 import { PluginTabOverflow } from '../plugin/PluginTabOverflow';
 import { ContextMenu, type ContextMenuItem } from '../../ui';
 import styles from './Channels.module.css';
+import { GlassSelection } from '../../ui/GlassSelection';
 
 declare function t(key: string, vars?: Record<string, string | number>): string;
 
@@ -100,45 +101,11 @@ export function ChannelTabBar() {
   const overflowDraggable = draggableTabs.slice(MAX_VISIBLE_DRAGGABLE);
   const visibleTabs: TabType[] = ['chat' as TabType, ...visibleDraggable];
 
-  const tabsRef = useRef<HTMLDivElement>(null);
-  const sliderRef = useRef<HTMLDivElement>(null);
-  const btnRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
 
   // Drag state
   const [dragTab, setDragTab] = useState<TabType | null>(null);
   const [dragOverTab, setDragOverTab] = useState<TabType | null>(null);
 
-  const setBtnRef = useCallback((tab: TabType, el: HTMLButtonElement | null) => {
-    if (el) btnRefs.current.set(tab, el);
-    else btnRefs.current.delete(tab);
-  }, []);
-
-  const moveSlider = useCallback((tab: TabType, animate: boolean) => {
-    const container = tabsRef.current;
-    const slider = sliderRef.current;
-    const target = btnRefs.current.get(tab);
-    if (!slider || !container) return;
-    if (!target) {
-      // Active tab is in overflow; hide slider
-      slider.style.width = '0px';
-      slider.style.transform = 'translateX(0px)';
-      return;
-    }
-    const parentRect = container.getBoundingClientRect();
-    const targetRect = target.getBoundingClientRect();
-    const offsetX = targetRect.left - parentRect.left;
-    if (!animate) slider.style.transition = 'none';
-    slider.style.width = targetRect.width + 'px';
-    slider.style.transform = `translateX(${offsetX - 2}px)`;
-    if (!animate) requestAnimationFrame(() => { slider.style.transition = ''; });
-  }, []);
-
-  useEffect(() => { moveSlider(currentTab, true); }, [currentTab, moveSlider]);
-  useEffect(() => { moveSlider(useStore.getState().currentTab || 'chat', false); }, [locale, moveSlider]);
-  // Initial position after mount
-  useEffect(() => {
-    requestAnimationFrame(() => moveSlider(useStore.getState().currentTab || 'chat', false));
-  }, [moveSlider, pluginPages, tabOrder]);
 
   // Restore saved tab on mount
   useEffect(() => {
@@ -225,8 +192,8 @@ export function ChannelTabBar() {
   ];
 
   return (
-    <div className={styles.tbTabs} ref={tabsRef}>
-      <div className={styles.tbTabsSlider} ref={sliderRef}></div>
+    <div className={styles.tbTabs} data-glass-segmented="" aria-label="主页面切换">
+      <GlassSelection selection={`${currentTab}:${locale}:${visibleTabs.join(',')}`} selector="button[data-tab][aria-pressed='true']"/>
       {visibleTabs.map(tab => {
         const isActive = currentTab === tab;
         const isDragging = dragTab === tab;
@@ -239,9 +206,9 @@ export function ChannelTabBar() {
         return (
           <button
             key={tab}
-            ref={(el) => setBtnRef(tab, el)}
             className={cls}
             data-tab={tab}
+            aria-pressed={isActive}
             draggable={tab !== 'chat'}
             onClick={() => handleTabClick(tab)}
             onContextMenu={(e) => handleTabContextMenu(e, tab)}

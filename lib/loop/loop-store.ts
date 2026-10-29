@@ -99,6 +99,8 @@ export class LoopStore {
       limits: { ...LOOP_DEFAULT_LIMITS, ...(limitsOverride || {}) },
       pausedReason: null,
       completedSummary: null,
+      activeSince: now,
+      activeElapsedMs: 0,
       createdAt: now,
       updatedAt: now,
     };
@@ -110,7 +112,13 @@ export class LoopStore {
   update(key, patch) {
     const existing = this._loops.get(key);
     if (!existing) throw new Error(`no_loop: ${key}`);
-    const next = { ...existing, ...clone(patch), updatedAt: Date.now() };
+    const now = Date.now();
+    const next = { ...existing, ...clone(patch), updatedAt: now };
+    if (patch.status && patch.status !== existing.status) {
+      const accrued = Number.isFinite(existing.activeElapsedMs) ? existing.activeElapsedMs : Math.max(0, (existing.status === 'running' ? now : existing.updatedAt || now) - existing.createdAt);
+      next.activeElapsedMs = accrued + (existing.status === 'running' && existing.activeSince ? Math.max(0, now-existing.activeSince) : 0);
+      next.activeSince = patch.status === 'running' ? now : null;
+    }
     this._loops.set(key, next);
     this._save();
     return clone(next);

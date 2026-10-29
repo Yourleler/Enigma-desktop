@@ -37,22 +37,39 @@ export class Artifacts {
       await writeJson(join(directory, `${record.id}.json`), record); return record;
     });
   }
-  async read(artifact: string, task?: string) {
+  private async metadata(artifact: string, task?: string) {
     const record = await readJson<ArtifactRecord>(join(await this.directory(), `${safeId(artifact)}.json`));
-    if (record.schema !== 1 || record.id !== artifact || !/^[a-f0-9]{64}$/.test(record.hash)) throw new Error('Invalid artifact record');
+    if (record.schema !== 1 || record.id !== artifact || !/^[a-f0-9]{64}$/.test(record.hash) || typeof record.title !== 'string'
+      || !Number.isSafeInteger(record.bytes) || record.bytes < 0 || record.bytes > 32_000_000 || !Array.isArray(record.evidence)) throw new Error('Invalid artifact record');
     if (task && record.task && record.task !== task) throw new Error('Artifact belongs to another task');
+    return record;
+  }
+  async read(artifact: string, task?: string) {
+    const record = await this.metadata(artifact, task);
     const path = join(await this.directory(), 'blobs', record.hash), bytes = await readFile(path);
     if (hash(bytes) !== record.hash || bytes.length !== record.bytes) throw new Error('Artifact blob integrity mismatch');
     let sourceCurrent = false;
     try { const source = await this.origin({ ...record, ...record.origin }); sourceCurrent = hash(await readFile(source)) === record.origin.originalHash; } catch { /* Missing source leaves the immutable result available as historical. */ }
-    const evidence = await Promise.all(record.evidence.map(async id => { const value = await this.workspace.evidenceStatus(id); return { id, current: value.valid }; }));
+    const evidence = await Promise.all(record.evidence.map(async id => {
+      try { const value = await this.workspace.evidenceStatus(id); return { id, current: value.valid }; }
+      catch { return { id, current: false, issue: '验收依据不可读取，不能视为当前有效证据。' }; }
+    }));
     return { record, path, sourceCurrent, evidence, note: 'Saved bytes are an immutable result version. Source/evidence freshness is checked independently; screenshots/traces may contain application secrets and remain local.' };
   }
   async list(task?: string) {
-    const directory = await this.directory(), records = [];
+    return (await this.catalog(task)).items;
+  }
+  async catalog(task?: string) {
+    const directory = await this.directory(), records = [], unavailable: { id?: string; title: string; reason: string }[] = [];
     for (const file of await readdir(directory)) if (file.endsWith('.json')) {
-      try { records.push(await this.read(file.slice(0, -5), task)); } catch (error) { if (!String(error).includes('another task')) throw error; }
+      let record: ArtifactRecord | undefined;
+      try { record = await this.metadata(file.slice(0, -5), task); records.push(await this.read(record.id, task)); }
+      catch (error) {
+        if (String(error).includes('another task')) continue;
+        unavailable.push(record ? { id: record.id, title: record.title, reason: (error as NodeJS.ErrnoException).code === 'ENOENT' ? '保存的文件已不在原位置，请从来源重新登记。' : '保存的文件无法读取或校验未通过，请核对原始来源。' }
+          : { title: '有成果记录无法读取', reason: '记录信息不完整，无法确认其来源与所属任务。' });
+      }
     }
-    return records.sort((a, b) => a.record.createdAt.localeCompare(b.record.createdAt));
+    return { items: records.sort((a, b) => a.record.createdAt.localeCompare(b.record.createdAt)), unavailable };
   }
 }

@@ -75,7 +75,10 @@ export class BackgroundRuns {
     const active = ['starting', 'running'].includes(state.status);
     const current = active && !identityMatches ? { ...state, status: 'unknown' as const, error: 'Worker identity is absent, changed or terminated; effects need reconciliation.' } : state;
     const terminal = !active || worker.state === 'gone' || worker.state === 'alive' && !!state.workerIdentity && !!worker.identity && worker.identity !== state.workerIdentity;
+    let reconciliation:{at:string;observation:string}|undefined;
+    try{const receipt=await readJson<{id:string;fingerprint:string;at:string;observation:string}>(join(directory,'reconciled.json'));if(receipt.id===spec.id&&receipt.fingerprint===spec.fingerprint)reconciliation={at:receipt.at,observation:receipt.observation};}catch(error){if((error as NodeJS.ErrnoException).code!=='ENOENT')throw error;}
     return { spec, state: current, recordedStatus: state.status, terminal, worker, observationFresh: Date.now() - Date.parse(state.observedAt) < 10_000,
+      reconciled:!!reconciliation,reconciliation,
       note: 'A live worker/output is not proof of task completion. The execution boundary is supplied by the active host; repository observations alone do not establish process isolation.' };
   }
   async list(task?: string) {
@@ -118,10 +121,7 @@ export class BackgroundRuns {
   }
   async unresolved() {
     const results = [];
-    for (const run of await this.list()) if (run.state.status === 'unknown') {
-      try { await readJson(join(await this.directory(run.spec.id), 'reconciled.json')); }
-      catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; results.push(run.spec.id); }
-    }
+    for (const run of await this.list()) if (run.state.status === 'unknown'&&!run.reconciled)results.push(run.spec.id);
     return results;
   }
   async acknowledge(run: string, observation: string) {
@@ -132,5 +132,6 @@ export class BackgroundRuns {
     if (current.worker.state === 'alive' && (!current.state.workerIdentity || current.worker.identity === current.state.workerIdentity)
       || child?.state === 'alive' && (!current.state.childIdentity || child.identity === current.state.childIdentity)) throw new Error('Owned worker/command may still be active; confirm termination before reconciling');
     await writeJson(join(await this.directory(run), 'reconciled.json'), { id: run, fingerprint: current.spec.fingerprint, at: new Date().toISOString(), observation: redact(observation, this.workspace.secrets) });
+    return {backgroundAcknowledged:run,label:current.spec.label,observation:redact(observation,this.workspace.secrets)};
   }
 }

@@ -68,6 +68,7 @@ export interface HistoryApiResponse {
     timestamp?: number | string | null;
     sourceIndex?: number;
     turnInputEntryId?: string;
+    turnStartedAt?: number | string | null;
     turnInputVisible?: boolean;
     agentReview?: import('../stores/chat-types').AgentReviewContext;
     agentReviewRequest?: import('../stores/chat-types').AgentReviewRequestContext;
@@ -605,6 +606,8 @@ export function buildItemsFromHistory(data: HistoryApiResponse): ChatListItem[] 
         role: 'assistant',
         blocks,
         ...(m.turnInputEntryId ? { turnInputEntryId: m.turnInputEntryId } : {}),
+        ...(normalizeHistoryTimestamp(m.turnStartedAt) !== undefined
+          ? { turnStartedAt: normalizeHistoryTimestamp(m.turnStartedAt) } : {}),
         ...(typeof m.turnInputVisible === 'boolean' ? { turnInputVisible: m.turnInputVisible } : {}),
       };
       if (timestamp !== undefined) msg.timestamp = timestamp;

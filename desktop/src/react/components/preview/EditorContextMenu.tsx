@@ -283,7 +283,7 @@ export function EditorContextMenu({
 
   return createPortal(
     <div
-      className="context-menu"
+      className="context-menu" data-liquid="menu" data-menu-surface="" data-menu-position="fixed"
       ref={menuRef}
       style={{ left: menu.position.x, top: menu.position.y }}
     >
@@ -364,7 +364,7 @@ function MenuItem({ label: text, shortcut, disabled, onClick }: {
 }) {
   return (
     <div
-      className={`context-menu-item${disabled ? ' disabled' : ''}`}
+      className={`context-menu-item${disabled ? ' disabled' : ''}`} data-menu-row=""
       onMouseDown={(e) => e.preventDefault()}
       onClick={(e) => {
         if (disabled) { e.preventDefault(); e.stopPropagation(); return; }

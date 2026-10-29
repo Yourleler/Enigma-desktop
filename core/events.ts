@@ -1,10 +1,11 @@
 /**
  * MoodParser — 从 streaming text 中解析内省标签
  *
- * 支持三种标签（对应三个 yuan 的思维框架）：
+ * 支持宿主角色与 Enigma 的显式工作说明标签：
  *   <mood></mood>       — Hanako（MOOD 意识流四池）
  *   <pulse></pulse>     — Butter（PULSE 体感三拍）
  *   <reflect></reflect> — Ming（沉思两层）
+ *   <work></work>       — Enigma（工作说明）
  *
  * 无论哪种标签，都输出统一的事件流：
  *   mood_start / mood_text / mood_end

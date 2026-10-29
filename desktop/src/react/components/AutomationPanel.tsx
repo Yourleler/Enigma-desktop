@@ -227,7 +227,7 @@ export function AutomationPanel() {
 
   return (
     <div className={fp.floatingPanel} id="automationPanel">
-      <div className={fp.floatingPanelInner}>
+      <div className={fp.floatingPanelInner} data-glass-frame="panel">
         <div className={fp.floatingPanelHeader}>
           <h2 className={fp.floatingPanelTitle}>{t('automation.title')}</h2>
           <button className={fp.floatingPanelClose} onClick={close}>

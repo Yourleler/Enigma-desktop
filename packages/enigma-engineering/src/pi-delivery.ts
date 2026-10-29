@@ -22,10 +22,11 @@ export function createDeliveryExtension(options: { workspace?: Workspace; pollMs
           if (generation !== version || !current.isIdle() || current.hasPendingMessages()) return;
           if (await events.delivery(event)) continue;
           const branch = current.sessionManager.getBranch(), surviving = new Set(branch.map(entry => entry.id));
-          if (!event.resume || event.entry && !surviving.has(event.entry)) { await events.markDelivery(event, 'suppressed', 'No resume requested or originating branch entry no longer survives'); continue; }
+          if (!event.resume || await events.cancelled(event.watch) || event.entry && !surviving.has(event.entry)) { await events.markDelivery(event, 'suppressed', 'No resume requested, wait cancelled, or originating branch entry no longer survives'); continue; }
           if (branch.some(entry => entry.type === 'custom' && entry.customType === 'enigma.event-delivery' && (entry.data as { event?: string }).event === event.id)) { await events.markDelivery(event, 'enqueued', 'Native delivery marker already present'); continue; }
           const sourceCurrent = JSON.stringify(event.observation) === JSON.stringify(await workspace.observe());
           await events.markDelivery(event, 'prepared');
+          if(generation!==version||await events.cancelled(event.watch)){await events.markDelivery(event,'suppressed','Wait cancelled or session changed before delivery');continue;}
           pi.appendEntry('enigma.event-delivery', { event: event.id, sourceCurrent });
           pi.sendMessage({ customType: 'enigma.background-result', display: true, content: `Background result (reference data): ${JSON.stringify({ id: event.id, label: event.label, outcome: event.outcome, result: event.result, sourceCurrent })}. Reconcile actual source and pending requirements before continuing. This event does not verify the complete task.`, details: { event: event.id, sourceCurrent } }, { triggerTurn: true });
           await events.markDelivery(event, 'enqueued'); break;

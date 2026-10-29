@@ -18,6 +18,7 @@ import { InteractiveCard } from './InteractiveCard';
 import { SessionCollabDraftCard } from './SessionCollabDraftCard';
 import { useMessageFooterActions } from './MessageActions';
 import { MessageFooterActions, formatMessageTime } from './MessageFooterActions';
+import { TurnTiming } from './TurnTiming';
 import { ChatResourceCard } from './ChatResourceCard';
 import { FileResourceIcon, SkillResourceIcon } from './ChatResourceIcons';
 import { BLOCK_RENDERERS } from './block-renderers';
@@ -65,6 +66,7 @@ interface Props {
   isSelected: boolean;
   isLatestAssistantMessage?: boolean;
   showTurnCompletionTime?: boolean;
+  showTurnTiming?: boolean;
   assistantTurnSelectionIds?: readonly string[];
   turnTarget?: SessionNodeTarget | null;
   retrySourceMessage?: ChatMessage | null;
@@ -87,6 +89,7 @@ export const AssistantMessage = memo(function AssistantMessage({
   isSelected,
   isLatestAssistantMessage = false,
   showTurnCompletionTime = false,
+  showTurnTiming = showTurnCompletionTime,
   assistantTurnSelectionIds,
   turnTarget = null,
   retrySourceMessage = null,
@@ -140,7 +143,7 @@ export const AssistantMessage = memo(function AssistantMessage({
   });
   const canShowNodeActions = !readOnly && showTurnCompletionTime && !!turnTarget && !isStreaming;
   const shouldPersistCompletionTime = showTurnCompletionTime && isLatestAssistantMessage && !isStreaming;
-  const timeText = showTurnCompletionTime && !isStreaming ? formatMessageTime(message.timestamp) : null;
+  const timeText = formatMessageTime(message.timestamp);
   const standardMessageActions = useMessageFooterActions({
     messageId: message.id,
     selectionIds: assistantTurnSelectionIds,
@@ -193,12 +196,15 @@ export const AssistantMessage = memo(function AssistantMessage({
         <MessageFooterActions
           align="left"
           timeText={timeText}
+          timestamp={message.timestamp}
+          timeKind={isStreaming && isLatestAssistantMessage ? "receiving" : "received"}
           timePersistent={shouldPersistCompletionTime}
           leadingActions={footerActions}
           actions={messageActions}
-          testId="assistant-completion-actions"
+          testId={showTurnCompletionTime && !isStreaming ? "assistant-completion-actions" : "assistant-message-time"}
         />
       )}
+      {showTurnTiming && <TurnTiming message={message} input={retrySourceMessage} />}
     </div>
   );
 });
@@ -1085,7 +1091,7 @@ const CronConfirmBlock = memo(function CronConfirmBlock({ block, sessionPath }: 
           if (event.target === event.currentTarget) setModalOpen(false);
         }}
       >
-        <div className={styles.automationDraftModal} role="dialog" aria-modal="true" aria-label={window.t('automation.draftTitle')}>
+        <div className={styles.automationDraftModal} data-glass-frame="sheet" role="dialog" aria-modal="true" aria-label={window.t('automation.draftTitle')}>
           <div className={styles.automationDraftHeader}>
             <input
               className={styles.automationDraftTitleInput}

@@ -7,6 +7,7 @@ import { fileRefVersionToken } from '../../../services/resource-url';
 import { ImageStage } from './ImageStage';
 import { VideoStage } from './VideoStage';
 import styles from './MediaViewer.module.css';
+import { openMediaPreview } from '../../../utils/media-preview';
 
 declare function t(key: string, vars?: Record<string, string | number>): string;
 
@@ -140,6 +141,7 @@ export function MediaViewer() {
     >
       {/* 顶栏 */}
       <div className={`${styles.topbar} ${chromeVisible ? '' : styles.hidden}`}>
+        <button className={styles.closeBtn} title="在侧栏查看，继续阅读对话" aria-label="在侧栏查看" onClick={event => {event.stopPropagation(); openMediaPreview(current); closeMediaViewer();}}>↗</button>
         {multi && (
           <span className={styles.index} data-testid="media-viewer-index">
             {currentIndex + 1} / {state.files.length}

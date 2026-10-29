@@ -1,0 +1,35 @@
+[
+  {
+    "route": "/api/enigma/choices?sources=repos,checks",
+    "ms": [
+      2.22,
+      3.36,
+      1.42,
+      2.89,
+      2.96
+    ],
+    "bytes": 688
+  },
+  {
+    "route": "/api/enigma/choices?sources=checkpoints",
+    "ms": [
+      4.05,
+      2.99,
+      3.78,
+      3.51,
+      3.05
+    ],
+    "bytes": 12590
+  },
+  {
+    "route": "/api/enigma/data/choices?query=",
+    "ms": [
+      6.43,
+      5.82,
+      5.72,
+      4.96,
+      5.36
+    ],
+    "bytes": 16456
+  }
+]

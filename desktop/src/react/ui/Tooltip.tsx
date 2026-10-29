@@ -19,6 +19,7 @@ export type TooltipAlign = 'start' | 'center' | 'end';
 export type TooltipVariant = 'compact' | 'panel';
 
 export interface TooltipTriggerProps {
+  'data-tooltip-managed': string;
   ref: (node: HTMLElement | null) => void;
   'aria-describedby'?: string;
   onMouseEnter: () => void;
@@ -190,13 +191,16 @@ export function Tooltip({
 
   useEffect(() => {
     if (!open) return;
+    const escape = (event: KeyboardEvent) => { if (event.key === 'Escape') hide(); };
+    document.addEventListener('keydown', escape, true);
     window.addEventListener('resize', updatePosition);
     window.addEventListener('scroll', updatePosition, true);
     return () => {
+      document.removeEventListener('keydown', escape, true);
       window.removeEventListener('resize', updatePosition);
       window.removeEventListener('scroll', updatePosition, true);
     };
-  }, [open, updatePosition]);
+  }, [hide, open, updatePosition]);
 
   useEffect(() => {
     if (!available) setOpen(false);
@@ -205,6 +209,7 @@ export function Tooltip({
   useEffect(() => () => clearTimer(), [clearTimer]);
 
   const triggerProps = useMemo<TooltipTriggerProps>(() => ({
+    'data-tooltip-managed': '',
     ref: (node: HTMLElement | null) => {
       anchorRef.current = node;
     },
@@ -229,6 +234,7 @@ export function Tooltip({
         id={tooltipId}
         ref={panelRef}
         role="tooltip"
+        data-glass-frame="hint"
         className={[styles.tooltip, styles[`variant-${variant}`]].filter(Boolean).join(' ')}
         data-placement={position?.placement || placement}
         style={{

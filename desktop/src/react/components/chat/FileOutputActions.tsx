@@ -216,13 +216,13 @@ export function FileOutputActions({ filePath, displayName, downloadUrl, download
       {menuOpen && createPortal(
         <div
           ref={menuRef}
-          className={styles.fileOutputActionMenu}
+          className={styles.fileOutputActionMenu} data-liquid="menu" data-menu-surface="" data-menu-position="fixed"
           style={menuStyle}
           role="menu"
         >
           {downloadUrl && (
             <a
-              className={styles.fileOutputActionMenuItem}
+              className={styles.fileOutputActionMenuItem} data-menu-row=""
               role="menuitem"
               href={downloadUrl}
               download={resolvedDownloadName}

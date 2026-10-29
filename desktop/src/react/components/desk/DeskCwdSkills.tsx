@@ -74,7 +74,7 @@ function useCwdSkillsOpen() {
 
 // ── CWD Skills 按钮 ──
 
-export function DeskCwdSkillsButton() {
+export function DeskCwdSkillsButton({ inline = false }: { inline?: boolean }) {
   const deskBasePath = useStore(s => s.deskBasePath);
   const deskWorkspaceMountId = useStore(s => s.deskWorkspaceMountId);
   const skillCatalogVersion = useStore(s => s.skillCatalogVersion);
@@ -102,7 +102,9 @@ export function DeskCwdSkillsButton() {
 
   return (
     <button
-      className={`${css.cwdBtn} ${css.headerCwdBtn}${open ? ` ${css.active}` : ''}`}
+      className={`${css.cwdBtn}${inline ? '' : ` ${css.headerCwdBtn}`}${open ? ` ${css.active}` : ''}`}
+      aria-expanded={open}
+      data-tooltip={t('desk.cwdSkillsHelp')}
       onClick={handleClick}
     >
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
@@ -116,7 +118,7 @@ export function DeskCwdSkillsButton() {
 
 // ── CWD Skills 面板 ──
 
-export function DeskCwdSkillsPanel() {
+export function DeskCwdSkillsPanel({ inline = false }: { inline?: boolean }) {
   const { open, skills } = useCwdSkillsOpen();
   const deskWorkspaceMountId = useStore(s => s.deskWorkspaceMountId);
   const canUseNativePath = useStore(s => canUseNativeResourcePath({ connection: resolveServerConnection(s) }));
@@ -211,7 +213,7 @@ export function DeskCwdSkillsPanel() {
   }
 
   return (
-    <div className={`${css.cwdPanelWrap}${closing ? ` ${css.closing}` : ''}`}>
+    <div className={`${css.cwdPanelWrap}${inline ? ` ${css.cwdPanelInline}` : ''}${closing ? ` ${css.closing}` : ''}`}>
       <div
         className={`${css.cwdPanel}${dragging ? ` ${css.dragOver}` : ''}`}
         data-desk-cwd-panel=""
@@ -242,8 +244,7 @@ export function DeskCwdSkillsPanel() {
               <div key={source}>
                 <div className={css.cwdGroupLabel}>{source}</div>
                 {items.map(s => {
-                  let desc = s.description || '';
-                  if (desc.length > 60) desc = desc.slice(0, 60) + '...';
+                  const desc = s.description || '';
                   return (
                     <div
                       className={css.cwdSkillItem}

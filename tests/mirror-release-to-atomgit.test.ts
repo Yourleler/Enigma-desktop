@@ -1,5 +1,4 @@
 import { describe, expect, it, vi } from "vitest";
-import { readFileSync } from "node:fs";
 import {
   buildAtomGitReleasePayload,
   getGithubLatestTag,
@@ -428,18 +427,14 @@ describe("mirror-release-to-atomgit", () => {
     expect(methods).not.toContain("POST");
   });
 
-  it("wires manual GitHub release changes to exact-tag mirroring", () => {
-    const workflow = readFileSync(new URL("../.github/workflows/mirror-release-to-atomgit.yml", import.meta.url), "utf8");
-    expect(workflow).toContain("release:");
-    expect(workflow).toContain("- published");
-    expect(workflow).toContain("- edited");
-    expect(workflow).toContain("- prereleased");
-    expect(workflow).toContain("- released");
-    expect(workflow).toContain("RELEASE_TAG: ${{ github.event.release.tag_name }}");
-    expect(workflow).toContain("ARGS+=(--tag \"$RELEASE_TAG\")");
-    expect(workflow).toContain("github.event.sender.login != 'github-actions[bot]'");
-    expect(workflow).toContain("group: atomgit-release-mirror");
-    expect(workflow).toContain("cancel-in-progress: false");
+  it("selects the explicit CLI tag without querying an implicit newest release", async () => {
+    const fetchImpl = vi.fn(async (_url: string, _options?: unknown) => new Response(JSON.stringify(githubRelease("v0.425.4")), { status: 200 }));
+    const options = parseArgs(["--tag", "v0.425.4", "--dry-run"], { GITHUB_REPOSITORY: "liliMozi/openhanako" });
+    const releases = await selectGithubReleases(options, { env: {}, fetchImpl });
+    expect(releases.map(release => release.tag_name)).toEqual(["v0.425.4"]);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(fetchImpl.mock.calls[0][0]).toBe("https://api.github.com/repos/liliMozi/openhanako/releases/tags/v0.425.4");
+    expect(options.dryRun).toBe(true);
   });
 
   it("rejects duplicate tags across AtomGit list pages", async () => {

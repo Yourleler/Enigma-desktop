@@ -124,3 +124,12 @@ describe("workspace watcher", () => {
     expect(changed).not.toContain(".obsidian/app.json");
   }, 45_000);
 });
+
+it('a blocked native registration cannot freeze the host event loop or hide its startup timeout',async()=>{
+ const {createIsolatedWorkspaceWatcher}=await import('../lib/file-history/workspace-watcher');
+ const errors:string[]=[];
+ const source=`const {parentPort}=require('node:worker_threads');Atomics.wait(new Int32Array(new SharedArrayBuffer(4)),0,0,10000);parentPort.postMessage({type:'ready',root:'.'});`;
+ const started=Date.now(),watcher=createIsolatedWorkspaceWatcher({root:'.',onChanged:()=>{},onDeleted:()=>{},onError:error=>errors.push(error.message)},source,60);cleanups.push(()=>watcher.close());
+ let responsive=false;await new Promise<void>(resolve=>setTimeout(()=>{responsive=true;resolve();},20));expect(responsive).toBe(true);expect(Date.now()-started).toBeLessThan(1000);
+ await watcher.ready;expect(errors).toHaveLength(1);expect(errors[0]).toContain('设置和对话可以继续使用');const closing=Date.now();await watcher.close();expect(Date.now()-closing).toBeLessThan(1500);
+});

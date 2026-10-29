@@ -1,3 +1,4 @@
+import { EnigmaDesign } from './react/ui/EnigmaDesign';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { installMobilePlatform } from './react/mobile/mobile-platform';
@@ -16,7 +17,7 @@ if (!root) throw new Error('mobile root not found');
 void import('./react/mobile/MobileApp').then(({ MobileApp }) => {
   createRoot(root).render(
     <React.StrictMode>
-      <MobileApp />
+      <><EnigmaDesign /><MobileApp /></>
     </React.StrictMode>,
   );
 }).catch((err) => {

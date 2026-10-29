@@ -337,7 +337,7 @@ export function SessionConfirmationPrompt({ block, exiting = false }: SessionCon
       <div
         className={styles['session-confirmation-menu']}
         ref={menuPanelRef}
-        role="menu"
+        role="menu" data-liquid="menu" data-menu-surface="" data-menu-position="fixed"
         style={menuStyle}
       >
         {mcpTarget && currentSessionId && (

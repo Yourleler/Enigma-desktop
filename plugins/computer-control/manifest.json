@@ -1,0 +1,15 @@
+{
+  "manifestVersion": 1,
+  "id": "computer-control",
+  "name": "电脑操作",
+  "version": "0.1.0",
+  "description": "观察并操作已授权的应用窗口，结合屏幕与控件定位完成任务；系统权限和应用授权单独控制。",
+  "trust": "full-access",
+  "userToggleable": true,
+  "minAppVersion": "0.452.70",
+  "contributes": {
+    "nativeTools": {
+      "computer": "native-tools/computer.ts"
+    }
+  }
+}

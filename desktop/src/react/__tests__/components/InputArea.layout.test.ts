@@ -90,7 +90,7 @@ describe('InputArea layout', () => {
     expect(pillBlock).toMatch(/height:\s*30px/);
   });
 
-  it('keeps the mention menu as compact as the Skill menu and gives primary names display priority', () => {
+  it('bounds command and mention menus to the viewport and gives primary names display priority', () => {
     const css = fs.readFileSync(
       path.join(process.cwd(), 'desktop/src/react/components/input/InputArea.module.css'),
       'utf8',
@@ -100,8 +100,10 @@ describe('InputArea layout', () => {
     const mentionNameBlock = cssBlock(css, String.raw`\.mention-name`);
     const mentionDetailBlock = cssBlock(css, String.raw`\.mention-detail`);
 
-    expect(slashMenuBlock).toMatch(/max-width:\s*360px/);
-    expect(slashMenuBlock).toMatch(/max-height:\s*308px/);
+    expect(slashMenuBlock).toMatch(/width:\s*min\(350px,\s*calc\(100vw - 32px\)\)/);
+    expect(slashMenuBlock).toMatch(/max-height:\s*min\(54vh,\s*400px\)/);
+    expect(cssBlock(css,String.raw`\.slash-menu-list`)).toMatch(/overflow:\s*auto/);
+    expect(cssBlock(css,String.raw`\.slash-menu-desc`)).toMatch(/overflow-wrap:\s*anywhere/);
     expect(mentionMenuBlock).toMatch(/width:\s*min\(360px,\s*calc\(100vw - 2rem\)\)/);
     expect(mentionMenuBlock).toMatch(/max-height:\s*308px/);
     expect(mentionNameBlock).toMatch(/flex:\s*0 0 auto/);

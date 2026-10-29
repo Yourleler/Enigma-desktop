@@ -29,6 +29,35 @@ describe("Usage ledger", () => {
     tmpDir = null;
   });
 
+  it('persists configurable retention, keeps the newest requests and preserves pending work', () => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'usage-retention-'));
+    const storagePath = path.join(tmpDir, 'usage-ledger.json');
+    fs.writeFileSync(storagePath, JSON.stringify({ version: 1, entries: Array.from({ length: 125 }, (_, i) => ({ requestId: `old-${i}`, startedAt: new Date(1000 + i).toISOString() })) }));
+    const ledger = createUsageLedger({ storagePath });
+    const pending = ledger.start({ usageContext: sessionContext() });
+    expect(ledger.setMaxEntries(100)).toMatchObject({ maximum: 100, retained: 100 });
+    expect(ledger.list().entries[0].requestId).toBe('old-25');
+    expect(ledger.finish(pending.requestId, { usage: { input: 1, output: 2 } })).not.toBeNull();
+    const restored = createUsageLedger({ storagePath });
+    expect(restored.coverage()).toMatchObject({ maximum: 100, retained: 100 });
+    expect(restored.list().entries.at(-1)?.requestId).toBe(pending.requestId);
+    restored.setMaxEntries(200);
+    expect(createUsageLedger({ storagePath }).coverage()).toMatchObject({ maximum: 200, retained: 100 });
+    expect(() => restored.setMaxEntries(99)).toThrow();
+    expect(() => restored.setMaxEntries(100.5)).toThrow();
+    expect(() => restored.setMaxEntries(100001)).toThrow();
+  });
+
+  it('does not change the in-memory cap or records if saving retention fails', () => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'usage-retention-failure-'));
+    const storagePath = path.join(tmpDir, 'ledger');
+    const ledger = createUsageLedger({ storagePath });
+    for (let i = 0; i < 101; i++) ledger.record({ usageContext: sessionContext() });
+    fs.unlinkSync(storagePath); fs.mkdirSync(storagePath);
+    expect(() => ledger.setMaxEntries(100)).toThrow();
+    expect(ledger.coverage()).toMatchObject({ maximum: 5000, retained: 101 });
+  });
+
   it("records a completed request with normalized usage and emits llm_usage", () => {
     const events = [];
     const ledger = createUsageLedger({

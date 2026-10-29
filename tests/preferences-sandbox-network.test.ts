@@ -23,6 +23,11 @@ function seedPrefsFile(dirs, contents) {
 }
 
 describe("PreferencesManager sandbox network preference", () => {
+  it('requires a persisted explicit server choice without enabling it during the legacy migration',()=>{
+    const dirs=makeUserDir();seedPrefsFile(dirs,{sandbox_network:true});const prefs=new PreferencesManager(dirs);expect(prefs.getEngineeringLocalServers()).toBe(false);
+    prefs.setEngineeringLocalServers(true);expect(prefs.getEngineeringLocalServers()).toBe(true);expect(new PreferencesManager(dirs).getEngineeringLocalServers()).toBe(true);
+    prefs.setEngineeringLocalServers(false);expect(new PreferencesManager(dirs).getEngineeringLocalServers()).toBe(false);fs.rmSync(path.dirname(dirs.userDir),{recursive:true,force:true});
+  });
   it("defaults sandbox networking to enabled so sandboxed commands keep network functionality", () => {
     const prefs = makePrefs();
 

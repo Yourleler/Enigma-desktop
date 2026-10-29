@@ -24,6 +24,7 @@ export interface SettingsSearchResult {
 type Translate = (key: string) => string;
 
 const BUILT_IN_SETTINGS_SEARCH_ENTRIES: SettingsSearchEntry[] = [
+  {id:'usage-history',tabId:'usage',titleKey:'settings.tabs.usage',aliases:['token','tokens','用量','消耗','历史统计','模型统计','请求记录','保留条数','保留上限','retention']},
   {
     id: 'agent-profile',
     tabId: 'agent',
@@ -31,7 +32,7 @@ const BUILT_IN_SETTINGS_SEARCH_ENTRIES: SettingsSearchEntry[] = [
     pathKeys: ['settings.tabs.agent'],
     // 'AGENTS.md' 同时是工作区条目的别名，一个词命中两个设置项是预期的：
     // 人格文件和工作区注入都叫这个名字，用户搜它时两处都该出现。
-    aliases: ['assistant', 'agent', 'persona', 'role', 'avatar', 'memory', 'yuan', 'AGENTS.md', '助手', '人设', '角色', '头像', '记忆', '源'],
+    aliases: ['assistant', 'agent', 'persona', 'role', 'avatar', 'memory', 'yuan', 'AGENTS.md', '助手', '人设', '角色', '头像', '记忆', '元', '回应风格', '记忆整理', 'Dream', '源'],
   },
   {
     id: 'me-profile',
@@ -45,7 +46,7 @@ const BUILT_IN_SETTINGS_SEARCH_ENTRIES: SettingsSearchEntry[] = [
     tabId: 'interface',
     titleKey: 'settings.appearance.theme',
     pathKeys: ['settings.tabs.interface'],
-    aliases: ['theme', 'appearance', 'color', 'dark mode', 'paper', 'paper texture', '主题', '外观', '颜色', '深色', '浅色', '纸张纹理'],
+    aliases: ['theme', 'appearance', 'color', 'dark mode', 'paper', 'paper texture', 'glass', 'motion', 'background', 'marble', 'halo', '主题', '外观', '颜色', '深色', '浅色', '纸张纹理', '液态玻璃', '玻璃', '动效', '极光', '背景', '光环', '光带', '大理石', '波纹'],
   },
   {
     id: 'interface-font',
@@ -199,7 +200,7 @@ const BUILT_IN_SETTINGS_SEARCH_ENTRIES: SettingsSearchEntry[] = [
     tabId: 'security',
     titleKey: 'settings.security.sandbox',
     pathKeys: ['settings.tabs.security'],
-    aliases: ['sandbox', 'network sandbox', 'file backup', 'archived chats', 'proxy', 'security', '沙盒', '联网', '文件备份', '归档对话', '代理', '安全'],
+    aliases: ['sandbox', 'network sandbox', 'development server', 'local server', 'file backup', 'archived chats', 'proxy', 'security', '沙盒', '联网', '开发服务器', '本地服务', '文件备份', '归档对话', '代理', '安全'],
   },
   {
     id: 'security-proxy',

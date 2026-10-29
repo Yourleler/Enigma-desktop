@@ -77,6 +77,7 @@ export function JianEditor({ showHeader = true }: { showHeader?: boolean }) {
       <span className={s.editorStatus} ref={statusRef}></span>
       <textarea
         className={s.editorInput}
+        aria-label={(window.t ?? ((p: string) => p))('desk.jianLabel')}
         placeholder={(window.t ?? ((p: string) => p))('desk.jianPlaceholder')}
         spellCheck={false}
         value={localValue}

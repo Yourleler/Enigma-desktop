@@ -253,6 +253,44 @@ describe('renderMarkdown', () => {
     expect(seenPaths).toEqual(['C:/vault/images/diagram.png']);
   });
 
+  it('keeps relative document links clickable using the explicit preview file context', () => {
+    const html = renderMarkdownPreview(
+      '[Web](./second.html) [Note](../notes/Next%20Note.md#details) [Section](#local)',
+      {filePath: '/vault/docs/readme.md', getFileUrl: filePath => `file://${filePath.replaceAll(' ', '%20')}`},
+    );
+    expect(html).toContain('href="file:///vault/docs/second.html"');
+    expect(html).toContain('href="file:///vault/notes/Next%20Note.md#details"');
+    expect(html).toContain('href="#local"');
+  });
+
+  it('resolves relative document links on Windows without treating drive letters as web schemes', () => {
+    const html = renderMarkdownPreview('[Note](../next.md)', {
+      filePath: 'C:\\vault\\docs\\readme.md', getFileUrl: filePath => `file:///${filePath}`,
+    });
+    expect(html).toContain('href="file:///C:/vault/next.md"');
+  });
+
+  it('does not grant file navigation to raw HTML, dangerous URLs or context-free relative links', () => {
+    const content = [
+      '[Relative](./next.md)',
+      '<a href="file:///vault/private.md">raw</a>',
+      '<a href="./raw.md">raw relative</a>',
+      '<a href="javascript:alert(1)">script</a>',
+      '[Network](//example.com/file.md)',
+    ].join('\n');
+    const context = {filePath: '/vault/readme.md', getFileUrl: (filePath: string) => `file://${filePath}`};
+    const html = renderMarkdownPreview(content, context);
+    expect(html).toContain('href="file:///vault/next.md"');
+    expect(html).toContain('<a>raw</a>');
+    expect(html).toContain('<a>raw relative</a>');
+    expect(html).toContain('<a>script</a>');
+    expect(html).toContain('<a>Network</a>');
+    expect(renderMarkdownPreview(content)).not.toContain('href=');
+    // A prior preview must not make its grants persist into a later render.
+    expect(renderMarkdownPreview('<a href="file:///vault/next.md">later</a>', context)).toContain('<a>later</a>');
+    expect(renderMarkdownPreview('[Bad](./bad.md)', {...context, getFileUrl: () => 'javascript:alert(1)'})).not.toContain('href=');
+  });
+
   it('renders Obsidian wikilink image embeds with width and height', () => {
     const html = renderMarkdownPreview(
       '![[attachments/diagram.png|320x180]]',

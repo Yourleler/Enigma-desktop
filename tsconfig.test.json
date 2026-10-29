@@ -19,7 +19,8 @@
   "include": [
     "tests/**/*.ts",
     "tests/**/*.tsx",
-    "desktop/src/global.d.ts"
+    "desktop/src/global.d.ts",
+    "desktop/src/assets.d.ts"
   ],
   "exclude": [
     "node_modules"

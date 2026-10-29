@@ -15,8 +15,10 @@ export interface Import { repo: string; file: string; path: string; line: number
 
 const key = (path: string) => process.platform === 'win32' ? resolve(path).replace(/\\/g, '/').toLowerCase() : resolve(path);
 const identifier = (unit: Unit, name: string) => `${unit.repo}:${unit.file}:${name}`;
-const location = (unit: Unit, name: string, kind: string, start: number, end = start): SourceLocation => ({ repo: unit.repo, file: unit.file, hash: unit.hash,
-  symbol: name, kind, line: start, endLine: Math.min(end, start + 80), snippet: unit.text.split('\n').slice(start - 1, Math.min(end, start + 80)).join('\n').slice(0, 16000), truncated: end > start + 80 });
+const location = (unit: Unit, name: string, kind: string, start: number, end = start): SourceLocation => {
+  const snippet=unit.text.split('\n').slice(start-1,Math.min(end,start+80)).join('\n');
+  return {repo:unit.repo,file:unit.file,hash:unit.hash,symbol:name,kind,line:start,endLine:Math.min(end,start+80),snippet:snippet.slice(0,16000),truncated:end>start+80||snippet.length>16000};
+};
 function thriftType(type: FunctionType): string {
   if (type.type === SyntaxType.Identifier) return type.value;
   if (type.type === SyntaxType.MapType) return `map<${thriftType(type.keyType)},${thriftType(type.valueType)}>`;

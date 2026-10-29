@@ -95,6 +95,9 @@ type BuildSystemPromptOptions = {
 export class Agent {
   declare _automationTool: any;
   declare _browserTool: any;
+  declare _browserToolOptions: any;
+  declare _nativeBrowserContribution: any;
+  declare _nativeComputerContribution: any;
   declare _cb: any;
   declare _channelPostHandler: any;
   declare _channelTool: any;
@@ -554,7 +557,13 @@ export class Agent {
       resolveSessionFile: resolveActiveSessionFile,
       registerSessionFile: (entry) => this._cb?.registerSessionFile?.(entry),
     });
-    this._browserTool = createBrowserTool(() => this._cb?.getCurrentSessionPath?.(), {
+    this._browserToolOptions = {
+      getAuthorizedFolders: (sessionPath) => this._cb?.getEngine?.()?.getSessionAuthorizedFolders?.(sessionPath) || [],
+      resolveSessionFile: resolveActiveSessionFile,
+      isEnabled: () => {
+        const manager = this._cb?.getEngine?.()?.pluginManager;
+        return typeof manager?.getNativeToolContribution !== 'function' || !!manager.getNativeToolContribution('browser');
+      },
       getSessionModel: (sessionPath) => {
         const engine = this._cb?.getEngine?.();
         return engine?.getSessionByPath?.(sessionPath)?.model || null;
@@ -564,7 +573,8 @@ export class Agent {
       getHanakoHome: () => this._cb?.getEngine?.()?.hanakoHome,
       getSessionIdForPath: (sessionPath) => this._cb?.getEngine?.()?.getSessionIdForPath?.(sessionPath) || null,
       registerSessionFile: (entry) => this._cb?.registerSessionFile?.(entry),
-    });
+    };
+    this._browserTool = createBrowserTool(() => this._cb?.getCurrentSessionPath?.(), this._browserToolOptions);
     this._notifyTool = createNotifyTool({
       onNotify: (payload, context) => this._notifyHandler?.(payload, context),
     });
@@ -945,7 +955,7 @@ export class Agent {
       this._stageFilesTool,
       this._fileTool,
       ...channelTools,
-      this._browserTool,
+      this._getBrowserTool(),
       ...computerUseTools,
       ...installSkillTools,
       this._notifyTool,
@@ -968,9 +978,27 @@ export class Agent {
     return this.getToolsSnapshot();
   }
 
+  _getBrowserTool() {
+    const manager = this._cb?.getEngine?.()?.pluginManager;
+    // Standalone Agent consumers without a plugin host retain their existing
+    // tool assembly. The desktop host always uses plugin-owned contributions.
+    if (typeof manager?.getNativeToolContribution !== 'function') return this._browserTool;
+    const contribution = manager.getNativeToolContribution('browser');
+    if (!contribution) return null;
+    if (this._nativeBrowserContribution !== contribution) {
+      this._browserTool = manager.createNativeTool(contribution, [() => this._cb?.getCurrentSessionPath?.(), this._browserToolOptions], {createBrowserTool});
+      this._nativeBrowserContribution = contribution;
+    }
+    return this._browserTool;
+  }
+
   _getComputerUseTool() {
-    if (!this._computerUseTool) {
-      this._computerUseTool = createComputerUseTool({
+    const manager = this._cb?.getEngine?.()?.pluginManager;
+    const hosted = typeof manager?.getNativeToolContribution === 'function';
+    const contribution = hosted ? manager.getNativeToolContribution('computer') : null;
+    if (hosted && !contribution) return null;
+    if (!this._computerUseTool || this._nativeComputerContribution !== contribution) {
+      const options = {
         getComputerHost: () => this._cb?.getEngine?.()?.getComputerHost?.() || null,
         getSessionModel: (sessionPath) => {
           const engine = this._cb?.getEngine?.();
@@ -984,7 +1012,9 @@ export class Agent {
         emitEvent: (event, sp) => { if (sp) this._cb?.emitEvent?.(event, sp); },
         isAgentToolEnabled: () => this._isComputerUseAvailableForThisAgent(),
         isEnabledForAgentConfig: () => this._isComputerUseAvailableForThisAgent(),
-      });
+      };
+      this._computerUseTool = hosted ? manager.createNativeTool(contribution, [options], {createComputerUseTool}) : createComputerUseTool(options);
+      this._nativeComputerContribution = contribution;
     }
     return this._computerUseTool;
   }
@@ -999,6 +1029,7 @@ export class Agent {
   _isComputerUseAvailableForThisAgent() {
     if (!this._isComputerUseCandidateForThisAgent()) return false;
     const engine = this._cb?.getEngine?.();
+    if (typeof engine?.pluginManager?.getNativeToolContribution === 'function' && !engine.pluginManager.getNativeToolContribution('computer')) return false;
     const settings = engine?.getComputerUseSettings?.();
     return settings?.enabled === true;
   }

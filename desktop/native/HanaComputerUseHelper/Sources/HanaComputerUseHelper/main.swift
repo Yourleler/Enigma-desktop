@@ -1,4 +1,5 @@
 import AppKit
+import CoreGraphics
 import CuaDriverCore
 import CuaDriverServer
 import Foundation
@@ -91,8 +92,49 @@ struct HanaComputerUseHelper {
 
     private static func callTool(_ name: String, args: [String], raw: Bool, compact: Bool, socketPath: String) async throws {
         let arguments = try decodeArguments(args.first)
-        guard ToolRegistry.default.handlers[name] != nil else {
+        guard ["drag_foreground", "release_foreground_input"].contains(name) || ToolRegistry.default.handlers[name] != nil else {
             throw HelperError(code: ExitCode.usage, message: "Unknown tool: \(name)")
+        }
+
+        // Host-only crash cleanup; not exposed as a model tool. It is called
+        // only after this helper has reported owning a physical mouse-down.
+        if name == "release_foreground_input" {
+            let point = CGEvent(source: nil)?.location ?? .zero
+            CGEvent(mouseEventSource: CGEventSource(stateID: .hidSystemState), mouseType: .leftMouseUp, mouseCursorPosition: point, mouseButton: .left)?.post(tap: .cghidEventTap)
+            try await Task.sleep(for: .milliseconds(50))
+            guard !CGEventSource.buttonState(.combinedSessionState, button: .left) else {
+                throw HelperError(code: ExitCode.toolError, message: "FOREGROUND_RELEASE_FAILED: Pointer release could not be confirmed.")
+            }
+            try emitToolResult(CallTool.Result(content: [.text(text: "Foreground pointer released.", annotations: nil, _meta: nil)]), raw: raw, compact: compact)
+            return
+        }
+
+        // A window capture can still succeed behind the lock screen while
+        // its AX tree is incomplete and input cannot reach the target. Do not
+        // advertise that capture as an interactive state or dispatch input.
+        if name != "check_permissions" && !name.contains("agent_cursor") {
+            let unavailable = await MainActor.run { () -> Bool in
+                guard let session = CGSessionCopyCurrentDictionary() as? [String: Any] else { return true }
+                let onConsole = session[kCGSessionOnConsoleKey as String] as? Bool ?? false
+                let loggedIn = session[kCGSessionLoginDoneKey as String] as? Bool ?? false
+                let locked = session["CGSSessionScreenIsLocked"] as? Bool ?? false
+                let loginWindow = NSWorkspace.shared.frontmostApplication?.bundleIdentifier == "com.apple.loginwindow"
+                return !onConsole || !loggedIn || locked || loginWindow
+            }
+            if unavailable {
+                throw HelperError(code: ExitCode.toolError, message: "SCREEN_LOCKED: The Mac is locked or its interactive session is unavailable. Ask the user to unlock it, then obtain a fresh window state before continuing. No input was dispatched.")
+            }
+        }
+
+        if name == "drag_foreground" {
+            do {
+                let request = try JSONDecoder().decode(ForegroundDragRequest.self, from: Data((args.first ?? "{}").utf8))
+                try await ForegroundDrag.run(request)
+                try emitToolResult(CallTool.Result(content: [.text("Foreground drag released. Inspect the new window state to verify the result.")]), raw: raw, compact: compact)
+                return
+            } catch {
+                throw HelperError(code: ExitCode.toolError, message: error.localizedDescription)
+            }
         }
 
         if try emitToolCallFromDaemon(name, arguments: arguments, socketPath: socketPath, raw: raw, compact: compact) {
@@ -267,7 +309,12 @@ private enum AppKitBootstrap {
                 let code = await work()
                 await MainActor.run {
                     exitCode.value = code
-                    NSApp.terminate(nil)
+                    NSApp.stop(nil)
+                    // terminate() exits the process with 0 and loses the tool
+                    // failure code. Wake run() so main returns the real code.
+                    if let event = NSEvent.otherEvent(with: .applicationDefined, location: .zero, modifierFlags: [], timestamp: 0, windowNumber: 0, context: nil, subtype: 0, data1: 0, data2: 0) {
+                        NSApp.postEvent(event, atStart: true)
+                    }
                 }
             }
 

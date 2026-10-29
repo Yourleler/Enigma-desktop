@@ -91,6 +91,13 @@ describe('CSP sync', () => {
     expect(indexCsp).not.toMatch(/connect-src[^;]*\sfile:(?:\s|;|$)/);
     expect(runtimeCsp).not.toMatch(/"connect-src":\s*\[[^\]]*"file:"/s);
   });
+  it('allows authenticated local image blobs without granting script or network blob execution', () => {
+    const runtimeCsp=fs.readFileSync(path.join(htmlDir,'modules','connection-csp.js'),'utf-8');
+    expect(profiles['index.html']).toMatch(/img-src[^;]*\sblob:(?:\s|;|$)/);
+    expect(runtimeCsp).toMatch(/"img-src":\s*\[[^\]]*"blob:"/s);
+    expect(profiles['index.html']).not.toMatch(/script-src[^;]*\sblob:(?:\s|;|$)/);
+    expect(profiles['index.html']).not.toMatch(/connect-src[^;]*\sblob:(?:\s|;|$)/);
+  });
 
   it('settings window uses the same dynamic scoped connection CSP as the desktop index', () => {
     const html = fs.readFileSync(path.join(htmlDir, 'settings.html'), 'utf-8');

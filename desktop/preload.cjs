@@ -107,6 +107,7 @@ contextBridge.exposeInMainWorld("hana", {
   showInFinder: (path) => ipcRenderer.invoke("show-in-finder", path),
   trashItem: (path) => ipcRenderer.invoke("trash-item", path),
   readFile: (path) => ipcRenderer.invoke("read-file", path),
+  statFile: (path) => ipcRenderer.invoke('stat-file', path),
   writeFile: (filePath, content) => ipcRenderer.invoke("write-file", filePath, content),
   readFileSnapshot: (path) => ipcRenderer.invoke("read-file-snapshot", path),
   writeFileIfUnchanged: (filePath, content, expectedVersion) => ipcRenderer.invoke("write-file-if-unchanged", filePath, content, expectedVersion),
@@ -159,6 +160,17 @@ contextBridge.exposeInMainWorld("hana", {
   },
   // 浏览器查看器窗口
   openBrowserViewer: (target) => ipcRenderer.invoke("open-browser-viewer", resolveTheme(), normalizeBrowserViewerOpenTarget(target)),
+  sidebarBrowserBind: (target) => ipcRenderer.invoke('sidebar-browser-bind', target),
+  sidebarBrowserLayout: (layout) => ipcRenderer.send('sidebar-browser-layout', layout),
+  sidebarBrowserRelease: (surfaceId) => ipcRenderer.invoke('sidebar-browser-release', surfaceId),
+  sidebarBrowserCommand: (command) => ipcRenderer.invoke('sidebar-browser-command', command),
+  browserHandleDialog: (command) => ipcRenderer.invoke('browser-handle-dialog', command),
+  browserViewerState: () => ipcRenderer.invoke('browser-viewer-state'),
+  onSidebarBrowserUpdate: (cb) => {
+    const handler = (_event, data) => cb(data);
+    ipcRenderer.on('sidebar-browser-update', handler);
+    return () => ipcRenderer.removeListener('sidebar-browser-update', handler);
+  },
   onBrowserUpdate: (cb) => {
     const handler = (_, data) => cb(data);
     ipcRenderer.on("browser-update", handler);

@@ -17,7 +17,10 @@ test('published source map expands to actual code and remains readable after a f
     await assert.rejects(workspace.exclusive(() => store.update('greet', { signal: cancelled.signal })), /cancelled/);
     const old = await store.open('greet'); assert('reading' in old); assert.equal(old.evidence, published.evidence); assert.equal(old.current, false); assert.equal(old.state.status, 'cancelled');
     const changed = await store.open('greet', { node: node.id }); assert('matchesPublishedSource' in changed); assert.equal(changed.matchesPublishedSource, false);
-    assert(changed.source.snippet.includes('changed'));
+    assert(changed.source?.snippet.includes('changed'));
+    await rm(join(root,'library','index.js'));const deleted=await store.open('greet',{node:node.id});assert('source' in deleted);assert.equal(deleted.source,null);assert(deleted.issues.some(issue=>issue.includes('当前文件已移除')));
+    await rm(join(workspace.data,'evidence',published.evidence+'.json'));
+    const missing=await store.open('greet');assert.equal(missing.current,false);assert('reading' in missing);assert.equal(missing.reading.query,'greet');assert(missing.issues.some(issue=>issue.includes('历史结果')));
   } finally { await rm(root, { recursive: true, force: true }); }
 });
 

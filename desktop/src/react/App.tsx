@@ -1,3 +1,4 @@
+import { EnigmaDesign } from './ui/EnigmaDesign';
 /**
  * App.tsx — React 根组件（纯布局编排）
  *
@@ -15,14 +16,14 @@ const SkillViewerOverlay = lazy(() => import('./components/SkillViewerOverlay').
 import { ChannelsPanel } from './components/ChannelsPanel';
 import { ChannelCreateOverlay } from './components/channels/ChannelCreateOverlay';
 import { SidebarLayout, toggleSidebar } from './components/SidebarLayout';
-import { FloatSidebar, useFloatSidebar } from './components/FloatSidebar';
+import { InteractionHints } from './ui/InteractionHints';
 import { useSidebarResize } from './hooks/use-sidebar-resize';
 import { createNewSession } from './stores/session-actions';
 import { toggleJianSidebar } from './stores/desk-actions';
+import {togglePreviewPanel} from './stores/preview-actions';
 import { ToastContainer } from './components/ToastContainer';
 import { InputContextMenu } from './components/InputContextMenu';
 import { StatusBar } from './components/StatusBar';
-import { LeavesOverlay } from './components/LeavesOverlay';
 import { SelectionQuoteActionSurface } from './components/selection/SelectionQuoteActionSurface';
 import { MediaViewer } from './components/shared/MediaViewer/MediaViewer';
 import { SettingsModalShell } from './components/SettingsModalShell';
@@ -67,9 +68,13 @@ function App() {
   useStore(s => s.locale);
   const sidebarOpen = useStore(s => s.sidebarOpen);
   const jianOpen = useStore(s => s.jianOpen);
+  const previewOpen = useStore(s => s.previewOpen);
   const currentTab = useStore(s => s.currentTab);
+  const currentTitle = useStore(s => {
+    const session = s.sessions.find(item => item.path === s.currentSessionPath);
+    return session?.title || session?.firstMessage || 'Enigma';
+  });
   const isPluginTab = typeof currentTab === 'string' && currentTab.startsWith('plugin:');
-  const { side: floatSide, show: showFloat, scheduleHide: scheduleFloatHide, cancelHide: cancelFloatHide, hide: hideFloat } = useFloatSidebar();
 
   useEffect(() => {
     console.info('[hana-launch] init-start');
@@ -89,6 +94,8 @@ function App() {
     <ErrorBoundary>
       {/* Headless behavior components */}
       <SidebarLayout />
+      <EnigmaDesign />
+      <InteractionHints />
       <ChannelsPanel />
 
       {/* ── App shell: titlebar 作为独立布局行（flex column 第一行），
@@ -96,13 +103,14 @@ function App() {
       <div className="app-shell">
         {/* ── Titlebar ── */}
         <AppTitlebar
+          centerTitle={currentTab === 'chat' ? currentTitle : undefined}
           sidebarOpen={sidebarOpen}
           jianOpen={jianOpen}
-          onToggleSidebar={() => { hideFloat(); toggleSidebar(); }}
-          onToggleJian={() => { hideFloat(); toggleJianSidebar(); }}
-          onLeftMouseEnter={() => showFloat('left')}
-          onRightMouseEnter={() => showFloat('right')}
-          onToggleMouseLeave={scheduleFloatHide}
+          previewOpen={previewOpen}
+          showPreviewToggle
+          onTogglePreview={() => togglePreviewPanel()}
+          onToggleSidebar={() => toggleSidebar()}
+          onToggleJian={() => toggleJianSidebar()}
         />
 
         {/* ── App body ── */}
@@ -130,19 +138,11 @@ function App() {
       {/* Skill viewer overlay */}
       <Suspense fallback={null}><SkillViewerOverlay /></Suspense>
 
-      {/* Float sidebar */}
-      <FloatSidebar
-        side={floatSide}
-        onMouseEnter={cancelFloatHide}
-        onMouseLeave={scheduleFloatHide}
-        onAction={hideFloat}
-      />
 
       {/* Connection status bar */}
       <StatusBar />
 
       {/* Leaves shadow overlay */}
-      <LeavesOverlay />
 
       {/* Media viewer overlay */}
       <MediaViewer />

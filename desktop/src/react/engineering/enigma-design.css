@@ -1,0 +1,218 @@
+/* Enigma design language: neutral surfaces, readable hierarchy, semantic color.
+   Shared by the desktop shell, Web, settings and onboarding. */
+body.enigma-surface {
+  --space-2: 2px;
+  --space-4: 4px;
+  --space-6: 6px;
+  --space-8: 8px;
+  --space-10: 10px;
+  --space-12: 12px;
+  --space-16: 16px;
+  --space-20: 20px;
+  --space-24: 24px;
+  --space-32: 32px;
+  --space-40: 40px;
+  --eg-page: #ffffff;
+  --eg-sidebar: #f7f7f8;
+  --eg-card: #ffffff;
+  --eg-secondary: #f4f4f5;
+  --eg-text: #202123;
+  --eg-muted: #737579;
+  --eg-faint: #929498;
+  --eg-accent: #252628;
+  --eg-accent-soft: #eeeeef;
+  --eg-on-accent: #ffffff;
+  --eg-stroke: #e7e7e9;
+  --eg-stroke-strong: #d7d7da;
+  --eg-shadow: 0 6px 24px rgb(0 0 0 / 7%);
+  --eg-shadow-soft: 0 2px 8px rgb(0 0 0 / 4%);
+  --eg-scrim: rgb(0 0 0 / 26%);
+  --eg-success: #17834a;
+  --eg-danger: #c83a3a;
+  --eg-link: #2878d0;
+  --accent-rgb: 37, 38, 40;
+  --link-rgb: 40, 120, 208;
+  --bg: var(--eg-page);
+  --bg-card: var(--eg-card);
+  --bg-hover: var(--eg-accent-soft);
+  --text: var(--eg-text);
+  --text-muted: var(--eg-muted);
+  --text-light: var(--eg-muted);
+  --text-faint: var(--eg-faint);
+  --border: var(--eg-stroke);
+  --accent: var(--eg-accent);
+  --accent-hover: var(--eg-text);
+  --accent-light: var(--eg-secondary);
+  --link: var(--eg-link);
+  --link-hover: var(--eg-link);
+  --coral: var(--eg-accent);
+  --green: var(--eg-success);
+  --danger: var(--eg-danger);
+  --overlay-light: var(--eg-stroke);
+  --overlay-medium: var(--eg-accent-soft);
+  --shadow: rgb(0 0 0 / 8%);
+  --panel-card-bg: var(--eg-card);
+  --panel-card-border: 1px solid var(--eg-stroke);
+  --panel-card-shadow: none;
+  --lg-panel: var(--eg-card);
+  --lg-panel-strong: var(--eg-card);
+  --lg-panel-soft: var(--eg-secondary);
+  --lg-stroke: var(--eg-stroke);
+  --lg-stroke-strong: var(--eg-stroke-strong);
+  --lg-highlight: transparent;
+  --lg-sheen: transparent;
+  --lg-sheen-soft: transparent;
+  --lg-scrim: var(--eg-scrim);
+  --lg-shadow: var(--eg-shadow);
+  --lg-shadow-soft: var(--eg-shadow-soft);
+  --lg-blur: none;
+  --lg-blur-strong: none;
+  --lg-accent: var(--eg-accent);
+  --lg-positive: var(--eg-success);
+  --lg-negative: var(--eg-danger);
+  --lg-radius-panel: 16px;
+  --lg-radius-card: 12px;
+  --lg-radius-control: 8px;
+  --radius-chat-card: 14px;
+  --radius-chat-surface: 20px;
+  --fs-ui: 14px;
+  --fs-body: 15px;
+  --fs-caption: 13px;
+  --fs-hint: 12px;
+  --fs-micro: 11px;
+  --fs-title: 18px;
+  --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", "PingFang SC", sans-serif;
+  --font-serif: var(--font-ui);
+  --font-sans: var(--font-ui);
+  --font-display: var(--font-ui);
+  --font-heading: var(--font-ui);
+  --sidebar-bg: var(--eg-sidebar);
+  --jian-note-bg: var(--eg-secondary);
+  --jian-note-border: var(--eg-stroke);
+  --tooltip-bg: #242528;
+  --tooltip-text: #ffffff;
+  --tooltip-border: transparent;
+  background: var(--eg-page);
+  color: var(--text);
+  color-scheme: light;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.5;
+}
+body.enigma-surface[data-enigma-tone="dark"] {
+  --eg-page: #191a1c;
+  --eg-sidebar: #141517;
+  --eg-card: #1f2023;
+  --eg-secondary: #292a2d;
+  --eg-text: #ededee;
+  --eg-muted: #a0a1a5;
+  --eg-faint: #85868b;
+  --eg-accent: #ededee;
+  --eg-accent-soft: #303135;
+  --eg-on-accent: #202123;
+  --eg-stroke: #333437;
+  --eg-stroke-strong: #48494d;
+  --eg-shadow: 0 8px 28px rgb(0 0 0 / 24%);
+  --eg-shadow-soft: 0 2px 8px rgb(0 0 0 / 12%);
+  --eg-scrim: rgb(0 0 0 / 48%);
+  --eg-success: #6fc494;
+  --eg-danger: #ee8383;
+  --eg-link: #78acf0;
+  --accent-rgb: 237, 237, 238;
+  --link-rgb: 120, 172, 240;
+  --tooltip-bg: #35363a;
+  --tooltip-text: #f5f5f5;
+  --tooltip-border: #48494d;
+  color-scheme: dark;
+}
+:root:has(body.enigma-surface) { --chat-column-width: 820px; --sidebar-width: 250px; --chat-message-font-size: 16px; }
+:root:has(body.enigma-engineering) { --jian-sidebar-width: clamp(320px, 28vw, 420px); }
+body.enigma-surface :is(.main-content,.chat-area,.app-container,.chat-area.has-panels) { background: var(--eg-page); }
+body.enigma-surface .titlebar { background: var(--eg-sidebar); border-bottom: 1px solid var(--eg-stroke); backdrop-filter: none; }
+body.enigma-surface .titlebar .tb-center-title { min-width: 0; max-width: min(52vw, 760px); color: var(--text); font-family: var(--font-ui); font-size: 13px; font-weight: 500; }
+body.enigma-surface .enigma-window-modes { display: flex; align-items: center; max-width: 240px; min-width: 0; -webkit-app-region: no-drag; }
+body.enigma-surface .enigma-window-modes > div { position: relative; left: auto; top: auto; transform: none; max-width: 100%; border-radius: 7px; }
+body.enigma-surface .enigma-window-modes button { font-size: 12px; min-height: 26px; }
+body.enigma-surface .titlebar .tb-right-group { margin-left: auto; flex-shrink: 0; }
+body.enigma-surface .titlebar .tb-center-title { position:absolute; left:50%; transform:translateX(-50%); max-width:max(0px,min(52vw,calc(100% - 620px))); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+body.enigma-surface .sidebar { margin: 0; border: 0; border-right: 1px solid var(--eg-stroke); border-radius: 0; background: var(--eg-sidebar); box-shadow: none; backdrop-filter: none; }
+body.enigma-surface .sidebar-header { padding: 16px 16px 10px; }
+body.enigma-surface .sidebar-title { color: var(--text); font-size: 16px; font-weight: 600; letter-spacing: 0; text-transform: none; }
+body.enigma-surface .sidebar-action-btn { width: 28px; height: 28px; border-radius: 7px; }
+body.enigma-surface .session-list { padding-top: 8px; }
+body.enigma-surface .enigma-new-chat { display: flex; gap: 10px; align-items: center; margin: 0 12px 12px; padding: 9px 10px; border: 0; border-radius: 8px; background: none; color: var(--text); font: 14px var(--font-ui); cursor: pointer; }
+body.enigma-surface .enigma-new-chat:hover { background: var(--eg-accent-soft); }
+body.enigma-surface .enigma-new-task-settings button { border: 1px solid var(--eg-stroke); background: var(--eg-card); font: inherit; cursor: pointer; }
+body.enigma-surface .sidebar-activity-bar { color: var(--text-muted); }
+body.enigma-surface .sidebar-activity-bar svg { opacity: .8; }
+body.enigma-surface .sidebar-bridge-card { background: none; box-shadow: none; border: 0; width: calc(100% - 16px); margin: 2px 8px 4px; padding: 6px 12px; justify-content: flex-start; }
+body.enigma-surface .sidebar-bridge-card:hover { background: var(--eg-accent-soft); }
+body.enigma-surface .jian-sidebar { background: var(--eg-page); backdrop-filter: none; }
+body.enigma-surface .jian-sidebar-inner { padding: 10px 12px 12px 0; background: var(--eg-page); box-shadow: none; }
+body.enigma-surface .enigma-surface-card { background: var(--eg-card); border-color: var(--eg-stroke); box-shadow: none; }
+body.enigma-surface :is(.input-wrapper,[class*="input-wrapper"]) { background: var(--eg-card); border: 1px solid var(--eg-stroke); border-radius: 20px; box-shadow: var(--eg-shadow-soft); backdrop-filter: none; }
+body.enigma-surface :is(.input-wrapper,[class*="input-wrapper"]):focus-within { border-color: var(--eg-stroke-strong); box-shadow: var(--eg-shadow-soft); }
+body.enigma-surface :is(button,a,input,textarea,select,summary):focus-visible { outline: 2px solid var(--eg-link); outline-offset: 2px; }
+body.enigma-surface ::selection { background: color-mix(in srgb, var(--eg-link) 20%, transparent); }
+body.enigma-surface .main-content:has(.enigma-toolbar) { padding-top: var(--titlebar-h, 44px); box-sizing: border-box; }
+/* Native shell already lays out the titlebar as a separate row. Web's
+   mobile shell overlays it and retains the inset above. */
+body.enigma-surface .app-shell .main-content:has(.enigma-toolbar) { padding-top: 0; }
+body.enigma-surface .main-content:has(.enigma-toolbar) > .chat-area { padding-top: 0; }
+body.enigma-surface .enigma-toolbar { gap: 4px; padding: 8px 20px; margin: 0; min-height: 52px; border: 0; border-bottom: 1px solid var(--eg-stroke); border-radius: 0; background: var(--eg-page); }
+body.enigma-surface .enigma-toolbar button { min-height: 30px; padding: 6px 10px; border-radius: 7px; }
+body.enigma-surface .enigma-toolbar nav button[data-active="true"] { color: var(--text); background: var(--eg-accent-soft); box-shadow: none; font-weight: 500; }
+body.enigma-surface .enigma-project-button { gap: 8px; max-width: 190px; font-weight: 500; }
+body.enigma-surface .enigma-mark { background: none; color: var(--text-muted); width: 18px; height: 18px; box-shadow: none; }
+body.enigma-surface .enigma-progress { padding: 8px 28px; min-height: 30px; font-size: 12px; color: var(--text-muted); }
+body.enigma-surface .enigma-runtime-button { color: var(--text-muted); }
+body.enigma-surface .enigma-panel { border: 1px solid var(--eg-stroke); border-radius: 16px; background: var(--eg-card); box-shadow: var(--eg-shadow-soft); }
+body.enigma-surface .enigma-panel-head { padding: 20px 20px 12px; }
+body.enigma-surface .enigma-panel-head h2 { font-size: 17px; font-weight: 600; }
+body.enigma-surface .enigma-panel-head small { font-size: 12px; letter-spacing: 0; }
+body.enigma-surface .enigma-tabs-row { padding: 0 8px; }
+body.enigma-surface .enigma-tabbar { padding: 8px 0; gap: 4px; }
+body.enigma-surface .enigma-tab { border-radius: 7px; }
+body.enigma-surface .enigma-tab[data-active="true"] { background: var(--eg-accent-soft); box-shadow: none; }
+body.enigma-surface .enigma-content { padding: 8px 20px 24px; font-size: 14px; line-height: 1.6; }
+body.enigma-surface .enigma-panel-controls { padding: 0 20px 12px; }
+body.enigma-surface :is(.enigma-panel,.enigma-sidebar-tools,.enigma-modal) { font-family: var(--font-ui); }
+body.enigma-surface .enigma-sidebar-tools { margin: 4px 12px 8px; padding: 4px 0 12px; border-bottom: 1px solid var(--eg-stroke); }
+body.enigma-surface .enigma-sidebar-tools button { padding: 7px 9px; min-height: 32px; font-size: 13px; }
+body.enigma-surface .enigma-sidebar-tools > div { gap: 4px; }
+body.enigma-surface :is(.enigma-primary,.enigma-panel button.enigma-primary,.enigma-modal button.enigma-primary) { background: var(--eg-accent); color: var(--eg-on-accent); border: 1px solid transparent; box-shadow: none; font-weight: 500; padding: 8px 12px; }
+body.enigma-surface :is(.enigma-primary,.enigma-panel button.enigma-primary,.enigma-modal button.enigma-primary):hover { background: var(--eg-accent); filter: brightness(.9); }
+body.enigma-surface :is(.enigma-toolbar,.enigma-panel,.enigma-modal) button:active { transform: none; }
+body.enigma-surface .enigma-view-tabs { background: var(--eg-secondary); padding: 3px; }
+body.enigma-surface .enigma-view-tabs button[aria-selected="true"] { background: var(--eg-card); box-shadow: 0 1px 3px rgb(0 0 0 / 8%); }
+body.enigma-surface .enigma-feature-icon { background: var(--eg-secondary); color: var(--text-muted); box-shadow: none; }
+body.enigma-surface .enigma-stat-grid > div { background: none; border-right: 1px solid var(--eg-stroke); border-radius: 0; }
+body.enigma-surface .enigma-stat-grid > div:last-child { border-right: 0; }
+body.enigma-surface .enigma-repo { padding: 14px 0; border-radius: 0; border-bottom: 1px solid var(--eg-stroke); }
+body.enigma-surface .enigma-repo-mark { background: var(--eg-secondary); color: var(--text-muted); width: 30px; height: 30px; }
+body.enigma-surface .enigma-repo > div > small { display: block; max-width: 100%; overflow-wrap: anywhere; white-space: normal; opacity: 1; color: var(--text-muted); font-size: 12px; }
+body.enigma-surface .enigma-chips span { padding: 3px 7px; background: var(--eg-secondary); border: 0; border-radius: 5px; color: var(--text-muted); }
+body.enigma-surface :is(.enigma-step p,.enigma-checkpoint small) { opacity: 1; color: var(--text-muted); }
+body.enigma-surface .enigma-welcome-card { padding: 18px; background: var(--eg-secondary); box-shadow: none; border: 1px solid var(--eg-stroke); }
+body.enigma-surface .enigma-empty-feature { padding: 24px 0; max-width: 45ch; }
+body.enigma-surface .enigma-empty-feature-icon { width: 34px; height: 34px; border: 0; border-radius: 8px; color: var(--text-muted); background: var(--eg-secondary); }
+body.enigma-surface .enigma-empty-feature h3 { font-size: 18px; line-height: 1.5; font-weight: 600; }
+body.enigma-surface .enigma-surface-menu { background: var(--eg-card); border: 1px solid var(--eg-stroke); box-shadow: var(--eg-shadow); border-radius: 12px; padding: 6px; backdrop-filter: none; }
+body.enigma-surface .enigma-surface-menu button { border-radius: 6px; }
+body.enigma-surface .enigma-modal-backdrop { background: var(--eg-scrim); backdrop-filter: none; }
+body.enigma-surface .enigma-modal { border: 1px solid var(--eg-stroke); background: var(--eg-card); box-shadow: var(--eg-shadow); border-radius: 16px; }
+body.enigma-surface .enigma-modal-portal { position: relative; z-index: 10000; }
+body.enigma-surface .enigma-drawer-scrim { background: var(--eg-scrim); backdrop-filter: none; }
+body.enigma-surface .jian-sidebar.enigma-drawer { padding-top: 0; }
+body.enigma-surface .universal-card { background: var(--eg-card); border: 1px solid var(--eg-stroke); box-shadow: none; }
+body.enigma-surface .onboarding-avatar { width: 56px; height: 56px; box-shadow: none; }
+body.enigma-surface .onboarding-title { font: 600 24px/1.4 var(--font-ui); letter-spacing: -.02em; }
+body.enigma-surface .ob-btn-primary { background: var(--eg-accent); color: var(--eg-on-accent); border-color: var(--eg-accent); }
+body.enigma-surface :is(.ob-input,.ob-remote-connect-panel,.ob-workspace-card) { background: var(--eg-card); border-color: var(--eg-stroke); border-radius: 10px; }
+body.enigma-surface .ob-input::placeholder { font-style: normal; }
+body.enigma-surface .ob-memory-row > div:last-child { flex-shrink: 0; }
+body.enigma-surface .hana-toggle.on::after { background: var(--eg-on-accent); }
+body.enigma-surface.paper-texture, body.enigma-surface.paper-texture .settings-panel { background-image: none; }
+body.enigma-surface.enigma-motion-off *, body.enigma-surface.enigma-motion-off *::before, body.enigma-surface.enigma-motion-off *::after { animation: none !important; transition: none !important; }
+@media (prefers-reduced-motion: reduce) { body.enigma-surface *, body.enigma-surface *::before, body.enigma-surface *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
+@media (max-width: 700px) { body.enigma-surface .enigma-toolbar { padding: 8px 12px; } body.enigma-surface .enigma-progress { padding-inline: 20px; } }

@@ -588,3 +588,15 @@ describe("loadLatestAssistantSummaryFromSessionFile", () => {
     await expect(loadLatestAssistantSummaryFromSessionFile(sessionPath)).resolves.toBeNull();
   });
 });
+
+it('retains public compatibility Responses text for history while still stripping explicit thinking blocks',()=>{
+ const content=[{type:'text',text:'Visible answer',textSignature:JSON.stringify({v:1,phase:'commentary'})},{type:'thinking',thinking:'separate reasoning'}];
+ expect(extractTextContent(content,{stripThink:true}).text).toBe('');
+ expect(extractTextContent(content,{stripThink:true,includeCommentary:true}).text).toBe('Visible answer');
+ expect(extractTextContent(content,{stripThink:true,includeCommentary:true}).thinking).toBe('separate reasoning');
+});
+it('keeps a compatible provider answer in the last-message summary after reopening a session file',async()=>{
+ const file=path.join(tmpDir,'compat-summary.jsonl');
+ await fsp.writeFile(file,JSON.stringify({type:'message',message:{role:'assistant',api:'openai-responses',provider:'gateway',content:[{type:'text',text:'Persisted visible answer',textSignature:JSON.stringify({phase:'commentary'})}]}})+'\n');
+ expect(await loadLatestAssistantSummaryFromSessionFile(file)).toBe('Persisted visible answer');
+});

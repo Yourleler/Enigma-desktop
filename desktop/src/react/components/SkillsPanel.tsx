@@ -605,7 +605,7 @@ export function SkillsPanel() {
 
   return (
     <div className={fp.floatingPanel} id="skillsPanel">
-      <div className={fp.floatingPanelInner}>
+      <div className={fp.floatingPanelInner} data-glass-frame="panel">
         <div className={fp.floatingPanelHeader}>
           <h2 className={fp.floatingPanelTitle}>{t('skills.panel.title')}</h2>
           <button className={fp.floatingPanelClose} onClick={close} aria-label={t('common.close')}>

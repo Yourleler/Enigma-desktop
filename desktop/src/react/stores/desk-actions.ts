@@ -29,6 +29,7 @@ import { pendingNewSessionIdentityPatch } from './session-actions';
 const t = (key: string, vars?: Record<string, string | number>) => window.t?.(key, vars) ?? key;
 
 let _deskLoadVersion = 0;
+let _deskActivationVersion = 0;
 const _deskTreeLoadVersion = new Map<string, number>();
 
 // ── 路径工具 ──
@@ -387,12 +388,14 @@ export async function activateWorkspaceDesk(root: string | null | undefined, opt
   // loads even when the caller delays the reload until after another step
   // such as persisting workspace history.
   _deskLoadVersion += 1;
+  const activation=++_deskActivationVersion;
 
   const mountId = normalizeMountId(options.mountId);
   const normalized = mountId ? null : normalizeFolder(root);
   const workspaceKey = deskStateRootKey(normalized, mountId);
   const s = useStore.getState();
   const currentRoot = deskStateRootKey(s.deskBasePath, s.deskWorkspaceMountId);
+  const current=()=>activation===_deskActivationVersion&&useStore.getState().activeServerConnectionId===s.activeServerConnectionId&&deskStateRootKey(useStore.getState().deskBasePath,useStore.getState().deskWorkspaceMountId)===workspaceKey;
 
   if (currentRoot) {
     captureCurrentWorkspaceDeskState(currentRoot);
@@ -456,13 +459,16 @@ export async function activateWorkspaceDesk(root: string | null | undefined, opt
   updateDeskContextBtn();
 
   if (!saved) {
+    const activated=useStore.getState();
+    const viewUnchanged=()=>{const value=useStore.getState();return value.previewOpen===activated.previewOpen&&value.openTabs===activated.openTabs&&value.activeTabId===activated.activeTabId&&value.rightWorkspaceTab===activated.rightWorkspaceTab&&value.jianView===activated.jianView&&value.jianDrawerOpen===activated.jianDrawerOpen&&value.deskExpandedPaths===activated.deskExpandedPaths&&value.deskSelectedPath===activated.deskSelectedPath;};
     const persisted = await loadPersistedWorkspaceUiState(workspaceKey);
-    const restoredPreviewItems = mountId ? [] : await hydratePersistedPreviewItems(workspaceKey, persisted);
+    if(!current())return;
+    const restoredPreviewItems = await hydratePersistedPreviewItems(workspaceKey, persisted);
     const restoredPreviewItemsById = new Map(restoredPreviewItems.map(item => [item.id, item]));
     const restoredOpenTabs = persisted?.openTabs?.filter(id => restoredPreviewItemsById.has(id)) || [];
     const restoredActiveTabId = activePreviewTabId(restoredOpenTabs, persisted?.activeTabId);
     const restoredReadingPositions = readingPositionsFromPersistedWorkspaceUiState(persisted, restoredOpenTabs);
-    if (persisted && deskStateRootKey(useStore.getState().deskBasePath, useStore.getState().deskWorkspaceMountId) === workspaceKey) {
+    if (persisted && current() && viewUnchanged()) {
       useStore.setState((state: any) => ({
         deskCurrentPath: '',
         deskExpandedPaths: persisted.deskExpandedPaths || [],
@@ -486,10 +492,12 @@ export async function activateWorkspaceDesk(root: string | null | undefined, opt
     }
   }
 
-  if (options.reload === false) return;
+  if (!current() || options.reload === false) return;
   await loadDeskFiles('', normalized, mountId);
+  if(!current())return;
   const expandedPaths = useStore.getState().deskExpandedPaths || [];
   for (const subdir of expandedPaths) {
+    if(!current())return;
     await loadDeskTreeFiles(subdir, { force: true, overrideDir: normalized, overrideMountId: mountId });
   }
 }

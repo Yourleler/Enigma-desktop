@@ -24,6 +24,23 @@ const ctx = {
 };
 
 describe("ComputerHost", () => {
+  it('waits for an active foreground gesture to release before settling cancellation',async()=>{
+    const provider=createMockComputerProvider({providerId:'mock'});
+    provider.capabilities.drag='pidScoped';
+    const createLease=provider.createLease;
+    provider.createLease=async(...args)=>({...await createLease(...args),allowedActions:['drag']});
+    let entered!:()=>void,release!:()=>void;
+    const started=new Promise<void>(resolve=>{entered=resolve});
+    provider.performAction=async()=>{entered();await new Promise<void>(resolve=>{release=resolve});return {ok:true,action:'drag'}};
+    const {host}=makeHost(provider),controller=new AbortController();
+    const lease=await host.createLease(ctx,{appId:'app.notes'});
+    const snapshot=await host.getAppState(ctx,lease.leaseId);
+    let settled=false;
+    const work=host.performAction({...ctx,signal:controller.signal},lease.leaseId,{type:'drag',foreground:true,snapshotId:snapshot.snapshotId}).finally(()=>{settled=true});
+    await started;controller.abort();await Promise.resolve();
+    expect(settled).toBe(false);
+    release();await work;expect(settled).toBe(true);
+  });
   it("blocks text-only models before creating a lease", async () => {
     const { host } = makeHost();
     await expect(host.createLease({
@@ -146,9 +163,10 @@ describe("ComputerHost", () => {
       snapshotId: snapshot.snapshotId,
       elementId: "mock-button",
     })).resolves.toMatchObject({ ok: true, action: "double_click" });
+    const latest = await host.getAppState(ctx, lease.leaseId);
     await expect(host.performAction(ctx, lease.leaseId, {
       type: "click_point",
-      snapshotId: snapshot.snapshotId,
+      snapshotId: latest.snapshotId,
       x: 10,
       y: 20,
     })).rejects.toMatchObject({ code: COMPUTER_USE_ERRORS.ACTION_REQUIRES_INPUT_INJECTION_APPROVAL });
@@ -391,6 +409,7 @@ describe("ComputerHost", () => {
     await Promise.resolve();
 
     expect(provider.createLease).toHaveBeenCalledTimes(1);
+    await vi.waitFor(()=>expect(finishStop).toBeTypeOf('function'));
     finishStop();
     const next = await nextLeasePromise;
 

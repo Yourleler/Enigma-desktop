@@ -1,0 +1,16 @@
+.analytics{min-width:0;color:var(--text);font:13px/1.5 var(--font-ui)}
+.filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
+.filter{display:flex;flex-direction:column;gap:6px;min-width:0;color:var(--text-muted)}
+.filter input{box-sizing:border-box;min-width:0;max-width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--bg-card);color:var(--text);font:inherit}
+.select.select{width:100%;max-width:none;min-width:0}.select button{font:13px/1.5 var(--font-ui)}
+.totals{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;padding:16px 0;border-block:1px solid var(--border)}
+.totals>div{min-width:0}.totals span{display:block;font-size:12px;color:var(--text-muted)}.totals strong{display:block;font-size:21px;font-weight:600;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.note{font-size:12px;color:var(--text-muted);line-height:1.6}.warning{font-size:13px;color:var(--coral,#bb6666)}
+.tabs{display:flex;gap:5px;flex-wrap:wrap;margin:14px 0}.tabs button,.pagination button{font:inherit;color:var(--text);border:1px solid var(--border);border-radius:8px;background:transparent;padding:6px 10px;cursor:pointer}
+.tabs button[aria-selected=true]{background:var(--accent-light);border-color:var(--accent);color:var(--accent)}
+.tableWrap{max-width:100%;overflow:auto}.tableWrap table{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}.tableWrap th,.tableWrap td{text-align:right;border-bottom:1px solid var(--border);padding:9px 7px;vertical-align:top}.tableWrap th:first-child{text-align:left;font-weight:500;overflow-wrap:anywhere;max-width:260px;min-width:115px}.tableWrap th small{display:block;color:var(--text-muted)}
+.pagination{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:12px}.pagination button:disabled{opacity:.4;cursor:default}
+.compact .filters{grid-template-columns:1fr}.compact .totals{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.compact .totals strong{font-size:18px}
+@media(max-width:600px){.totals{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.analytics.analytics button{font-size:12px;line-height:1.5}
+.analytics .select.select button{font:13px/1.5 var(--font-ui);border:1px solid var(--border);background:var(--bg-card);padding:8px 10px;min-height:36px}

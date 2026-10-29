@@ -26,6 +26,7 @@ export class Experiments {
   }
   async create(input: ExperimentInput) {
     if (!input.goal?.trim() || input.goal.length > 4000 || !Array.isArray(input.candidates) || input.candidates.length < 2 || input.candidates.length > 8 || new Set(input.candidates.map(item => item.id)).size !== input.candidates.length) throw new Error('An experiment requires two to eight named variants');
+    if(new Set(input.candidates.map(item=>item.delegation)).size!==input.candidates.length)throw new Error('请选择不同的独立子任务，不能将同一份实现重复作为候选方案。');
     if (input.task) safeId(input.task); input.candidates.forEach(item => { safeId(item.id); safeId(item.delegation); });
     await this.workspace.reload(); const criteria = this.criteria(input.checks), criteriaHash = digest(criteria); let shared: string | undefined;
     for (const variant of input.candidates) {

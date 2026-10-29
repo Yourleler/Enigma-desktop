@@ -5,7 +5,7 @@ import { useStore } from '../../stores';
 import type { ForkedSessionHandler, SessionNodeTarget } from '../../stores/message-turn-actions';
 import styles from './Chat.module.css';
 import { ConversationEventCard } from './ConversationEventCard';
-import { MessageFooterActions } from './MessageFooterActions';
+import { MessageFooterActions, formatMessageTime } from './MessageFooterActions';
 import { useSessionNodeActions } from './SessionNodeActions';
 
 const COLLAPSE_LINES = 12;
@@ -74,9 +74,12 @@ export const AgentOriginMessage = memo(function AgentOriginMessage({
             {expanded ? window.t('sessionCollab.collapse') : window.t('sessionCollab.expand')}
           </button>
         )}
-        {actions.length > 0 && !isStreaming && (
+        {(actions.length > 0 || message.timestamp) && !isStreaming && (
           <MessageFooterActions
             align="left"
+            timeText={formatMessageTime(message.timestamp)}
+            timestamp={message.timestamp}
+            timeKind="received"
             leadingActions={actions}
             actions={[]}
             testId="agent-origin-node-actions"

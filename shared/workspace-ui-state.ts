@@ -12,12 +12,12 @@ export const DEFAULT_WORKSPACE_UI_SURFACE = "electron";
 
 const WORKSPACE_UI_SURFACE_SET = new Set(WORKSPACE_UI_SURFACES);
 
-function cleanString(value, max = MAX_STRING) {
+function cleanString(value: unknown, max = MAX_STRING) {
   if (typeof value !== "string") return "";
   return value.trim().slice(0, max);
 }
 
-function normalizeRelativePath(value) {
+function normalizeRelativePath(value: unknown) {
   const raw = cleanString(value);
   if (!raw) return "";
   const slashed = raw.replace(/\\/g, "/").replace(/^\/+|\/+$/g, "");
@@ -27,7 +27,7 @@ function normalizeRelativePath(value) {
   return parts.join("/");
 }
 
-function normalizePreviewSourceRootPath(value) {
+function normalizePreviewSourceRootPath(value: unknown) {
   const root = normalizeWorkspacePath(value) || "";
   if (!root) return "";
   if (root.startsWith("/") || root.startsWith("//") || /^[A-Za-z]:[\\/]/.test(root) || root.startsWith("studio:")) {
@@ -36,7 +36,7 @@ function normalizePreviewSourceRootPath(value) {
   return "";
 }
 
-function uniqueRelativePaths(values, limit = MAX_PATHS) {
+function uniqueRelativePaths(values: unknown, limit = MAX_PATHS) {
   const out = [];
   const seen = new Set();
   for (const value of Array.isArray(values) ? values : []) {
@@ -49,7 +49,39 @@ function uniqueRelativePaths(values, limit = MAX_PATHS) {
   return out;
 }
 
-function normalizePreviewTab(raw) {
+export function normalizePreviewWorkbenchRef(raw: Record<string, any> | null | undefined) {
+  if (!raw || raw.kind !== 'workbench-file') return null;
+  const mountId = cleanString(raw.mountId || raw.rootId, 256) || 'default';
+  const name = cleanString(raw.name, 256);
+  const subdir: string = typeof raw.subdir === 'string' ? raw.subdir.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '') : '';
+  if (!name || name === '.' || name === '..' || /[/\\\0]/.test(name) || subdir.split('/').some(part => part === '..' || part === '.')) return null;
+  if (subdir.length > MAX_STRING || /\0/.test(subdir)) return null;
+  const contentPath = '/api/workbench/content?' + new URLSearchParams({mountId, subdir, name});
+  return {kind: 'workbench-file' as const, mountId, rootId: mountId, subdir, name, contentPath};
+}
+
+/** Persist only stable resource routes, never bearer query parameters or image
+ * bytes. Restore still goes through the server's current permission checks. */
+export function normalizePreviewMediaRef(raw: Record<string, any> | null | undefined) {
+  if (!raw || !['image', 'svg', 'video', 'audio'].includes(raw.kind)) return null;
+  const link = raw.resource?.links?.content;
+  if (typeof link !== 'string') return null;
+  const resourceId = /^\/api\/resources\/([^/?#]+)\/content(?:[?#]|$)/.exec(link)?.[1];
+  let contentPath;
+  if (resourceId) contentPath = `/api/resources/${resourceId}/content`;
+  else if (link.startsWith('/api/workbench/content?')) {
+    const params = new URLSearchParams(link.slice(link.indexOf('?') + 1));
+    const ref = normalizePreviewWorkbenchRef({kind: 'workbench-file', mountId: params.get('mountId') || params.get('rootId'), subdir: params.get('subdir'), name: params.get('name')});
+    if (!ref) return null;
+    contentPath = '/api/workbench/content?' + new URLSearchParams({mountId: ref.mountId, subdir: ref.subdir, name: ref.name});
+  } else return null;
+  const id = cleanString(raw.id), name = cleanString(raw.name, 256);
+  if (!id || !name) return null;
+  return {id, name, path: '', kind: raw.kind, source: 'desk' as const, ext: cleanString(raw.ext, 32),
+    resource: {resourceId: cleanString(raw.resource.resourceId), studioId: cleanString(raw.resource.studioId, 256), links: {self: contentPath, content: contentPath}}};
+}
+
+export function normalizePreviewTab(raw: Record<string, any> | null | undefined) {
   if (!raw || typeof raw !== "object") return null;
   const id = cleanString(raw.id);
   if (!id) return null;
@@ -57,7 +89,11 @@ function normalizePreviewTab(raw) {
   const relativePath = normalizeRelativePath(raw.relativePath);
   const sourceRootPath = normalizePreviewSourceRootPath(raw.sourceRootPath);
   const readingPosition = normalizePreviewReadingPosition(raw.readingPosition);
-  if (!filePath && !relativePath) return null;
+  const remoteContentRef = normalizePreviewWorkbenchRef(raw.remoteContentRef);
+  const mediaRef = normalizePreviewMediaRef(raw.mediaRef);
+  const contentResourceId = cleanString(raw.contentResourceId);
+  const browser = raw.type === 'browser' && (raw.browserSessionPath === null || typeof raw.browserSessionPath === 'string' && raw.browserSessionPath.length <= MAX_STRING);
+  if (!filePath && !relativePath && !remoteContentRef && !mediaRef && !browser && !contentResourceId) return null;
   return {
     id,
     ...(filePath ? { filePath } : {}),
@@ -67,17 +103,21 @@ function normalizePreviewTab(raw) {
     ext: cleanString(raw.ext, 32).toLowerCase(),
     language: cleanString(raw.language, 64) || null,
     ...(sourceRootPath ? { sourceRootPath } : {}),
+    ...(remoteContentRef ? {remoteContentRef} : {}),
+    ...(mediaRef ? {mediaRef} : {}),
+    ...(contentResourceId ? {contentResourceId} : {}),
+    ...(browser ? {browserSessionPath: raw.browserSessionPath} : {}),
     ...(readingPosition ? { readingPosition } : {}),
   };
 }
 
-export function normalizeWorkspaceUiSurface(value, fallback = DEFAULT_WORKSPACE_UI_SURFACE) {
+export function normalizeWorkspaceUiSurface(value: unknown, fallback = DEFAULT_WORKSPACE_UI_SURFACE) {
   const raw = typeof value === "string" ? value.trim().toLowerCase() : "";
   if (!raw) return fallback;
   return WORKSPACE_UI_SURFACE_SET.has(raw) ? raw : null;
 }
 
-function normalizeRightWorkspaceTab(value) {
+function normalizeRightWorkspaceTab(value: unknown) {
   const raw = cleanString(value, 128);
   if (raw === "session-files" || raw === "workspace") return raw;
   if (raw.startsWith("plugin-widget:")) return raw;
@@ -96,7 +136,7 @@ export function normalizeWorkspaceUiEntry(raw: Record<string, any> = {}, { now =
   }
 
   const tabIds = new Set(previewTabs.map(tab => tab.id));
-  const openTabs = [];
+  const openTabs: string[] = [];
   for (const rawId of Array.isArray(raw.openTabs) ? raw.openTabs : []) {
     const id = cleanString(rawId);
     if (!id || !tabIds.has(id) || openTabs.includes(id)) continue;
@@ -165,7 +205,7 @@ export function normalizeWorkspaceUiState(raw: Record<string, any> = {}, opts: R
   const entries = Object.entries(source.workspaces || {})
     .map(([workspace, entry]) => [normalizeWorkspacePath(workspace), entry])
     .filter(([workspace]) => !!workspace)
-    .map(([workspace, entry]) => [workspace, normalizeWorkspaceUiRecord(entry, opts)])
+    .map(([workspace, entry]) => [workspace, normalizeWorkspaceUiRecord(entry as Record<string, any>, opts)])
     .sort((a: any, b: any) => (b[1].updatedAt || 0) - (a[1].updatedAt || 0))
     .slice(0, MAX_WORKSPACES);
   return {
@@ -174,7 +214,7 @@ export function normalizeWorkspaceUiState(raw: Record<string, any> = {}, opts: R
   };
 }
 
-export function getWorkspaceUiStateEntry(raw, workspaceRoot, opts: Record<string, any> = {}) {
+export function getWorkspaceUiStateEntry(raw: Record<string, any>, workspaceRoot: unknown, opts: Record<string, any> = {}) {
   const workspace = normalizeWorkspacePath(workspaceRoot);
   const surface = normalizeWorkspaceUiSurface(opts.surface);
   if (!workspace || !surface) return null;
@@ -183,7 +223,7 @@ export function getWorkspaceUiStateEntry(raw, workspaceRoot, opts: Record<string
   return entry ? structuredClone(entry) : null;
 }
 
-export function upsertWorkspaceUiState(raw, workspaceRoot, entry, opts: Record<string, any> = {}) {
+export function upsertWorkspaceUiState(raw: Record<string, any>, workspaceRoot: unknown, entry: Record<string, any>, opts: Record<string, any> = {}) {
   const workspace = normalizeWorkspacePath(workspaceRoot);
   if (!workspace) return normalizeWorkspaceUiState(raw, opts);
   const surface = normalizeWorkspaceUiSurface(opts.surface);

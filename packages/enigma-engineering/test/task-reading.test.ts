@@ -1,10 +1,22 @@
 import assert from 'node:assert/strict';
-import { rm, writeFile } from 'node:fs/promises';
+import { rm, readFile,writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import test from 'node:test';
 import { fixture } from './fixtures.js';
 import { ProjectContext } from '../src/project-context.js';
 import { TaskReadingStore } from '../src/task-reading.js';
+
+test('a single application entry expands upstream calls across all three repositories', { timeout: 60_000 }, async () => {
+  const { root, workspace } = await fixture();
+  try {
+    await writeFile(join(root,'sdk','index.js'), 'import { greet as say } from "../library/index.js";\nexport const call = () => say();\n');
+    const report = await new TaskReadingStore(workspace).build({goal:'理解应用入口',queries:[{symbol:'main',repo:'app'}],maxQueries:3});
+    assert.deepEqual(new Set(report.nodes.map(node=>node.source.repo)),new Set(['app','sdk','library']));
+    assert(report.edges.some(edge=>edge.kind==='outgoing-call'&&edge.from.startsWith('app:')&&edge.to.startsWith('sdk:')));
+    assert(report.edges.some(edge=>edge.kind==='outgoing-call'&&edge.from.startsWith('sdk:')&&edge.to.startsWith('library:')));
+    assert(!report.gaps.includes('Further source expansion remains outside the query budget.'));
+  } finally { await rm(root,{recursive:true,force:true}); }
+});
 
 test('task reading connects changed repositories, source paths, advisory requirements and actual joint checks', { timeout: 60_000 }, async () => {
   const { root, workspace } = await fixture();
@@ -50,8 +62,14 @@ test('task map freshness follows project materials and respects task scope', asy
     const store = new TaskReadingStore(workspace);
     const report = await store.build({ goal: '说明 SDK 调用关系', queries: [{ symbol: 'call', repo: 'sdk' }], resources: [resource.id], task: 'task-a', maxQueries: 3 });
     assert((await store.open(report.id, 'task-a')).current);
+    assert.equal((await store.list('task-a')).items.length,1);assert.equal((await store.list('task-b')).items.length,0);
     await assert.rejects(store.open(report.id, 'task-b'), /another task/);
     await context.refresh(resource.id, { task: 'task-a' }, '调整后的任务背景。');
     assert.equal((await store.open(report.id, 'task-a')).current, false);
+    const prior=await readFile(join(workspace.data,'task-readings',`${report.id}-1.json`),'utf8');
+    await rm(join(workspace.data,'evidence',report.evidence+'.json'));
+    const missing=await store.open(report.id,'task-a');assert.equal(missing.current,false);assert(missing.issues.some(issue=>issue.includes('证据暂不可读取')));assert.equal(missing.report.nodes.length,report.nodes.length);
+    const coverage=await store.coverage(report.id,'missing-evidence','task-a');assert(coverage.evidenceIssue);assert.equal(coverage.current,false);
+    assert.equal(await readFile(join(workspace.data,'task-readings',`${report.id}-1.json`),'utf8'),prior);
   } finally { await rm(root, { recursive: true, force: true }); }
 });

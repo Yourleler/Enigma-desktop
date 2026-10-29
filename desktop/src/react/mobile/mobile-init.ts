@@ -3,7 +3,8 @@ import { hanaFetch } from '../hooks/use-hana-fetch';
 import { sessionIdForPathFromLocatorState, sessionScopedValue } from '../stores/session-slice';
 import { applyAgentIdentity, loadAvatars } from '../stores/agent-actions';
 import { activateWorkspaceDesk } from '../stores/desk-actions';
-import { loadMessages, pendingNewSessionIdentityPatch } from '../stores/session-actions';
+import { loadMessages, pendingNewSessionIdentityPatch,switchSession } from '../stores/session-actions';
+import {restoreConversationView,trackConversationView} from '../engineering/conversation-view';
 import { connectWebSocket, getWebSocket } from '../services/websocket';
 import { configureAppEventActions } from '../services/app-event-actions';
 import { configureWsMessageHandler } from '../services/ws-message-handler';
@@ -143,6 +144,8 @@ export async function initializeMobileRuntime(principal: MobilePrincipal): Promi
   ]);
 
   connectWebSocket();
+  await restoreConversationView(switchSession);
+  trackConversationView();
 
   return { identity, bootstrap };
 }
@@ -295,7 +298,6 @@ async function activateMobileSessionDesk(session: Pick<Session, 'cwd'> | null | 
 async function activateMobileWelcomeDesk(): Promise<void> {
   const state = useStore.getState();
   await activateWorkspaceDesk(state.selectedFolder || state.homeFolder || null);
-  useStore.setState({ previewOpen: false });
 }
 
 function syncMobilePermissionMode(session: Pick<Session, 'permissionMode'> | null | undefined): void {

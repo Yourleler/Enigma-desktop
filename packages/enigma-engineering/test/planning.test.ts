@@ -5,6 +5,27 @@ import test from 'node:test';
 import { PlanStore } from '../src/planning.js';
 import { fixture } from './fixtures.js';
 
+test('shared plan prerequisites and evidence are read once per view, then revalidated on the next view', async () => {
+  const { root, workspace } = await fixture();
+  try {
+    await workspace.exclusive(() => workspace.addCheck({ id: 'syntax', repo: 'library', argv: [process.execPath, '--check', 'index.js'] }));
+    const proof = await workspace.exclusive(() => workspace.verify()), plans = new PlanStore(workspace);
+    const plan = await plans.create({ goal: 'Shared dependencies', steps: [
+      { id: 'base', repo: 'library', goal: 'Base', checks: ['syntax'] },
+      { id: 'a', repo: 'library', goal: 'A', requires: ['base'], checks: ['syntax'] },
+      { id: 'b', repo: 'library', goal: 'B', requires: ['base'], checks: ['syntax'] },
+      { id: 'end', repo: 'library', goal: 'End', requires: ['a', 'b'], checks: ['syntax'] },
+    ] });
+    for (const step of plan.steps) { step.phase = 'verified'; step.evidence = proof.evidence; }
+    let reads = 0; const original = workspace.evidenceStatus.bind(workspace);
+    workspace.evidenceStatus = async id => { reads++; return original(id); };
+    assert.equal((await plans.view(plan))?.completed, 4); assert.equal(reads, 1);
+    await writeFile(join(root, 'library', 'index.js'), 'export const changed = true;');
+    const after = await plans.view(plan); assert.equal(reads, 2); assert.equal(after?.completed, 0);
+    assert.equal(after?.steps[0]?.state, 'stale'); assert.deepEqual(after?.steps[3]?.blockedBy, ['a', 'b']);
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
 test('three-repo task plan uses real acceptance evidence and blocks downstream after an upstream change', async () => {
   const { root, workspace } = await fixture(); const plans = new PlanStore(workspace);
   try {

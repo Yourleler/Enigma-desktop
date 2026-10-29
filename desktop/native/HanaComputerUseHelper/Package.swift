@@ -18,7 +18,8 @@ let package = Package(
                 .product(name: "CuaDriverCore", package: "cua"),
                 .product(name: "CuaDriverServer", package: "cua"),
                 .product(name: "MCP", package: "swift-sdk"),
-            ]
+            ],
+            swiftSettings: [.unsafeFlags(["-parse-as-library"])]
         ),
     ]
 )

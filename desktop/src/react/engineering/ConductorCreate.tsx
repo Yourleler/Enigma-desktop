@@ -43,7 +43,7 @@ export function ConductorCreateDialog({ close }: { close: () => void }) {
       );
       },async result=>{close();await switchSession(result.sessionPath);});
   return <SurfaceModal onClose={close}><div className="enigma-modal-backdrop">
-    <section className={`enigma-modal enigma-surface-card ${styles.dialog}`} role="dialog" aria-modal="true" aria-label="创建任务编排管家">
+    <section className={`enigma-modal enigma-surface-card ${styles.dialog}`} role="dialog" data-glass-frame="sheet" data-glass-controls="" aria-modal="true" aria-label="创建任务编排管家">
       <header><h2>把目标交给管家</h2><button type="button" onClick={close}>关闭</button></header>
       <div className={styles.body}>
         <p>管家使用独立对话组织工作。先设置并发、仓库和模型范围，再交代目标。</p>

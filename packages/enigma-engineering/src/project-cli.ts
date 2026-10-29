@@ -1,6 +1,6 @@
 import type { Workspace } from './workspace.js';
 import { ProjectContext } from './project-context.js';
-import { SourceIndex } from './source-index.js';
+import { SourceIndex,sourceSelectionView } from './source-index.js';
 import { TaskReadingStore } from './task-reading.js';
 import { readSchemas } from './schema-reading.js';
 import { fetchResource, refreshResource, readResourceCapture } from './resource-fetch.js';
@@ -12,7 +12,7 @@ export async function projectCommand(workspace: Workspace, command: string | und
   if (command === 'source-index') {
     const language = args[1]; if (language && !['Go', 'Python', 'TypeScript'].includes(language)) throw new Error('Source index language must be Go, Python or TypeScript');
     const indexed = await new SourceIndex(workspace).select(args[0] ?? '', { language: language as 'Go' | 'Python' | 'TypeScript' | undefined, signal });
-    const { candidates: _all, ...page } = indexed; void _all; return page;
+    return sourceSelectionView(indexed);
   }
   if (command === 'project') {
     const context = new ProjectContext(workspace), access = { task: args[2] };

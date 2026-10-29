@@ -8,6 +8,7 @@
 
 import { useStore } from '../stores';
 import { displayInitial } from './grapheme';
+import {yuanAvatarAsset} from '../../../../shared/yuan-visuals';
 
 function tr(key: string, vars?: Record<string, string>): any {
   const fn = (globalThis as any).t || (globalThis as any).window?.t;
@@ -17,7 +18,7 @@ function tr(key: string, vars?: Record<string, string>): any {
 export function yuanFallbackAvatar(yuan?: string): string {
   const types = tr('yuan.types') || {};
   const entry = types[yuan || 'hanako'];
-  return `assets/${entry?.avatar || 'Hanako.png'}`;
+  return `assets/${yuanAvatarAsset(yuan,entry?.avatar)}`;
 }
 
 export function userFallbackAvatar(displayName: string): string {

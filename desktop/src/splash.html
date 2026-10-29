@@ -4,13 +4,14 @@
     <meta charset="UTF-8">
     <meta http-equiv="Content-Security-Policy"
           content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' file:;">
-    <title>HanaAgent</title>
+    <title>Enigma</title>
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         html, body { height: 100%; overflow: hidden; }
         body {
-            font-family: 'Songti SC', 'Georgia', serif;
-            background: #F4F0E4;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text",
+                "PingFang SC", "Helvetica Neue", "Microsoft YaHei", sans-serif;
+            background: #f7f7f8;
             border-radius: 12px;
             display: flex;
             align-items: center;
@@ -25,24 +26,26 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 1.5rem;
+            gap: 1.4rem;
         }
         .splash-avatar {
-            width: 72px; height: 72px;
+            width: 56px; height: 56px;
             border-radius: 50%;
             object-fit: cover;
             pointer-events: none;
             user-select: none;
+            box-shadow: none;
+            background: #ffffff;
         }
         .splash-text-row {
             display: flex;
             align-items: center;
-            gap: 0.4rem;
+            gap: 0.45rem;
             justify-content: center;
         }
         .splash-text {
-            font-size: 0.82rem;
-            color: #8E9196;
+            font-size: 0.9rem;
+            color: #65666a;
             letter-spacing: 0.02em;
             line-height: 1.5;
             transition: opacity 0.5s ease;
@@ -53,12 +56,14 @@
             display: inline-flex;
             align-items: center;
             font-size: 1.05rem;
-            color: var(--splash-accent, #537D96);
+            color: var(--splash-accent, #747579);
             flex-shrink: 0;
             line-height: 1;
             animation: spin 4s linear infinite;
         }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @media (prefers-color-scheme: dark) { body { background: #191a1c; } .splash-text { color: #a0a1a5; } .splash-avatar { background: #1f2023; } }
+        @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
     </style>
 </head>
 <body>

@@ -29,6 +29,7 @@ export function Toggle({ on, onChange, label, ariaLabel, title, disabled = false
         title={title}
         aria-busy={loading || undefined}
         role="switch"
+        data-glass-interactive=""
         aria-checked={loading ? 'mixed' : visualOn}
         onClick={(e) => {
           e.stopPropagation();

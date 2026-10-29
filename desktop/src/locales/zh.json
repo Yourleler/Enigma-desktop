@@ -132,7 +132,7 @@
   },
   "skills": {
     "panel": {
-      "title": "Skills",
+      "title": "技能",
       "allTab": "全部技能",
       "agentTabs": "按助手查看技能",
       "previousAgent": "上一个助手",
@@ -146,7 +146,7 @@
     "expand": "展开对话列表",
     "empty": "还没有对话哦 ✿",
     "activity": "助手活动",
-    "jian": "书桌",
+    "jian": "工作台",
     "bridge": "社交平台",
     "toggle": "侧边栏",
     "bridgeShort": "社交平台",
@@ -493,14 +493,14 @@
       "选中页面任意文字，会浮出一个临时输入框",
       "头像下方那枚菱形按钮，控制本次对话是否被记住",
       "工作台按钮可以切换或新增文件夹",
-      "右侧「笺」面板，放着这次会话的笔记与上下文",
+      "右侧「文件夹说明」用于记录目录用途和文件处理要求",
       "在头像下方点不同的小圆点，可以切换助手",
       "「操作前询问」模式让助手在动手前先征求你同意",
       "试试 /rc，在手机上操作你的电脑",
       "在设置里开启「辅助视觉」，文本模型也能看懂图片",
       "想要一些新发现？试试插件市场！",
       "文件备份功能可以解决一些安全上的顾虑",
-      "工作场景下用 subagent 让 Agent 协作，频道留给游玩",
+      "工作场景下用 subagent 让助手协作，频道留给游玩",
       "每个 Agent 可以配置自己独立的 Skills",
       "试试晴天模式的日光浴！",
       "工作台里的 Markdown 文件打开可以直接编辑",
@@ -510,6 +510,7 @@
     ]
   },
   "yuan": {
+    "simpleMode": "简洁模式",
     "types": {
       "hanako": {
         "label": "均衡的助手",
@@ -524,12 +525,12 @@
         "avatar": "Ming.png"
       },
       "kong": {
-        "label": "无发散思考模块（如 MOOD），和别的 Agent 一致体验。",
+        "label": "直接处理任务，不额外生成情绪或思绪片段。",
         "shortLabel": "无思考区块，直接回答。",
         "avatar": "Kong.png"
       }
     },
-    "title": "元",
+    "title": "回应风格",
     "splash": {
       "butter": [
         "{name} 翻开了昨天没看完的那一页",
@@ -1058,6 +1059,7 @@
       "noResults": "没有找到相关设置"
     },
     "tabs": {
+      "usage": "用量统计",
       "interface": "界面",
       "general": "通用",
       "browser": "浏览器",
@@ -1294,15 +1296,15 @@
       "changeAvatar": "更换",
       "removeAvatar": "移除头像",
       "avatarRemoved": "已恢复默认头像",
-      "agentNameHint": "Ta 叫什么",
+      "agentNameHint": "助手名称",
       "identity": "身份简介",
-      "identityHint": "简短描述助手是谁、擅长什么。其他助手通过这段文字认识 Ta",
+      "identityHint": "介绍助手的职责和擅长的工作；其他助手协作时会读取这段简介。",
       "agentsMd": "AGENTS.md",
-      "agentsMdHint": "定义助手的性格、语气和行为方式。跟「元」是分开的，互不影响。",
+      "agentsMdHint": "写明助手需要遵守的规则、语气和工作方式，保存在 AGENTS.md。",
       "publicAgentsMd": "对外 AGENTS.md",
       "publicAgentsMdHint": "出于隐私考虑，助手与访客对话时无法访问记忆、你的个人信息，以及电脑上的任何文件与工具。\n你可以在这里设定助手对访客说话时的回复风格以及注意事项。",
-      "chatModel": "Ta 的模型",
-      "chatModelHint": "Ta 在对话与工作中使用的模型",
+      "chatModel": "默认对话模型",
+      "chatModelHint": "选择后自动保存，新对话默认使用此模型；对话中仍可切换。",
       "modelUnavailable": "当前不可用：{model}",
       "modelUnavailableHint": "当前模型已不在可用列表中，请重新选择模型，或去供应商页面重新保存配置并读取模型。",
       "imageModel": "图片模型",
@@ -1331,19 +1333,19 @@
       "setPrimary": "设为主助手",
       "setPrimaryFailed": "设置主助手失败",
       "lastAgent": "至少保留一个助手",
-      "yuan": "元",
-      "yuanHint": "「元」是助手的潜意识，以此为基础搭建你独一无二的伙伴",
+      "yuan": "回应风格",
+      "yuanHint": "选择助手的默认回应风格。行为规则可进一步规定工作要求。",
       "tools": {
         "title": "工具",
         "description": "这些工具开关会在重启对话或新建对话后生效。当前进行中的会话继续使用创建时的工具集。",
         "items": {
           "automation": {
             "label": "自动化",
-            "summary": "让 Agent 创建通知和插件定时动作"
+            "summary": "让助手创建通知和插件定时动作"
           },
           "beautify": {
-            "label": "小花美术",
-            "summary": "让 Agent 为文档生成封面和审美增强内容"
+            "label": "图片与封面",
+            "summary": "让助手为文档生成封面和审美增强内容"
           },
           "browser": {
             "label": "浏览器",
@@ -1362,8 +1364,8 @@
             "summary": "从 GitHub 或技能库安装新技能"
           },
           "office": {
-            "label": "Office",
-            "summary": "让 Agent 读取文档、转换 HTML 到 PDF"
+            "label": "文档处理",
+            "summary": "让助手读取文档、转换 HTML 到 PDF"
           },
           "session": {
             "label": "跨会话协作",
@@ -1371,11 +1373,11 @@
           },
           "update_settings": {
             "label": "修改设置",
-            "summary": "让 Agent 修改应用配置项"
+            "summary": "让助手修改应用配置项"
           },
           "workflow": {
-            "label": "Workflow",
-            "summary": "让 Agent 把多 Agent 编排脚本作为后台任务运行"
+            "label": "协作流程",
+            "summary": "让多个助手按步骤协同执行后台任务"
           }
         }
       },
@@ -1414,7 +1416,7 @@
       }
     },
     "about": {
-      "title": "关于 Ta",
+      "title": "行为与风格",
       "tagline": "一个住在你电脑里的助手，记性很好。",
       "license": "许可证",
       "copyright": "版权",
@@ -1787,10 +1789,10 @@
       "noModels": "还没有添加模型",
       "otherModelSection": "其他模型",
       "chatModel": "主模型",
-      "utilityModel": "小工具模型",
+      "utilityModel": "轻量辅助模型",
       "utilityModelHint": "生成标题、轻量分类等简单任务，推荐用便宜的小模型",
-      "utilityLargeModel": "大工具模型",
-      "utilityLargeModelHint": "活动摘要、任务拆解等需要理解力的场景，留空则复用小工具模型",
+      "utilityLargeModel": "深度辅助模型",
+      "utilityLargeModelHint": "活动摘要、任务拆解等需要理解力的场景，留空则复用轻量辅助模型",
       "visionModel": "视觉辅助模型",
       "visionAuxiliaryToggle": "辅助视觉开关",
       "visionModelHint": "仅在当前聊天模型不能接收图片时，用来先看图并递交简洁说明",
@@ -1841,16 +1843,16 @@
     "memory": {
       "sectionTitle": "记忆",
       "title": "记忆开关",
-      "needsUtilityModel": "需要先在「模型」中配置 Utility 模型",
+      "needsUtilityModel": "请到「供应商 → 其他模型」配置辅助模型，用于总结和整理记忆。",
       "compiled": "当下记忆",
       "compiledHint": "助手记住的关于你的，重要的与近期的事",
       "compiledView": "查看当下记忆",
-      "compiledEmpty": "还没有编译过记忆",
+      "compiledEmpty": "还没有整理后的记忆",
       "compiledClear": "清空",
-      "compiledCleared": "编译记忆已清空",
+      "compiledCleared": "已清空整理后的记忆",
       "editableFactsLabel": "重要事实",
-      "saveFacts": "保存 Facts",
-      "factsSaved": "Facts 已保存",
+      "saveFacts": "保存重要事实",
+      "factsSaved": "重要事实已保存",
       "readonlyTimelineTitle": "时间线记忆",
       "editEntry": "编辑",
       "editDone": "完成",
@@ -1862,10 +1864,10 @@
       "saveDay": "保存这一天",
       "daySaved": "这一天已保存",
       "dream": {
-        "title": "Dream 整理",
+        "title": "记忆整理",
         "hint": "把重要事实与长期情况整理成一行一条，去重合并并清理过时内容",
-        "autoLabel": "每日自动 Dream",
-        "autoHint": "仅对当前 Agent 生效；默认关闭，每个逻辑日最多运行一次",
+        "autoLabel": "每日自动整理",
+        "autoHint": "仅整理当前助手的记忆；默认关闭，按设置的时区每天最多运行一次。",
         "run": "整理当下记忆",
         "running": "正在整理…",
         "restore": "恢复版本",
@@ -1874,10 +1876,10 @@
         "unchanged": "{time} 检查完成，本次没有需要写回的变化。",
         "legacySuccess": "{time} 完成：{before} → {after} 字符。这是旧版运行记录，无法核对实际合并数量。",
         "revisions": {
-          "title": "Dream 版本",
+          "title": "记忆整理历史",
           "listLabel": "可恢复版本",
           "loading": "正在读取版本…",
-          "empty": "还没有可恢复的 Dream 版本",
+          "empty": "还没有可恢复的记忆整理版本",
           "manual": "手动整理前",
           "automatic": "自动整理前",
           "preRestore": "恢复操作前",
@@ -1890,14 +1892,14 @@
           "close": "关闭",
           "restored": "已恢复到所选版本；恢复前的当前版本也已保存。"
         },
-        "failed": "Dream 整理失败，原记忆未改动",
+        "failed": "记忆整理失败，原记忆未改动",
         "errors": {
-          "statusLoadFailed": "暂时无法读取 Dream 状态，请稍后重试",
-          "startFailed": "暂时无法开始 Dream 整理，请稍后重试",
-          "autoSaveFailed": "无法保存每日自动 Dream 设置，请稍后重试",
-          "revisionsLoadFailed": "暂时无法读取 Dream 版本，请稍后重试",
-          "revisionLoadFailed": "暂时无法读取这个 Dream 版本，请稍后重试",
-          "restoreFailed": "恢复 Dream 版本失败，当前记忆没有改动"
+          "statusLoadFailed": "暂时无法读取 记忆整理状态，请稍后重试",
+          "startFailed": "暂时无法开始 记忆整理，请稍后重试",
+          "autoSaveFailed": "无法保存每日自动整理 设置，请稍后重试",
+          "revisionsLoadFailed": "暂时无法读取 记忆整理版本，请稍后重试",
+          "revisionLoadFailed": "暂时无法读取这个 记忆整理版本，请稍后重试",
+          "restoreFailed": "恢复 记忆整理版本失败，当前记忆没有改动"
         }
       },
       "sections": {
@@ -1926,17 +1928,17 @@
       },
       "allMemories": "所有记忆",
       "tokenBudget": "记忆容量",
-      "tokenBudgetHint": "memory.md 的目标 token 预算",
+      "tokenBudgetHint": "控制常驻上下文的记忆长度，单位为 token（模型处理文本的计量单位）。",
       "decayPerDay": "衰减系数",
-      "decayPerDayHint": "高斯衰减的基础 λ 值",
+      "decayPerDayHint": "数值越高，久未使用的记忆越快降低优先级。",
       "hitBonus": "命中加分",
       "hitBonusHint": "每次提及记忆时增加的分数",
       "baseImportance": "初始重要度",
       "baseImportanceHint": "新记忆的默认初始分",
       "forgetSpeed": "遗忘倍率",
       "forgetSpeedHint": "1.0 = 正常，2.0 = 忘得快一倍",
-      "compileThreshold": "编译阈值",
-      "compileThresholdHint": "分数低于此值的记忆不进入 memory.md",
+      "compileThreshold": "记忆保留门槛",
+      "compileThresholdHint": "低于此分数的记忆不进入常驻摘要，原始记录仍保留。",
       "timezone": "时区",
       "timezoneHint": "用于记忆的时间标记",
       "actions": {
@@ -1960,8 +1962,8 @@
       },
       "unknownDate": "未知日期",
       "threshold": {
-        "title": "记忆水位线",
-        "hint": "有多少记忆能被记住由你决定。有一些杂音是可以的，大语言模型可以很好的识别",
+        "title": "记忆保留范围",
+        "hint": "调整常驻摘要保留多少记忆；范围越大，占用的上下文越多。",
         "stats": "记住 {remembered} 条 / 共 {total} 条记忆"
       },
       "activeOnly": "请先将此助手设为主助手"
@@ -2517,10 +2519,10 @@
       "cancelEdit": "取消",
       "saveEdit": "保存",
       "invalidNumber": "请输入有效的正整数",
-      "utility": "小工具模型",
+      "utility": "轻量辅助模型",
       "utilityHint": "对话摘要、事实提取等轻量任务，推荐便宜快速的小模型",
-      "utilityLarge": "大工具模型",
-      "utilityLargeHint": "记忆编译、深度分析等需要理解力的任务，推荐能力较强的模型",
+      "utilityLarge": "深度辅助模型",
+      "utilityLargeHint": "用于整理记忆、深度分析等任务，可选择理解能力更强的模型。",
       "back": "上一步",
       "next": "下一步"
     },
@@ -2557,7 +2559,7 @@
         "desc": "指定一个文件夹作为工作台，我就可以帮你管理项目和文件。"
       },
       "jian": {
-        "title": "笺",
+        "title": "文件夹说明",
         "desc": "在任意文件夹放一个 jian.md，写上你的指令。\n我会在巡检时看到它并自动执行。"
       },
       "agents": {
@@ -2616,7 +2618,7 @@
     "newAutomation": "新的自动化",
     "newPrompt": "",
     "promptPlaceholder": "写下你想让 {agent} 做什么",
-    "promptRequired": "先写下想让 Agent 做什么，再启用这条自动化",
+    "promptRequired": "先写下想让助手做什么，再启用这条自动化",
     "createFailed": "创建自动化失败",
     "agentRequired": "需要先选择一个 Agent",
     "field": {
@@ -2687,16 +2689,16 @@
       "title": "后台动态"
     },
     "todo": {
-      "title": "进程",
+      "title": "任务进度",
       "waitForOutput": "输出完成后再标记"
     },
     "subagent": {
       "title": "子助手"
     },
     "workflow": {
-      "title": "Workflow",
+      "title": "协作流程",
       "running": "已运行 {text}",
-      "agents": "{n} 个 agent"
+      "agents": "{n} 个助手"
     },
     "session": {
       "title": "本次对话",
@@ -2722,9 +2724,9 @@
         "copyPath": "复制路径",
         "copySelectedPaths": "复制 {n} 个路径",
         "sendToBridge": "发送到...",
-        "sendToBridgeLoading": "正在加载 Bridge 会话...",
-        "sendToBridgeEmpty": "没有可发送的 Bridge 会话",
-        "sendToBridgeLoadFailed": "Bridge 会话加载失败"
+        "sendToBridgeLoading": "正在加载外部聊天…",
+        "sendToBridgeEmpty": "没有可发送的外部聊天",
+        "sendToBridgeLoadFailed": "外部聊天加载失败"
       },
       "bridgeLoadFailed": "加载 Bridge 会话失败：{error}",
       "sendSuccess": "已发送到 {target}",
@@ -2743,30 +2745,33 @@
       }
     },
     "jian": {
-      "collapse": "收起笺",
-      "expand": "展开笺"
+      "collapse": "收起文件夹说明",
+      "expand": "展开文件夹说明"
     }
   },
   "desk": {
-    "title": "书桌",
+    "title": "工作台",
     "workspaceTitle": "工作台",
     "skills": "技能",
     "cwdSkills": "项目技能",
     "cwdSkillsEmpty": "当前文件夹没有项目技能",
     "cwdSkillsHint": "在文件夹下创建 .agents/skills/ 目录即可",
-    "cwdSkillsDesc": "技能跟随工作台",
+    "cwdSkillsDesc": "供当前工作目录使用的操作指南与工具",
     "cwdSkillsDrop": "拖入文件夹或 .zip 安装技能",
     "cwdSkillActive": "已加载",
     "cwdSkillInactive": "未加载",
     "cwdSkillShadowed": "已被覆盖",
     "deleteSkill": "删除技能",
     "openInFinder": "打开文件夹",
-    "jianLabel": "笺",
-    "jianPlaceholder": "写点什么，告诉助手这个文件夹里面的文件该如何处理...",
+    "jianLabel": "文件夹说明",
+    "fullPath": "查看完整路径",
+    "jianHint": "记录目录用途与处理要求，内容会自动保存。开启工作台巡检后，助手会读取这些要求。",
+    "cwdSkillsHelp": "查看当前目录可用的技能及其用途",
+    "jianPlaceholder": "例如：文档按项目归档；保留原始文件；只整理本文件夹。",
     "execLogLabel": "执行记录",
     "execLogDelete": "删除此条记录",
-    "emptyTitle": "书桌还空空的呢",
-    "emptyHint": "书桌是助手日常巡检的工作台，也是每次对话的默认目录\n去设置里指定一个文件夹吧",
+    "emptyTitle": "尚未选择工作目录",
+    "emptyHint": "选择默认工作目录，方便查看和处理文件。自动巡检需单独开启。",
     "goToSettings": "前往设置",
     "fileLabel": "文件",
     "openWithDefault": "用默认应用打开",
@@ -3066,8 +3071,8 @@
     "codexNoHealthCheck": "codex API 不支持健康检测",
     "modelNotFound": "找不到模型: {id}",
     "modelContextTooLarge": "新模型的上下文空间不足，无法容纳当前会话。请先压缩当前会话，再重新切换。",
-    "noUtilityModel": "未配置 utility 模型，请在设置中添加",
-    "noUtilityLargeModel": "未配置 utility_large 模型，请在设置中添加",
+    "noUtilityModel": "尚未配置辅助模型，请在设置中添加。",
+    "noUtilityLargeModel": "尚未配置深度辅助模型，请在设置中添加。",
     "modelNoProvider": "{role} 模型 \"{model}\" 没有 provider 归属",
     "providerMissingApi": "provider \"{provider}\" 缺少 API 协议配置",
     "providerMissingCreds": "provider \"{provider}\" 缺少完整凭证",
@@ -3159,15 +3164,15 @@
       "agentModelNotAvailable": "这个助手配置的模型当前不可用，去设置里给它换一个",
       "workspaceNotFound": "找不到这个工作台",
       "capabilityDenied": "这个操作没有获得授权",
-      "dreamUnavailable": "这个 Agent 暂时无法使用 Dream 整理",
+      "dreamUnavailable": "这个助手暂时无法整理记忆",
       "dreamMemoryDisabled": "请先为这个 Agent 开启记忆",
       "dreamMemoryBusy": "记忆正在后台整理，请稍后再试",
-      "dreamAlreadyRunning": "当前记忆正在进行 Dream 整理",
+      "dreamAlreadyRunning": "当前记忆正在进行 记忆整理",
       "dreamNoMemory": "当前还没有重要事实或长期记忆可整理",
-      "dreamMemoryChanged": "整理期间记忆发生了变化，请重新运行 Dream",
-      "dreamRevisionNotFound": "找不到这个 Dream 版本，它可能已经被清理",
-      "dreamRestoreFailed": "恢复 Dream 版本失败，当前记忆没有改动",
-      "dreamRunFailed": "Dream 整理失败，原记忆没有改动",
+      "dreamMemoryChanged": "整理期间记忆发生了变化，请重新整理记忆",
+      "dreamRevisionNotFound": "找不到这个 记忆整理版本，它可能已经被清理",
+      "dreamRestoreFailed": "恢复 记忆整理版本失败，当前记忆没有改动",
+      "dreamRunFailed": "记忆整理失败，原记忆没有改动",
       "internalContract": "应用内部出了点问题，这不是你的操作问题；详情已记录，可在反馈时附上"
     }
   },
@@ -3262,8 +3267,8 @@
     "helpAgent": "查看当前 agent",
     "helpAgentList": "列出所有 agent",
     "helpAgentSwitch": "切换 agent",
-    "helpJian": "查看当前目录的笺",
-    "helpJianSub": "查看子目录的笺",
+    "helpJian": "查看当前文件夹的说明",
+    "helpJianSub": "查看子文件夹的说明",
     "helpLs": "列出书桌文件",
     "helpLsSub": "列出子目录文件",
     "helpCat": "查看文件内容",
@@ -3288,8 +3293,8 @@
     "agentList": "Agent 列表",
     "agentSwitched": "已切换到 {name}",
     "currentAgent": "当前 Agent:",
-    "jianTitle": "笺",
-    "jianEmpty": "此目录没有笺",
+    "jianTitle": "文件夹说明",
+    "jianEmpty": "此文件夹尚未添加说明",
     "dirEmpty": "(空)",
     "catUsage": "用法: /cat <文件路径>",
     "catFailed": "无法读取: {status}",
@@ -3689,7 +3694,7 @@
     "confirmSend": "发送",
     "confirmCreate": "创建并发送",
     "ignore": "忽略",
-    "expired": "草稿已过期，请让 Agent 重新发起",
+    "expired": "草稿已过期，请让助手重新发起",
     "inFlight": "正在执行中",
     "halfCreated": "会话已创建（{id}），首条消息投递失败，可重试或打开该会话手动发送",
     "createdSession": "已创建会话 {id}",

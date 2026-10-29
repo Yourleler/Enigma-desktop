@@ -15,6 +15,7 @@ import { discoverContracts } from './contracts.js';
 import { ReadingStore } from './reading-store.js';
 import { emitActivity, measured, telemetryChannel, telemetryStateChannel } from './telemetry.js';
 import { CONTEXT_CHECKPOINT, MODEL_REWIND, contextCheckpoints, prepareContextRewind, type ContextRewindInput } from './context-rewind.js';
+import {operationVerificationResult} from './operation-history.js';
 
 export { toolNames } from './tool-names.js';
 
@@ -239,12 +240,12 @@ export function createEnigmaExtension(options: { workspace?: Workspace; approval
       details: event.details === undefined ? undefined : JSON.parse(redact(JSON.stringify(event.details), workspace.secrets)),
     }));
     pi.on('tool_result', async event => {
-      if (event.isError || event.toolName !== 'delegate_task') return;
-      const result = event.structuredContent as { verification?: { status?: string; evidence?: string } } | undefined;
-      if (!result?.verification?.evidence) return;
+      if (event.isError || !['delegate_task','recipe_manage'].includes(event.toolName)) return;
+      const verification=operationVerificationResult(event.structuredContent) as {status?:string;evidence?:string}|undefined;
+      if (!verification?.evidence) return;
       state.lastVerification = 'unverified'; state.lastCheckEvidence = undefined;
       requireAcceptedChecks();
-      const accepted = await workspace.reusableVerification(result.verification.evidence);
+      const accepted = await workspace.reusableVerification(verification.evidence);
       if (accepted) { state.lastVerification = 'verified'; state.lastCheckEvidence = accepted.evidence; state.evidence.push(accepted.evidence); }
       await save();
     });

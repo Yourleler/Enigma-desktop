@@ -1,3 +1,4 @@
+import { GlassSelection } from '../ui/GlassSelection';
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useStore } from '../stores';
 import { usePanel } from '../hooks/use-panel';
@@ -173,7 +174,7 @@ export function ActivityPanel() {
 
   return (
     <div className={fp.floatingPanel} id="activityPanel">
-      <div className={fp.floatingPanelInner}>
+      <div className={fp.floatingPanelInner} data-glass-frame="panel">
         <div id="activityListView" style={FLEX_COLUMN_STYLE}>
           <div className={fp.floatingPanelHeader}>
               <h2 className={fp.floatingPanelTitle}>{t('activity.title')}</h2>
@@ -208,7 +209,7 @@ export function ActivityPanel() {
                       setSelectedBucket(firstNonEmptyBucket(groupedActivities.get(agentId)));
                     }}
                   />
-                  <div className={automationStyles.categoryTabs} role="tablist" aria-label={t('activity.categoryTabs')}>
+                  <div className={automationStyles.categoryTabs} role="tablist" aria-label={t('activity.categoryTabs')} data-glass-segmented=""><GlassSelection selection={selectedBucket}/>
                     {ACTIVITY_BUCKETS.map(bucket => {
                       const count = activeBuckets?.get(bucket)?.length || 0;
                       const active = bucket === selectedBucket;

@@ -16,7 +16,7 @@
 }
 
 .title {
-    font-family: "Songti SC", "Noto Serif CJK SC", serif;
+    font-family: var(--font-ui);
     font-size: var(--fs-body);
     font-weight: 600;
     color: var(--accent);

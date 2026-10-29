@@ -37,6 +37,7 @@ import {
 } from './stream-resume';
 import { TODO_TOOL_NAMES, type TodoToolName } from '../utils/todo-constants';
 import { applyTodoLifecycle, migrateLegacyTodos } from '../utils/todo-compat';
+import { useTokenMeterStore } from '../components/input/token-meter-store';
 import { renderMarkdown } from '../utils/markdown';
 import { bumpMessageLiveVersion } from '../stores/message-live-version';
 
@@ -678,6 +679,20 @@ export function handleServerMessage(msg: any): void {
       break;
     }
 
+    case 'enigma_event': {
+      const sp=msg.sessionPath,connection=useStore.getState().activeServerConnectionId;
+      if(!sp)break;
+      if(['settled','new_context','code_fork','guardian_update'].includes(msg.event))scheduleSessionsRefresh('enigma-operation');
+      if(msg.event==='settled'&&sp===useStore.getState().currentSessionPath)void import('../stores/session-actions').then(module=>{
+        const current=useStore.getState();
+        if(current.activeServerConnectionId===connection&&current.currentSessionPath===sp&&!sessionScopedListIncludes(current as Record<string,any>,current.streamingSessions||[],sp))void module.loadMessages(sp);
+      });
+      if(sp===useStore.getState().currentSessionPath)void import('../engineering/state').then(module=>{
+        if(useStore.getState().activeServerConnectionId===connection&&module.useEngineering.getState().sessionPath===sp)void module.refreshEngineering(sp).catch(()=>{});
+      });
+      break;
+    }
+
     case 'todo_update': {
       const sp = msg.sessionPath;
       if (!sp) { console.warn('[ws] event missing sessionPath:', msg.type); break; }
@@ -1021,6 +1036,15 @@ export function handleServerMessage(msg: any): void {
           (_s, d) => ({ contextTokens: d.tokens, contextWindow: d.window, contextPercent: d.percent }),
         );
       }
+      break;
+    }
+
+    case 'token_meter': {
+      // 实时 token 流速（服务端节流 ~7fps），meter 本体做形状防御后直接落 store
+      const sp = typeof msg.sessionPath === 'string' ? msg.sessionPath.trim() : '';
+      const meter = msg.meter;
+      if (!sp || !meter || typeof meter !== 'object') break;
+      useTokenMeterStore.getState().applyTokenMeter(sp, meter, useStore.getState().activeServerConnectionId);
       break;
     }
 

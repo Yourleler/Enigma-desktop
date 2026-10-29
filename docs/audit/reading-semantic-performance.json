@@ -1,0 +1,17 @@
+{
+  "beforeMs": 144459.105333,
+  "afterMs": 23883.589875,
+  "speedup": 6.048467005548931,
+  "nodes": 283,
+  "gaps": 2,
+  "equal": {
+    "nodes": true,
+    "edges": true,
+    "path": true,
+    "architecture": true,
+    "groups": true,
+    "gaps": true,
+    "truncated": true
+  },
+  "pathsAndProviderNamesRedacted": true
+}

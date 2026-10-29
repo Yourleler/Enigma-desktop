@@ -70,12 +70,26 @@
               0 1px 3px rgba(0, 0, 0, 0.04);
   z-index: 9999;
   margin-top: 0;
-  overflow: hidden auto;
+  overflow: hidden;
   flex-direction: column;
   animation: hana-popout var(--duration-fast) var(--ease-out);
   transform-origin: top right;
   padding: 0;
   -webkit-app-region: no-drag;
+}
+
+/* The glass shell does not scroll. Its pseudo-element material and rim stay
+   pinned while the inner list handles wheel, touch and keyboard scrolling. */
+.scrollArea {
+  min-height: 0;
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden auto;
+  overscroll-behavior: contain;
+  scroll-padding-block: 8px;
+  padding: 2px;
+  border-radius: 10px;
+  background: transparent;
 }
 
 .popup[data-direction="up"][data-align="end"]   { transform-origin: bottom right; }
@@ -91,6 +105,7 @@
   padding: 0.4rem 0.65rem;
   font-family: inherit;
   font-size: var(--fs-caption);
+  line-height: 1.5;
   color: var(--text);
   background: none;
   border: none;
@@ -98,6 +113,12 @@
   cursor: default;
   text-align: left;
   transition: all var(--duration-fast);
+}
+
+.option > span:not(.selectionMark):not(.optionDesc) {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .option:hover {

@@ -7,8 +7,10 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { Workspace } from '../src/workspace.js';
 import { runProcess } from '../src/process.js';
 
-export async function crossLanguageFixture() {
-  const root = await mkdtemp(join(tmpdir(), 'enigma-cross-language-')); const workspace = await Workspace.open(root);
+export async function crossLanguageFixture(destination?: string) {
+  const root = destination ?? await mkdtemp(join(tmpdir(), 'enigma-cross-language-'));
+  if(destination)await mkdir(destination);
+  const workspace = await Workspace.open(root);
   for (const repo of ['server', 'sdk', 'app']) {
     const path = join(root, repo); await mkdir(path);
     assert.equal((await runProcess(['git', 'init', '-b', 'main'], path)).status, 'passed');

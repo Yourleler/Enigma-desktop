@@ -11,6 +11,7 @@ const { autoUpdater } = require("electron-updater");
 const path = require("path");
 const fs = require("fs");
 const crypto = require("crypto");
+const {redactLogText,formatLogArgs}=require('../shared/log-redactor.cjs');
 
 const CHECK_INTERVAL = 4 * 60 * 60 * 1000; // 4 小时
 const DIGEST_ASSET_NAME = "release-digest.v1.json";
@@ -19,9 +20,10 @@ const UPDATE_CHANNEL_VERSION = 1;
 // 邀请核销服务地址。服务已于 2026-08-20 上线（Cloudflare Worker），地址
 // 非秘密——邀请码才是凭证，端点按 IP 限速。留空即"通道未配置"、设置页
 // 不渲染邀请入口；HANA_INVITE_API_URL 可临时覆盖。
-const DEFAULT_INVITE_API_URL = "https://alpha-invite-gate.hanaagent.workers.dev";
-const DEFAULT_GITHUB_OWNER = "liliMozi";
-const DEFAULT_GITHUB_REPO = "openhanako";
+const product=require('../shared/enigma-product.cjs').productIdentity();
+const DEFAULT_INVITE_API_URL = product.inviteApi;
+const DEFAULT_GITHUB_OWNER = product.owner;
+const DEFAULT_GITHUB_REPO = product.repository;
 
 let _mainWindow = null;
 let _setIsUpdating = null;  // 由 main.cjs 注入
@@ -255,6 +257,7 @@ function getState() {
 }
 
 function logUpdate(message) {
+  message=redactLogText(message,{extraPaths:[_hanakoHome]}).slice(0,12000);
   const line = `[${new Date().toISOString()}] ${message}`;
   try { console.log(`[auto-updater] ${message}`); } catch {}
   if (!_hanakoHome) return;
@@ -293,6 +296,7 @@ function sendToRenderer(channel, data) {
 }
 
 function setState(patch) {
+  patch={...patch};for(const key of ['error','digestError','updateChannelError'])if(typeof patch[key]==='string')patch[key]=redactLogText(patch[key],{extraPaths:[_hanakoHome]}).slice(0,4000);
   Object.assign(_updateState, patch);
   sendToRenderer("auto-update-state", getState());
 }
@@ -560,6 +564,12 @@ async function dirSize(dir) {
 // ── electron-updater 配置 ──
 
 function setupAutoUpdater() {
+  autoUpdater.logger={
+    info:(...args)=>logUpdate(formatLogArgs(args)),
+    warn:(...args)=>logUpdate(formatLogArgs(args)),
+    error:(...args)=>logUpdate(formatLogArgs(args)),
+    debug:()=>{},
+  };
   // 显式设置 feed URL，不依赖 app-update.yml（electron-builder --dir 不生成该文件）
   applyUpdateFeedConfig(resolveUpdateFeedConfig());
 

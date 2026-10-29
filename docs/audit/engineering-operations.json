@@ -1,0 +1,3234 @@
+{
+  "date": "2026-10-26",
+  "count": 71,
+  "items": [
+    {
+      "id": "document-example",
+      "title": "验证文档示例",
+      "group": "documents",
+      "effect": "execute",
+      "fieldCount": 1,
+      "sources": [
+        "documentExamples"
+      ],
+      "entry": "catalog + document row",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "document-example",
+        "width": 420,
+        "error": [],
+        "fields": 1,
+        "notes": "选择显示文档名称、章节和示例；真实长操作与停止均通过"
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 4,
+        "failedOrInterrupted": 4,
+        "samples": [
+          {
+            "action": "document-example",
+            "state": "completed",
+            "outcome": "passed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T05-08-13-469Z_01a17bc2-4c1d-7504-9b09-e8acc0da076f.jsonl",
+            "entry": "4040b2d4",
+            "operation": "1edb2bad-dd93-4a03-ac14-7d6e492e8b97",
+            "createdAt": "2026-10-27T05:18:24.012Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "document-example",
+            "state": "cancelled",
+            "outcome": "cancelled",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T14-19-26-351Z_01a17894-970f-72cf-8098-742fcfb2aef0.jsonl",
+            "entry": "8a66bd35",
+            "operation": "c75b9575-0e0f-4742-9644-60a5c511ebe2",
+            "createdAt": "2026-10-26T17:22:30.878Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "document-example",
+            "state": "completed",
+            "outcome": "passed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T14-19-26-351Z_01a17894-970f-72cf-8098-742fcfb2aef0.jsonl",
+            "entry": "971bd9f8",
+            "operation": "d8c5139e-54e5-440b-b99b-228e20c520f2",
+            "createdAt": "2026-10-26T16:31:02.138Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      },
+      "domainExecutionEvidence": {
+        "report": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/cross-language-e2e-r2/report.json",
+        "runner": "scripts/verify-enigma-cross-language.mjs",
+        "scope": "Actual unchanged document example executed and matched exact output. Independent model read guide and ran command with no source changes.",
+        "boundary": "Direct application-domain API workflow, actual Gateway workers and filesystem/HTTP. This is not separate button-invocation proof."
+      },
+      "workflowExecutionEvidence": {
+        "path": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/final-operations-r1/report.json",
+        "scope": "Actual CUA registered actions in isolated two-repository fixture, followed by same-host API readback and targeted output checks; does not claim live Feishu authentication (public HTTP tested)."
+      }
+    },
+    {
+      "id": "document-register",
+      "title": "登记已有文档",
+      "group": "documents",
+      "effect": "write",
+      "fieldCount": 20,
+      "sources": [
+        "repos"
+      ],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "document-register",
+        "ms": 388,
+        "error": [],
+        "fields": 3
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 1,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "document-register",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T05-08-13-469Z_01a17bc2-4c1d-7504-9b09-e8acc0da076f.jsonl",
+            "entry": "260a3309",
+            "operation": "04aa1bd8-ac1d-4b61-9c9e-3ae722ea3fc8",
+            "createdAt": "2026-10-27T05:18:13.247Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      },
+      "domainExecutionEvidence": {
+        "report": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/cross-language-e2e-r2/report.json",
+        "runner": "scripts/verify-enigma-cross-language.mjs",
+        "scope": "Registered exact behavior section and full source anchors for all three repositories plus node verify.mjs example.",
+        "boundary": "Direct application-domain API workflow, actual Gateway workers and filesystem/HTTP. This is not separate button-invocation proof."
+      },
+      "workflowExecutionEvidence": {
+        "path": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/final-operations-r1/report.json",
+        "scope": "Actual CUA registered actions in isolated two-repository fixture, followed by same-host API readback and targeted output checks; does not claim live Feishu authentication (public HTTP tested)."
+      }
+    },
+    {
+      "id": "repo-add",
+      "title": "加入仓库",
+      "group": "project",
+      "effect": "write",
+      "fieldCount": 4,
+      "sources": [],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "repo-add",
+        "ms": 295,
+        "error": [],
+        "fields": 4
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 2,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "repo-add",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T05-08-13-469Z_01a17bc2-4c1d-7504-9b09-e8acc0da076f.jsonl",
+            "entry": "e79280ec",
+            "operation": "6c06ae43-e5df-4b56-a581-1e5420d2c342",
+            "createdAt": "2026-10-27T05:09:23.980Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "repo-add",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T05-08-13-469Z_01a17bc2-4c1d-7504-9b09-e8acc0da076f.jsonl",
+            "entry": "107d2dda",
+            "operation": "9f316d19-a9ff-44f5-8794-386f1dad9190",
+            "createdAt": "2026-10-27T05:08:52.155Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      },
+      "domainTestEvidence": {
+        "log": "/tmp/enigma-final-domain-audit.log",
+        "sourceTests": "workspace.test.ts;fixtures.ts",
+        "scope": "Three independent Git repos register; aliases/out-of-root, read-only paths and lock behavior asserted.",
+        "suiteResult": "208 tests passed; browser UI paths excluded"
+      },
+      "workflowExecutionEvidence": {
+        "path": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/final-operations-r1/report.json",
+        "scope": "Actual CUA registered actions in isolated two-repository fixture, followed by same-host API readback and targeted output checks; does not claim live Feishu authentication (public HTTP tested)."
+      }
+    },
+    {
+      "id": "repo-dependencies",
+      "title": "调整仓库依赖",
+      "group": "project",
+      "effect": "write",
+      "fieldCount": 2,
+      "sources": [
+        "repos"
+      ],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "repo-dependencies",
+        "ms": 297,
+        "error": [],
+        "fields": 4
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 1,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "repo-dependencies",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T05-08-13-469Z_01a17bc2-4c1d-7504-9b09-e8acc0da076f.jsonl",
+            "entry": "a8dc6765",
+            "operation": "f27c7245-39e0-49ce-999f-1a54a70e4248",
+            "createdAt": "2026-10-27T05:09:51.516Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      },
+      "domainTestEvidence": {
+        "log": "/tmp/enigma-final-domain-audit.log",
+        "sourceTests": "reading.test.ts",
+        "scope": "Explicit dependencies updated into a cycle, graph reports unresolved cycle and no false execution order.",
+        "suiteResult": "208 tests passed; browser UI paths excluded"
+      },
+      "workflowExecutionEvidence": {
+        "path": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/final-operations-r1/report.json",
+        "scope": "Actual CUA registered actions in isolated two-repository fixture, followed by same-host API readback and targeted output checks; does not claim live Feishu authentication (public HTTP tested)."
+      }
+    },
+    {
+      "id": "check-add",
+      "title": "添加验收检查",
+      "group": "project",
+      "effect": "write",
+      "fieldCount": 5,
+      "sources": [
+        "repos"
+      ],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "check-add",
+        "ms": 297,
+        "error": [],
+        "fields": 5
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 1,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "check-add",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T05-08-13-469Z_01a17bc2-4c1d-7504-9b09-e8acc0da076f.jsonl",
+            "entry": "a6df3a99",
+            "operation": "189e6542-d401-4f2f-a0d9-e4018952cb1f",
+            "createdAt": "2026-10-27T05:12:10.414Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      },
+      "domainTestEvidence": {
+        "log": "/tmp/enigma-final-domain-audit.log",
+        "sourceTests": "workspace.test.ts",
+        "scope": "Adds repo syntax and joint checks; actual failure before upgrade and success after actual source edits; check changes invalidate evidence.",
+        "suiteResult": "208 tests passed; browser UI paths excluded"
+      },
+      "workflowExecutionEvidence": {
+        "path": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/final-operations-r1/report.json",
+        "scope": "Actual CUA registered actions in isolated two-repository fixture, followed by same-host API readback and targeted output checks; does not claim live Feishu authentication (public HTTP tested)."
+      }
+    },
+    {
+      "id": "verify",
+      "title": "运行全部检查",
+      "group": "project",
+      "effect": "execute",
+      "fieldCount": 0,
+      "sources": [],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "verify",
+        "ms": 296,
+        "error": [],
+        "fields": 0
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 8,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "verify",
+            "state": "completed",
+            "outcome": "verified",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T05-08-13-469Z_01a17bc2-4c1d-7504-9b09-e8acc0da076f.jsonl",
+            "entry": "52208de4",
+            "operation": "2967d06a-656d-47d7-bd7f-270195d9a6b1",
+            "createdAt": "2026-10-27T05:12:26.138Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "verify",
+            "state": "completed",
+            "outcome": "verified",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T23-18-55-358Z_01a17a82-807e-73d1-a282-ae05bde5a66c.jsonl",
+            "entry": "43597ee2",
+            "operation": "883ad942-c9a2-4047-938a-011a4ab831ba",
+            "createdAt": "2026-10-26T23:41:26.787Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "verify",
+            "state": "completed",
+            "outcome": "verified",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T21-39-05-635Z_01a17a27-1b23-75df-aa7f-80c626dfebdd.jsonl",
+            "entry": "56126757",
+            "operation": "73e89d82-f7a4-4899-8c9e-afdcb79046cc",
+            "createdAt": "2026-10-26T21:56:26.281Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      },
+      "domainExecutionEvidence": {
+        "report": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/cross-language-e2e-r2/report.json",
+        "runner": "scripts/verify-enigma-cross-language.mjs",
+        "scope": "Python HTTP listener→SDK response parsing→app display executed; new and legacy payload behavior asserted, exact output HTTP3_REPO_OK.",
+        "boundary": "Direct application-domain API workflow, actual Gateway workers and filesystem/HTTP. This is not separate button-invocation proof."
+      },
+      "workflowExecutionEvidence": {
+        "path": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/final-operations-r1/report.json",
+        "scope": "Actual CUA registered actions in isolated two-repository fixture, followed by same-host API readback and targeted output checks; does not claim live Feishu authentication (public HTTP tested)."
+      }
+    },
+    {
+      "id": "plan-create",
+      "title": "建立任务目标",
+      "group": "plan",
+      "effect": "write",
+      "fieldCount": 7,
+      "sources": [
+        "repos",
+        "checks"
+      ],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "plan-create",
+        "ms": 295,
+        "error": [],
+        "fields": 1
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 1,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "plan-create",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T17-36-56-983Z_01a17949-6a96-7406-a87d-d974361c53d5.jsonl",
+            "entry": "99737ad2",
+            "operation": "1a093303-cd0b-4fc0-83eb-8b826363020e",
+            "createdAt": "2026-10-26T19:32:24.997Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      },
+      "domainExecutionEvidence": {
+        "report": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/cross-language-e2e-r2/report.json",
+        "runner": "scripts/verify-enigma-cross-language.mjs",
+        "scope": "PlanStore created three dependent steps with the unchanged real HTTP joint check.",
+        "boundary": "Direct application-domain API workflow, actual Gateway workers and filesystem/HTTP. This is not separate button-invocation proof."
+      }
+    },
+    {
+      "id": "plan-step",
+      "title": "更新步骤进度",
+      "group": "plan",
+      "effect": "write",
+      "fieldCount": 5,
+      "sources": [
+        "checkEvidence"
+      ],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "plan-step",
+        "ms": 295,
+        "error": [],
+        "fields": 5
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": true,
+      "receiptEvidence": {
+        "completed": 2,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "plan-step",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T21-39-05-635Z_01a17a27-1b23-75df-aa7f-80c626dfebdd.jsonl",
+            "entry": "54c27e5b",
+            "operation": "deb7124b-594e-4ba1-b393-484b24944e02",
+            "createdAt": "2026-10-26T21:41:30.832Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "plan-step",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T17-36-56-983Z_01a17949-6a96-7406-a87d-d974361c53d5.jsonl",
+            "entry": "ad5383a6",
+            "operation": "0258e9d9-18c5-4d09-ab22-5de1f3c1a3d0",
+            "createdAt": "2026-10-26T17:44:30.073Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      },
+      "latestExecutionEvidence": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/plan-collaboration-r1/report.json",
+      "latestExecutionScope": "Actual plan progression through UI 0/2→1/2; source edit returns to 0/2 and blocks dependent step.",
+      "domainExecutionEvidence": {
+        "report": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/cross-language-e2e-r2/report.json",
+        "runner": "scripts/verify-enigma-cross-language.mjs",
+        "scope": "PlanStore advanced server/sdk/app with fresh parent verification; actual progress 3/3.",
+        "boundary": "Direct application-domain API workflow, actual Gateway workers and filesystem/HTTP. This is not separate button-invocation proof."
+      }
+    },
+    {
+      "id": "code-read",
+      "title": "追踪代码",
+      "group": "reading",
+      "effect": "read",
+      "fieldCount": 3,
+      "sources": [
+        "repos"
+      ],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "code-read",
+        "ms": 311,
+        "error": [],
+        "fields": 3
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 1,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "code-read",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T03-27-54-420Z_01a17b66-7434-770b-9960-baaf6c5cca71.jsonl",
+            "entry": "c7b24758",
+            "operation": "e47d3992-e295-4829-8dc2-9742bca219d1",
+            "createdAt": "2026-10-27T03:32:39.755Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      },
+      "latestExecutionEvidence": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/source-reading-ui-r1/report.json",
+      "latestExecutionScope": "Actual UI greet restricted to api finds one definition and two real client references; clicking published node needs no raw ID."
+    },
+    {
+      "id": "source-index",
+      "title": "查询源码索引",
+      "group": "reading",
+      "effect": "read",
+      "fieldCount": 3,
+      "sources": [],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "source-index",
+        "ms": 296,
+        "error": [],
+        "fields": 3
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 1,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "source-index",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T03-27-54-420Z_01a17b66-7434-770b-9960-baaf6c5cca71.jsonl",
+            "entry": "7704b0e0",
+            "operation": "e69c255b-0268-4484-89e4-9886a63db87b",
+            "createdAt": "2026-10-27T03:31:15.154Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      },
+      "latestExecutionEvidence": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/source-reading-ui-r1/report.json",
+      "latestExecutionScope": "Actual UI 35/36 path candidates, continuation reveals later result and file opens; response 5563 bytes without internal terms/candidate corpus."
+    },
+    {
+      "id": "schema-read",
+      "title": "阅读 Schema / IDL",
+      "group": "reading",
+      "effect": "read",
+      "fieldCount": 1,
+      "sources": [],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "schema-read",
+        "ms": 296,
+        "error": [],
+        "fields": 1
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 1,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "schema-read",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T03-27-54-420Z_01a17b66-7434-770b-9960-baaf6c5cca71.jsonl",
+            "entry": "6e8350e3",
+            "operation": "3018181b-dd77-4214-885c-e31a052ee08c",
+            "createdAt": "2026-10-27T03:38:58.852Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      },
+      "latestExecutionEvidence": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/source-reading-ui-r1/report.json",
+      "latestExecutionScope": "Actual UI JSON Schema required/optional fields and Protobuf IDs/types; definition file opened."
+    },
+    {
+      "id": "map-build",
+      "title": "建立任务代码地图",
+      "group": "reading",
+      "effect": "write",
+      "fieldCount": 10,
+      "sources": [
+        "repos",
+        "checkpoints",
+        "materials",
+        "checks"
+      ],
+      "entry": "catalog + Changes / Task maps",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "map-build",
+        "ms": 298,
+        "error": [],
+        "fields": 4
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": true,
+      "latestExecutionEvidence": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/taskmap-ui-r1/report.json",
+      "latestExecutionScope": "CUA: start at main, follow app → sdk → api; 7 source nodes / 6 static edges; real joint check.",
+      "receiptEvidence": {
+        "completed": 2,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "map-build",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T21-15-03-251Z_01a17a11-18d3-7767-bc02-a97a9ac2a5a2.jsonl",
+            "entry": "10b163dd",
+            "operation": "525492e6-afa9-4525-8609-879c5b76533e",
+            "createdAt": "2026-10-26T21:21:59.779Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "map-build",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T21-15-03-251Z_01a17a11-18d3-7767-bc02-a97a9ac2a5a2.jsonl",
+            "entry": "7843739a",
+            "operation": "bc0160f8-a479-474f-b3e5-ececaa2feb07",
+            "createdAt": "2026-10-26T21:18:29.738Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      },
+      "domainExecutionEvidence": {
+        "report": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/cross-language-e2e-r2/report.json",
+        "runner": "scripts/verify-enigma-cross-language.mjs",
+        "scope": "TaskReadingStore built 10 nodes/7 static relations across Python server, JS SDK and app; dynamic fetch/JSON limitations retained.",
+        "boundary": "Direct application-domain API workflow, actual Gateway workers and filesystem/HTTP. This is not separate button-invocation proof."
+      }
+    },
+    {
+      "id": "map-coverage",
+      "title": "检查需求覆盖",
+      "group": "reading",
+      "effect": "read",
+      "fieldCount": 2,
+      "sources": [
+        "taskMaps",
+        "checkEvidence"
+      ],
+      "entry": "catalog + Changes / Task maps",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "map-coverage",
+        "ms": 297,
+        "error": [],
+        "fields": 2
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": true,
+      "latestExecutionEvidence": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/taskmap-ui-r1/report.json",
+      "latestExecutionScope": "CUA: current evidence selected and passed, source mutated then old evidence excluded; second coverage reports no current associated check.",
+      "receiptEvidence": {
+        "completed": 2,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "map-coverage",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T21-15-03-251Z_01a17a11-18d3-7767-bc02-a97a9ac2a5a2.jsonl",
+            "entry": "99e4b5a3",
+            "operation": "432f30cb-f57d-4df7-830c-138e956fe1a8",
+            "createdAt": "2026-10-26T21:26:44.674Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "map-coverage",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T21-15-03-251Z_01a17a11-18d3-7767-bc02-a97a9ac2a5a2.jsonl",
+            "entry": "5bcafb80",
+            "operation": "00effe31-28fc-466d-9714-17861285ebef",
+            "createdAt": "2026-10-26T21:24:41.956Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      }
+    },
+    {
+      "id": "changes-build",
+      "title": "生成变更智能阅读",
+      "group": "reading",
+      "effect": "write",
+      "fieldCount": 7,
+      "sources": [
+        "repos"
+      ],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "changes-build",
+        "ms": 295,
+        "error": [],
+        "fields": 5
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": true,
+      "receiptEvidence": {
+        "completed": 1,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "changes-build",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T05-08-13-469Z_01a17bc2-4c1d-7504-9b09-e8acc0da076f.jsonl",
+            "entry": "445a1890",
+            "operation": "7ff06988-786b-4412-ae7f-d637e4b4a895",
+            "createdAt": "2026-10-27T05:20:25.963Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      },
+      "domainTestEvidence": {
+        "log": "/tmp/enigma-final-domain-audit.log",
+        "sourceTests": "change-reading.test.ts",
+        "scope": "Frozen staged content vs newer working edits, current-source invalidation, binary files, newline filenames, long diff truncation and executable modes. Domain test coverage only, not a new UI action receipt.",
+        "suiteResult": "included in prior 208 passed domain tests"
+      },
+      "workflowExecutionEvidence": {
+        "path": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/final-operations-r1/report.json",
+        "scope": "Actual CUA registered actions in isolated two-repository fixture, followed by same-host API readback and targeted output checks; does not claim live Feishu authentication (public HTTP tested)."
+      }
+    },
+    {
+      "id": "material-file",
+      "title": "关联文件资料",
+      "group": "materials",
+      "effect": "write",
+      "fieldCount": 4,
+      "sources": [
+        "repos"
+      ],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "material-file",
+        "ms": 296,
+        "error": [],
+        "fields": 4
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 1,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "material-file",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T05-08-13-469Z_01a17bc2-4c1d-7504-9b09-e8acc0da076f.jsonl",
+            "entry": "f9b78e1a",
+            "operation": "1d2b77a1-421c-4348-b27d-4393d0d039f6",
+            "createdAt": "2026-10-27T05:13:39.922Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      },
+      "domainTestEvidence": {
+        "log": "/tmp/enigma-final-domain-audit.log",
+        "sourceTests": "project-context.test.ts",
+        "scope": "File-linked material read, revision/source refresh/removal and task-scope concurrency verified.",
+        "suiteResult": "208 tests passed; browser UI paths excluded"
+      },
+      "workflowExecutionEvidence": {
+        "path": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/final-operations-r1/report.json",
+        "scope": "Actual CUA registered actions in isolated two-repository fixture, followed by same-host API readback and targeted output checks; does not claim live Feishu authentication (public HTTP tested)."
+      }
+    },
+    {
+      "id": "material-note",
+      "title": "添加项目笔记",
+      "group": "materials",
+      "effect": "write",
+      "fieldCount": 3,
+      "sources": [],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "material-note",
+        "ms": 297,
+        "error": [],
+        "fields": 3
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 1,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "material-note",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T05-08-13-469Z_01a17bc2-4c1d-7504-9b09-e8acc0da076f.jsonl",
+            "entry": "0ca7a434",
+            "operation": "7e437ce1-e517-4b3d-a0ec-17c3f166e5e4",
+            "createdAt": "2026-10-27T05:14:08.196Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      },
+      "domainTestEvidence": {
+        "log": "/tmp/enigma-final-domain-audit.log",
+        "sourceTests": "project-context.test.ts",
+        "scope": "User-authored reference notes maintain source role, revision and private task visibility.",
+        "suiteResult": "208 tests passed; browser UI paths excluded"
+      },
+      "workflowExecutionEvidence": {
+        "path": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/final-operations-r1/report.json",
+        "scope": "Actual CUA registered actions in isolated two-repository fixture, followed by same-host API readback and targeted output checks; does not claim live Feishu authentication (public HTTP tested)."
+      }
+    },
+    {
+      "id": "material-fetch",
+      "title": "获取网页 / 飞书",
+      "group": "materials",
+      "effect": "write",
+      "fieldCount": 7,
+      "sources": [],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "material-fetch",
+        "ms": 304,
+        "error": [],
+        "fields": 4
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 1,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "material-fetch",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T05-08-13-469Z_01a17bc2-4c1d-7504-9b09-e8acc0da076f.jsonl",
+            "entry": "1edd9139",
+            "operation": "1890b519-ef44-434e-866f-c57db670b5c9",
+            "createdAt": "2026-10-27T05:16:05.105Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      },
+      "domainTestEvidence": {
+        "log": "/tmp/enigma-final-domain-audit.log",
+        "sourceTests": "resource-fetch.test.ts",
+        "scope": "Real controlled HTTP extraction/redirect/size/cancel; Lark CLI controlled response scope/revision/auth failure. Does not claim live remote Lark auth.",
+        "suiteResult": "208 tests passed; browser UI paths excluded"
+      },
+      "workflowExecutionEvidence": {
+        "path": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/final-operations-r1/report.json",
+        "scope": "Actual CUA registered actions in isolated two-repository fixture, followed by same-host API readback and targeted output checks; does not claim live Feishu authentication (public HTTP tested)."
+      }
+    },
+    {
+      "id": "material-refresh",
+      "title": "刷新资料",
+      "group": "materials",
+      "effect": "write",
+      "fieldCount": 1,
+      "sources": [
+        "materials"
+      ],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "material-refresh",
+        "ms": 297,
+        "error": [],
+        "fields": 1
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 1,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "material-refresh",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T17-36-56-983Z_01a17949-6a96-7406-a87d-d974361c53d5.jsonl",
+            "entry": "bb98688c",
+            "operation": "b093e580-d0ae-4370-833e-f30402f67d39",
+            "createdAt": "2026-10-26T18:03:05.564Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      },
+      "latestExecutionEvidence": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/plan-collaboration-r1/materials-report.json",
+      "latestExecutionScope": "Actual filtered reference outside first30 refreshed to revision2 and readable content."
+    },
+    {
+      "id": "material-remove",
+      "title": "移除资料",
+      "group": "materials",
+      "effect": "write",
+      "fieldCount": 1,
+      "sources": [
+        "materials"
+      ],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "material-remove",
+        "ms": 295,
+        "error": [],
+        "fields": 1
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 1,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "material-remove",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T17-36-56-983Z_01a17949-6a96-7406-a87d-d974361c53d5.jsonl",
+            "entry": "73b4cfb6",
+            "operation": "c670d8c5-8fc5-4c97-927c-a295159b96b2",
+            "createdAt": "2026-10-26T18:08:54.107Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      },
+      "latestExecutionEvidence": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/plan-collaboration-r1/materials-report.json",
+      "latestExecutionScope": "Actual removal closes selected reference; old reference unavailable, source file unchanged and list restored."
+    },
+    {
+      "id": "material-raw",
+      "title": "查看原始来源",
+      "group": "materials",
+      "effect": "read",
+      "fieldCount": 1,
+      "sources": [
+        "materials"
+      ],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "material-raw",
+        "ms": 296,
+        "error": [],
+        "fields": 1
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 2,
+        "failedOrInterrupted": 1,
+        "samples": [
+          {
+            "action": "material-raw",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T05-08-13-469Z_01a17bc2-4c1d-7504-9b09-e8acc0da076f.jsonl",
+            "entry": "3a9beee9",
+            "operation": "28531aed-476b-4ad8-a597-a09e5a728ec8",
+            "createdAt": "2026-10-27T05:32:17.641Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "material-raw",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T05-08-13-469Z_01a17bc2-4c1d-7504-9b09-e8acc0da076f.jsonl",
+            "entry": "0898f6f2",
+            "operation": "17db3194-7106-43c4-b941-6aaed712e236",
+            "createdAt": "2026-10-27T05:16:46.312Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "material-raw",
+            "state": "failed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T17-36-56-983Z_01a17949-6a96-7406-a87d-d974361c53d5.jsonl",
+            "entry": "0cc6b6ca",
+            "operation": "9bfc44dc-61fc-4d4e-be53-91aba04e9b92",
+            "createdAt": "2026-10-26T19:32:24.980Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      },
+      "domainTestEvidence": {
+        "log": "/tmp/enigma-final-domain-audit.log",
+        "sourceTests": "resource-fetch.test.ts",
+        "scope": "Original HTML envelope and controlled Lark comments/selection sidecar readable independently of extracted text.",
+        "suiteResult": "208 tests passed; browser UI paths excluded"
+      },
+      "workflowExecutionEvidence": {
+        "path": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/final-operations-r1/report.json",
+        "scope": "Actual CUA registered actions in isolated two-repository fixture, followed by same-host API readback and targeted output checks; does not claim live Feishu authentication (public HTTP tested)."
+      }
+    },
+    {
+      "id": "skills-paths",
+      "title": "添加技能发现路径",
+      "group": "skills",
+      "effect": "write",
+      "fieldCount": 1,
+      "sources": [],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "skills-paths",
+        "ms": 300,
+        "error": [],
+        "fields": 1
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 2,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "skills-paths",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T05-08-13-469Z_01a17bc2-4c1d-7504-9b09-e8acc0da076f.jsonl",
+            "entry": "b3ccdf2b",
+            "operation": "c7634f0e-b74f-4fbf-a2b2-cdaf3f4a7c96",
+            "createdAt": "2026-10-27T05:33:53.353Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "skills-paths",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T05-08-13-469Z_01a17bc2-4c1d-7504-9b09-e8acc0da076f.jsonl",
+            "entry": "9c1315d7",
+            "operation": "d5ac8005-b067-445f-8b0a-01c8567d4676",
+            "createdAt": "2026-10-27T05:19:09.173Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      },
+      "domainTestEvidence": {
+        "log": "/tmp/enigma-final-skills-domain.log",
+        "sourceTests": "reuse.test.ts (two native skill tests only)",
+        "scope": "Configures an actual native skill directory, reads by ID+hash, manual-only rules preserved, changed versions refused, result beyond first30 opens; repository remains read-only. No skill instructions executed.",
+        "suiteResult": "2 tests passed"
+      },
+      "workflowExecutionEvidence": {
+        "path": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/final-operations-r1/report.json",
+        "scope": "Actual CUA registered actions in isolated two-repository fixture, followed by same-host API readback and targeted output checks; does not claim live Feishu authentication (public HTTP tested)."
+      }
+    },
+    {
+      "id": "skills-read",
+      "title": "阅读技能",
+      "group": "skills",
+      "effect": "read",
+      "fieldCount": 2,
+      "sources": [],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "skills-read",
+        "ms": 297,
+        "error": [],
+        "fields": 2
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 2,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "skills-read",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T05-08-13-469Z_01a17bc2-4c1d-7504-9b09-e8acc0da076f.jsonl",
+            "entry": "de3b5b48",
+            "operation": "2b671fa3-a49a-4f39-b6f6-6b99af86a814",
+            "createdAt": "2026-10-27T05:32:46.617Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "skills-read",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T05-08-13-469Z_01a17bc2-4c1d-7504-9b09-e8acc0da076f.jsonl",
+            "entry": "4f4150c2",
+            "operation": "291af3fb-a1df-4ce4-9356-904c0817ae4e",
+            "createdAt": "2026-10-27T05:19:32.601Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      },
+      "domainTestEvidence": {
+        "log": "/tmp/enigma-final-skills-domain.log",
+        "sourceTests": "reuse.test.ts (two native skill tests only)",
+        "scope": "Configures an actual native skill directory, reads by ID+hash, manual-only rules preserved, changed versions refused, result beyond first30 opens; repository remains read-only. No skill instructions executed.",
+        "suiteResult": "2 tests passed"
+      },
+      "workflowExecutionEvidence": {
+        "path": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/final-operations-r1/report.json",
+        "scope": "Actual CUA registered actions in isolated two-repository fixture, followed by same-host API readback and targeted output checks; does not claim live Feishu authentication (public HTTP tested)."
+      }
+    },
+    {
+      "id": "recipe-save",
+      "title": "创建 / 编辑配方",
+      "group": "skills",
+      "effect": "write",
+      "fieldCount": 18,
+      "sources": [
+        "repos",
+        "services",
+        "scenarios"
+      ],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "recipe-save",
+        "ms": 301,
+        "error": [],
+        "fields": 5
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "latestExecutionEvidence": "recipe-ui-r1/report.json; recipe-workbench.test.ts",
+      "receiptEvidence": {
+        "completed": 3,
+        "failedOrInterrupted": 2,
+        "samples": [
+          {
+            "action": "recipe-save",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T21-39-05-635Z_01a17a27-1b23-75df-aa7f-80c626dfebdd.jsonl",
+            "entry": "7b4acba8",
+            "operation": "e09c5dec-ddd9-41b4-8e31-ccfae7c18fc5",
+            "createdAt": "2026-10-26T21:44:00.146Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "recipe-save",
+            "state": "failed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T20-31-03-779Z_01a179e8-d263-775a-a390-c9f7aa72ed27.jsonl",
+            "entry": "3f22f962",
+            "operation": "a46a3902-ae27-4745-8ced-4491b48fc46f",
+            "createdAt": "2026-10-26T20:44:56.433Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "recipe-save",
+            "state": "failed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T20-31-03-779Z_01a179e8-d263-775a-a390-c9f7aa72ed27.jsonl",
+            "entry": "48c3be7a",
+            "operation": "3afd1524-3114-4dbe-ac52-71fd6f0aeef1",
+            "createdAt": "2026-10-26T20:42:17.794Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      }
+    },
+    {
+      "id": "recipe-run",
+      "title": "运行配方",
+      "group": "skills",
+      "effect": "execute",
+      "fieldCount": 3,
+      "sources": [
+        "recipes"
+      ],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "recipe-run",
+        "ms": 311,
+        "error": [],
+        "fields": 2
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "latestExecutionEvidence": "recipe-ui-r1/report.json; recipe-workbench.test.ts",
+      "receiptEvidence": {
+        "completed": 2,
+        "failedOrInterrupted": 1,
+        "samples": [
+          {
+            "action": "recipe-run",
+            "state": "completed",
+            "outcome": "passed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T21-39-05-635Z_01a17a27-1b23-75df-aa7f-80c626dfebdd.jsonl",
+            "entry": "a2521bf2",
+            "operation": "d31a3109-6d5f-416c-8efa-3612883e1837",
+            "createdAt": "2026-10-26T21:44:49.079Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "recipe-run",
+            "state": "cancelled",
+            "outcome": "cancelled",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T20-31-03-779Z_01a179e8-d263-775a-a390-c9f7aa72ed27.jsonl",
+            "entry": "7740f8d4",
+            "operation": "104ed372-067f-4d0c-955a-38e92238b54c",
+            "createdAt": "2026-10-26T20:38:42.467Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "recipe-run",
+            "state": "completed",
+            "outcome": "passed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T20-31-03-779Z_01a179e8-d263-775a-a390-c9f7aa72ed27.jsonl",
+            "entry": "8c5128da",
+            "operation": "4a4a76a4-21d9-491b-91c3-83869bd5fa9a",
+            "createdAt": "2026-10-26T20:38:14.747Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      }
+    },
+    {
+      "id": "recipe-propose",
+      "title": "从成功任务提取配方",
+      "group": "skills",
+      "effect": "write",
+      "fieldCount": 0,
+      "sources": [],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "recipe-propose",
+        "ms": 343,
+        "error": [],
+        "fields": 0
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "executionAudit": "Do not infer direct execution from generic recipe UI tests; requires its own scenario evidence.",
+      "latestExecutionEvidence": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/recipe-lifecycle-r1/report.json",
+      "latestExecutionScope": "Actual UI: blocked until current plan is verified; original check linked; proposal preserves goals/evidence; UI adds syntax step and promotes without running. Saved status and revision-bound editing verified.",
+      "receiptEvidence": {
+        "completed": 1,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "recipe-propose",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T21-39-05-635Z_01a17a27-1b23-75df-aa7f-80c626dfebdd.jsonl",
+            "entry": "4056062f",
+            "operation": "4edfa55b-7a57-477a-be5b-fa548d59463a",
+            "createdAt": "2026-10-26T21:42:07.636Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      }
+    },
+    {
+      "id": "delegate-start",
+      "title": "创建隔离子任务",
+      "group": "collaboration",
+      "effect": "execute",
+      "fieldCount": 8,
+      "sources": [
+        "repos",
+        "checks",
+        "entries",
+        "materials"
+      ],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "delegate-start",
+        "ms": 296,
+        "error": [],
+        "fields": 14
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 0,
+        "failedOrInterrupted": 0,
+        "samples": []
+      },
+      "domainExecutionEvidence": {
+        "report": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/cross-language-e2e-r2/report.json",
+        "runner": "scripts/verify-enigma-cross-language.mjs",
+        "scope": "Two actual Gateway Pi workers in isolated copies: 14-call implementation, 7-call independent document follower; original source unchanged before integration.",
+        "boundary": "Direct application-domain API workflow, actual Gateway workers and filesystem/HTTP. This is not separate button-invocation proof."
+      }
+    },
+    {
+      "id": "delegate-cancel",
+      "title": "取消子任务",
+      "group": "collaboration",
+      "effect": "execute",
+      "fieldCount": 1,
+      "sources": [
+        "delegations"
+      ],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "delegate-cancel",
+        "ms": 295,
+        "error": [],
+        "fields": 1
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 0,
+        "failedOrInterrupted": 0,
+        "samples": []
+      },
+      "domainTestEvidence": {
+        "log": "/tmp/enigma-final-domain-audit.log",
+        "sourceTests": "delegation.test.ts",
+        "scope": "Cancellation while real provider request active returns cancelled and prevents parent merge; one-request budget stops child; workers drained.",
+        "suiteResult": "included in 208 passed domain tests"
+      }
+    },
+    {
+      "id": "delegate-preview",
+      "title": "预览合并",
+      "group": "collaboration",
+      "effect": "write",
+      "fieldCount": 1,
+      "sources": [
+        "delegations"
+      ],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "delegate-preview",
+        "ms": 304,
+        "error": [],
+        "fields": 1
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 4,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "delegate-preview",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T17-36-56-983Z_01a17949-6a96-7406-a87d-d974361c53d5.jsonl",
+            "entry": "5dc46abf",
+            "operation": "7e6c48e9-2991-493e-bf3a-e95c5ee0f259",
+            "createdAt": "2026-10-26T17:50:04.869Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "delegate-preview",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T17-36-56-983Z_01a17949-6a96-7406-a87d-d974361c53d5.jsonl",
+            "entry": "03dbba97",
+            "operation": "80c9bbf7-efa9-4df9-8bcb-8a719eb8ba1b",
+            "createdAt": "2026-10-26T17:48:09.015Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "delegate-preview",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T17-36-56-983Z_01a17949-6a96-7406-a87d-d974361c53d5.jsonl",
+            "entry": "249e5832",
+            "operation": "9673d037-92bc-441d-99e4-2666275dceaa",
+            "createdAt": "2026-10-26T17:46:49.328Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      },
+      "latestExecutionEvidence": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/plan-collaboration-r1/report.json",
+      "latestExecutionScope": "Actual merge preview displays real patch and binds selected child; unfinished children do not offer merge.",
+      "domainExecutionEvidence": {
+        "report": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/cross-language-e2e-r2/report.json",
+        "runner": "scripts/verify-enigma-cross-language.mjs",
+        "scope": "Real proposal contains exactly server/model.py, sdk/index.js, app/index.js and MIGRATION.md; parent concurrent note preserved.",
+        "boundary": "Direct application-domain API workflow, actual Gateway workers and filesystem/HTTP. This is not separate button-invocation proof."
+      }
+    },
+    {
+      "id": "delegate-merge",
+      "title": "应用已预览结果",
+      "group": "collaboration",
+      "effect": "execute",
+      "fieldCount": 1,
+      "sources": [
+        "mergePreviews"
+      ],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "delegate-merge",
+        "ms": 295,
+        "error": [],
+        "fields": 1
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 1,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "delegate-merge",
+            "state": "completed",
+            "outcome": "verified",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T17-36-56-983Z_01a17949-6a96-7406-a87d-d974361c53d5.jsonl",
+            "entry": "bcf64cc9",
+            "operation": "76febb24-cb23-4d90-901d-c7371591aad7",
+            "createdAt": "2026-10-26T17:50:37.618Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      },
+      "latestExecutionEvidence": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/plan-collaboration-r1/report.json",
+      "latestExecutionScope": "Actual UI confirmation invoked delegation merge and joint verification; parent concurrent edit preserved.",
+      "domainExecutionEvidence": {
+        "report": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/cross-language-e2e-r2/report.json",
+        "runner": "scripts/verify-enigma-cross-language.mjs",
+        "scope": "Parent integration followed explicit preview, reran original HTTP chain and retained original check bytes/configuration.",
+        "boundary": "Direct application-domain API workflow, actual Gateway workers and filesystem/HTTP. This is not separate button-invocation proof."
+      }
+    },
+    {
+      "id": "experiment-create",
+      "title": "比较多个方案",
+      "group": "collaboration",
+      "effect": "write",
+      "fieldCount": 5,
+      "sources": [
+        "checks"
+      ],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "experiment-create",
+        "ms": 311,
+        "error": [],
+        "fields": 2
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 1,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "experiment-create",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T17-36-56-983Z_01a17949-6a96-7406-a87d-d974361c53d5.jsonl",
+            "entry": "444bf599",
+            "operation": "b1b265c1-874e-4c81-8150-f0b5481fc799",
+            "createdAt": "2026-10-27T04:43:30.162Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      },
+      "workflowExecutionEvidence": {
+        "path": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/experiment-ui-r1/report.json",
+        "scope": "CUA creation, common syntax checks, selection and no-op merge preview; controlled-provider candidates, no new agent spawned."
+      }
+    },
+    {
+      "id": "experiment-evaluate",
+      "title": "执行共同验收",
+      "group": "collaboration",
+      "effect": "execute",
+      "fieldCount": 1,
+      "sources": [
+        "experiments"
+      ],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "experiment-evaluate",
+        "ms": 296,
+        "error": [],
+        "fields": 1
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 1,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "experiment-evaluate",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T17-36-56-983Z_01a17949-6a96-7406-a87d-d974361c53d5.jsonl",
+            "entry": "a298a12c",
+            "operation": "069f6668-6285-4a41-b0e4-500a0435e091",
+            "createdAt": "2026-10-27T04:43:45.337Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      },
+      "workflowExecutionEvidence": {
+        "path": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/experiment-ui-r1/report.json",
+        "scope": "CUA creation, common syntax checks, selection and no-op merge preview; controlled-provider candidates, no new agent spawned."
+      }
+    },
+    {
+      "id": "experiment-select",
+      "title": "选择当前通过方案",
+      "group": "collaboration",
+      "effect": "write",
+      "fieldCount": 2,
+      "sources": [
+        "experiments"
+      ],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "experiment-select",
+        "ms": 298,
+        "error": [],
+        "fields": 2
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 1,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "experiment-select",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T17-36-56-983Z_01a17949-6a96-7406-a87d-d974361c53d5.jsonl",
+            "entry": "e5dd938a",
+            "operation": "5a372341-269b-4eb8-b31e-443193c36094",
+            "createdAt": "2026-10-27T04:44:32.953Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      },
+      "workflowExecutionEvidence": {
+        "path": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/experiment-ui-r1/report.json",
+        "scope": "CUA creation, common syntax checks, selection and no-op merge preview; controlled-provider candidates, no new agent spawned."
+      }
+    },
+    {
+      "id": "checkpoint",
+      "title": "记录检查点",
+      "group": "timeline",
+      "effect": "write",
+      "fieldCount": 1,
+      "sources": [],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "checkpoint",
+        "ms": 297,
+        "error": [],
+        "fields": 1
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 4,
+        "failedOrInterrupted": 1,
+        "samples": [
+          {
+            "action": "checkpoint",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-17-10-306Z_01a17b93-8ea2-70b0-ad65-6dc44ab5757b.jsonl",
+            "entry": "0aad883f",
+            "operation": "8a8a3741-8078-4941-bf6f-86439c2cce60",
+            "createdAt": "2026-10-27T04:56:53.394Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "checkpoint",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-17-10-306Z_01a17b93-8ea2-70b0-ad65-6dc44ab5757b.jsonl",
+            "entry": "b7421822",
+            "operation": "7fcb0cf4-d170-4d0f-99e8-b67dafa3c7ce",
+            "createdAt": "2026-10-27T04:52:39.841Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "checkpoint",
+            "state": "unknown",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-56-19-199Z_01a17bb7-65ff-77b3-a2e8-80338aee34d5.jsonl",
+            "entry": "b7421822",
+            "operation": "7fcb0cf4-d170-4d0f-99e8-b67dafa3c7ce",
+            "createdAt": "2026-10-27T04:52:39.841Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      },
+      "workflowExecutionEvidence": {
+        "path": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/time-machine-ui-r2/report.json",
+        "scope": "Real CUA save, preview, confirm restore, byte equality, independent branch with and without bound history, open created native conversation."
+      }
+    },
+    {
+      "id": "restore-preview",
+      "title": "预览代码恢复",
+      "group": "timeline",
+      "effect": "read",
+      "fieldCount": 2,
+      "sources": [
+        "checkpoints"
+      ],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "restore-preview",
+        "ms": 298,
+        "error": [],
+        "fields": 2
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 3,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "restore-preview",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-17-10-306Z_01a17b93-8ea2-70b0-ad65-6dc44ab5757b.jsonl",
+            "entry": "de90a1dc",
+            "operation": "47a21364-3ecc-4bab-b7f8-286ef94286f1",
+            "createdAt": "2026-10-27T04:58:04.879Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "restore-preview",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-17-10-306Z_01a17b93-8ea2-70b0-ad65-6dc44ab5757b.jsonl",
+            "entry": "e2f9508e",
+            "operation": "6ad5b656-dcec-474d-a1ec-f6419801c105",
+            "createdAt": "2026-10-27T04:52:47.249Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "restore-preview",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T12-51-03-501Z_01a17843-accd-70ff-8858-6b30690a4ee0.jsonl",
+            "entry": "d9f74568",
+            "operation": "f0fa7f4a-0b0b-488f-b343-9862f9816576",
+            "createdAt": "2026-10-26T14:09:43.116Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      }
+    },
+    {
+      "id": "restore",
+      "title": "恢复代码 / 上下文",
+      "group": "timeline",
+      "effect": "execute",
+      "fieldCount": 3,
+      "sources": [
+        "checkpoints"
+      ],
+      "entry": "catalog -> timeline -> preview -> confirmation",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "restore",
+        "ms": 286,
+        "flow": "requires preview",
+        "error": []
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 2,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "restore",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-17-10-306Z_01a17b93-8ea2-70b0-ad65-6dc44ab5757b.jsonl",
+            "entry": "009f7da0",
+            "operation": "b7e56a4f-d822-42ad-aada-3c4e2bf50555",
+            "createdAt": "2026-10-27T04:58:18.460Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "restore",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-17-10-306Z_01a17b93-8ea2-70b0-ad65-6dc44ab5757b.jsonl",
+            "entry": "a9863df9",
+            "operation": "a8301e7d-7841-4bff-8c19-4edbe15e45d0",
+            "createdAt": "2026-10-27T04:53:22.583Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      },
+      "workflowExecutionEvidence": {
+        "path": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/time-machine-ui-r2/report.json",
+        "scope": "Real CUA save, preview, confirm restore, byte equality, independent branch with and without bound history, open created native conversation."
+      }
+    },
+    {
+      "id": "code-fork",
+      "title": "创建独立代码方案",
+      "group": "timeline",
+      "effect": "execute",
+      "fieldCount": 2,
+      "sources": [
+        "checkpoints"
+      ],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "code-fork",
+        "ms": 303,
+        "error": [],
+        "fields": 2
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 2,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "code-fork",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-17-10-306Z_01a17b93-8ea2-70b0-ad65-6dc44ab5757b.jsonl",
+            "entry": "1671d443",
+            "operation": "96eed6d3-0c86-4147-8b0a-a2e5e1c189f7",
+            "createdAt": "2026-10-27T05:00:50.645Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "code-fork",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-17-10-306Z_01a17b93-8ea2-70b0-ad65-6dc44ab5757b.jsonl",
+            "entry": "e1fa2c2e",
+            "operation": "7402fd9f-80bd-438a-9438-9c829063ace7",
+            "createdAt": "2026-10-27T04:56:17.509Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      },
+      "workflowExecutionEvidence": {
+        "path": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/time-machine-ui-r2/report.json",
+        "scope": "Real CUA save, preview, confirm restore, byte equality, independent branch with and without bound history, open created native conversation."
+      }
+    },
+    {
+      "id": "memory-search",
+      "title": "检索记忆",
+      "group": "memory",
+      "effect": "read",
+      "fieldCount": 2,
+      "sources": [],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "memory-search",
+        "ms": 303,
+        "error": [],
+        "fields": 2
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": true,
+      "latestExecutionEvidence": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/memory-ui-r1/report.json",
+      "latestExecutionScope": "Actual main memory panel query + paging of 526 visible records; catalog search action called separately with includeStale; other task hidden.",
+      "receiptEvidence": {
+        "completed": 1,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "memory-search",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T00-36-54-944Z_01a17ac9-e820-73d1-a282-ae071bfe1acc.jsonl",
+            "entry": "4ea87f97",
+            "operation": "28ed51b5-6558-40e3-9daa-d7d2deba0889",
+            "createdAt": "2026-10-27T01:21:59.864Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      }
+    },
+    {
+      "id": "memory-read",
+      "title": "阅读完整记忆",
+      "group": "memory",
+      "effect": "read",
+      "fieldCount": 1,
+      "sources": [
+        "memories"
+      ],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "memory-read",
+        "ms": 303,
+        "error": [],
+        "fields": 1
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": true,
+      "latestExecutionEvidence": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/memory-ui-r1/report.json",
+      "latestExecutionScope": "Actual UI reads scoped source-backed body and correction form; source/version and applicability readable.",
+      "receiptEvidence": {
+        "completed": 4,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "memory-read",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T00-36-54-944Z_01a17ac9-e820-73d1-a282-ae071bfe1acc.jsonl",
+            "entry": "1ece223d",
+            "operation": "f0814d15-354a-4a4b-8940-64c3556f2cf6",
+            "createdAt": "2026-10-27T00:45:53.713Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "memory-read",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T14-19-26-351Z_01a17894-970f-72cf-8098-742fcfb2aef0.jsonl",
+            "entry": "a2d10f91",
+            "operation": "21368452-f780-4522-8210-c3e985c43535",
+            "createdAt": "2026-10-26T15:52:46.440Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "memory-read",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T14-19-26-351Z_01a17894-970f-72cf-8098-742fcfb2aef0.jsonl",
+            "entry": "0f8a4e4d",
+            "operation": "8b0fb0b6-ff57-4eff-88eb-fd2af3774103",
+            "createdAt": "2026-10-26T15:40:02.195Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      }
+    },
+    {
+      "id": "memory-reindex",
+      "title": "重建记忆索引",
+      "group": "memory",
+      "effect": "write",
+      "fieldCount": 0,
+      "sources": [],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "memory-reindex",
+        "ms": 308,
+        "error": [],
+        "fields": 0
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": true,
+      "latestExecutionEvidence": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/memory-ui-r1/report.json",
+      "latestExecutionScope": "Actual UI reindexes >500 records and displays only scoped statistics, internal index tokens never returned.",
+      "receiptEvidence": {
+        "completed": 1,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "memory-reindex",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T00-36-54-944Z_01a17ac9-e820-73d1-a282-ae071bfe1acc.jsonl",
+            "entry": "45c1d59c",
+            "operation": "182bc0ee-3a2b-4a47-b145-4c0756eea3ae",
+            "createdAt": "2026-10-27T01:10:54.492Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      }
+    },
+    {
+      "id": "memory-recover",
+      "title": "恢复记忆整理状态",
+      "group": "memory",
+      "effect": "write",
+      "fieldCount": 0,
+      "sources": [],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "memory-recover",
+        "ms": 296,
+        "error": [],
+        "fields": 0
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 0,
+        "failedOrInterrupted": 0,
+        "samples": []
+      },
+      "domainTestEvidence": {
+        "log": "/tmp/enigma-final-domain-audit.log",
+        "sourceTests": "memory-index.test.ts",
+        "scope": "Actual live writer rejected; killed writer releases lock and leaves processing draft unknown, never replayed.",
+        "suiteResult": "208 tests passed; browser UI paths excluded"
+      }
+    },
+    {
+      "id": "reading-open",
+      "title": "展开已发布阅读",
+      "group": "reading",
+      "effect": "read",
+      "fieldCount": 3,
+      "sources": [
+        "repos"
+      ],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "reading-open",
+        "ms": 297,
+        "error": [],
+        "fields": 3
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 4,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "reading-open",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T03-27-54-420Z_01a17b66-7434-770b-9960-baaf6c5cca71.jsonl",
+            "entry": "b46125ff",
+            "operation": "0a2abb58-d27e-4b79-97e2-7ed2c854f5a5",
+            "createdAt": "2026-10-27T03:37:17.128Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "reading-open",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T03-27-54-420Z_01a17b66-7434-770b-9960-baaf6c5cca71.jsonl",
+            "entry": "823e4c00",
+            "operation": "d58d5242-296c-4d23-b94a-474a68b7d810",
+            "createdAt": "2026-10-27T03:36:21.779Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "reading-open",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T03-27-54-420Z_01a17b66-7434-770b-9960-baaf6c5cca71.jsonl",
+            "entry": "10448bb2",
+            "operation": "5d136db6-b05a-4359-9688-69ee2c1bf750",
+            "createdAt": "2026-10-27T03:34:52.245Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      },
+      "latestExecutionEvidence": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/source-reading-ui-r1/report.json",
+      "latestExecutionScope": "Actual UI full published map and node states: matching old content, changed new content, deleted current file while saved snippet retained; original query scope carried."
+    },
+    {
+      "id": "map-annotate",
+      "title": "补充讲解与风险",
+      "group": "reading",
+      "effect": "write",
+      "fieldCount": 12,
+      "sources": [
+        "taskMaps"
+      ],
+      "entry": "catalog + Changes / Task maps",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "map-annotate",
+        "ms": 297,
+        "error": [],
+        "fields": 2
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": true,
+      "latestExecutionEvidence": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/taskmap-ui-r1/report.json",
+      "latestExecutionScope": "CUA: named source choices; pin map and revision; save insight and requirement assessment, revision 1 → 2; click citations; stale source disables annotation.",
+      "receiptEvidence": {
+        "completed": 1,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "map-annotate",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T21-15-03-251Z_01a17a11-18d3-7767-bc02-a97a9ac2a5a2.jsonl",
+            "entry": "05d9d39d",
+            "operation": "29cc33bd-de69-42b4-9dbe-8fd68a249633",
+            "createdAt": "2026-10-26T21:22:51.811Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      }
+    },
+    {
+      "id": "memory-save",
+      "title": "保存 / 更正记忆",
+      "group": "memory",
+      "effect": "write",
+      "fieldCount": 10,
+      "sources": [
+        "repos",
+        "memories"
+      ],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "memory-save",
+        "ms": 297,
+        "error": [],
+        "fields": 6
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": true,
+      "latestExecutionEvidence": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/memory-ui-r1/report.json",
+      "latestExecutionScope": "Actual UI prefills current source and scope; saves correction after more than 500 prior records, old note suppressed.",
+      "receiptEvidence": {
+        "completed": 1,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "memory-save",
+            "state": "completed",
+            "outcome": "user-stated",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T00-36-54-944Z_01a17ac9-e820-73d1-a282-ae071bfe1acc.jsonl",
+            "entry": "60e042df",
+            "operation": "9d76ed93-422f-4220-9c1e-cb8099e30671",
+            "createdAt": "2026-10-27T00:46:24.667Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      }
+    },
+    {
+      "id": "memory-forget",
+      "title": "忘记记忆",
+      "group": "memory",
+      "effect": "write",
+      "fieldCount": 1,
+      "sources": [
+        "memories"
+      ],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "memory-forget",
+        "ms": 298,
+        "error": [],
+        "fields": 1
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": true,
+      "latestExecutionEvidence": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/memory-ui-r1/report.json",
+      "latestExecutionScope": "Actual UI explicit selected-note forgetting, subsequent query returns no matching note; old history retained.",
+      "receiptEvidence": {
+        "completed": 1,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "memory-forget",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T00-36-54-944Z_01a17ac9-e820-73d1-a282-ae071bfe1acc.jsonl",
+            "entry": "8b817095",
+            "operation": "d190a49d-e1e6-4459-b7c7-aa254a24c1a2",
+            "createdAt": "2026-10-27T00:46:58.355Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      }
+    },
+    {
+      "id": "memory-organize",
+      "title": "整理候选知识",
+      "group": "memory",
+      "effect": "write",
+      "fieldCount": 1,
+      "sources": [
+        "memoryDrafts"
+      ],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "memory-organize",
+        "ms": 296,
+        "error": [],
+        "fields": 0
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": true,
+      "latestExecutionEvidence": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/memory-ui-r1/report.json",
+      "latestExecutionScope": "Actual UI processes selected current private draft without model; source mutation rejects another draft. Other task isolation tested separately.",
+      "receiptEvidence": {
+        "completed": 2,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "memory-organize",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T00-36-54-944Z_01a17ac9-e820-73d1-a282-ae071bfe1acc.jsonl",
+            "entry": "bc281479",
+            "operation": "8b683dcb-5c2e-48a7-8bbe-12ba9453a533",
+            "createdAt": "2026-10-27T00:57:49.016Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "memory-organize",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T00-36-54-944Z_01a17ac9-e820-73d1-a282-ae071bfe1acc.jsonl",
+            "entry": "0798b0f8",
+            "operation": "ad608835-134b-43c3-9676-180600c7835b",
+            "createdAt": "2026-10-27T00:48:23.926Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      }
+    },
+    {
+      "id": "knowledge-draft",
+      "title": "记录有依据的经验",
+      "group": "memory",
+      "effect": "write",
+      "fieldCount": 8,
+      "sources": [
+        "materials",
+        "repos",
+        "checkEvidence"
+      ],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "knowledge-draft",
+        "ms": 296,
+        "error": [],
+        "fields": 4
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": true,
+      "latestExecutionEvidence": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/memory-ui-r1/report.json",
+      "latestExecutionScope": "Actual UI note and source selectors create task-private candidate; second queued draft detects source edit.",
+      "receiptEvidence": {
+        "completed": 2,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "knowledge-draft",
+            "state": "completed",
+            "outcome": "queued",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T00-36-54-944Z_01a17ac9-e820-73d1-a282-ae071bfe1acc.jsonl",
+            "entry": "436e3f59",
+            "operation": "d411aa71-d935-4fb9-938c-78e1ee71d906",
+            "createdAt": "2026-10-27T00:55:03.240Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "knowledge-draft",
+            "state": "completed",
+            "outcome": "queued",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T00-36-54-944Z_01a17ac9-e820-73d1-a282-ae071bfe1acc.jsonl",
+            "entry": "9257a2b7",
+            "operation": "0e0b5a5e-3181-4347-badd-e8212b00791a",
+            "createdAt": "2026-10-27T00:47:40.010Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      }
+    },
+    {
+      "id": "observer-question",
+      "title": "询问运行状态",
+      "group": "observer",
+      "effect": "read",
+      "fieldCount": 1,
+      "sources": [],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "observer-question",
+        "ms": 296,
+        "error": [],
+        "fields": 1
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 0,
+        "failedOrInterrupted": 0,
+        "samples": []
+      },
+      "domainTestEvidence": {
+        "log": "/tmp/enigma-final-domain-audit.log",
+        "sourceTests": "observer-questions.test.ts",
+        "scope": "Current streaming/wait question remains independent; timeout falls back to facts, no false semantic progress or completion.",
+        "suiteResult": "208 tests passed; browser UI paths excluded"
+      },
+      "equivalentUIRouteEvidence": {
+        "path": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/final-operations-r1/report.json",
+        "scope": "Dedicated /guardian/diagnose entry in real UI: two model calls, before/after history fix, no commands or main-run interruption."
+      }
+    },
+    {
+      "id": "review-run",
+      "title": "按需独立审查",
+      "group": "review",
+      "effect": "execute",
+      "fieldCount": 4,
+      "sources": [
+        "checkpoints",
+        "entries"
+      ],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "review-run",
+        "ms": 295,
+        "error": [],
+        "fields": 9
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 1,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "review-run",
+            "state": "completed",
+            "outcome": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T20-10-02-746Z_01a179d5-947a-71a8-95ff-fc0bdc5b8df2.jsonl",
+            "entry": "6114696e",
+            "operation": "3b10e278-4c9f-49a7-9512-0565bbe20a02",
+            "createdAt": "2026-10-26T20:10:39.264Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      },
+      "latestExecutionEvidence": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/review-ui-r1/report.json",
+      "latestExecutionScope": "Actual Gateway independent review with 3 requests; source report read, later stale state and frozen/current/deleted source verified."
+    },
+    {
+      "id": "service-add",
+      "title": "配置服务",
+      "group": "environment",
+      "effect": "write",
+      "fieldCount": 18,
+      "sources": [
+        "repos",
+        "services"
+      ],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "service-add",
+        "ms": 296,
+        "error": [],
+        "fields": 12
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 6,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "service-add",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-17-10-306Z_01a17b93-8ea2-70b0-ad65-6dc44ab5757b.jsonl",
+            "entry": "a26d4496",
+            "operation": "79ee4b96-82b8-4bd1-8474-af07e0f65e9a",
+            "createdAt": "2026-10-27T04:38:21.333Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "service-add",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-56-19-199Z_01a17bb7-65ff-77b3-a2e8-80338aee34d5.jsonl",
+            "entry": "a26d4496",
+            "operation": "79ee4b96-82b8-4bd1-8474-af07e0f65e9a",
+            "createdAt": "2026-10-27T04:38:21.333Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "service-add",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-17-10-306Z_01a17b93-8ea2-70b0-ad65-6dc44ab5757b.jsonl",
+            "entry": "1623442f",
+            "operation": "88471785-f3c5-4271-a292-3c8398d083eb",
+            "createdAt": "2026-10-27T04:37:45.609Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      },
+      "domainTestEvidence": {
+        "log": "/tmp/enigma-final-service-domain.log",
+        "sourceTests": "services.test.ts",
+        "scope": "Actual backend/frontend HTTP communicate, dependency restart invalidates consumer, owned processes stop; occupied user port and unhealthy readiness rejected. Selected non-browser tests only.",
+        "suiteResult": "2 tests passed"
+      },
+      "workflowExecutionEvidence": {
+        "path": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/environment-ui-r1/report.json",
+        "scope": "Actual CUA source UI in isolated profile; browser trace download initiation only, not saved-file validation."
+      }
+    },
+    {
+      "id": "service-start",
+      "title": "启动服务",
+      "group": "environment",
+      "effect": "execute",
+      "fieldCount": 1,
+      "sources": [
+        "services"
+      ],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "service-start",
+        "ms": 295,
+        "error": [],
+        "fields": 1
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 4,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "service-start",
+            "state": "completed",
+            "outcome": "readiness-timeout",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-17-10-306Z_01a17b93-8ea2-70b0-ad65-6dc44ab5757b.jsonl",
+            "entry": "99c622dc",
+            "operation": "a9c59132-e142-41c8-a4f5-360492fecaad",
+            "createdAt": "2026-10-27T04:38:35.342Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "service-start",
+            "state": "completed",
+            "outcome": "readiness-timeout",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-56-19-199Z_01a17bb7-65ff-77b3-a2e8-80338aee34d5.jsonl",
+            "entry": "99c622dc",
+            "operation": "a9c59132-e142-41c8-a4f5-360492fecaad",
+            "createdAt": "2026-10-27T04:38:35.342Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "service-start",
+            "state": "completed",
+            "outcome": "ready",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-17-10-306Z_01a17b93-8ea2-70b0-ad65-6dc44ab5757b.jsonl",
+            "entry": "e5655cfa",
+            "operation": "87eefe6b-7dc6-480d-a702-175b68a10ab8",
+            "createdAt": "2026-10-27T04:22:34.491Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      },
+      "domainTestEvidence": {
+        "log": "/tmp/enigma-final-service-domain.log",
+        "sourceTests": "services.test.ts",
+        "scope": "Actual backend/frontend HTTP communicate, dependency restart invalidates consumer, owned processes stop; occupied user port and unhealthy readiness rejected. Selected non-browser tests only.",
+        "suiteResult": "2 tests passed"
+      },
+      "workflowExecutionEvidence": {
+        "path": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/environment-ui-r1/report.json",
+        "scope": "Actual CUA source UI in isolated profile; browser trace download initiation only, not saved-file validation."
+      }
+    },
+    {
+      "id": "service-stop",
+      "title": "停止服务",
+      "group": "environment",
+      "effect": "execute",
+      "fieldCount": 1,
+      "sources": [
+        "services"
+      ],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "service-stop",
+        "ms": 295,
+        "error": [],
+        "fields": 1
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 0,
+        "failedOrInterrupted": 0,
+        "samples": []
+      },
+      "domainTestEvidence": {
+        "log": "/tmp/enigma-final-service-domain.log",
+        "sourceTests": "services.test.ts",
+        "scope": "Actual backend/frontend HTTP communicate, dependency restart invalidates consumer, owned processes stop; occupied user port and unhealthy readiness rejected. Selected non-browser tests only.",
+        "suiteResult": "2 tests passed"
+      },
+      "equivalentUIRouteEvidence": {
+        "path": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/environment-ui-r1/report.json",
+        "scope": "Dedicated /runtime/cancel UI route executed and terminal result verified. Not a chat action receipt."
+      }
+    },
+    {
+      "id": "service-restart",
+      "title": "重启服务",
+      "group": "environment",
+      "effect": "execute",
+      "fieldCount": 1,
+      "sources": [
+        "services"
+      ],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "service-restart",
+        "ms": 297,
+        "error": [],
+        "fields": 1
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 2,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "service-restart",
+            "state": "completed",
+            "outcome": "ready",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-17-10-306Z_01a17b93-8ea2-70b0-ad65-6dc44ab5757b.jsonl",
+            "entry": "aec0c7e7",
+            "operation": "4208c982-1d79-41fc-8135-b583a8e6a9f1",
+            "createdAt": "2026-10-27T04:30:17.755Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "service-restart",
+            "state": "completed",
+            "outcome": "ready",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-56-19-199Z_01a17bb7-65ff-77b3-a2e8-80338aee34d5.jsonl",
+            "entry": "aec0c7e7",
+            "operation": "4208c982-1d79-41fc-8135-b583a8e6a9f1",
+            "createdAt": "2026-10-27T04:30:17.755Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      },
+      "domainTestEvidence": {
+        "log": "/tmp/enigma-final-service-domain.log",
+        "sourceTests": "services.test.ts",
+        "scope": "Actual backend/frontend HTTP communicate, dependency restart invalidates consumer, owned processes stop; occupied user port and unhealthy readiness rejected. Selected non-browser tests only.",
+        "suiteResult": "2 tests passed"
+      },
+      "workflowExecutionEvidence": {
+        "path": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/environment-ui-r1/report.json",
+        "scope": "Actual CUA source UI in isolated profile; browser trace download initiation only, not saved-file validation."
+      }
+    },
+    {
+      "id": "background-start",
+      "title": "运行后台命令",
+      "group": "environment",
+      "effect": "execute",
+      "fieldCount": 5,
+      "sources": [
+        "repos"
+      ],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "background-start",
+        "ms": 296,
+        "error": [],
+        "fields": 5
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 4,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "background-start",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-17-10-306Z_01a17b93-8ea2-70b0-ad65-6dc44ab5757b.jsonl",
+            "entry": "f211247e",
+            "operation": "3baf81d9-cdfd-471b-b80c-33431f947362",
+            "createdAt": "2026-10-27T04:36:36.142Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "background-start",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-56-19-199Z_01a17bb7-65ff-77b3-a2e8-80338aee34d5.jsonl",
+            "entry": "f211247e",
+            "operation": "3baf81d9-cdfd-471b-b80c-33431f947362",
+            "createdAt": "2026-10-27T04:36:36.142Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "background-start",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-17-10-306Z_01a17b93-8ea2-70b0-ad65-6dc44ab5757b.jsonl",
+            "entry": "6371dbe3",
+            "operation": "4b3b2d5b-8155-4c28-8abf-2a8677f1b7da",
+            "createdAt": "2026-10-27T04:32:49.473Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      },
+      "domainTestEvidence": {
+        "log": "/tmp/enigma-final-domain-audit.log",
+        "sourceTests": "background.test.ts",
+        "scope": "Actual persistent command launches and writes result, keeps workspace lock available; environment-only secrets redacted.",
+        "suiteResult": "208 tests passed; browser UI paths excluded"
+      },
+      "workflowExecutionEvidence": {
+        "path": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/environment-ui-r1/report.json",
+        "scope": "Actual CUA source UI in isolated profile; browser trace download initiation only, not saved-file validation."
+      }
+    },
+    {
+      "id": "background-cancel",
+      "title": "取消后台命令",
+      "group": "environment",
+      "effect": "execute",
+      "fieldCount": 1,
+      "sources": [
+        "background"
+      ],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "background-cancel",
+        "ms": 303,
+        "error": [],
+        "fields": 1
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 0,
+        "failedOrInterrupted": 0,
+        "samples": []
+      },
+      "domainTestEvidence": {
+        "log": "/tmp/enigma-final-domain-audit.log",
+        "sourceTests": "background.test.ts",
+        "scope": "Actual cancellation terminates owned command and prevents late write, durable cancelled receipt verified.",
+        "suiteResult": "208 tests passed; browser UI paths excluded"
+      },
+      "equivalentUIRouteEvidence": {
+        "path": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/environment-ui-r1/report.json",
+        "scope": "Dedicated /runtime/cancel UI route executed and terminal result verified. Not a chat action receipt."
+      }
+    },
+    {
+      "id": "wait-start",
+      "title": "等待结果并接续",
+      "group": "environment",
+      "effect": "write",
+      "fieldCount": 10,
+      "sources": [],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "wait-start",
+        "ms": 308,
+        "error": [],
+        "fields": 4
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 2,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "wait-start",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-17-10-306Z_01a17b93-8ea2-70b0-ad65-6dc44ab5757b.jsonl",
+            "entry": "c8955d52",
+            "operation": "2e500f06-f3f9-4ec9-a288-fe4628c4c76e",
+            "createdAt": "2026-10-27T04:36:52.216Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "wait-start",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-56-19-199Z_01a17bb7-65ff-77b3-a2e8-80338aee34d5.jsonl",
+            "entry": "c8955d52",
+            "operation": "2e500f06-f3f9-4ec9-a288-fe4628c4c76e",
+            "createdAt": "2026-10-27T04:36:52.216Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      },
+      "domainTestEvidence": {
+        "log": "/tmp/enigma-final-domain-audit.log",
+        "sourceTests": "task-events.test.ts",
+        "scope": "Independent wait worker observes real command result without holding workspace lock; timeout/interruption distinct from successful completion.",
+        "suiteResult": "208 tests passed; browser UI paths excluded"
+      },
+      "workflowExecutionEvidence": {
+        "path": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/environment-ui-r1/report.json",
+        "scope": "Actual CUA source UI in isolated profile; browser trace download initiation only, not saved-file validation."
+      }
+    },
+    {
+      "id": "wait-cancel",
+      "title": "取消等待",
+      "group": "environment",
+      "effect": "write",
+      "fieldCount": 1,
+      "sources": [
+        "waits"
+      ],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "wait-cancel",
+        "ms": 313,
+        "error": [],
+        "fields": 1
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 0,
+        "failedOrInterrupted": 0,
+        "samples": []
+      },
+      "latestExecutionEvidence": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/wait-ui-r1/report.json",
+      "latestExecutionScope": "Two actual waits settled cancelled with gone worker; target service not started.",
+      "equivalentUIRouteEvidence": {
+        "path": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/environment-ui-r1/report.json",
+        "scope": "Dedicated /runtime/cancel UI route executed and terminal result verified. Not a chat action receipt."
+      }
+    },
+    {
+      "id": "browser-add",
+      "title": "配置浏览器验收",
+      "group": "environment",
+      "effect": "write",
+      "fieldCount": 12,
+      "sources": [
+        "services"
+      ],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "browser-add",
+        "ms": 296,
+        "error": [],
+        "fields": 4
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 2,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "browser-add",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-17-10-306Z_01a17b93-8ea2-70b0-ad65-6dc44ab5757b.jsonl",
+            "entry": "0f1307bb",
+            "operation": "02c3940b-996a-4744-8a15-4cf32eb8cc3b",
+            "createdAt": "2026-10-27T04:26:13.352Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "browser-add",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-56-19-199Z_01a17bb7-65ff-77b3-a2e8-80338aee34d5.jsonl",
+            "entry": "0f1307bb",
+            "operation": "02c3940b-996a-4744-8a15-4cf32eb8cc3b",
+            "createdAt": "2026-10-27T04:26:13.352Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      },
+      "workflowExecutionEvidence": {
+        "path": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/environment-ui-r1/report.json",
+        "scope": "Actual CUA source UI in isolated profile; browser trace download initiation only, not saved-file validation."
+      }
+    },
+    {
+      "id": "browser-run",
+      "title": "执行浏览器场景",
+      "group": "environment",
+      "effect": "execute",
+      "fieldCount": 1,
+      "sources": [
+        "scenarios"
+      ],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "browser-run",
+        "ms": 303,
+        "error": [],
+        "fields": 1
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 2,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "browser-run",
+            "state": "completed",
+            "outcome": "passed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-17-10-306Z_01a17b93-8ea2-70b0-ad65-6dc44ab5757b.jsonl",
+            "entry": "d7ff7784",
+            "operation": "62c2b433-f42c-4bc6-997b-96790be755ed",
+            "createdAt": "2026-10-27T04:27:23.736Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "browser-run",
+            "state": "completed",
+            "outcome": "passed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-56-19-199Z_01a17bb7-65ff-77b3-a2e8-80338aee34d5.jsonl",
+            "entry": "d7ff7784",
+            "operation": "62c2b433-f42c-4bc6-997b-96790be755ed",
+            "createdAt": "2026-10-27T04:27:23.736Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      },
+      "workflowExecutionEvidence": {
+        "path": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/environment-ui-r1/report.json",
+        "scope": "Actual CUA source UI in isolated profile; browser trace download initiation only, not saved-file validation."
+      }
+    },
+    {
+      "id": "browser-report",
+      "title": "查看浏览器报告",
+      "group": "environment",
+      "effect": "read",
+      "fieldCount": 1,
+      "sources": [
+        "browserReports"
+      ],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "browser-report",
+        "ms": 296,
+        "error": [],
+        "fields": 1
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 2,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "browser-report",
+            "state": "completed",
+            "outcome": "passed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-17-10-306Z_01a17b93-8ea2-70b0-ad65-6dc44ab5757b.jsonl",
+            "entry": "da99f976",
+            "operation": "46586e77-c0fd-40d1-bcd2-87099da3cf8e",
+            "createdAt": "2026-10-27T04:31:40.108Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "browser-report",
+            "state": "completed",
+            "outcome": "passed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-56-19-199Z_01a17bb7-65ff-77b3-a2e8-80338aee34d5.jsonl",
+            "entry": "da99f976",
+            "operation": "46586e77-c0fd-40d1-bcd2-87099da3cf8e",
+            "createdAt": "2026-10-27T04:31:40.108Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      },
+      "workflowExecutionEvidence": {
+        "path": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/environment-ui-r1/report.json",
+        "scope": "Actual CUA source UI in isolated profile; browser trace download initiation only, not saved-file validation."
+      }
+    },
+    {
+      "id": "background-acknowledge",
+      "title": "核对未知后台效果",
+      "group": "environment",
+      "effect": "write",
+      "fieldCount": 2,
+      "sources": [
+        "background"
+      ],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "background-acknowledge",
+        "ms": 302,
+        "error": [],
+        "fields": 2
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 0,
+        "failedOrInterrupted": 0,
+        "samples": []
+      },
+      "domainTestEvidence": {
+        "log": "/tmp/enigma-final-domain-audit.log",
+        "sourceTests": "background.test.ts",
+        "scope": "Actual killed worker with living child blocks mutation/ack; both must stop before observed effects can be acknowledged.",
+        "suiteResult": "208 tests passed; browser UI paths excluded"
+      }
+    },
+    {
+      "id": "recipe-report",
+      "title": "查看配方运行报告",
+      "group": "skills",
+      "effect": "read",
+      "fieldCount": 1,
+      "sources": [
+        "recipeRuns"
+      ],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "recipe-report",
+        "ms": 319,
+        "error": [],
+        "fields": 1
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "latestExecutionEvidence": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/recipe-lifecycle-r1/report.json",
+      "latestExecutionScope": "Actual UI: direct run report and catalog selector both execute; successful two-step run and killed-owner run readable; old recipe label retained; interrupted running step is explicitly historical/unknown.",
+      "receiptEvidence": {
+        "completed": 2,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "recipe-report",
+            "state": "completed",
+            "outcome": "unknown",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T21-39-05-635Z_01a17a27-1b23-75df-aa7f-80c626dfebdd.jsonl",
+            "entry": "d4ae0fb8",
+            "operation": "27c13427-235f-4dce-8b03-95d5e9c5de9b",
+            "createdAt": "2026-10-26T21:58:12.212Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "recipe-report",
+            "state": "completed",
+            "outcome": "passed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T21-39-05-635Z_01a17a27-1b23-75df-aa7f-80c626dfebdd.jsonl",
+            "entry": "5d515b2d",
+            "operation": "64a9ae9e-0151-4891-80d7-4c038f15a607",
+            "createdAt": "2026-10-26T21:45:04.994Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      }
+    },
+    {
+      "id": "recipe-reconcile",
+      "title": "核对中断配方",
+      "group": "skills",
+      "effect": "write",
+      "fieldCount": 2,
+      "sources": [
+        "recipeLocks"
+      ],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "recipe-reconcile",
+        "ms": 321,
+        "error": [],
+        "fields": 1
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": true,
+      "executionAudit": "Do not infer direct execution from generic recipe UI tests; requires its own scenario evidence.",
+      "latestExecutionEvidence": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/recipe-lifecycle-r1/report.json",
+      "latestExecutionScope": "Actual UI: real owner/command process started then killed; live-owner control disabled; pinned owner released once; remaining workspace effects still unresolved until separate recovery/acknowledgment.",
+      "receiptEvidence": {
+        "completed": 1,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "recipe-reconcile",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T21-39-05-635Z_01a17a27-1b23-75df-aa7f-80c626dfebdd.jsonl",
+            "entry": "05c661b9",
+            "operation": "c51d3417-87b4-403b-b987-39fb0c71c0a5",
+            "createdAt": "2026-10-26T21:46:39.881Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      }
+    },
+    {
+      "id": "artifact-add",
+      "title": "登记产物版本",
+      "group": "artifacts",
+      "effect": "write",
+      "fieldCount": 6,
+      "sources": [
+        "repos"
+      ],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "artifact-add",
+        "ms": 297,
+        "error": [],
+        "fields": 6
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 1,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "artifact-add",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T05-08-13-469Z_01a17bc2-4c1d-7504-9b09-e8acc0da076f.jsonl",
+            "entry": "a6ebd1fd",
+            "operation": "5d1c4b62-0eed-4263-b6ab-e3f550b74365",
+            "createdAt": "2026-10-27T05:24:19.875Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      },
+      "domainExecutionEvidence": {
+        "report": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/cross-language-e2e-r2/report.json",
+        "runner": "scripts/verify-enigma-cross-language.mjs",
+        "scope": "Migration guide registered as immutable document artifact after parent checks and example passed.",
+        "boundary": "Direct application-domain API workflow, actual Gateway workers and filesystem/HTTP. This is not separate button-invocation proof."
+      },
+      "workflowExecutionEvidence": {
+        "path": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/final-operations-r1/report.json",
+        "scope": "Actual CUA registered actions in isolated two-repository fixture, followed by same-host API readback and targeted output checks; does not claim live Feishu authentication (public HTTP tested)."
+      }
+    },
+    {
+      "id": "handoff-export",
+      "title": "导出背景交接",
+      "group": "handoff",
+      "effect": "write",
+      "fieldCount": 7,
+      "sources": [
+        "entries",
+        "checkEvidence",
+        "memories"
+      ],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "handoff-export",
+        "ms": 322,
+        "error": [],
+        "fields": 11
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": true,
+      "receiptEvidence": {
+        "completed": 2,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "handoff-export",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T01-57-15-664Z_01a17b13-7710-7701-b4e5-1a2624487cbe.jsonl",
+            "entry": "1a48ff40",
+            "operation": "6eee1129-0707-44f1-ab3c-776ee5d4e38d",
+            "createdAt": "2026-10-27T02:11:23.201Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "handoff-export",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T01-57-15-664Z_01a17b13-7710-7701-b4e5-1a2624487cbe.jsonl",
+            "entry": "f4e6d176",
+            "operation": "62999073-79f2-4221-85f9-aac18b1a51e0",
+            "createdAt": "2026-10-27T02:07:27.820Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      },
+      "latestExecutionEvidence": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/handoff-ui-r1/report.json",
+      "latestExecutionScope": "Actual UI continuation export with original requirements, exact clipboard-to-file verification; differential export omits assistant background, preserves original requirements and warns about base dependency."
+    },
+    {
+      "id": "handoff-inspect",
+      "title": "核对交接包",
+      "group": "handoff",
+      "effect": "read",
+      "fieldCount": 1,
+      "sources": [],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "handoff-inspect",
+        "ms": 319,
+        "error": [],
+        "fields": 1
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 3,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "handoff-inspect",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T01-57-15-664Z_01a17b13-7710-7701-b4e5-1a2624487cbe.jsonl",
+            "entry": "7c89a90c",
+            "operation": "f4281edd-38ac-4ec3-9935-ca27450f89e3",
+            "createdAt": "2026-10-27T02:30:31.906Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "handoff-inspect",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T01-57-15-664Z_01a17b13-7710-7701-b4e5-1a2624487cbe.jsonl",
+            "entry": "d8595a5e",
+            "operation": "ae65b79a-01cb-4178-a99f-ce71c7fea040",
+            "createdAt": "2026-10-27T02:09:55.881Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "handoff-inspect",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T01-57-15-664Z_01a17b13-7710-7701-b4e5-1a2624487cbe.jsonl",
+            "entry": "e5537c3b",
+            "operation": "f8ce5df9-a4a0-4adf-ab0c-6578ae5a124f",
+            "createdAt": "2026-10-27T02:08:02.296Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      },
+      "latestExecutionEvidence": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/handoff-ui-r1/report.json",
+      "latestExecutionScope": "Actual UI reinspection from current to changed code, explicit non-current warning. Scoped memory revalidation tested separately; manifest access never grants recipient access."
+    },
+    {
+      "id": "new-context",
+      "title": "同背景开启新任务",
+      "group": "handoff",
+      "effect": "write",
+      "fieldCount": 2,
+      "sources": [
+        "entries"
+      ],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "new-context",
+        "ms": 318,
+        "error": [],
+        "fields": 7
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "receiptEvidence": {
+        "completed": 1,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "new-context",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T01-57-15-664Z_01a17b13-7710-7701-b4e5-1a2624487cbe.jsonl",
+            "entry": "00a8852a",
+            "operation": "e055e399-ab31-48ee-8640-435bec496df7",
+            "createdAt": "2026-10-27T02:13:20.108Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      },
+      "latestExecutionEvidence": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/handoff-ui-r1/report.json",
+      "latestExecutionScope": "Actual UI selected-source new context creation and open; preserved source task, zero automatic model requests and unverified new acceptance."
+    },
+    {
+      "id": "package-export",
+      "title": "导出可复现任务包",
+      "group": "handoff",
+      "effect": "write",
+      "fieldCount": 6,
+      "sources": [
+        "entries",
+        "materials",
+        "artifacts",
+        "checkEvidence",
+        "memories"
+      ],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "package-export",
+        "ms": 319,
+        "error": [],
+        "fields": 9
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": true,
+      "latestExecutionEvidence": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/package-ui-r1/report.json",
+      "latestExecutionScope": "Actual UI export of 3 repos, 6 files and one task-private material; pending original requirement preserved; original source hashes unchanged.",
+      "receiptEvidence": {
+        "completed": 1,
+        "failedOrInterrupted": 1,
+        "samples": [
+          {
+            "action": "package-export",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T22-27-26-158Z_01a17a53-5d4e-73cc-a1f7-48072e110be8.jsonl",
+            "entry": "0260e630",
+            "operation": "80b8bb5a-c8c3-4b47-a790-fa697ffd8d13",
+            "createdAt": "2026-10-26T22:51:10.996Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "package-export",
+            "state": "failed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T22-27-26-158Z_01a17a53-5d4e-73cc-a1f7-48072e110be8.jsonl",
+            "entry": "82109599",
+            "operation": "85c26f3c-a576-4450-ae42-3f29c172bdeb",
+            "createdAt": "2026-10-26T22:46:52.327Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      }
+    },
+    {
+      "id": "package-inspect",
+      "title": "检查任务包",
+      "group": "handoff",
+      "effect": "read",
+      "fieldCount": 1,
+      "sources": [],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "package-inspect",
+        "ms": 313,
+        "error": [],
+        "fields": 1
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": true,
+      "latestExecutionEvidence": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/package-ui-r1/report.json",
+      "latestExecutionScope": "Actual UI from unrelated launcher project; readable package inventory, code and declared checks; version returned for restore.",
+      "receiptEvidence": {
+        "completed": 2,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "package-inspect",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T22-27-26-737Z_01a17a53-5f91-73cc-a1f7-480951066558.jsonl",
+            "entry": "8d812ef5",
+            "operation": "126fe164-6517-445f-9682-cdbf8d495c89",
+            "createdAt": "2026-10-26T23:16:13.743Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "package-inspect",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T22-27-26-737Z_01a17a53-5f91-73cc-a1f7-480951066558.jsonl",
+            "entry": "0abe7015",
+            "operation": "7e7ecddd-a15d-4d4b-ba1b-c785a137e7a8",
+            "createdAt": "2026-10-26T22:58:39.418Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      }
+    },
+    {
+      "id": "package-restore",
+      "title": "在新目录复现",
+      "group": "handoff",
+      "effect": "execute",
+      "fieldCount": 5,
+      "sources": [],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "package-restore",
+        "ms": 329,
+        "error": [],
+        "fields": 6
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": true,
+      "latestExecutionEvidence": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/package-ui-r1/report.json",
+      "latestExecutionScope": "Actual UI foreign-package repo choices, sdk-only write grant; fixed metadata git init under native sandbox; real native session adoption, private material and original requirements; Gateway task_requirements only; original joint check rerun in target.",
+      "receiptEvidence": {
+        "completed": 1,
+        "failedOrInterrupted": 1,
+        "samples": [
+          {
+            "action": "package-restore",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T22-27-26-737Z_01a17a53-5f91-73cc-a1f7-480951066558.jsonl",
+            "entry": "3f71233c",
+            "operation": "54c74d12-43c7-4d3c-86f4-56fe6210af42",
+            "createdAt": "2026-10-26T23:18:50.688Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          },
+          {
+            "action": "package-restore",
+            "state": "failed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T22-27-26-737Z_01a17a53-5f91-73cc-a1f7-480951066558.jsonl",
+            "entry": "82315b33",
+            "operation": "64529fb8-4adc-4b1e-814a-d633d116c219",
+            "createdAt": "2026-10-26T23:02:30.665Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      }
+    },
+    {
+      "id": "recover",
+      "title": "核对中断运行",
+      "group": "timeline",
+      "effect": "write",
+      "fieldCount": 0,
+      "sources": [],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "recover",
+        "ms": 297,
+        "error": [],
+        "fields": 0
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "latestExecutionEvidence": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/recipe-lifecycle-r1/report.json",
+      "latestExecutionScope": "Actual UI: killed recipe command leaves operation.lock and one pending effect; recover reads current files and displays only STARTED.json added.",
+      "receiptEvidence": {
+        "completed": 1,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "recover",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T21-39-05-635Z_01a17a27-1b23-75df-aa7f-80c626dfebdd.jsonl",
+            "entry": "052ff72a",
+            "operation": "757e7644-b1a9-43a6-a9b0-a8e455a3ebb0",
+            "createdAt": "2026-10-26T21:49:37.291Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      }
+    },
+    {
+      "id": "acknowledge",
+      "title": "记录未知效果核对",
+      "group": "timeline",
+      "effect": "write",
+      "fieldCount": 2,
+      "sources": [],
+      "entry": "catalog + contextual panel",
+      "formRender": "tested-current-definition",
+      "uiObserved": {
+        "id": "acknowledge",
+        "ms": 295,
+        "error": [],
+        "fields": 2
+      },
+      "uiObservationScope": "Historical form-open record from the October 26 audit; later changes have targeted execution evidence in the iteration ledger.",
+      "definitionChangedSinceOriginal": false,
+      "latestExecutionEvidence": "LOCAL_AUDIT_ROOT/2026-10-27/enigma-12h/recipe-lifecycle-r1/report.json",
+      "latestExecutionScope": "Actual UI: per-record source pinned by readable repo/type/time; explicit observed effects recorded, pending count becomes zero, then original check actually rerun.",
+      "receiptEvidence": {
+        "completed": 1,
+        "failedOrInterrupted": 0,
+        "samples": [
+          {
+            "action": "acknowledge",
+            "state": "completed",
+            "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T21-39-05-635Z_01a17a27-1b23-75df-aa7f-80c626dfebdd.jsonl",
+            "entry": "58ed9a9f",
+            "operation": "2e03917c-ab85-4a29-a679-9fe4b97f62a3",
+            "createdAt": "2026-10-26T21:50:26.953Z",
+            "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+          }
+        ]
+      }
+    }
+  ],
+  "definitionCheckedAt": "2026-10-27T04:48:00+08:00",
+  "pathsAndProviderNamesRedacted": true
+}

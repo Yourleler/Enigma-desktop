@@ -14,7 +14,7 @@ function visibleText(events: Array<{ type: string; data?: string }>) {
 }
 
 describe("MoodParser", () => {
-  it.each(["mood", "pulse", "reflect"])(
+  it.each(["mood", "pulse", "reflect", "work"])(
     "parses a leading <%s> block with the existing stream event contract",
     (tag) => {
       expect(collect([`<${tag}>inside</${tag}>\nafter`])).toEqual([
@@ -36,7 +36,7 @@ describe("MoodParser", () => {
     ]);
   });
 
-  it.each(["mood", "pulse", "reflect"])(
+  it.each(["mood", "pulse", "reflect", "work"])(
     "keeps an inline-code <%s> tag and all following prose visible",
     (tag) => {
       const input = `\`<${tag}>\` suffix survives`;

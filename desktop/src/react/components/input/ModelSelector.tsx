@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, useEffect } from 'react';
 import { useStore } from '../../stores';
 import { sessionScopedValue } from '../../stores/session-slice';
 import { hanaFetch } from '../../hooks/use-hana-fetch';
@@ -8,6 +8,7 @@ import type { SessionModel } from '../../stores/chat-types';
 import { SelectWidget, ProviderIcon, ProviderGroupHeader, selectWidgetStyles, type SelectOption } from '@/ui';
 import styles from './InputArea.module.css';
 import { useEngineering, engineeringRequest, refreshEngineering } from '../../engineering/state';
+import {useSideAction} from '../../engineering/useSideAction';
 
 export function ModelSelector({ models, sessionModel, isStreaming = false }: {
   models: Model[];
@@ -15,7 +16,10 @@ export function ModelSelector({ models, sessionModel, isStreaming = false }: {
   isStreaming?: boolean;
 }) {
   const { t } = useI18n();
-  const [loading, setLoading] = useState(false);
+  const [switching, setLoading] = useState(false);
+  const path=useStore(s=>s.currentSessionPath)||'',engineeringSwitch=useSideAction(path);
+  const loading=switching||!!engineeringSwitch.busy;
+  useEffect(()=>{if(engineeringSwitch.error)useStore.getState().addToast(engineeringSwitch.error,'error');},[engineeringSwitch.error]);
 
   const matchedSessionModel = sessionModel
     ? models.find(m => m.id === sessionModel.id && m.provider === sessionModel.provider)
@@ -49,9 +53,10 @@ export function ModelSelector({ models, sessionModel, isStreaming = false }: {
       const state = useStore.getState();
       const { currentSessionPath, pendingNewSession, chatSessions, sessionModelsByPath } = state;
       if (currentSessionPath && useEngineering.getState().snapshot?.connected && useEngineering.getState().sessionPath === currentSessionPath) {
-        const result = await engineeringRequest('/model', currentSessionPath, { modelId, provider });
-        await refreshEngineering(currentSessionPath);
-        useStore.getState().addToast(result.effectiveAt === 'now' ? '已切换模型' : '已记录选择，下一次模型请求生效', 'info');
+        await engineeringSwitch.run('model',()=>engineeringRequest('/model', currentSessionPath, { modelId, provider }),async result=>{
+          await refreshEngineering(currentSessionPath);
+          if(useStore.getState().currentSessionPath===currentSessionPath&&useStore.getState().activeServerConnectionId===state.activeServerConnectionId)useStore.getState().addToast(result.effectiveAt === 'now' ? '已切换模型' : '已记录选择，当前请求结束后生效', 'info');
+        });
         return;
       }
       const sessionHasMessages = !!(currentSessionPath && sessionScopedValue(state, chatSessions, currentSessionPath)?.items?.length);
@@ -133,7 +138,7 @@ export function ModelSelector({ models, sessionModel, isStreaming = false }: {
       setLoading(false);
       useStore.getState().setModelSwitching(false);
     }
-  }, [models, t]);
+  }, [models, t,engineeringSwitch.run]);
 
   // 按 provider 分组
   const grouped = useMemo(() => {

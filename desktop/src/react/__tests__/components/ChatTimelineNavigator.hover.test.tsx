@@ -1,131 +1,94 @@
 // @vitest-environment jsdom
-
 import '@testing-library/jest-dom/vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { RefObject } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChatTimelineNavigator } from '../../components/chat/ChatTimelineNavigator';
+import { ConversationRail, sampleConversationAnchors } from '../../components/chat/ConversationRail';
 import type { TimelineAnchor } from '../../components/chat/timeline-anchors';
 
-function measuredDiv(rect: DOMRect): HTMLDivElement {
-  const element = document.createElement('div');
-  element.getBoundingClientRect = () => rect;
-  return element;
-}
-
-function scrollPanel(): HTMLDivElement {
-  const panel = measuredDiv(new DOMRect(0, 0, 640, 720));
-  Object.defineProperties(panel, {
-    clientHeight: { value: 720, configurable: true },
-    scrollHeight: { value: 1440, configurable: true },
-    scrollTop: { value: 0, writable: true, configurable: true },
-  });
+const anchors: TimelineAnchor[] = ['检查多仓库接口契约与消费方', '修复超时并补充验证说明'].map((text, i) => ({ messageId: `u${i}`, timestamp: null, label: text.slice(0, 10), preview: text, role: 'user', markerWidthEm: 1 }));
+function renderNavigator(active = true) {
+  const panel = document.createElement('div');
+  panel.getBoundingClientRect = () => new DOMRect(0, 0, 640, 500);
+  Object.defineProperties(panel, { clientHeight: { value: 500 }, scrollHeight: { value: 1400 }, scrollTop: { value: 0, writable: true } });
   panel.scrollTo = vi.fn();
-  return panel;
+  const messages = anchors.map((a, i) => {
+    const node = document.createElement('div');
+    node.getBoundingClientRect = () => new DOMRect(0, 120 + i * 700, 400, 80);
+    return [a.messageId, node] as const;
+  });
+  const before = vi.fn();
+  render(<ChatTimelineNavigator anchors={anchors} active={active} railVisible={false} scrollRef={{ current: panel }} contentRef={{ current: panel }} messageElementsRef={{ current: new Map(messages) }} onBeforeJump={before} />);
+  return { panel, before, messages };
 }
-
-function renderNavigator({ active = true }: { active?: boolean } = {}) {
-  const panel = scrollPanel();
-  const content = measuredDiv(new DOMRect(0, 0, 640, 1440));
-  const firstMessage = measuredDiv(new DOMRect(0, 120, 420, 80));
-  const secondMessage = measuredDiv(new DOMRect(0, 520, 420, 80));
-  const anchors: TimelineAnchor[] = [
-    {
-      messageId: 'u1',
-      timestamp: null,
-      label: '你知道大学...',
-      role: 'user',
-      markerWidthEm: 0.75,
-    },
-    {
-      messageId: 'u2',
-      timestamp: null,
-      label: '好，你现在...',
-      role: 'user',
-      markerWidthEm: 1,
-    },
-  ];
-
-  const scrollRef = { current: panel } satisfies RefObject<HTMLDivElement | null>;
-  const contentRef = { current: content } satisfies RefObject<HTMLDivElement | null>;
-  const messageElementsRef = {
-    current: new Map<string, HTMLDivElement>([
-      ['u1', firstMessage],
-      ['u2', secondMessage],
-    ]),
-  } satisfies RefObject<Map<string, HTMLDivElement>>;
-
-  return render(
-    <ChatTimelineNavigator
-      anchors={anchors}
-      scrollRef={scrollRef}
-      contentRef={contentRef}
-      messageElementsRef={messageElementsRef}
-      active={active}
-      railVisible={false}
-    />,
-  );
-}
-
-describe('ChatTimelineNavigator hover behavior', () => {
+describe('Conversation navigation', () => {
   beforeEach(() => {
     vi.useFakeTimers();
-    vi.stubGlobal('ResizeObserver', class {
-      observe() {}
-      unobserve() {}
-      disconnect() {}
-    });
-    Object.assign(window, {
-      t: (key: string) => ({
-        'chat.timeline.navAriaLabel': 'Turn navigation',
-        'chat.timeline.jumpTo': 'Jump to {label}',
-      }[key] || key),
-    });
+    vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} });
+    window.matchMedia = vi.fn().mockReturnValue({ matches: true });
   });
-
-  afterEach(() => {
-    cleanup();
-    vi.unstubAllGlobals();
-    vi.useRealTimers();
+  afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.useRealTimers(); });
+  it('shows the rail without requiring a hidden hover zone and previews full excerpts', () => {
+    renderNavigator();
+    expect(screen.getByRole('navigation', { name: '对话快速跳转' })).toBeVisible();
+    fireEvent.mouseEnter(screen.getByRole('button', { name: /^第 1 轮/ }));
+    expect(screen.getByRole('tooltip')).toHaveTextContent(anchors[0].preview!);
   });
-
-  it('opens from the short rail but stays open while the pointer moves inside the expanded card', () => {
-    const { container } = renderNavigator();
-    const nav = screen.getByRole('navigation', { name: 'Turn navigation' });
-    const firstMarker = screen.getByRole('button', { name: 'Jump to 你知道大学...' });
-    const card = container.querySelector('[class*="timelineCard"]') as HTMLElement;
-    expect(firstMarker.querySelector('[class*="timelineLine"]')).toBeTruthy();
-
-    fireEvent.mouseEnter(firstMarker);
-
-    expect(nav.className).toContain('timelineNavExpanded');
-
-    fireEvent.mouseLeave(firstMarker, { relatedTarget: card });
-    act(() => {
-      vi.advanceTimersByTime(130);
-    });
-
-    expect(nav.className).toContain('timelineNavExpanded');
-
-    fireEvent.pointerLeave(card);
-    act(() => {
-      vi.advanceTimersByTime(130);
-    });
-
-    expect(nav.className).not.toContain('timelineNavExpanded');
+  it('cancels sticky follow, respects reduced motion and highlights the destination', () => {
+    const { panel, before, messages } = renderNavigator();
+    fireEvent.click(screen.getByRole('button', { name: /^第 2 轮/ }));
+    expect(before).toHaveBeenCalledOnce();
+    expect(panel.scrollTo).toHaveBeenCalledWith({ top: 804, behavior: 'auto' });
+    expect(messages[1][1].className).toContain('locateFlash');
   });
-
-  it('does not attach layout observers for inactive preserved panels', () => {
-    const observe = vi.fn();
-    vi.stubGlobal('ResizeObserver', class {
-      observe(...args: unknown[]) { observe(...args); }
-      unobserve() {}
-      disconnect() {}
-    });
-
-    renderNavigator({ active: false });
-
+  it('does not measure or render inactive sessions', () => {
+    const observe = vi.fn(); vi.stubGlobal('ResizeObserver', class { observe = observe; disconnect() {} });
+    renderNavigator(false);
     expect(observe).not.toHaveBeenCalled();
-    expect(screen.queryByRole('navigation', { name: 'Turn navigation' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('navigation')).toBeNull();
+  });
+  it('shows the final turn at the bottom even when its prompt cannot reach the viewport top', () => {
+    const { panel } = renderNavigator();
+    panel.scrollTop = 900;
+    fireEvent.scroll(panel);
+    act(() => vi.advanceTimersByTime(20));
+    expect(screen.getByRole('button', { name: /^第 2 轮/ })).toHaveAttribute('aria-current', 'step');
+  });
+  it('filters all loaded turns, jumps, and returns keyboard focus to the directory trigger', () => {
+    const onJump = vi.fn();
+    render(<ConversationRail anchors={anchors} activeId="u0" onJump={onJump} />);
+    fireEvent.click(screen.getByRole('button', { name: '打开对话目录' }));
+    const search = screen.getByRole('textbox', { name: '筛选对话目录' });
+    expect(search).toHaveFocus();
+    fireEvent.change(search, { target: { value: '超时' } });
+    expect(fireEvent.keyDown(search, { key: 'Enter' })).toBe(false);
+    expect(onJump).toHaveBeenCalledWith(anchors[1]);
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.getByRole('button', { name: '打开对话目录' })).toHaveFocus();
+  });
+  it('explains history limits and exposes loading older messages and full-text search', () => {
+    const load = vi.fn(), find = vi.fn();
+    render(<ConversationRail anchors={anchors} activeId="u0" onJump={vi.fn()} hasMore onLoadMore={load} onFind={find} />);
+    fireEvent.click(screen.getByRole('button', { name: '打开对话目录' }));
+    expect(screen.getByRole('dialog')).toHaveTextContent('仅显示已加载的提问');
+    fireEvent.click(screen.getByRole('button', { name: '加载更早的对话' })); expect(load).toHaveBeenCalledOnce();
+    fireEvent.click(screen.getByRole('button', { name: /全文查找/ })); expect(find).toHaveBeenCalledOnce();
+  });
+  it('allows moving into a preview and dismissing with Escape', () => {
+    renderNavigator();
+    fireEvent.mouseEnter(screen.getByRole('button', { name: /^第 1 轮/ }));
+    fireEvent.mouseLeave(screen.getByRole('button', { name: /^第 1 轮/ }));
+    fireEvent.mouseEnter(screen.getByRole('tooltip'));
+    act(() => vi.advanceTimersByTime(200));
+    expect(screen.getByRole('tooltip')).toBeVisible();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByRole('tooltip')).toBeNull();
+  });
+  it('keeps endpoints and the current turn when sampling long conversations', () => {
+    const many = Array.from({ length: 500 }, (_, i) => ({ ...anchors[0], messageId: `m${i}` }));
+    const selected = sampleConversationAnchors(many, 'm247');
+    expect(selected.length).toBeLessThanOrEqual(64);
+    expect(selected[0].messageId).toBe('m0'); expect(selected.at(-1)?.messageId).toBe('m499');
+    expect(selected.some(a => a.messageId === 'm247')).toBe(true);
   });
 });

@@ -4,6 +4,7 @@ import { useSettingsStore } from './store';
 import { t } from './helpers';
 import { buildSettingsSearchEntries, searchSettings } from './settings-search-index';
 import styles from './Settings.module.css';
+import { GlassSelection } from '../ui/GlassSelection';
 
 function TabIcon({ d }: { d: string }) {
   return (
@@ -21,6 +22,7 @@ const TAB_ITEMS = [
   { id: 'skills', key: 'settings.tabs.skills', d: '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>' },
   { id: 'mcp', key: 'settings.tabs.mcp', d: '<rect x="2" y="9" width="6" height="6" rx="1"/><rect x="16" y="9" width="6" height="6" rx="1"/><path d="M8 12h8"/>' },
   { id: 'bridge', key: 'settings.tabs.bridge', d: '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>' },
+  { id: 'usage', key: 'settings.tabs.usage', d: '<path d="M4 20h16M7 16V9m5 7V4m5 12v-5"/>' },
   { id: 'providers', key: 'settings.tabs.providers', d: '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>' },
   { id: 'media', key: 'settings.tabs.media', d: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>' },
   { id: 'sharing', key: 'settings.tabs.sharing', d: '<path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>' },
@@ -61,7 +63,8 @@ export function SettingsNav({ onTabChange }: SettingsNavProps) {
   };
 
   return (
-    <nav className={styles['settings-nav']}>
+    <nav className={styles['settings-nav']} data-glass-segmented="" data-settings-navigation="">
+      <GlassSelection selection={`${activeNavTab}:${query}`} selector="button[aria-current='page']"/>
       <div className={styles['settings-search-shell']}>
         <svg className={styles['settings-search-icon']} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <circle cx="11" cy="11" r="7" />
@@ -117,6 +120,7 @@ export function SettingsNav({ onTabChange }: SettingsNavProps) {
           key={item.id}
           className={`${styles['settings-nav-item']}${activeNavTab === item.id ? ' ' + styles['active'] : ''}`}
           data-tab={item.id}
+          aria-current={activeNavTab === item.id ? 'page' : undefined}
           onClick={() => openTab(item.id)}
         >
           <TabIcon d={item.d} />

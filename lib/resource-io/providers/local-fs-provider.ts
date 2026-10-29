@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import crypto from "crypto";
+import {readDirectoryIsolated} from '../../isolated-directory-reader.ts';
 import { ResourceIOError, resourceAccessDenied, resourceNotFound, targetAlreadyExists } from "../errors.ts";
 import { normalizeResourceRef, resourceKeyForRef } from "../resource-refs.ts";
 import type {
@@ -272,18 +273,19 @@ export class LocalFsProvider {
   async list(ref: ResourceRef | unknown): Promise<ResourceListResult> {
     const dirPath = this.resolvePath(ref);
     this.assertAllowed(dirPath, "read");
-    const items = fs.readdirSync(dirPath, { withFileTypes: true })
-      .map((entry) => {
-        const fullPath = path.join(dirPath, entry.name);
-        const stat = fs.statSync(fullPath);
-        return {
+    // Protected or network folders can wait on the OS. Keep those reads off
+    // the server event loop, just like native watch registration.
+    const entries = await readDirectoryIsolated(dirPath);
+    const items = [];
+    for (const entry of entries) {
+        items.push({
           name: entry.name,
-          isDirectory: entry.isDirectory(),
-          size: entry.isDirectory() ? null : stat.size,
-          mtimeMs: stat.mtimeMs,
-        };
-      })
-      .sort((a, b) => a.name.localeCompare(b.name));
+          isDirectory: entry.isDirectory,
+          size: entry.isDirectory ? null : entry.size,
+          mtimeMs: entry.mtimeMs,
+        });
+    }
+    items.sort((a, b) => a.name.localeCompare(b.name));
     return {
       resourceKey: localResourceKey(dirPath),
       resource: this.resourceForPath(dirPath),

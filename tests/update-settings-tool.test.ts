@@ -249,6 +249,11 @@ describe("update-settings-tool", () => {
         key: "sandbox_network",
       });
     });
+    it('cannot enable development server listeners from a model tool call',async()=>{
+      const {tool,engine}=buildTool({prefsData:{engineering_local_servers:false}});
+      const result=await tool.execute('c-server',{action:'apply',key:'engineering_local_servers',value:'true'});
+      expect(result.details.settingsUpdate).toMatchObject({status:'blocked',key:'engineering_local_servers'});expect(engine._prefs._store.engineering_local_servers).toBe(false);
+    });
   });
 
   describe("file_backup toggle", () => {

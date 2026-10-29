@@ -21,6 +21,7 @@ describe("server runtime assets", () => {
     const assetsDir = path.join(rootDir, "desktop", "src", "assets");
     fs.mkdirSync(assetsDir, { recursive: true });
     for (const fileName of SERVER_RUNTIME_ASSET_FILES) {
+      fs.mkdirSync(path.dirname(path.join(assetsDir,fileName)),{recursive:true});
       fs.writeFileSync(path.join(assetsDir, fileName), `${fileName}\n`);
     }
     for (const dirName of SERVER_RUNTIME_ASSET_DIRS) {

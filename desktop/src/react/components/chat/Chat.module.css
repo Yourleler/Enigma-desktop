@@ -24,8 +24,8 @@
 
 .messageGroupAssistant {
     align-items: flex-start;
-    padding-left: var(--space-8);
-    margin-left: 2px;
+    padding-left: 0;
+    margin-left: 0;
     position: relative;
 }
 
@@ -50,8 +50,8 @@
 
 .avatar {
     flex-shrink: 0;
-    width: 32px;
-    height: 32px;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
 }
 
@@ -96,9 +96,9 @@
 
 /* 用户消息 */
 .messageUser {
-    background: rgba(0, 0, 0, 0.045);
-    padding: var(--space-8) var(--space-16);
-    border-radius: var(--radius-chat-card) var(--radius-chat-card) var(--radius-chat-card-inner) var(--radius-chat-card);
+    background: var(--eg-secondary, rgba(0, 0, 0, 0.045));
+    padding: 12px 16px;
+    border-radius: var(--radius-chat-card);
     color: var(--text);
     font-size: var(--chat-message-font-size);
     word-break: break-word;
@@ -355,7 +355,7 @@
     line-height: 14px;
     text-align: center;
     background: var(--accent);
-    color: #fff;
+    color: var(--eg-on-accent, #fff);
     border-radius: 7px;
     padding: 0 3px;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -382,6 +382,10 @@
 .moodWrapper[data-yuan="ming"]    { --mood-accent: #8BA4B4; }
 
 .moodSummary {
+    border: 0;
+    background: none;
+    padding: 0;
+    font: inherit;
     display: inline-flex;
     align-items: center;
     gap: 0.2rem;
@@ -774,7 +778,7 @@
 
 .cronConfirmBtnApprove {
     background: var(--accent);
-    color: #fff;
+    color: var(--eg-on-accent, #fff);
 }
 
 .cronConfirmBtnReject {
@@ -1162,7 +1166,7 @@
 
 .settingsConfirmOptionSelected {
     background: var(--accent);
-    color: #fff;
+    color: var(--eg-on-accent, #fff);
     font-weight: 500;
     border-bottom-color: transparent;
 }
@@ -1205,7 +1209,7 @@
 
 .settingsConfirmBtnConfirm {
     background: var(--accent);
-    color: #fff;
+    color: var(--eg-on-accent, #fff);
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
@@ -2004,8 +2008,11 @@
     position: absolute;
     inset: 0;
     overflow-y: auto;
-    padding: 76px var(--space-24) 0;
+    padding: 28px var(--space-24) 0;
 }
+
+.withConversationRail { padding-right: 46px; }
+.loadMoreHint button { background: none; color: var(--text-light); border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; cursor: pointer; }
 
 /* 静默滚动条：默认 thumb 透明（track 已是 transparent），hover 或正在滚动时才显色。
    不改宽度，避免布局抖动。is-scrolling class 由 Panel 的 scroll handler 在滚动时打上、800ms 无滚动后摘掉。 */
@@ -2056,6 +2063,9 @@
     padding-left: var(--space-16);
     padding-right: var(--space-16);
 }
+
+.cardSessionShell .withConversationRail,
+:global(.mobile-desktop-root) .withConversationRail { padding-right: 46px; }
 
 @media (prefers-reduced-motion: reduce) {
     .sessionShellActive {
@@ -2310,3 +2320,11 @@
 .chatFindBarHost {
     position: relative;
 }
+
+/* Reveal recorded send/receive time over the message's whole hit area without moving its text. */
+.messageTimeFull { display:none; }
+.messageGroup:hover .messageTimeShort, .messageGroup:focus-within .messageTimeShort { display:none; }
+.messageGroup:hover .messageTimeFull, .messageGroup:focus-within .messageTimeFull { display:inline; }
+.messageGroup:focus-within .messageFooterActions { opacity:1; pointer-events:auto; }
+.messageFooterTime { font-size:12px; line-height:1.5; white-space:nowrap; }
+@media(hover:none){.messageTimeShort {display:none;}.messageTimeFull {display:inline;}.messageFooterActions:has(.messageFooterTime){opacity:.85;}}

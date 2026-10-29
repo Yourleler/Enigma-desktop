@@ -85,7 +85,12 @@ export class Workspace {
     catch (err) { if (errorCode(err) !== 'ENOENT') throw err; this.config = { schema: 1, repos: [], checks: [] }; }
   }
   async exclusive<T>(fn: () => Promise<T>): Promise<T> {
-    return await measured('workspace.operation', {}, () => this.runExclusive(fn), this.activity);
+    if(activeOperationRoots.getStore()?.has(this.root))throw new Error('Workspace operation already active');
+    const previous=localOperations.get(this.root)||Promise.resolve();let release!:()=>void;
+    const reserved=new Promise<void>(resolve=>{release=resolve;});localOperations.set(this.root,reserved);
+    await previous.catch(()=>{});
+    try{return await activeOperationRoots.run(new Set([...activeOperationRoots.getStore()||[],this.root]),()=>measured('workspace.operation', {}, () => this.runExclusive(fn), this.activity));}
+    finally{release();if(localOperations.get(this.root)===reserved)localOperations.delete(this.root);}
   }
   private async runExclusive<T>(fn: () => Promise<T>): Promise<T> {
     if (this.locked) throw new Error('Workspace operation already active');
@@ -238,10 +243,10 @@ export class Workspace {
     const names = await this.files(repoId);
     if (names.length > 50_000) throw new Error('Snapshot exceeds 50,000 files');
     let total = 0;
-    for (const file of names) {
+    const captureFile = async (file: string): Promise<FileVersion | undefined> => {
       const path = await this.path(repoId, file);
       let stat;
-      try { stat = await lstat(path); } catch (err) { if (errorCode(err) === 'ENOENT') continue; throw err; }
+      try { stat = await lstat(path); } catch (err) { if (errorCode(err) === 'ENOENT') return undefined; throw err; }
       if (!stat.isFile()) throw new Error(`Snapshot requires a regular file: ${file}`);
       total += stat.size;
       if (total > 256 * 1024 * 1024) throw new Error('Repository snapshot exceeds 256 MiB');
@@ -256,7 +261,18 @@ export class Workspace {
           await rename(temporary, blob);
         } finally { await rm(temporary, { force: true }); }
       }
-      files[file] = { hash: digest, mode: stat.mode & 0o777 };
+      return { hash: digest, mode: stat.mode & 0o777 };
+    };
+    // Read-only observations keep all freshness checks, but do bounded file IO
+    // together. Preserve path ordering and settle every reader before releasing
+    // the workspace lock, including when a file changed or exceeded a budget.
+    const concurrency=storeBlobs?1:8;
+    for(let offset=0;offset<names.length;offset+=concurrency){
+      const group=names.slice(offset,offset+concurrency),results=await Promise.allSettled(group.map(captureFile));
+      for(const [index,result] of results.entries()){
+        if(result.status==='rejected')throw result.reason;
+        if(result.value)files[group[index]!]=result.value;
+      }
     }
     const [metadata, ignoredFiles] = await Promise.all([
       git(repo.root, ['--no-optional-locks', 'status', '--porcelain=v2', '--branch', '--untracked-files=no', '-z']),
@@ -328,7 +344,7 @@ export class Workspace {
   async checkpoints(): Promise<Checkpoint[]> {
     const names = (await readdir(join(this.data, 'checkpoints'))).filter(x => x.endsWith('.json'));
     const checkpoints = await Promise.all(names.map(x => readJson<Checkpoint>(join(this.data, 'checkpoints', x))));
-    return checkpoints.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    return checkpoints.filter(checkpoint=>!checkpoint.purpose).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
   }
   private async readBlob(digest: string): Promise<Buffer> {
     if (!/^[a-f0-9]{64}$/.test(digest)) throw new Error('Invalid snapshot blob');
@@ -573,20 +589,21 @@ export class Workspace {
     const opId = id('restore'), journal = storePath(this.data, 'operations', opId);
     await writeJson(journal, { schema: 1, id: opId, status: 'pending', targetId, expectedId, changes });
     const applied: typeof changes = [];
+    const readVersion=async(path:string):Promise<FileVersion|undefined>=>{
+      try{const stat=await lstat(path);if(!stat.isFile())throw new Error('Restore requires regular files');return {hash:hash(await readFile(path)),mode:stat.mode&0o777};}
+      catch(error){if(errorCode(error)==='ENOENT')return undefined;throw error;}
+    };
+    const sameVersion=(actual:FileVersion|undefined,expected:FileVersion|undefined)=>actual?.hash===expected?.hash&&actual?.mode===expected?.mode;
     const apply = async (change: typeof changes[number], version: FileVersion | undefined, expectedVersion: FileVersion | undefined, track = false) => {
       await this.path(change.repo, change.file, 'write');
-      let current: Buffer | undefined;
-      try { current = await readFile(change.path); } catch (error) { if (errorCode(error) !== 'ENOENT') throw error; }
-      if ((current ? hash(current) : undefined) !== expectedVersion?.hash) throw new Error(`Concurrent edit detected before apply: ${change.repo}:${change.file}`);
+      if (!sameVersion(await readVersion(change.path),expectedVersion)) throw new Error(`Concurrent edit detected before apply: ${change.repo}:${change.file}`);
       if (!version) { if (track) applied.push(change); await rm(change.path, { force: true }); return; }
       const bytes = await this.readBlob(version.hash);
       await mkdir(dirname(change.path), { recursive: true });
       const tmp = `${change.path}.${opId}.tmp`;
       try {
         await writeFile(tmp, bytes, { mode: version.mode });
-        let latest: Buffer | undefined;
-        try { latest = await readFile(change.path); } catch (error) { if (errorCode(error) !== 'ENOENT') throw error; }
-        if ((latest ? hash(latest) : undefined) !== expectedVersion?.hash) throw new Error(`Concurrent edit detected before replacement: ${change.repo}:${change.file}`);
+        if (!sameVersion(await readVersion(change.path),expectedVersion)) throw new Error(`Concurrent edit detected before replacement: ${change.repo}:${change.file}`);
         if (track) applied.push(change);
         await rename(tmp, change.path); await chmod(change.path, version.mode);
       }
@@ -595,9 +612,7 @@ export class Workspace {
     try {
       for (const change of changes) {
         // Recheck each path just before mutation; external edits after preflight are conflicts.
-        let current: Buffer | undefined;
-        try { current = await readFile(change.path); } catch (err) { if (errorCode(err) !== 'ENOENT') throw err; }
-        if ((current ? hash(current) : undefined) !== change.before?.hash) throw new Error(`Concurrent edit detected in ${change.repo}:${change.file}`);
+        if (!sameVersion(await readVersion(change.path),change.before)) throw new Error(`Concurrent edit detected in ${change.repo}:${change.file}`);
         await apply(change, change.after, change.before, true);
       }
       for (const snapshot of target.repos) {
@@ -609,10 +624,9 @@ export class Workspace {
       let rollbackError;
       try {
         for (const change of applied.reverse()) {
-          let actual: Buffer | undefined;
-          try { actual = await readFile(change.path); } catch (err) { if (errorCode(err) !== 'ENOENT') throw err; }
-          if ((actual ? hash(actual) : undefined) === change.before?.hash) continue;
-          if ((actual ? hash(actual) : undefined) !== change.after?.hash) throw new Error(`Concurrent edit during compensation: ${change.repo}:${change.file}`);
+          const actual=await readVersion(change.path);
+          if (sameVersion(actual,change.before)) continue;
+          if (!sameVersion(actual,change.after)) throw new Error(`Concurrent edit during compensation: ${change.repo}:${change.file}`);
           await apply(change, change.before, change.after);
         }
         if (previousPlan) await writeJson(planPath, previousPlan);
@@ -626,3 +640,6 @@ export class Workspace {
     return await this.checkpoint(`restored:${target.label}`, { references: target.references, plan: target.plan ?? null });
   }
 }
+import {AsyncLocalStorage} from 'node:async_hooks';
+const localOperations=new Map<string,Promise<void>>();
+const activeOperationRoots=new AsyncLocalStorage<Set<string>>();

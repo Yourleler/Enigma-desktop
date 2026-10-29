@@ -555,6 +555,7 @@
     "thinking": "{name}이(가) 생각하는 중"
   },
   "yuan": {
+    "simpleMode": "간결 모드",
     "types": {
       "hanako": {
         "label": "균형 잡힌 어시스턴트",
@@ -1058,6 +1059,7 @@
       "noResults": "일치하는 설정이 없습니다"
     },
     "tabs": {
+      "usage": "사용량",
       "interface": "인터페이스",
       "general": "일반",
       "browser": "브라우저",
@@ -2744,8 +2746,8 @@
       }
     },
     "jian": {
-      "collapse": "Jian 접기",
-      "expand": "Jian 펼치기"
+      "collapse": "폴더 지침 접기",
+      "expand": "폴더 지침 펼치기"
     }
   },
   "desk": {
@@ -2762,7 +2764,10 @@
     "cwdSkillShadowed": "우선 소스에 의해 비활성",
     "deleteSkill": "스킬 삭제",
     "openInFinder": "폴더 열기",
-    "jianLabel": "Jian",
+    "jianLabel": "폴더 지침",
+    "fullPath": "전체 경로 보기",
+    "jianHint": "폴더 용도와 파일 처리 방법을 적습니다. 자동 저장되며 작업 공간 순찰을 켜면 이 지침을 참고합니다.",
+    "cwdSkillsHelp": "이 폴더에서 사용 가능한 스킬과 용도 보기",
     "jianPlaceholder": "이 폴더의 파일을 어떻게 처리할지 어시스턴트에게 알려주세요...",
     "execLogLabel": "실행 기록",
     "execLogDelete": "이 기록 삭제",

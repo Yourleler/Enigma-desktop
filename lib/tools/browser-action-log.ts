@@ -4,6 +4,10 @@ export function summarizeBrowserActionParams(action: any, params: any = {}) {
   if (!params || typeof params !== "object") return {};
 
   switch (action) {
+    case 'upload':
+      return compact({ref:params.ref,fileCount:params.fileCount ?? params.files?.length ?? params.fileIds?.length ?? 0});
+    case 'download':
+      return compact({url:redactLogText(params.url)});
     case "type":
       return compact({
         ref: redactLogText(params.ref),

@@ -6,6 +6,7 @@ export interface TimelineAnchor {
   messageId: string;
   timestamp: number | null;
   label: string;
+  preview?: string;
   role: ChatMessage['role'];
   markerWidthEm: number;
 }
@@ -127,6 +128,7 @@ export function buildTimelineAnchors(
       timestamp: parseTimestamp(message.timestamp),
       role: message.role,
       label: formatTimelinePromptPreview(previewSource),
+      preview: formatTimelinePromptPreview(previewSource, 320),
       markerWidthEm: measureTimelineMarkerWidthEm(previewLength),
     };
   });

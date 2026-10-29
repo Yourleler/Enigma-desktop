@@ -14,44 +14,58 @@
     --right-workspace-jian-open-height: 320px;
     --right-workspace-jian-closed-height: 40px;
     --right-workspace-jian-bottom: var(--panel-edge-gap);
-    --right-workspace-jian-reserved: calc(var(--right-workspace-jian-closed-height) + var(--right-workspace-jian-bottom));
+    --right-workspace-jian-reserved: 0px;
     position: relative;
-    /* desk 卡撑满优先：独处（下方无平级卡片）时 flex-grow 顶满整列，避免短卡 + 下方空隙的不对称。
-       下方出现平级卡片（todo/workflow/活动/状态）时收缩让位，但不低于地板 640px——
-       收缩到地板后整列总高仍超出时，由 .shell 滚动（绝不把 desk 压到 640 以下）。
-       min(…,100%) 仅在极矮窗口（panel < 640）兜底防 desk 自身溢出。 */
-    flex: 1 1 var(--right-workspace-desk-height, 640px);
-    min-height: min(var(--right-workspace-desk-height, 640px), 100%);
+    /* Give files the remaining space while leaving task status visible.
+       Short windows keep a usable list; overflow is handled by the rail. */
+    flex: 1 0 auto;
+    min-height: min(var(--right-workspace-desk-height, 420px), 65vh);
     display: flex;
     flex-direction: column;
     overflow: hidden;
 }
 
 .workspaceHeader {
-    position: relative;
     flex: 0 0 auto;
     display: flex;
-    align-items: center;
-    min-height: 40px;
-    padding: 6px calc(var(--space-8) + 7.5rem) 2px var(--space-16);
+    flex-direction: column;
+    align-items: stretch;
+    gap: 7px;
+    padding: 12px var(--space-12) 8px;
 }
 
 .workspaceTitle {
-    flex: 1;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
     min-width: 0;
     max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-family: "Songti SC", "Noto Serif CJK SC", serif;
-    font-size: var(--fs-title);
+    overflow-wrap: anywhere;
+    font-family: var(--font-ui);
+    font-size: var(--fs-body);
+    line-height: 1.4;
     font-weight: 600;
-    color: var(--accent);
+    color: var(--text);
 }
 
+.workspaceHeaderTools {
+    display: flex;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+}
+
+.workspacePath {
+    min-width: 0;
+    flex: 1 1 70px;
+    font-size: var(--fs-caption);
+    color: var(--text-muted);
+}
+
+.workspacePath summary { cursor: pointer; width: fit-content; }
+.workspacePath code { display: block; margin-top: 6px; overflow-wrap: anywhere; white-space: normal; user-select: text; }
+
 .tabs {
-    --right-workspace-active-tab-index: 0;
-    --right-workspace-tab-slider-offset: 0px;
     position: relative;
     flex: 0 0 auto;
     display: grid;
@@ -59,41 +73,27 @@
     gap: 2px;
     margin: 0 var(--space-8);
     padding: 2px;
-    border-radius: var(--radius-sm);
+    border-radius: 12px;
     background: var(--overlay-subtle);
     border: 1px solid var(--overlay-light);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     overflow: hidden;
 }
 
-.tabSlider {
-    position: absolute;
-    top: 2px;
-    bottom: 2px;
-    left: 2px;
-    z-index: 0;
-    width: calc((100% - 6px) / 2);
-    border-radius: max(2px, calc(var(--radius-sm) - 2px));
-    background: var(--tab-slider-bg, var(--bg-card));
-    box-shadow: var(--tab-slider-shadow, 0 1px 3px var(--shadow));
-    transform: translateX(var(--right-workspace-tab-slider-offset));
-    transition: transform var(--duration-slow) cubic-bezier(0.4, 0, 0.2, 1),
-                width var(--duration-slow) cubic-bezier(0.4, 0, 0.2, 1);
-}
 
 .tab {
     position: relative;
     z-index: 1;
     min-width: 0;
-    height: 20px;
+    height: 30px;
     border: none;
-    border-radius: max(2px, calc(var(--radius-sm) - 2px));
+    border-radius: 10px;
     background: transparent;
     color: var(--text-muted);
     font-family: inherit;
     font-size: var(--fs-hint);
     font-weight: 400;
-    cursor: default;
+    cursor: pointer;
     transition: color var(--duration-fast) var(--ease-out);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -105,14 +105,15 @@
 }
 
 .tabActive {
-    color: var(--text-muted);
+    color: var(--text);
+    font-weight: 600;
 }
 
 .content {
     position: relative;
     flex: 1 1 0;
     height: 0;
-    min-height: 0;
+    min-height: 150px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -202,8 +203,8 @@
     min-height: 0;
     overflow-y: auto;
     display: block;
-    padding: 4px 2px calc(var(--right-workspace-jian-reserved, 56px) + var(--panel-edge-gap));
-    scroll-padding-bottom: calc(var(--right-workspace-jian-reserved, 56px) + var(--panel-edge-gap));
+    padding: 4px 2px var(--panel-edge-gap);
+    scroll-padding-bottom: var(--panel-edge-gap);
     outline: none;
 }
 
@@ -358,98 +359,45 @@
 }
 
 .jianDrawer {
-    --right-workspace-jian-open-dur: 400ms;
-    --right-workspace-jian-close-dur: var(--duration-slow);
-    --right-workspace-jian-ease: cubic-bezier(0.22, 1, 0.36, 1);
-    position: absolute;
-    left: var(--panel-edge-gap);
-    right: var(--panel-edge-gap);
-    bottom: var(--right-workspace-jian-bottom);
-    z-index: 2;
-    height: var(--right-workspace-jian-open-height);
-    max-height: none;
+    position: relative;
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    height: min(300px, 40vh);
+    max-height: 50%;
+    min-height: 40px;
+    margin: 8px var(--panel-edge-gap) var(--panel-edge-gap);
     overflow: hidden;
-    margin: 0;
     border-radius: var(--radius-md);
-    border: 1px solid var(--jian-note-border, rgba(200, 160, 110, 0.2));
+    border: 1px solid var(--overlay-light);
     background: var(--jian-note-bg, #FAF0E2);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-    transition: height var(--right-workspace-jian-open-dur) var(--right-workspace-jian-ease);
 }
 
-.jianDrawer[data-open="false"] {
-    height: var(--right-workspace-jian-closed-height);
-    transition-duration: var(--right-workspace-jian-close-dur);
-}
-
-.jianDrawer[data-open="false"] .jianHeader {
-    height: var(--right-workspace-jian-closed-height);
-}
+.jianDrawer[data-open="false"] { height: 40px; }
 
 .jianHeader {
-    height: 46px;
+    width: 100%;
+    min-height: 40px;
+    flex: 0 0 auto;
     display: flex;
     align-items: center;
-    padding: 0 var(--space-16);
-    border-bottom: 1px solid var(--jian-note-border, rgba(200, 160, 110, 0.2));
-}
-
-.jianRule {
-    height: 1px;
-    background: var(--jian-note-border, rgba(200, 160, 110, 0.25));
-}
-
-.jianTitle {
-    color: var(--text-light);
-    font-family: var(--font-ui);
-    font-size: 0.94rem;
-    font-weight: 600;
-    letter-spacing: 0;
-}
-
-.jianToggle {
-    position: absolute;
-    right: calc(var(--panel-edge-gap) + 6px);
-    bottom: calc(var(--panel-edge-gap) + 6px);
-    z-index: 3;
-    width: 28px;
-    height: 28px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid var(--overlay-light);
-    border-radius: var(--radius-sm);
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 12px;
+    border: 0;
     background: transparent;
-    color: var(--text-muted);
-    cursor: default;
-    transition: border-color 0.16s var(--ease-out), color 0.16s var(--ease-out);
+    color: var(--text);
+    text-align: left;
+    cursor: pointer;
 }
-
-.jianToggle:hover {
-    color: var(--text-muted);
-    border-color: var(--overlay-light);
-}
-
-.jianBody {
-    height: calc(var(--right-workspace-jian-open-height) - 48px);
-    transform: translateY(0);
-    transition: transform var(--right-workspace-jian-open-dur) var(--right-workspace-jian-ease);
-}
-
-.jianDrawer[data-open="false"] .jianBody {
-    transform: translateY(24px);
-    pointer-events: none;
-    transition-duration: var(--right-workspace-jian-close-dur);
-}
-
-.jianBody :global([data-desk-editor]) {
-    height: 100%;
-    margin: 0;
-    border: none;
-    border-radius: 0;
-    box-shadow: none;
-    background: transparent;
-}
+.jianHeader svg { flex: 0 0 auto; }
+.jianHeader:hover { background: var(--overlay-subtle); }
+.jianHeader:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
+.jianTitle { font-family: var(--font-ui); font-size: var(--fs-caption); font-weight: 600; overflow-wrap: anywhere; }
+.jianHint { flex-shrink: 0; margin: 0; padding: 0 12px 8px; font-size: var(--fs-caption); line-height: 1.5; color: var(--text-muted); }
+.jianBody { min-height: 0; flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
+.jianDrawer[data-open="false"] .jianBody { visibility: hidden; pointer-events: none; }
+.jianBody :global([data-desk-editor]) { height: auto; flex: 1; min-height: 50px; margin: 0; border: none; border-radius: 0; box-shadow: none; background: transparent; }
 
 @media (prefers-reduced-motion: reduce) {
     .jianDrawer,
@@ -457,3 +405,5 @@
         transition: none !important;
     }
 }
+
+.workspacePath[open] { flex-basis: 100%; }

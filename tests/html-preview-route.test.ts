@@ -13,6 +13,28 @@ function makeApp(options = {}) {
 }
 
 describe("HTML preview route", () => {
+  it('resolves remote HTML assets through the authorized workbench root', async () => {
+    const home = fs.mkdtempSync(path.join(os.tmpdir(), 'enigma-preview-home-'));
+    const workspace = path.join(home, 'new-workspace'); fs.mkdirSync(workspace);
+    fs.mkdirSync(path.join(workspace, 'pages'));
+    fs.writeFileSync(path.join(workspace, 'pages', 'new.html'), '<img src="../new.svg">');
+    fs.writeFileSync(path.join(workspace, 'new.svg'), '<svg xmlns="http://www.w3.org/2000/svg"/>');
+    try {
+      const app = makeApp({engine: {hanakoHome: home, homeCwd: workspace}, randomId: () => 'pv_remote', randomToken: () => 'test-only'});
+      const response = await app.request('http://localhost/api/preview/html', {method: 'POST', headers: {'content-type': 'application/json'}, body: JSON.stringify({
+        content: '<img src="../new.svg">', remoteContentRef: {kind: 'workbench-file', mountId: 'default', subdir: 'pages', name: 'new.html'},
+      })});
+      expect(response.status).toBe(200);
+      const preview = await app.request((await response.json()).previewUrl);
+      expect(await preview.text()).toContain('/assets/test-only/pages/');
+      const asset = await app.request('http://localhost/preview/html/pv_remote/assets/test-only/new.svg');
+      expect(asset.status).toBe(200);
+      expect(asset.headers.get('Cross-Origin-Resource-Policy')).toBe('cross-origin');
+      expect((await app.request('http://localhost/preview/html/pv_remote/assets/wrong-token/new.svg')).status).toBe(404);
+      const forged = await app.request('http://localhost/api/preview/html', {method: 'POST', headers: {'content-type': 'application/json'}, body: JSON.stringify({content: '<img>', sourceFilePath: path.join(workspace, 'pages', 'new.html')})});
+      expect(forged.status).toBe(403);
+    } finally {fs.rmSync(home, {recursive: true, force: true});}
+  });
   it("serves registered HTML with a dedicated CDN-capable CSP and no referrer leakage", async () => {
     const app = makeApp({
       randomId: () => "pv_test",

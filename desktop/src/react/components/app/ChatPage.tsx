@@ -1,3 +1,4 @@
+import { SessionClock } from '../chat/SessionClock';
 import { EngineeringToolbar } from '../../engineering/Engineering';
 import { useStore } from '../../stores';
 import { InputArea, type InputAreaProps } from '../InputArea';
@@ -28,6 +29,7 @@ export function ChatPage({
   return (
     <>
       <EngineeringToolbar />
+      <SessionClock />
       <div className={`chat-area${hasPanels ? ' has-panels' : ''}`}>
         <WelcomeContainer />
         <RegionalErrorBoundary region={`${regionPrefix}chat`} resetKeys={[currentSessionPath]}>

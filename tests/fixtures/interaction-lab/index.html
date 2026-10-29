@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="zh-CN"><meta charset="utf-8"><title>Enigma 新建交互验收页</title>
+<style>
+body{font:16px system-ui;margin:0;background:#f5f3fa;color:#292433}main{max-width:860px;margin:auto;padding:28px}section{background:white;padding:24px;margin:18px 0;border-radius:16px;border:1px solid #ddd5e9}label{display:block;margin:14px 0}input,textarea,select,button{font:inherit;padding:9px;border:1px solid #b7abc9;border-radius:8px}button{cursor:pointer;background:#eee6fb}output{display:block;white-space:pre-wrap;margin-top:16px}.row{display:flex;gap:14px;flex-wrap:wrap}.drop{padding:35px;border:2px dashed #ab93d5;margin-top:16px}dialog{border:1px solid #c8badb;border-radius:14px}dialog::backdrop{background:#28203288}#fixed{position:fixed;right:12px;bottom:12px}a{color:#69429c}#click-surface{height:90px;background:#e5def3;border-radius:12px;display:grid;place-items:center}
+</style>
+<main><h1>新建交互验收页</h1><p>这里的数据和文件仅用于本次测试。</p><nav><a href="/second.html">第二页</a> · <a href="/second.html" target="_blank">在新标签打开第二页</a></nav>
+<section><h2>表单</h2><form id="order"><label>姓名 <input id="name" name="name" autocomplete="off"></label><label>数量 <input id="quantity" name="quantity" type="number" min="1" max="9" value="1"></label><label>颜色 <select id="color" name="color"><option value="">请选择</option><option value="blue">蓝色</option><option value="green">绿色</option></select></label><label>备注 <textarea id="note" name="note"></textarea></label><label><input type="checkbox" name="accepted">确认测试内容</label><button type="submit">生成测试回执</button></form><output id="receipt" aria-live="polite">尚未提交</output></section>
+<section><h2>动态控件与遮挡</h2><div class="row"><button id="delayed">稍后显示输入框</button><button id="modal">打开说明弹窗</button><button id="replace">替换操作按钮</button></div><div id="dynamic"></div><button id="changing">保存测试记录</button><output id="action-result">尚未操作</output><dialog><p>这是新建的测试弹窗。</p><button id="close-modal">关闭说明</button></dialog></section>
+<section><h2>测试文件</h2><label>选择新建测试文件 <input id="upload" type="file" accept=".txt,.md,.csv,.json"></label><output id="upload-result">尚未选择文件</output><a href="/sample.txt" download="enigma-lab-download.txt">下载新建测试文本</a></section>
+<section><h2>鼠标与拖拽</h2><div id="click-surface" role="button" tabindex="0" aria-label="双击测试区域">请双击这里</div><div draggable="true" id="card">可拖动的测试卡片</div><div class="drop" id="drop">把卡片拖到这里</div><output id="pointer-result">尚未操作</output></section>
+<section><h2>预览与链接</h2><p><a href="/sample.md">Markdown 测试文件</a> · <a href="/sample.svg">SVG 测试图片</a></p><p>这个较长的页面用于验证滚动和控件重新定位。</p></section>
+<button id="fixed">固定定位按钮</button><output id="fixed-result"></output></main>
+<script src="/lab.js"></script></html>

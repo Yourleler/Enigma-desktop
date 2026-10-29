@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024"><svg x="80" y="80" width="864" height="864" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="surface" cx="28%" cy="12%" r="100%">
+      <stop offset="0" stop-color="#243b3b"/>
+      <stop offset=".5" stop-color="#10161e"/>
+      <stop offset="1" stop-color="#090c13"/>
+    </radialGradient>
+    <linearGradient id="aurora" x1="112" y1="112" x2="398" y2="403" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#c7fff0"/>
+      <stop offset=".45" stop-color="#75d7c7"/>
+      <stop offset=".78" stop-color="#9ca8fa"/>
+      <stop offset="1" stop-color="#c5a5ed"/>
+    </linearGradient>
+    <linearGradient id="spark" x1="220" y1="160" x2="286" y2="338" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#edfff9"/>
+      <stop offset="1" stop-color="#8ddacd"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="13"/></filter>
+  </defs>
+  <rect width="512" height="512" rx="124" fill="url(#surface)"/>
+  <rect x="11" y="11" width="490" height="490" rx="114" fill="none" stroke="#d0efe8" stroke-opacity=".12" stroke-width="2"/>
+  <g fill="none" stroke="url(#aurora)" stroke-linecap="round">
+    <ellipse cx="256" cy="256" rx="143" ry="158" transform="rotate(35 256 256)" stroke-width="19" opacity=".18" filter="url(#glow)"/>
+    <path d="M 350 133 A 150 150 0 1 0 402 278" stroke-width="18"/>
+  </g>
+  <path d="M256 169 C265 222 281 239 333 256 C281 266 265 284 256 343 C245 286 228 268 178 256 C230 241 247 223 256 169Z" fill="url(#spark)"/>
+  <circle cx="395" cy="197" r="19" fill="#b7aff6"/>
+  <circle cx="391" cy="191" r="6" fill="#eeeaff" opacity=".7"/>
+</svg></svg>

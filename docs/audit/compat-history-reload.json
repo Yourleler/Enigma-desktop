@@ -1,0 +1,17 @@
+{
+  "status": "verified",
+  "session": "sess_0mvp997wm_1d584588152368e51646",
+  "messages": [
+    {
+      "role": "user",
+      "chars": 69,
+      "sourceIndex": 1
+    },
+    {
+      "role": "assistant",
+      "chars": 621,
+      "sourceIndex": 2
+    }
+  ],
+  "pathsAndProviderNamesRedacted": true
+}

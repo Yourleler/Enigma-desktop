@@ -3,7 +3,7 @@ import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-a
 import { Workspace } from './workspace.js';
 import { ProjectContext, type ResourceInput } from './project-context.js';
 import { TaskReadingStore, type TaskReadingInput } from './task-reading.js';
-import { SourceIndex } from './source-index.js';
+import { SourceIndex,sourceSelectionView } from './source-index.js';
 import { redact } from './storage.js';
 import { readSchemas } from './schema-reading.js';
 import { fetchResource, refreshResource, readResourceCapture } from './resource-fetch.js';
@@ -30,7 +30,7 @@ export function createProjectExtension(options: { workspace?: Workspace; taskSco
       + 'Go navigation uses gopls; missing dependencies and truncated analysis are gaps. Reading maps and linked tests do not alone prove all requirements satisfied.' }));
     pi.registerTool({ name: 'source_index', label: 'Source navigation index', description: 'Refresh a rebuildable, bounded source index and rank files by query. Lexical hits are candidates, not confirmed symbol relations.',
       executionMode: 'sequential', parameters: Type.Object({ query: Type.String(), language: Type.Optional(Type.Union([Type.Literal('Go'), Type.Literal('Python'), Type.Literal('TypeScript')])), maxFiles: Type.Optional(Type.Integer()) }),
-      async execute(_id, args, signal) { const indexed = await new SourceIndex(workspace).select(args.query, { ...args, signal }); const { candidates: _all, ...page } = indexed; void _all; return result(page); } });
+      async execute(_id, args, signal) { return result(sourceSelectionView(await new SourceIndex(workspace).select(args.query, { ...args, signal }))); } });
     pi.registerTool({ name: 'schema_reading', label: 'Read interface schemas', description: 'Read registered Thrift, protobuf and JSON Schema declarations with real fields, source positions, scoped type relations and unresolved import diagnostics. Does not run code generators or prove runtime compatibility.', executionMode: 'sequential',
       parameters: Type.Object({ query: Type.Optional(Type.String()), maxFiles: Type.Optional(Type.Integer()) }), async execute(_id, args, signal) {
         return await workspace.exclusive(async () => { const schema = await readSchemas(workspace, { ...args, signal }); const evidence = await workspace.evidence('reading', schema); return result({ ...schema, evidence: evidence.id }); });

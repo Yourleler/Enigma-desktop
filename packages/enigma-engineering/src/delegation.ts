@@ -12,6 +12,7 @@ import type { Checkpoint, Observation } from './types.js';
 import { runProcess } from './process.js';
 import { BackgroundRuns } from './background.js';
 import { PlanStore } from './planning.js';
+import { createTwoFilesPatch } from 'diff';
 
 export interface DelegationInput extends TaskPackageInput {
   target: 'pi' | 'codex'; writeRepos?: string[]; checks?: string[]; timeoutMs?: number; maxRequests?: number; provider?: string; model?: string; agentDir?: string;
@@ -30,8 +31,9 @@ export interface DelegationState {
 }
 export interface MergePreview {
   schema: 1; id: string; delegation: string; spec: string; expected: string; proposed: string; child: Observation;
-  changes: { repo: string; file: string; state: 'apply' | 'already-present' | 'merged' | 'conflict'; reason?: string; patch?: string }[];
+  changes: { repo: string; file: string; state: 'apply' | 'already-present' | 'merged' | 'conflict'; reason?: string; patch?: string; patchTruncated?: boolean }[];
   conflicts: string[]; applyAllowed: boolean; createdAt: string;
+  criteriaHash?:string;
 }
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
@@ -139,9 +141,9 @@ export class Delegations {
     return await this.workspace.exclusive(async () => {
       const childSnapshot = await child.exclusive(() => child.checkpoint('merge proposal')), observed = await child.observe();
       const plan = await new PlanStore(this.workspace, options.planFile).current();
-      const expected = await this.workspace.checkpoint('before child merge', { plan: plan ? { id: plan.id, revision: plan.revision } : null }), proposed: Checkpoint = structuredClone(expected); proposed.id = id('checkpoint'); proposed.label = `merge:${taskId}`; proposed.references = [];
+      const expected = await this.workspace.checkpoint('before child merge', { plan: plan ? { id: plan.id, revision: plan.revision } : null }), proposed: Checkpoint = structuredClone(expected); proposed.id = id('checkpoint'); proposed.label = `merge:${taskId}`; proposed.references = [];proposed.purpose='integration-proposal';
       const preview: MergePreview = { schema: 1, id: id('merge'), delegation: taskId, spec: result.spec.fingerprint, expected: expected.id, proposed: proposed.id, child: observed,
-        changes: [], conflicts: [], applyAllowed: false, createdAt: new Date().toISOString() };
+        changes: [], conflicts: [], applyAllowed: false, createdAt: new Date().toISOString(),criteriaHash:hash(JSON.stringify(this.workspace.config.checks)) };
       const directory = await ensureDir(join(await ensureDir(join(this.workspace.data, 'merge-previews')), preview.id));
       for (const repo of source.manifest.repos) {
         const target = proposed.repos.find(item => item.repo.id === repo.repo.id), other = childSnapshot.repos.find(item => item.repo.id === repo.repo.id);
@@ -165,6 +167,27 @@ export class Delegations {
             }
           } else { change.state = 'conflict'; change.reason = 'Parent edited, removed, or changed permissions on this file'; }
           if (change.state === 'conflict') preview.conflicts.push(`${change.repo}:${file}: ${change.reason}`);
+          else if (change.state !== 'already-present') {
+            const proposedFile = target.files[file];
+            const blob = async (fingerprint: typeof ours) => {
+              if (!fingerprint) return Buffer.alloc(0);
+              const bytes = await readFile(join(this.workspace.data, 'blobs', fingerprint.hash));
+              if (hash(bytes) !== fingerprint.hash) throw new Error('Merge preview blob integrity mismatch');
+              return bytes;
+            };
+            const [before, after] = await Promise.all([blob(ours), blob(proposedFile)]);
+            if (before.length + after.length > 1_000_000) change.reason = '文件较大，请在独立工作目录核对完整内容。';
+            else try {
+              const decoder = new TextDecoder('utf-8', { fatal: true });
+              if (before.includes(0) || after.includes(0)) throw new Error('Binary file');
+              const patch = redact(createTwoFilesPatch(`${repo.repo.id}/${file}`, `${repo.repo.id}/${file}`, decoder.decode(before), decoder.decode(after)), this.workspace.secrets);
+              change.patch = patch.slice(0, 48_000); change.patchTruncated = patch.length > 48_000;
+              if (ours?.mode !== proposedFile?.mode && ours && proposedFile) change.reason = `文件权限：${ours.mode.toString(8)} → ${proposedFile.mode.toString(8)}`;
+            } catch (error) {
+              if (error instanceof TypeError || (error as Error).message === 'Binary file') change.reason = '二进制文件或非 UTF-8 内容，请在独立工作目录核对。';
+              else throw error;
+            }
+          }
         }
       }
       if (!same(observed.fingerprints, (await child.observe()).fingerprints)) throw new Error('Child changed during merge preview');
@@ -180,12 +203,14 @@ export class Delegations {
   async merge(previewId: string, options: { task?: string; signal?: AbortSignal; planFile?: string } = {}) {
     const path = join(this.workspace.data, 'merge-previews', safeId(previewId), 'preview.json'), preview = await readJson<MergePreview>(path), result = await this.status(preview.delegation, options.task);
     if (preview.schema !== 1 || preview.id !== previewId || !preview.applyAllowed || result.spec.fingerprint !== preview.spec || result.state.status !== 'completed' || !result.terminal) throw new Error('Merge preview is conflicting, stale or no longer owned');
-    const child = await Workspace.open(result.spec.workspace); if (!same(preview.child.fingerprints, (await child.observe()).fingerprints)) throw new Error('Child changed after preview');
-    return await this.workspace.exclusive(async () => {
+    const child = await Workspace.open(result.spec.workspace);
+    return await this.workspace.exclusive(()=>child.exclusive(async () => {
+      if(!same(preview.child.fingerprints,(await child.observe()).fingerprints)||(await child.operations()).some(op=>['pending','unknown'].includes(op.status))||(await new BackgroundRuns(child).unresolved()).length)throw new Error('Child changed or has unresolved effects after preview');
+      if(preview.criteriaHash!==hash(JSON.stringify(this.workspace.config.checks)))throw new Error('Acceptance changed or old preview lacks criteria; generate a new preview before merge');
       options.signal?.throwIfAborted(); await this.workspace.restore(preview.proposed, preview.expected, { planFile: options.planFile });
       const verified = await this.workspace.verify(options.signal);
       const receipt = { schema: 1, id: id('merge-result'), preview: preview.id, delegation: result.spec.id, task: options.task, createdAt: new Date().toISOString(), verification: verified, observation: await this.workspace.observe(), note: 'Applied code only. Child/source historical evidence and runtime permissions were not imported as parent success.' };
       await writeJson(join(this.workspace.data, 'merge-previews', preview.id, 'result.json'), receipt); return receipt;
-    });
+    }));
   }
 }

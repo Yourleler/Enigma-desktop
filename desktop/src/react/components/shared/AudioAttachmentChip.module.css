@@ -72,7 +72,7 @@
 }
 
 .play.isPlaying {
-    color: white;
+    color: var(--eg-on-accent, #fff);
     background: var(--accent);
 }
 

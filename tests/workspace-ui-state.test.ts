@@ -7,6 +7,26 @@ import {
 } from "../shared/workspace-ui-state.ts";
 
 describe("workspace UI state", () => {
+  it('retains browser owners and remote media while stripping transient tokens and inline data', () => {
+    const state = normalizeWorkspaceUiEntry({openTabs: ['browser', 'doc', 'image'], activeTabId: 'image', previewTabs: [
+      {id: 'browser', type: 'browser', browserSessionPath: '/new/session.jsonl', content: 'do not store'},
+      {id: 'doc', type: 'markdown', remoteContentRef: {kind: 'workbench-file', mountId: 'test', subdir: 'docs', name: 'readme.md', contentPath: 'https://unrelated.invalid/?token=secret'}},
+      {id: 'image', type: 'media', mediaRef: {id: 'img', kind: 'image', name: 'new.png', inlineData: {base64: 'private'}, resource: {resourceId: 'r1', studioId: 's1', links: {content: '/api/resources/r1/content?token=secret&ticket=stale'}}}},
+    ]});
+    expect(state.openTabs).toEqual(['browser', 'doc', 'image']);
+    expect(state.activeTabId).toBe('image');
+    expect(JSON.stringify(state)).not.toMatch(/secret|private|unrelated.invalid/);
+    expect(state.previewTabs[1].remoteContentRef?.contentPath).toBe('/api/workbench/content?mountId=test&subdir=docs&name=readme.md');
+    expect(state.previewTabs[2].mediaRef?.resource.links.content).toBe('/api/resources/r1/content');
+  });
+
+  it('rejects invalid remote file references instead of fetching a saved arbitrary URL', () => {
+    const state = normalizeWorkspaceUiEntry({previewTabs: [
+      {id: 'escape', type: 'markdown', remoteContentRef: {kind: 'workbench-file', mountId: 'm', subdir: '../outside', name: 'private.md'}},
+      {id: 'external', type: 'media', mediaRef: {id: 'x', kind: 'image', name: 'x', resource: {links: {content: 'https://invalid.example/file'}}}},
+    ]});
+    expect(state.previewTabs).toEqual([]);
+  });
   it("keeps desktop and mobile workspace state in separate surface buckets", () => {
     let state = upsertWorkspaceUiState({}, "/repo", {
       deskExpandedPaths: ["desktop"],

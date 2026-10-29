@@ -61,7 +61,7 @@ function getResource(engine, resourceId, requestContext) {
   return engine?.resources?.getResource?.(resourceId, options) || null;
 }
 
-function resolveResourceContent(engine, resourceId, requestContext) {
+export function resolveResourceContent(engine, resourceId, requestContext) {
   const access = getResourceAccess(engine);
   if (access) return access.resolveContent(resourceId, requestContext);
   const options = { requestContext };

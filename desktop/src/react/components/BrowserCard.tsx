@@ -8,6 +8,7 @@
 import { useCallback } from 'react';
 import { useStore } from '../stores';
 import { setBrowserCardCollapsed, useBrowserState } from '../stores/browser-slice';
+import { openBrowserPreview } from '../utils/browser-preview';
 
 export function BrowserCard() {
   const {
@@ -19,7 +20,7 @@ export function BrowserCard() {
 
   const handleClick = useCallback(() => {
     const sessionPath = useStore.getState().currentSessionPath;
-    window.platform?.openBrowserViewer?.({ sessionPath });
+    openBrowserPreview({ sessionPath });
   }, []);
 
   // 叉只收起卡片，不碰浏览器本身：agent 的操作不能被一次视觉整理打断。
@@ -40,7 +41,7 @@ export function BrowserCard() {
   }
 
   return (
-    <div className="browser-floating-card" id="browserFloatingCard" onClick={handleClick}>
+    <div className="browser-floating-card" id="browserFloatingCard" onClick={handleClick} role="button" tabIndex={0} aria-label="在侧栏查看本对话的网页" onKeyDown={event => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); handleClick(); } }}>
       <div className="browser-floating-info">
         <div className="browser-floating-icon">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">

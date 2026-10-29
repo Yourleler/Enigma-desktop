@@ -16,6 +16,7 @@ vi.mock('../../hooks/use-stream-buffer', () => ({
 
 vi.mock('../../stores/session-actions', () => ({
   loadSessions: vi.fn(),
+  loadMessages:vi.fn(),
 }));
 
 vi.mock('../../stores/channel-actions', () => ({
@@ -55,7 +56,7 @@ import { resetSessionRefreshSchedulerForTest } from '../../services/session-refr
 import { dispatchStreamKey } from '../../services/stream-key-dispatcher';
 import { handleAppEvent } from '../../services/app-event-actions';
 import { clearMessageLiveVersion, readMessageLiveVersion } from '../../stores/message-live-version';
-import { loadSessions } from '../../stores/session-actions';
+import { loadSessions,loadMessages } from '../../stores/session-actions';
 import zh from '../../../locales/zh.json';
 
 /** Resolve a dotted i18n key against the real Chinese pack, the way window.t does. */
@@ -73,6 +74,13 @@ afterEach(() => {
   previewRefreshMocks.markDeskTreeDirtyForResourceChange.mockClear();
   vi.useRealTimers();
   vi.unstubAllGlobals();
+});
+
+it('engineering settlement refreshes active history but does not overwrite a running model stream',async()=>{
+  vi.mocked(loadMessages).mockClear();useStore.setState({currentSessionPath:'/engineering',currentSessionId:null,activeServerConnectionId:'local',streamingSessions:[]});
+  handleServerMessage({type:'enigma_event',event:'settled',sessionPath:'/engineering'});
+  await vi.dynamicImportSettled();expect(loadMessages).toHaveBeenCalledWith('/engineering');
+  vi.mocked(loadMessages).mockClear();useStore.setState({streamingSessions:['/engineering']});handleServerMessage({type:'enigma_event',event:'settled',sessionPath:'/engineering'});await vi.dynamicImportSettled();expect(loadMessages).not.toHaveBeenCalled();
 });
 
 describe('ws-message-handler applyStreamingStatus', () => {

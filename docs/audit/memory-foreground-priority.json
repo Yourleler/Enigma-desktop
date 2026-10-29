@@ -1,0 +1,32 @@
+{
+  "status": "verified",
+  "foregroundActualCommand": true,
+  "waiting": [
+    {
+      "status": "queued",
+      "requests": 0,
+      "waitingReason": "foreground"
+    },
+    {
+      "status": "queued",
+      "requests": 0,
+      "waitingReason": "foreground"
+    },
+    {
+      "status": "queued",
+      "requests": 0,
+      "waitingReason": "foreground"
+    },
+    {
+      "status": "queued",
+      "requests": 0,
+      "waitingReason": "foreground"
+    }
+  ],
+  "actualGatewayAfterIdle": true,
+  "requests": 1,
+  "candidates": 1,
+  "noAutomaticPublication": true,
+  "sourceUnchanged": true,
+  "pathsAndProviderNamesRedacted": true
+}

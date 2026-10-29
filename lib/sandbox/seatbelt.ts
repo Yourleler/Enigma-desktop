@@ -51,7 +51,7 @@ function realpath(p) {
 /**
  * 生成 Seatbelt SBPL profile
  */
-export function generateProfile(policy, { allowNetwork = true } = {}) {
+export function generateProfile(policy, { allowNetwork = true,allowLocalServers = false } = {}) {
   const lines = [
     "(version 1)",
     "(deny default)",
@@ -112,6 +112,11 @@ export function generateProfile(policy, { allowNetwork = true } = {}) {
     lines.push(
       ";; 网络（允许沙盒内命令出站联网）",
       "(allow network-outbound)",
+    );
+    if(allowLocalServers)lines.push(
+      ';; Explicitly enabled development servers. Bind address is project-owned.',
+      '(allow network-bind (local ip))',
+      '(allow network-inbound (local ip))',
     );
   } else {
     lines.push(

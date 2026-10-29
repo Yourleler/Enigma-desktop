@@ -84,7 +84,7 @@ import { searchSessions } from "../../lib/search/session-search.ts";
 import { findInSessionMessages } from "../../lib/search/session-find.ts";
 import { SessionSearchTokenizerUnavailableError } from "../../lib/search/session-search-tokenizer.ts";
 import { MountAwareFileError, MountAwareFileService } from "../../core/mount-aware-file-service.ts";
-import { isAssistantCommentaryTextBlock } from "../../shared/text-signature.ts";
+import { includesCompatibleResponseText, isAssistantCommentaryTextBlock } from "../../shared/text-signature.ts";
 import { collectToolOutcomesByCallId } from "../../shared/tool-outcome.ts";
 
 const log = createModuleLogger("sessions");
@@ -226,13 +226,13 @@ function hasInlineImageContent(content) {
   return content.some(block => block?.type === "image" && (block.data || block.source?.data));
 }
 
-function hasTextBlockContent(content, { stripThink = false } = {}) {
+function hasTextBlockContent(content, { stripThink = false, includeCommentary = false } = {}) {
   if (typeof content === "string") {
     const text = stripThink ? stripInlineThinkText(content) : content;
     return text.length > 0;
   }
   if (!Array.isArray(content)) return false;
-  return content.some(block => block?.type === "text" && block.text && !isAssistantCommentaryTextBlock(block));
+  return content.some(block => block?.type === "text" && block.text && (includeCommentary || !isAssistantCommentaryTextBlock(block)));
 }
 
 function hasToolUseContent(content) {
@@ -246,7 +246,7 @@ function isDisplayableHistoryMessage(message) {
     return hasTextBlockContent(message.content) || hasInlineImageContent(message.content);
   }
   if (message.role === "assistant") {
-    return hasTextBlockContent(message.content, { stripThink: true })
+    return hasTextBlockContent(message.content, { stripThink: true, includeCommentary: includesCompatibleResponseText(message) })
       || contentHasThinkingBlock(message.content, { stripThink: true })
       || hasToolUseContent(message.content);
   }
@@ -285,7 +285,7 @@ export function collectFindableHistoryEntries(sourceMessages, sanitizeVisibleCon
         .replace(FIND_TURN_TAG_PREFIX_RE, "");
       if (visible.trim()) entries.push({ index: currentIndex, text: visible });
     } else {
-      const { text } = extractTextContent(m.content, { stripThink: true });
+      const { text } = extractTextContent(m.content, { stripThink: true, includeCommentary: includesCompatibleResponseText(m) });
       const content = sanitizeVisibleContent(text);
       if (content.trim()) entries.push({ index: currentIndex, text: content });
     }
@@ -1294,6 +1294,10 @@ export function createSessionsRoute(engine, hub = null) {
       // 标成「已同步」会让 /rc 消息永久漏掉，issue #1610 的反方向竞态）。
       const revision = await readSessionFileRevision(resolvedSessionPath);
       const sourceMessages = await loadSessionHistoryMessages(engine, resolvedSessionPath);
+      // Resolve against the full branch before pagination, including hidden inputs.
+      const inputTimestampById = new Map(sourceMessages
+        .filter(m => m.id && (m.role === "user" || isCustomTurnInputHistoryMessage(m)))
+        .map(m => [m.id, m.timestamp]));
       // annotateOriginMessages 会把 origin custom 条目从数组里摘掉、把 origin/displayText
       // 并进其后第一条 user 消息。下面的主展示循环大量以 sourceIndex 回查
       // sourceMessages[sourceIndex]（nextImmediateDisplayableAssistantIndex、
@@ -1559,7 +1563,7 @@ export function createSessionsRoute(engine, hub = null) {
           const currentIndex = displayIdx;
           displayIdx += 1;
           if (currentIndex >= pageBounds.startIdx && currentIndex < pageBounds.endIdx) {
-            const { text, thinking, toolUses } = extractTextContent(m.content, { stripThink: true });
+            const { text, thinking, toolUses } = extractTextContent(m.content, { stripThink: true, includeCommentary: includesCompatibleResponseText(m) });
             const content = sanitizeVisibleContent(text);
             const projectedToolUses = toolUses.map((toolUse) => {
               const outcome = toolUse.id ? toolOutcomesByCallId.get(toolUse.id) : null;
@@ -1575,6 +1579,7 @@ export function createSessionsRoute(engine, hub = null) {
               role: "assistant",
               content,
               ...(turnInputEntryId ? { turnInputEntryId, turnInputVisible } : {}),
+              ...(turnInputEntryId ? { turnStartedAt: inputTimestampById.get(turnInputEntryId) } : {}),
               ...(contentHasThinkingBlock(m.content, { stripThink: true }) ? { thinking } : {}),
               toolCalls: projectedToolUses.length ? projectedToolUses : undefined,
               ...(m.timestamp ? { timestamp: m.timestamp } : {}),

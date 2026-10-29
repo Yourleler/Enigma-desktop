@@ -91,7 +91,7 @@ export function ModelPolicyDialog({close}:{close:()=>void}) {
   const modelOptions=models.map(model=>({value:key(model),label:model.name||model.id,group:model.provider}));
   const busy=saving||loading;
   return <SurfaceModal onClose={close}><div className="enigma-modal-backdrop">
-    <section className={`enigma-modal enigma-surface-card ${styles.dialog}`} role="dialog" aria-modal="true" aria-label="模型分工">
+    <section className={`enigma-modal enigma-surface-card ${styles.dialog}`} role="dialog" data-glass-frame="sheet" data-glass-controls="" aria-modal="true" aria-label="模型分工">
       <header><h2>模型分工</h2><button type="button" onClick={close} aria-label="关闭模型分工">关闭</button></header>
       <div className={styles.body}>
         <p>选择任务的执行方式，再为每个角色指定模型。当前运行中的请求会先完成，调整从下一次模型请求生效。</p>

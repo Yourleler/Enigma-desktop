@@ -15,6 +15,9 @@ import {
   readFileForPreviewWithVersion,
 } from './preview-file-content';
 import { showError } from './ui-helpers';
+import { openMediaPreview } from './media-preview';
+import { useStore } from '../stores';
+import { selectDeskFiles, selectSessionFiles } from '../stores/selectors/file-refs';
 
 export { PREVIEWABLE_EXTS, BINARY_PREVIEW_TYPES, readFileForPreview };
 
@@ -89,6 +92,14 @@ export async function openFilePreview(
 
     // Media 类型（image / svg / video）分流到 MediaViewer，不经过 Preview 面板。
     const mediaKind = inferKindByExt(normalizedExt);
+    if ((isMediaKind(mediaKind) && context?.origin === 'desk') || mediaKind === 'audio') {
+      const files = context?.origin === 'session' ? selectSessionFiles(useStore.getState(), context.sessionPath || '') : selectDeskFiles(useStore.getState());
+      const registered = files.find(file => context?.fileId && (file.fileId === context.fileId || file.legacyFileIds?.includes(context.fileId)))
+        || files.find(file => file.path === filePath || file.legacyFilePaths?.includes(filePath));
+      openMediaPreview(registered || {id: `file-${filePath}`, source: context?.origin === 'session' ? 'session-attachment' : 'desk',
+        name: fileName, path: filePath, ext: normalizedExt, kind: mediaKind, fileId: context?.fileId});
+      return;
+    }
     if (isMediaKind(mediaKind)) {
       openMediaViewerFromContext({
         ext: normalizedExt,

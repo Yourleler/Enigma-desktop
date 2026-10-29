@@ -59,6 +59,9 @@ const CUA_CLICK_TOOL_RELATIVE_PATH = path.join(
   "Tools",
   "ClickTool.swift",
 );
+const CUA_SCROLL_TOOL_RELATIVE_PATH = path.join('checkouts', 'cua', 'libs', 'cua-driver', 'Sources', 'CuaDriverServer', 'Tools', 'ScrollTool.swift');
+const CUA_PRESS_KEY_RELATIVE_PATH = path.join('checkouts', 'cua', 'libs', 'cua-driver', 'Sources', 'CuaDriverServer', 'Tools', 'PressKeyTool.swift');
+const CUA_FOCUS_ENFORCER_RELATIVE_PATH = path.join('checkouts', 'cua', 'libs', 'cua-driver', 'Sources', 'CuaDriverCore', 'Focus', 'SyntheticAppFocusEnforcer.swift');
 
 const CUA_AX_PATCH_SENTINEL = "cuaDriverAXMessagingTimeoutSeconds";
 const CUA_CLICK_PATCH_SENTINEL = '"show_default_ui": "AXShowDefaultUI"';
@@ -369,6 +372,46 @@ export function patchCuaDriverClickToolSource(source) {
   return patched;
 }
 
+export function patchCuaDriverVisibleRowsSource(source) {
+  if (source.includes('enigmaVisibleRowsResult')) return source;
+  return replaceRequired(source,
+    '        let result = AXUIElementCopyAttributeValue(element, "AXChildren" as CFString, &value)',
+    `        let role = attributeString(element, "AXRole") ?? ""
+        let enigmaVisibleRowsResult = (role == "AXTable" || role == "AXOutline")
+            ? AXUIElementCopyAttributeValue(element, "AXVisibleRows" as CFString, &value)
+            : AXError.attributeUnsupported
+        let result = enigmaVisibleRowsResult == .success
+            ? enigmaVisibleRowsResult
+            : AXUIElementCopyAttributeValue(element, "AXChildren" as CFString, &value)`,
+    'visible table rows before offscreen rows exhaust the AX budget');
+}
+
+export function patchCuaDriverScrollToolSource(source) {
+  if (source.includes('enigmaScrollPageControl')) return source;
+  const old = `                    let enigmaPageAction = ["up": "AXScrollUpByPage", "down": "AXScrollDownByPage", "left": "AXScrollLeftByPage", "right": "AXScrollRightByPage"][direction]
+                    if let action = enigmaPageAction, AXInput.advertisedActionNames(of: element).contains(action) {
+                        for _ in 0..<amount { try AXInput.performAction(action, on: element) }
+                        return CallTool.Result(content: [.text(text: "Scrolled the observed region with its native page action. Verify the new visible content.", annotations: nil, _meta: nil)])
+                    }
+`;
+  const next = `
+                    let enigmaPageAction = ["up": "AXScrollUpByPage", "down": "AXScrollDownByPage", "left": "AXScrollLeftByPage", "right": "AXScrollRightByPage"][direction]
+                    let orientation = (direction == "left" || direction == "right") ? "AXHorizontalOrientation" : "AXVerticalOrientation"
+                    let bar = AXInput.children(of: element).first { AXInput.stringAttribute("AXRole", of: $0) == "AXScrollBar" && AXInput.stringAttribute("AXOrientation", of: $0) == orientation }
+                    let pageRole = (direction == "down" || direction == "right") ? "AXIncrementPage" : "AXDecrementPage"
+                    let enigmaScrollPageControl = bar.flatMap { AXInput.children(of: $0).first { AXInput.stringAttribute("AXSubrole", of: $0) == pageRole } }
+                    if let action = enigmaPageAction, AXInput.advertisedActionNames(of: element).contains(action) || enigmaScrollPageControl != nil {
+                        for _ in 0..<amount {
+                            do { try AXInput.performAction(action, on: element) }
+                            catch { guard let page = enigmaScrollPageControl else { throw error }; try AXInput.performAction("AXPress", on: page) }
+                        }
+                        return CallTool.Result(content: [.text(text: "Scrolled the observed region with its native page action. Verify the new visible content.", annotations: nil, _meta: nil)])
+                    }
+`;
+  if (source.includes('enigmaPageAction')) return replaceRequired(source, old, next, 'native scrollbar fallback');
+  return replaceRequired(source, '                if let element = focusedElement {\n', '                if let element = focusedElement {\n' + next, 'native scroll action before keyboard focus fallback');
+}
+
 export function applyCuaDriverSourcePatches({ scratchPath } = {}) {
   const appStatePath = path.join(scratchPath, CUA_APP_STATE_RELATIVE_PATH);
   if (!fs.existsSync(appStatePath)) {
@@ -378,10 +421,28 @@ export function applyCuaDriverSourcePatches({ scratchPath } = {}) {
   if (!fs.existsSync(clickToolPath)) {
     throw new Error(`[computer-use-helper] Cua ClickTool.swift not found at ${clickToolPath}`);
   }
+  const scrollToolPath = path.join(scratchPath, CUA_SCROLL_TOOL_RELATIVE_PATH);
+  if (!fs.existsSync(scrollToolPath)) throw new Error('Cua ScrollTool.swift is missing');
 
   let patchedAny = false;
+  const focusPath = path.join(scratchPath, CUA_FOCUS_ENFORCER_RELATIVE_PATH);
+  const focus = fs.readFileSync(focusPath, 'utf8');
+  if (!focus.includes('// Enigma: redundant focus writes')) {
+    const patched = replaceRequired(focus,
+      '    private func writeBool(_ element: AXUIElement, _ attribute: String, _ value: Bool) {\n',
+      '    private func writeBool(_ element: AXUIElement, _ attribute: String, _ value: Bool) {\n        // Enigma: redundant focus writes reset text selections in AppKit.\n        if readBool(element, attribute) == value { return }\n', 'preserve selection on unchanged focus');
+    fs.chmodSync(focusPath,0o644);fs.writeFileSync(focusPath,patched);patchedAny=true;
+  }
+  const keyPath=path.join(scratchPath,CUA_PRESS_KEY_RELATIVE_PATH);
+  const keySource=fs.readFileSync(keyPath,'utf8');
+  if(!keySource.includes('// Enigma: preserve an already-focused selection')) {
+    const patched=replaceRequired(keySource,
+      '                        try? AXInput.setAttribute(\n                            "AXFocused",\n                            on: element,\n                            value: kCFBooleanTrue as CFTypeRef\n                        )',
+      '                        // Enigma: preserve an already-focused selection.\n                        if AXInput.boolAttribute("AXFocused", of: element) != true {\n                            try? AXInput.setAttribute("AXFocused", on: element, value: kCFBooleanTrue as CFTypeRef)\n                        }', 'avoid key focus reset');
+    fs.chmodSync(keyPath,0o644);fs.writeFileSync(keyPath,patched);patchedAny=true;
+  }
   const appStateSource = fs.readFileSync(appStatePath, "utf8");
-  const patchedAppState = patchCuaDriverAppStateSource(appStateSource);
+  const patchedAppState = patchCuaDriverVisibleRowsSource(patchCuaDriverAppStateSource(appStateSource));
   if (patchedAppState !== appStateSource) {
     fs.chmodSync(appStatePath, 0o644);
     fs.writeFileSync(appStatePath, patchedAppState);
@@ -395,6 +456,15 @@ export function applyCuaDriverSourcePatches({ scratchPath } = {}) {
     fs.chmodSync(clickToolPath, 0o644);
     fs.writeFileSync(clickToolPath, patchedClickTool);
     console.log("[computer-use-helper] patched Cua ClickTool for AXShowDefaultUI row actions");
+    patchedAny = true;
+  }
+
+  const scrollSource = fs.readFileSync(scrollToolPath, 'utf8');
+  const patchedScroll = patchCuaDriverScrollToolSource(scrollSource);
+  if (patchedScroll !== scrollSource) {
+    fs.chmodSync(scrollToolPath, 0o644);
+    fs.writeFileSync(scrollToolPath, patchedScroll);
+    console.log('[computer-use-helper] enabled advertised native scroll actions');
     patchedAny = true;
   }
 

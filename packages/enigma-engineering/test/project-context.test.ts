@@ -5,6 +5,49 @@ import test from 'node:test';
 import { fixture } from './fixtures.js';
 import { ProjectContext } from '../src/project-context.js';
 
+test('search retries concurrent refresh/removal and does not expose revoked or mixed-version results', async () => {
+  const { root, workspace } = await fixture();
+  try {
+    const store = new ProjectContext(workspace);
+    await writeFile(join(root, 'library', 'reference.md'), 'design source');
+    const removed = await store.add({ title: 'design file', source: { kind: 'file', repo: 'library', file: 'reference.md' } });
+    const changed = await store.add({ title: 'design note', source: { kind: 'note', author: 'user' }, content: 'before revision' });
+    const privateItem = await store.add({ title: 'design private', task: 'other-task', source: { kind: 'note', author: 'user' }, content: 'not visible here' });
+    const path = workspace.path.bind(workspace); let raced = false;
+    workspace.path = async (...args) => {
+      const result = await path(...args);
+      if (!raced && args[1] === 'reference.md') {
+        raced = true;
+        await store.remove(removed.id);
+        await store.refresh(changed.id, {}, 'after revision');
+      }
+      return result;
+    };
+    const found = await store.search('design');
+    assert(raced); assert.deepEqual(found.items.map(item => item.id), [changed.id]);
+    assert.equal(found.items[0]?.revision, 2);
+    assert(!found.items.some(item => item.id === privateItem.id));
+    await assert.rejects(store.read(removed.id), /removed/);
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
+test('context assembly retains the selected revision when an imported resource refreshes during search', async () => {
+  const { root, workspace } = await fixture();
+  try {
+    const store = new ProjectContext(workspace), resource = await store.add({ title: '协议设计', source: { kind: 'imported', uri: 'https://example.com/design' }, content: '原版协议：data.text' });
+    const search = store.search.bind(store);
+    store.search = async (...args) => {
+      const selected = await search(...args);
+      await store.refresh(resource.id, {}, '新版协议：data.value');
+      return selected;
+    };
+    const context = await store.materialize('协议');
+    assert.equal(context.items[0]?.revision, 1); assert.match(context.items[0]?.content || '', /data.text/);
+    assert.equal((await store.read(resource.id)).resource.revision, 2);
+    await store.remove(resource.id); await assert.rejects(store.read(resource.id, {}, 1), /removed/);
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
 test('project materials retain source versions, Chinese recall and explicit reference roles', async () => {
   const { root, workspace } = await fixture();
   try {

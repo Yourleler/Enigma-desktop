@@ -13,9 +13,11 @@ import { createMemoryExtension } from './pi-memory.js';
 import { createObserverExtension } from './pi-observer.js';
 import handoffExtension from './pi-handoff.js';
 import reviewExtension from './pi-review.js';
-import { redact } from './storage.js';
+import { redact, hash } from './storage.js';
+import { hasWorkbenchGoal,operationVerificationResult } from './operation-history.js';
 import { skillPaths } from './skill-discovery.js';
 import { getSupportedThinkingLevels } from '@earendil-works/pi-ai/compat';
+import {emitActivity,measured} from './telemetry.js';
 export interface ChatRecord {
     id: string;
     title: string;
@@ -396,6 +398,9 @@ export class WorkbenchSession {
         return { chat: this.chat, notices };
     }
     protected operationRequestText(title: string, request: unknown) { return '工作台操作请求：' + JSON.stringify(this.safe({ title, request })); }
+    async confirmOperation(title: string, message: string, signal: AbortSignal) {
+        return await this.dialog({kind:'confirm',title,message},{signal}) === true;
+    }
     async perform(title: string, action: (signal: AbortSignal) => Promise<unknown>, request?: unknown) {
         if (!this.snapshot().idle)
             throw new Error('请等待或取消当前运行后再操作。');
@@ -404,17 +409,22 @@ export class WorkbenchSession {
         const controller = new AbortController(), operation: NonNullable<WorkbenchSession['operation']> = { id: randomUUID(), title, state: 'running' };
         this.operationAbort = controller;
         this.operation = operation;
+        emitActivity({kind:'start',stage:'run',id:operation.id,detail:title},this.options.workspace.activity);
         this.emit('run_start', {});
         const work = (async () => {
             try {
                 if (request !== undefined) {
-                    this.runtime.session.sessionManager.appendMessage({ role: 'user', content: [{ type: 'text', text: this.operationRequestText(title, request) }], timestamp: Date.now() });
+                    const text=this.operationRequestText(title,request);
+                    const entry=this.runtime.session.sessionManager.appendMessage({ role: 'user', content: [{ type: 'text', text }], timestamp: Date.now() });
+                    if(typeof (request as any)?.action==='string')this.runtime.session.sessionManager.appendCustomEntry('enigma.workbench-request',{
+                      entry,sourceHash:hash(text),operation:operation.id,action:(request as any).action,title,goal:hasWorkbenchGoal((request as any).args),
+                    });
                     this.runtime.session.refreshContext();
                     this.chat.started = true;
                     await this.options.persist(this.chat);
                 }
                 controller.signal.throwIfAborted();
-                const result = await action(controller.signal);
+                const result = await measured('workbench',{detail:title},()=>action(controller.signal),this.options.workspace.activity);
                 operation.result = this.safe(result);
                 operation.state = controller.signal.aborted ? 'cancelled' : 'completed';
                 const value = result as {
@@ -434,7 +444,10 @@ export class WorkbenchSession {
             }
             try {
                 const summary = JSON.stringify(this.safe(operation));
-                this.runtime.session.sessionManager.appendCustomMessageEntry('enigma.workbench-operation', summary.slice(0, 20000), false, { operation: operation.id, title, state: operation.state });
+                const checked=operationVerificationResult(operation.result);
+                const verificationAttempt=['verify','recipe-run'].includes((request as any)?.action)||!!(checked&&Array.isArray(checked.results)&&typeof checked.evidence==='string');
+                this.runtime.session.sessionManager.appendCustomMessageEntry('enigma.workbench-operation', summary.slice(0, 20000), false, { operation: operation.id, title, state: operation.state, outcome:operation.outcome,
+                  ...(verificationAttempt?{verificationAttempt:true,verificationEvidence:typeof checked?.evidence==='string'?checked.evidence:undefined}:{}) });
                 this.runtime.session.refreshContext();
             }
             catch (error) {
@@ -442,6 +455,7 @@ export class WorkbenchSession {
                 operation.error = '操作记录未完整保存：' + redact(String(error), this.options.workspace.secrets);
             }
             finally {
+                emitActivity({kind:'end',stage:'run',id:operation.id,status:operation.state==='cancelled'?'aborted':['failed','unknown'].includes(operation.state)?'error':'completed',detail:title},this.options.workspace.activity);
                 this.inputRunning = false;
                 this.operationAbort = undefined;
                 this.inflight = undefined;

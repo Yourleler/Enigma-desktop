@@ -80,6 +80,8 @@ export function SecurityTab() {
     ? isWindows || readConfigBoolean(settingsConfig, cfg => cfg.sandbox_network, true)
     : undefined;
   const sandboxNetworkDisabled = sandboxEnabled !== true || isWindows;
+  const localServers=readConfigBoolean(settingsConfig,cfg=>cfg.engineering_local_servers,false);
+  const chinese=(settingsConfig?.locale||window.i18n?.locale||'zh').startsWith('zh');
   const fileBackupEnabled = readConfigBoolean(settingsConfig, cfg => cfg.file_backup?.enabled, false);
   const fileBackup = settingsConfig?.file_backup || { enabled: fileBackupEnabled, retention_days: 1, max_file_size_kb: 1024 };
 
@@ -103,6 +105,7 @@ export function SecurityTab() {
     await autoSaveConfig({ sandbox_network: on }, { silent: true });
     await loadSettingsConfig();
   }, []);
+  const handleLocalServersToggle=useCallback(async(on:boolean)=>{await autoSaveConfig({engineering_local_servers:on},{silent:true});await loadSettingsConfig();},[]);
 
   const handleBackupToggle = useCallback(async (on: boolean) => {
     const current = useSettingsStore.getState().settingsConfig?.file_backup || {};
@@ -202,6 +205,7 @@ export function SecurityTab() {
             />
           }
         />
+        {(platformName==='darwin'||platformName==='web')&&<SettingsRow label={chinese?'工程开发服务器':'Engineering development servers'} hint={chinese?'默认关闭，仅用于 Mac 工程命令。允许工程检查启动 HTTP 等服务器；监听地址由项目决定，绑定所有地址可能被局域网访问。仅为可信项目开启。':'Off by default; applies to engineering commands on Mac. Allows checks to start servers. Project bind settings determine whether other devices can connect; enable only for trusted projects.'} control={<Toggle ariaLabel={chinese?'工程开发服务器':'Engineering development servers'} title={chinese?'显式允许工程检查启动服务器，默认关闭':'Explicitly allow engineering server processes; off by default'} on={localServers} onChange={handleLocalServersToggle} disabled={sandboxEnabled!==true||sandboxNetworkEnabled!==true}/>}/>}
         {sandboxEnabled === false && (
           <SettingsSection.Warning>
             {t('settings.security.sandboxWarning')}

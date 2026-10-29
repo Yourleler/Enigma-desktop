@@ -8,6 +8,7 @@ import type { ThinkingLevel } from '../../stores/model-slice';
 import type { Model } from '../../types';
 import type { SessionModel } from '../../stores/chat-types';
 import styles from './InputArea.module.css';
+import {AppIcon} from '../../ui/app-icons';
 
 interface Props {
   t: (key: string) => string;
@@ -50,16 +51,13 @@ export const InputControlBar = memo(function InputControlBar(props: Props) {
 
   return (
     <div className={styles['input-bottom-bar']}>
-      <div className={styles['input-actions']}>
+      <div className={styles['input-actions']} data-glass-controls="">
         <button
           className={styles['attach-btn']}
           title={t('input.attachFiles')}
           onClick={onAttach}
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
+          <AppIcon name="add" size={18}/>
         </button>
         <button
           ref={slashBtnRef}
@@ -67,14 +65,12 @@ export const InputControlBar = memo(function InputControlBar(props: Props) {
           title={t('input.commandMenu')}
           onClick={onSlashToggle}
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 2L14 10L22 12L14 14L12 22L10 14L2 12L10 10Z" />
-          </svg>
+          <AppIcon name="command" size={18}/>
         </button>
         <PlanModeButton mode={permissionMode} onChange={onPermissionModeChange} locked={planModeLocked} />
         <ContextRing />
       </div>
-      <div className={styles['input-controls']}>
+      <div className={styles['input-controls']} data-glass-controls="">
         {showThinking ? (
           <div className={styles['model-split-control']}>
             <ThinkingLevelButton level={thinkingLevel} onChange={onThinkingChange} availableLevels={availableThinkingLevels} />

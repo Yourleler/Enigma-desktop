@@ -251,7 +251,7 @@ export function BridgePanel() {
 
   return (
     <div className={`${fp.floatingPanel} ${fp.bridgePanelWide}`} id="bridgePanel">
-      <div className={fp.floatingPanelInner}>
+      <div className={fp.floatingPanelInner} data-glass-frame="panel">
         <div className={fp.floatingPanelHeader}>
           {agents.length > 1 && (
             <div className={fp.bridgeAgentRow} ref={agentMenuRef}>

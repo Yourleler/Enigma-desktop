@@ -32,3 +32,11 @@ export function getAssistantTextPhase(block: unknown): AssistantTextPhase | null
 export function isAssistantCommentaryTextBlock(block: unknown): boolean {
   return getAssistantTextPhase(block) === "commentary";
 }
+
+/** Compatible Responses providers can mark the sole public answer as
+ * commentary. Their text was already streamed to the user and must survive
+ * history/search reloads. Codex's distinct commentary lane keeps its policy. */
+export function includesCompatibleResponseText(message: any): boolean {
+  return message?.provider !== 'openai-codex'
+    && ['openai-responses','azure-openai-responses'].includes(message?.api);
+}

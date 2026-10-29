@@ -24,11 +24,11 @@ function tr(key: string, fallback: string): string {
 
 export function LinkContextMenu({ state, onClose }: LinkContextMenuProps) {
   const target = resolveLinkTarget(state.href, state.context);
-  const isFile = target.kind === 'file';
+  const isFile = target.kind === 'file' || target.kind === 'workbench';
   const copyLabel = isFile
     ? tr('link.copyPath', '复制路径')
     : tr('link.copyLink', '复制链接');
-  const openLabel = isFile
+  const openLabel = target.kind === 'workbench' ? '在工作区打开' : isFile
     ? tr('desk.openWithDefault', '用默认应用打开')
     : tr('link.openInSystemBrowser', '用系统浏览器打开');
 

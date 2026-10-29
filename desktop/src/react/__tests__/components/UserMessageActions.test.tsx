@@ -104,7 +104,7 @@ describe('UserMessage Codex-style actions', () => {
     const footer = screen.getByTestId('user-message-footer-actions');
     expect(footer).toHaveAttribute('data-message-actions');
     const ordered = Array.from(footer.children).map(child => (
-      child.textContent?.trim() || child.getAttribute('title') || ''
+      child.tagName === 'TIME' ? child.querySelector('span')?.textContent : child.textContent?.trim() || child.getAttribute('title') || ''
     ));
 
     expect(ordered).toEqual([

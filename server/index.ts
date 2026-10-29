@@ -1256,6 +1256,9 @@ export async function startServer(root: CompositionRoot = {}): Promise<void> {
       log.error(`写入 server-info.json 失败: ${e.message}`);
     }
 
+    // Restore only previously authorized Enigma sidecars after this server's
+    // authenticated identity exists; no saved budget or scope is expanded.
+    if(process.env.ENIGMA_DESKTOP_PRODUCT==='1')void import('../plugins/enigma/host.ts').then(module=>module.engineeringHost(engine).restoreSidecars()).catch(error=>log.error(`Enigma sidecar restoration failed: ${error.message}`));
     // 通知就绪（server-info.json 已在上方写入，无需额外动作）
     log.log(`ready: port=${actualPort}`);
 

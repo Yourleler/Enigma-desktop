@@ -11,7 +11,7 @@ import { parseLeadingInternalMoodBlock } from '../../../../shared/internal-mood-
 
 // ── Mood 解析 ──
 
-const TAG_TO_YUAN: Record<string, string> = { mood: 'hanako', pulse: 'butter', reflect: 'ming' };
+const TAG_TO_YUAN: Record<string, string> = { mood: 'hanako', pulse: 'butter', reflect: 'ming', work:'enigma' };
 // 当前块头是静态的；`at <时间戳>` 是历史 JSONL 里的旧块头，剥离端必须继续认
 const SESSION_REMINDER_HEADER_RE = /^\[hana_reminder(?: at \d{4}-\d{2}-\d{2} \d{2}:\d{2})?\]\r?\n/;
 const SESSION_REMINDER_END = '[/hana_reminder]';
@@ -29,6 +29,7 @@ function stripLeadingSessionReminder(content: string): string {
 }
 
 export function moodLabel(yuan: string): string {
+  if(yuan==='enigma')return '◈ 工作说明';
   return moodLabelForYuan(yuan);
 }
 

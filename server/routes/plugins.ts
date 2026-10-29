@@ -777,6 +777,7 @@ export function createPluginsRoute(engine: any) {
       activationEvents: Array.isArray(p.activationEvents) ? p.activationEvents : [],
       activationError: p.activationError || null,
       source: p.source || "community", trust: p.trust || "restricted",
+      userToggleable: p.source === 'builtin' && p.manifest?.userToggleable === true,
       contributions: p.contributions,
       error: p.error || null,
     }));
@@ -1153,12 +1154,15 @@ export function createPluginsRoute(engine: any) {
     const pm = engine.pluginManager;
     if (!pm) return c.json({ error: "Plugin manager not available" }, 500);
     const id = c.req.param("id");
-    const { enabled } = await c.req.json();
+    const { enabled, source: requestedSource } = await c.req.json();
+    if (typeof enabled !== 'boolean') return c.json({ error: 'enabled must be a boolean' }, 400);
+    if (requestedSource !== undefined && !['builtin', 'community'].includes(requestedSource)) return c.json({ error: 'Unsupported plugin source' }, 400);
+    const source = requestedSource === 'builtin' ? 'builtin' : 'community';
     try {
       if (enabled) {
-        await pm.enablePlugin(id, { source: "community" });
+        await pm.enablePlugin(id, { source });
       } else {
-        await pm.disablePlugin(id, { source: "community" });
+        await pm.disablePlugin(id, { source });
       }
       await engine.syncPluginExtensions();
       return c.json({ ok: true });

@@ -1,6 +1,8 @@
 import { EngineeringPanel } from '../../engineering/Engineering';
 import { useEngineering } from '../../engineering/state';
-import { useCallback, type CSSProperties } from 'react';
+import { useId } from 'react';
+import { GlassSelection } from '../../ui/GlassSelection';
+import { AppIcon } from '../../ui/app-icons';
 import { useStore } from '../../stores';
 import type { RightWorkspaceTab } from '../../types';
 import { DeskSection } from '../DeskSection';
@@ -35,38 +37,23 @@ function Chevron({ open }: { open: boolean }) {
 
 function JianDrawer() {
   const open = useStore(s => s.jianDrawerOpen);
+  const setOpen = useStore(s => s.setJianDrawerOpen);
   const t = window.t ?? ((p: string) => p);
   const label = t('desk.jianLabel');
-
+  const bodyId = useId();
   return (
     <section className={styles.jianDrawer} data-open={open ? 'true' : 'false'} role="region" aria-label={label}>
-      <div className={styles.jianHeader}>
+      <button className={styles.jianHeader} type="button" aria-expanded={open} aria-controls={bodyId}
+        aria-label={open ? t('rightWorkspace.jian.collapse') : t('rightWorkspace.jian.expand')}
+        onClick={() => setOpen(!open)}>
         <span className={styles.jianTitle}>{label}</span>
-      </div>
-      <div className={styles.jianBody}>
+        <Chevron open={open} />
+      </button>
+      <div id={bodyId} className={styles.jianBody} inert={!open} aria-hidden={!open}>
+        <p className={styles.jianHint}>{t('desk.jianHint')}</p>
         <JianEditor showHeader={false} />
       </div>
     </section>
-  );
-}
-
-function JianFloatingToggle() {
-  const open = useStore(s => s.jianDrawerOpen);
-  const setOpen = useStore(s => s.setJianDrawerOpen);
-  const t = window.t ?? ((p: string) => p);
-  const actionLabel = open ? t('rightWorkspace.jian.collapse') : t('rightWorkspace.jian.expand');
-  const toggle = useCallback(() => setOpen(!open), [open, setOpen]);
-
-  return (
-    <button
-      className={styles.jianToggle}
-      type="button"
-      aria-label={actionLabel}
-      aria-expanded={open}
-      onClick={toggle}
-    >
-      <Chevron open={open} />
-    </button>
   );
 }
 
@@ -90,12 +77,16 @@ function WorkspaceHeader() {
   return (
     <>
       <div className={styles.workspaceHeader}>
-        <div className={styles.workspaceTitle} title={titlePath}>
-          {title}
+        <div className={styles.workspaceTitle} title={titlePath}><AppIcon name="project" size={18}/><span>{title}</span></div>
+        <div className={styles.workspaceHeaderTools}>
+          {titlePath && <details className={styles.workspacePath}>
+            <summary>{t('desk.fullPath')}</summary>
+            <code>{titlePath}</code>
+          </details>}
+          <DeskCwdSkillsButton inline />
         </div>
-        <DeskCwdSkillsButton />
       </div>
-      <DeskCwdSkillsPanel />
+      <DeskCwdSkillsPanel inline />
     </>
   );
 }
@@ -121,14 +112,9 @@ export function RightWorkspacePanel({ compact = false }: { compact?: boolean }) 
   const activeTab = BASE_TABS.some(tab => tab.id === rightWorkspaceTab)
     ? rightWorkspaceTab
     : 'workspace';
-  const activeTabIndex = Math.max(0, BASE_TABS.findIndex(tab => tab.id === activeTab));
-  const tabsStyle = {
-    '--right-workspace-active-tab-index': `${activeTabIndex}`,
-    '--right-workspace-tab-slider-offset': activeTabIndex === 0 ? '0px' : 'calc(100% + 2px)',
-  } as CSSProperties;
 
   return (
-    <div className={styles.shell}>
+    <div className={`${styles.shell} enigma-workspace-shell`} data-liquid="sidebar">
       {!compact && <SessionTodoCard />}
       <div
         className={`universal-card ${styles.workspaceCard}`}
@@ -136,8 +122,8 @@ export function RightWorkspacePanel({ compact = false }: { compact?: boolean }) 
         data-jian-open={jianDrawerOpen ? 'true' : 'false'}
       >
         <WorkspaceHeader />
-        <div className={styles.tabs} role="tablist" aria-label={t('rightWorkspace.tabs.label')} style={tabsStyle}>
-          <div className={styles.tabSlider} data-right-workspace-tab-slider aria-hidden="true" />
+        <div className={styles.tabs} role="tablist" aria-label={t('rightWorkspace.tabs.label')} data-glass-segmented="">
+          <GlassSelection selection={activeTab}/>
           {BASE_TABS.map(tab => {
             const selected = activeTab === tab.id;
             return (
@@ -158,7 +144,6 @@ export function RightWorkspacePanel({ compact = false }: { compact?: boolean }) 
           <TabContent activeTab={activeTab} />
         </div>
         <JianDrawer />
-        <JianFloatingToggle />
       </div>
       {!compact && (
         <>

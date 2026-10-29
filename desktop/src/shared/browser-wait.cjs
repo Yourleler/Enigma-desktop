@@ -1,4 +1,5 @@
 const DEFAULT_TIMEOUT_MS = 5000;
+const {browserDialog,withDialogAwareness}=require('./browser-dialogs.cjs');
 const DEFAULT_POLL_MS = 100;
 const DEFAULT_QUIET_MS = 500;
 const DEFAULT_STABLE_SAMPLES = 3;
@@ -63,6 +64,19 @@ function isReadyForState(sample, state) {
   return sample.readyState !== "loading";
 }
 
+async function readWaitScript(webContents,code,signal,timeoutMs) {
+  signal?.throwIfAborted();
+  if(browserDialog(webContents)){const error=new Error('BROWSER_DIALOG_OPEN');error.code='BROWSER_DIALOG_OPEN';throw error;}
+  let timer,abort;
+  try{return await Promise.race([
+    withDialogAwareness(webContents,typeof webContents.executeJavaScriptInIsolatedWorld==='function'?webContents.executeJavaScriptInIsolatedWorld(812,[{code}]):webContents.executeJavaScript(code)),
+    new Promise((_,reject)=>{
+      timer=setTimeout(()=>reject(new Error('PAGE_UNRESPONSIVE: page observation timed out.')),Math.max(1,timeoutMs));
+      abort=()=>reject(signal.reason||new Error('Browser wait cancelled'));signal?.addEventListener('abort',abort,{once:true});
+    }),
+  ]);}finally{clearTimeout(timer);if(abort)signal?.removeEventListener('abort',abort);}
+}
+
 async function waitForBrowserState(webContents, opts = {}) {
   const state = normalizeWaitState(opts.state);
   const timeoutMs = Math.max(0, Number(opts.timeoutMs ?? DEFAULT_TIMEOUT_MS) || DEFAULT_TIMEOUT_MS);
@@ -70,13 +84,30 @@ async function waitForBrowserState(webContents, opts = {}) {
   const quietMs = Math.max(0, Number(opts.quietMs ?? DEFAULT_QUIET_MS) || DEFAULT_QUIET_MS);
   const stableSamples = Math.max(1, Number(opts.stableSamples ?? DEFAULT_STABLE_SAMPLES) || DEFAULT_STABLE_SAMPLES);
   const started = Date.now();
+  const minWaitMs = Math.max(0, Number(opts.minWaitMs) || 0);
   let last = null;
   let lastSignature = "";
   let sameCount = 0;
 
   while (Date.now() - started <= timeoutMs) {
-    last = await webContents.executeJavaScript(READ_BROWSER_STATE_SCRIPT);
-    const ready = isReadyForState(last, state);
+    opts.signal?.throwIfAborted();
+    if(browserDialog(webContents))return buildDiagnostics({state,started,last,timedOut:false,reason:'dialog-open'});
+    try {
+      last = await readWaitScript(webContents,READ_BROWSER_STATE_SCRIPT,opts.signal,timeoutMs-(Date.now()-started));
+    } catch (error) {
+      opts.signal?.throwIfAborted();
+      if(error.code==='BROWSER_DIALOG_OPEN')return buildDiagnostics({state,started,last,timedOut:false,reason:'dialog-open'});
+      if (!/context.*destroy|navigation|loading/i.test(error?.message || '')) throw error;
+      last = null;
+    }
+    opts.signal?.throwIfAborted();
+    if (opts.text && last) {
+      const code = `((document.body && document.body.innerText) || '').includes(${JSON.stringify(String(opts.text))})`;
+      try {last.textMatched=await readWaitScript(webContents,code,opts.signal,timeoutMs-(Date.now()-started));}
+      catch(error){if(error.code==='BROWSER_DIALOG_OPEN')return buildDiagnostics({state,started,last,timedOut:false,reason:'dialog-open'});throw error;}
+    }
+    const ready = isReadyForState(last, state) && Date.now() - started >= minWaitMs && (!opts.text || last?.textMatched === true);
+    if (ready && opts.text) return buildDiagnostics({state,started,last,timedOut:false,reason:'text-observed'});
     if (ready && (state === "domcontentloaded" || state === "load")) {
       return buildDiagnostics({ state, started, last, timedOut: false, reason: "state-ready" });
     }
@@ -90,7 +121,13 @@ async function waitForBrowserState(webContents, opts = {}) {
       }
     }
 
-    await new Promise((resolve) => setTimeout(resolve, pollMs));
+    await new Promise((resolve, reject) => {
+      const finish = () => { opts.signal?.removeEventListener('abort', abort); resolve(); };
+      const timer = setTimeout(finish, pollMs);
+      const abort = () => { clearTimeout(timer); opts.signal?.removeEventListener('abort', abort); reject(opts.signal.reason || new Error('Browser operation cancelled')); };
+      opts.signal?.addEventListener('abort', abort, {once:true});
+      if (opts.signal?.aborted) abort();
+    });
   }
 
   return buildDiagnostics({ state, started, last, timedOut: true, reason: "timeout" });
@@ -107,6 +144,7 @@ function buildDiagnostics({ state, started, last, timedOut, reason }) {
     lastTextLength: Number(last?.textLength || 0),
     lastBodyHeight: Number(last?.bodyHeight || 0),
     lastMutationAgeMs: Number(last?.mutationAgeMs || 0),
+    textMatched: last?.textMatched === true,
   };
 }
 

@@ -40,6 +40,13 @@ function putWorkspaceImageOnDrag(dataTransfer: DataTransfer) {
 }
 
 describe('PreviewRenderer HTML isolation', () => {
+  it('sanitizes converted office documents before placing them in the application DOM', () => {
+    const {container}=render(<PreviewRenderer previewItem={{id:'word',type:'docx',title:'new.docx',content:'<p>正文</p><a href="javascript:alert(1)">链接</a><img src="x" onerror="alert(1)"><script>alert(1)</script>'}}/>);
+    expect(container.textContent).toContain('正文');
+    expect(container.querySelector('script')).toBeNull();
+    expect(container.querySelector('a')?.getAttribute('href')).toBeNull();
+    expect(container.querySelector('[onerror]')).toBeNull();
+  });
   const htmlContent = '<script src="https://cdn.tailwindcss.com"></script><div class="text-red-500">Hello</div>';
   const previewItem: PreviewItem = {
     id: 'html-demo',
@@ -85,6 +92,7 @@ describe('PreviewRenderer HTML isolation', () => {
     const { container } = render(<PreviewRenderer previewItem={previewItem} />);
 
     expect(mocks.hanaFetch).toHaveBeenCalledWith('/api/preview/html', {
+      throwOnHttpError: false,
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -180,7 +188,8 @@ describe('PreviewRenderer HTML isolation', () => {
     expect(legacyNativePreviewApi.closeHtmlPreview).not.toHaveBeenCalled();
   });
 
-  it('renders PDF previews from a source URL without requiring base64 content', () => {
+  it('checks PDF readability then renders a source URL without requiring base64 content', async () => {
+    mocks.hanaFetch.mockResolvedValueOnce(new Response(JSON.stringify({pages:2}),{status:200}));
     const pdfItem = {
       id: 'pdf-demo',
       type: 'pdf',
@@ -192,10 +201,12 @@ describe('PreviewRenderer HTML isolation', () => {
     } as PreviewItem & { sourceUrl: string };
 
     const { container } = render(<PreviewRenderer previewItem={pdfItem} />);
+    await waitFor(()=>expect(container.querySelector('.preview-pdf')).toBeTruthy());
     const iframe = container.querySelector<HTMLIFrameElement>('.preview-pdf');
 
     expect(iframe).toBeTruthy();
-    expect(iframe).toHaveAttribute('src', 'file:///tmp/Report.PDF#toolbar=0&navpanes=0');
+    expect(iframe).toHaveAttribute('src', 'file:///tmp/Report.PDF#toolbar=1&navpanes=0');
+    expect(iframe).toHaveAttribute('title', 'Report.PDF');
   });
 
   it('applies a workspace image dropped on the markdown cover', async () => {

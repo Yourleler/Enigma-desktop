@@ -788,7 +788,7 @@ export class HanaEngine {
   /** Publish against an explicit native session; never borrow UI focus. */
   getEngineeringExecutionPreferences() {
     const prefs = this._readPreferences();
-    return { sandbox: prefs.sandbox !== false, network: prefs.sandbox_network !== false };
+    return { sandbox: prefs.sandbox !== false, network: prefs.sandbox_network !== false,localServers:prefs.engineering_local_servers===true };
   }
 
   emitBoundSessionEvent(event, sessionPath) {
@@ -1994,6 +1994,8 @@ export class HanaEngine {
   setSessionThinkingLevel(sessionPath, level) { return this._sessionCoord.setSessionThinkingLevel(sessionPath, level); }
   getSandbox() { return this._prefs.getSandbox(); }
   setSandbox(v) { this._prefs.setSandbox(v); }
+  getEngineeringLocalServers(){return this._prefs.getEngineeringLocalServers();}
+  setEngineeringLocalServers(v){this._prefs.setEngineeringLocalServers(v);}
   startWin32LegacySandboxMaintenance() {
     this._win32LegacySandboxCleanupQueue?.enqueueProfileCleanup?.();
   }

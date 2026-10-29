@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { inspectPortableHandoff } from './differential-handoff.js';
 import { spawn } from 'node:child_process';
 import { access, mkdir } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
@@ -14,7 +15,7 @@ import { compareSolutions, previewRestore } from './solutions.js';
 import { readObserverStatus } from './observer.js';
 import { MemoryStore, type MemoryInput } from './memory.js';
 import { discoverContracts } from './contracts.js';
-import { exportHandoff, inspectHandoff, type HandoffInput } from './handoff.js';
+import { exportHandoff, type HandoffInput } from './handoff.js';
 import { askObserver } from './observer-questions.js';
 import { ReadingStore } from './reading-store.js';
 
@@ -150,9 +151,9 @@ async function main(args: string[]): Promise<void> {
     } else throw new Error('Expected repos add, list, or depends');
   } else if (command === 'handoff') {
     if (rest[0] === 'export' && rest[1] && rest[2]) print(await exportHandoff(workspace, rest[1], JSON.parse(rest[2]) as HandoffInput));
-    else if (rest[0] === 'inspect' && rest[1]) print(await inspectHandoff(workspace, rest[1]));
+    else if (rest[0] === 'inspect' && rest[1]) print(await inspectPortableHandoff(workspace, rest[1]));
     else if (rest[0] === 'import-pi' && rest[1]) {
-      const inspection = await inspectHandoff(workspace, rest[1]);
+      const inspection = await inspectPortableHandoff(workspace, rest[1]);
       print(await (await import('./pi-session.js')).importPiHandoff(workspace, inspection));
     } else if (rest[0] === 'codex' && rest[1]) {
       const controller = new AbortController(), stop = () => controller.abort(); process.once('SIGINT', stop);

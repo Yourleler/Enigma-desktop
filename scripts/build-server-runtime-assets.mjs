@@ -6,12 +6,10 @@ export const SERVER_RUNTIME_ASSET_FILES = [
   "Butter.png",
   "Ming.png",
   "Kong.png",
+  "enigma/avatar.png",
 ];
 
-export const SERVER_RUNTIME_ASSET_DIRS = [
-  "character-cards",
-  "cover-gallery",
-];
+export const SERVER_RUNTIME_ASSET_DIRS = ["character-cards", "cover-gallery"];
 
 export const SERVER_RUNTIME_RENDERER_REQUIRED_FILES = [
   "mobile.html",
@@ -41,31 +39,60 @@ export function copyServerRuntimeAssets({ rootDir, outDir, fsImpl = fs }) {
 
   for (const fileName of SERVER_RUNTIME_ASSET_FILES) {
     const sourcePath = path.join(sourceAssetsDir, fileName);
-    assertRequiredAssetExists(fsImpl, sourcePath, path.join("desktop", "src", "assets", fileName));
-    fsImpl.copyFileSync(sourcePath, path.join(targetAssetsDir, fileName));
+    assertRequiredAssetExists(
+      fsImpl,
+      sourcePath,
+      path.join("desktop", "src", "assets", fileName),
+    );
+    const targetPath = path.join(targetAssetsDir, fileName);
+    // 资产可含子目录（如 enigma/avatar.png），逐段建目录
+    fsImpl.mkdirSync(path.dirname(targetPath), { recursive: true });
+    fsImpl.copyFileSync(sourcePath, targetPath);
     copied.push(path.join("desktop", "src", "assets", fileName));
   }
 
   for (const dirName of SERVER_RUNTIME_ASSET_DIRS) {
     const sourcePath = path.join(sourceAssetsDir, dirName);
-    assertRequiredAssetExists(fsImpl, sourcePath, path.join("desktop", "src", "assets", dirName));
-    fsImpl.cpSync(sourcePath, path.join(targetAssetsDir, dirName), { recursive: true });
+    assertRequiredAssetExists(
+      fsImpl,
+      sourcePath,
+      path.join("desktop", "src", "assets", dirName),
+    );
+    fsImpl.cpSync(sourcePath, path.join(targetAssetsDir, dirName), {
+      recursive: true,
+    });
     copied.push(path.join("desktop", "src", "assets", dirName) + path.sep);
   }
 
   const sourceRendererDir = path.join(rootDir, "desktop", "dist-renderer");
   const targetRendererDir = path.join(outDir, "desktop", "dist-renderer");
-  assertRequiredAssetExists(fsImpl, sourceRendererDir, path.join("desktop", "dist-renderer"));
+  assertRequiredAssetExists(
+    fsImpl,
+    sourceRendererDir,
+    path.join("desktop", "dist-renderer"),
+  );
   for (const fileName of SERVER_RUNTIME_RENDERER_REQUIRED_FILES) {
-    assertRequiredAssetExists(fsImpl, path.join(sourceRendererDir, fileName), path.join("desktop", "dist-renderer", fileName));
+    assertRequiredAssetExists(
+      fsImpl,
+      path.join(sourceRendererDir, fileName),
+      path.join("desktop", "dist-renderer", fileName),
+    );
   }
   for (const dirName of ["assets", "lib", "themes", "locales"]) {
-    assertRequiredAssetExists(fsImpl, path.join(sourceRendererDir, dirName), path.join("desktop", "dist-renderer", dirName));
+    assertRequiredAssetExists(
+      fsImpl,
+      path.join(sourceRendererDir, dirName),
+      path.join("desktop", "dist-renderer", dirName),
+    );
   }
   fsImpl.rmSync(targetRendererDir, { recursive: true, force: true });
   fsImpl.mkdirSync(path.dirname(targetRendererDir), { recursive: true });
   for (const fileName of SERVER_RUNTIME_RENDERER_REQUIRED_FILES) {
-    copyRuntimeFile(fsImpl, path.join(sourceRendererDir, fileName), path.join(targetRendererDir, fileName));
+    copyRuntimeFile(
+      fsImpl,
+      path.join(sourceRendererDir, fileName),
+      path.join(targetRendererDir, fileName),
+    );
   }
   copyMobileRuntimeAssets({
     fsImpl,
@@ -83,7 +110,12 @@ export function copyServerRuntimeAssets({ rootDir, outDir, fsImpl = fs }) {
   return copied;
 }
 
-function copyMobileRuntimeAssets({ fsImpl, sourceAssetsDir, targetAssetsDir, mobileHtmlPath }) {
+function copyMobileRuntimeAssets({
+  fsImpl,
+  sourceAssetsDir,
+  targetAssetsDir,
+  mobileHtmlPath,
+}) {
   const assetNames = new Set();
   const queued = [];
 
@@ -107,7 +139,10 @@ function copyMobileRuntimeAssets({ fsImpl, sourceAssetsDir, targetAssetsDir, mob
     if (!/\.(?:js|css)$/i.test(name)) addAsset(name);
   }
 
-  collectAssetReferences(fsImpl.readFileSync(mobileHtmlPath, "utf-8"), addAsset);
+  collectAssetReferences(
+    fsImpl.readFileSync(mobileHtmlPath, "utf-8"),
+    addAsset,
+  );
 
   while (queued.length) {
     const name = queued.shift();
@@ -118,22 +153,31 @@ function copyMobileRuntimeAssets({ fsImpl, sourceAssetsDir, targetAssetsDir, mob
   }
 
   for (const name of assetNames) {
-    copyRuntimeFile(fsImpl, path.join(sourceAssetsDir, name), path.join(targetAssetsDir, name));
+    copyRuntimeFile(
+      fsImpl,
+      path.join(sourceAssetsDir, name),
+      path.join(targetAssetsDir, name),
+    );
   }
 }
 
 function collectAssetReferences(content, addAsset) {
   const assetUrlPattern = /(?:href|src)=["'](?:\.\/)?assets\/([^"'?#]+)/g;
   const relativePattern = /["']\.\/([^"'?#]+)["']/g;
-  const cssUrlPattern = /url\(\s*["']?(?!data:|https?:|\/)([^"')?#]+)["']?\s*\)/g;
+  const cssUrlPattern =
+    /url\(\s*["']?(?!data:|https?:|\/)([^"')?#]+)["']?\s*\)/g;
   for (const pattern of [assetUrlPattern, relativePattern, cssUrlPattern]) {
     for (const match of content.matchAll(pattern)) addAsset(match[1]);
   }
 }
 
 function normalizeAssetName(value) {
-  const normalized = String(value || "").replace(/\\/g, "/").replace(/^\.\//, "").replace(/^assets\//, "");
-  if (!normalized || normalized.startsWith("/") || normalized.includes("\0")) return null;
+  const normalized = String(value || "")
+    .replace(/\\/g, "/")
+    .replace(/^\.\//, "")
+    .replace(/^assets\//, "");
+  if (!normalized || normalized.startsWith("/") || normalized.includes("\0"))
+    return null;
   const parts = normalized.split("/");
   if (parts.some((part) => !part || part === "." || part === "..")) return null;
   if (shouldExcludeRuntimeFile(normalized)) return null;
@@ -141,7 +185,9 @@ function normalizeAssetName(value) {
 }
 
 function shouldExcludeRuntimeFile(relativePath) {
-  return relativePath.split(/[\\/]/).some((part) => part === ".DS_Store" || part.endsWith(".map"));
+  return relativePath
+    .split(/[\\/]/)
+    .some((part) => part === ".DS_Store" || part.endsWith(".map"));
 }
 
 function copyRuntimeFile(fsImpl, sourcePath, targetPath) {

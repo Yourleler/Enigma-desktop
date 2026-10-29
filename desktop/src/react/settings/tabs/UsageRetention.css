@@ -1,0 +1,7 @@
+.usage-retention { display:grid; gap:10px; padding:14px 16px; font-size:13px; }
+.usage-retention-control { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.usage-retention-control input { width:150px; padding:9px 12px; border:1px solid var(--border); background:var(--bg-card); color:var(--text); border-radius:10px; font:inherit; }
+.usage-retention-control button { border:1px solid var(--border); border-radius:10px; padding:8px 16px; background:var(--accent); color:var(--eg-on-accent); cursor:pointer; font:inherit; }
+.usage-retention-control button:disabled { opacity:.5; cursor:default; }
+.usage-retention p { margin:0; line-height:1.65; color:var(--text-muted); }
+.usage-retention [aria-invalid="true"] { border-color:var(--danger); }

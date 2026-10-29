@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { atomicWriteSync } from "../../shared/safe-fs.ts";
 import { normalizeLlmUsage } from "./usage-observer.ts";
+import { DEFAULT_USAGE_RETENTION, MAX_USAGE_RETENTION, isUsageRetention } from '../../shared/usage-retention.ts';
 import {
   attributionSessionId,
   attributionSessionPath,
@@ -9,20 +10,22 @@ import {
   normalizeUsageContext,
 } from "./usage-context.ts";
 
-const DEFAULT_MAX_ENTRIES = 5_000;
 const STORAGE_VERSION = 1;
 
 export function createUsageLedger({
-  maxEntries = DEFAULT_MAX_ENTRIES,
+  maxEntries = null,
   eventBus = null,
   logger = null,
   now = () => Date.now(),
   requestIdFactory = null,
   storagePath = null,
 } = {}) {
-  const entries = loadPersistedEntries({ storagePath, maxEntries, logger, now });
+  const saved = loadPersistedEntries({ storagePath, logger, now });
+  maxEntries = maxEntries ?? saved.maxEntries ?? DEFAULT_USAGE_RETENTION;
+  let entries = saved.entries.slice(-maxEntries);
   const pending = new Map();
   let sequence = 0;
+  let revision = 0;
 
   const nextRequestId = () => {
     if (typeof requestIdFactory === "function") return String(requestIdFactory());
@@ -36,8 +39,9 @@ export function createUsageLedger({
       warn(logger, `unknown usage context for LLM request ${normalizedEntry.requestId}`);
     }
     entries.push(normalizedEntry);
-    while (entries.length > maxEntries) entries.shift();
-    persistEntries({ storagePath, entries, logger });
+    if (entries.length > maxEntries) entries.splice(0, entries.length - maxEntries);
+    revision += 1;
+    persistEntries({ storagePath, entries, maxEntries, logger });
     emit(eventBus, normalizedEntry);
     return normalizedEntry;
   };
@@ -136,39 +140,61 @@ export function createUsageLedger({
       };
     },
 
+    coverage() {
+      return {retained:entries.length,maximum:maxEntries,atCapacity:entries.length>=maxEntries,
+        oldestAt:entries[0]?.startedAt||null,newestAt:entries.at(-1)?.endedAt||null};
+    },
+
+    revision() { return revision; },
+
+    setMaxEntries(value: number) {
+      if (!isUsageRetention(value)) throw new RangeError('保留条数须为 100 至 100000 的整数');
+      const retained = entries.slice(-value);
+      // Commit the file first. A failed preference save must not discard memory.
+      persistEntries({ storagePath, entries: retained, maxEntries: value, logger, strict: true });
+      entries = retained;
+      maxEntries = value;
+      revision += 1;
+      return this.coverage();
+    },
+
     clear() {
       entries.length = 0;
       pending.clear();
-      persistEntries({ storagePath, entries, logger });
+      revision += 1;
+      persistEntries({ storagePath, entries, maxEntries, logger });
     },
   };
 }
 
-function loadPersistedEntries({ storagePath, maxEntries, logger, now }) {
-  if (!storagePath) return [];
+function loadPersistedEntries({ storagePath, logger, now }) {
+  const empty = { entries: [], maxEntries: null };
+  if (!storagePath) return empty;
   try {
     const raw = JSON.parse(fs.readFileSync(storagePath, "utf-8"));
     const rawEntries = Array.isArray(raw?.entries) ? raw.entries : [];
-    return rawEntries
+    const entries = rawEntries
       .map(entry => normalizeEntry(entry, now))
-      .filter(entry => entry.requestId)
-      .slice(-maxEntries);
+      .filter(entry => entry.requestId);
+    return { entries, maxEntries: Number.isInteger(raw.maxEntries) && raw.maxEntries > 0 && raw.maxEntries <= MAX_USAGE_RETENTION ? raw.maxEntries : null };
   } catch (err) {
-    if (err?.code === "ENOENT") return [];
+    if (err?.code === "ENOENT") return empty;
     warn(logger, `failed to read usage ledger storage ${storagePath}: ${err.message}`);
-    return [];
+    return empty;
   }
 }
 
-function persistEntries({ storagePath, entries, logger }) {
+function persistEntries({ storagePath, entries, maxEntries, logger, strict = false }) {
   if (!storagePath) return;
   try {
     fs.mkdirSync(path.dirname(storagePath), { recursive: true });
     atomicWriteSync(storagePath, `${JSON.stringify({
       version: STORAGE_VERSION,
+      maxEntries,
       entries,
     }, null, 2)}\n`);
   } catch (err) {
+    if (strict) throw err;
     warn(logger, `failed to write usage ledger storage ${storagePath}: ${err.message}`);
   }
 }

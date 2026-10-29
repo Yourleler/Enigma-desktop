@@ -1,46 +1,88 @@
-import { Hono } from 'hono';
-import { safeJson } from '../hono-helpers.ts';
-import { createRequestContext } from '../http/boundary.ts';
-import { engineeringHost } from '../../plugins/enigma/host.ts';
-import { Artifacts } from 'enigma-next';
-import fs from 'node:fs/promises';
+import { Hono } from "hono";
+import { safeJson } from "../hono-helpers.ts";
+import { createRequestContext } from "../http/boundary.ts";
+import { engineeringHost } from "../../plugins/enigma/host.ts";
+import { Artifacts, DocumentationStore,BackgroundRuns,TaskEvents,ServiceManager,artifactPresentation,artifactContentDisposition,readStoredReviewSource } from "enigma-next";
+import fs from "node:fs/promises";
+import { withNativeEngineeringExecution } from "../../plugins/enigma/execution-policy.ts";
+import { isReadOnlyPermissionMode } from '../../core/session-permission-mode.ts';
+import { hash } from 'enigma-next/storage';
 
 /** Thin authenticated transport for the system engineering plugin. */
 export function createEnigmaRoute(engine: any) {
-  const route = new Hono(), host = engineeringHost(engine);
+  const route = new Hono(),
+    host = engineeringHost(engine);
   async function session(c: any, write = false, body: any = {}) {
-    const ref = engine.resolveSessionRef({ sessionId: body.sessionId || c.req.query('sessionId'), sessionPath: body.sessionPath || c.req.query('sessionPath') });
+    const ref = engine.resolveSessionRef({
+      sessionId: body.sessionId || c.req.query("sessionId"),
+      sessionPath: body.sessionPath || c.req.query("sessionPath"),
+    });
     const sessionPath = ref.sessionPath || ref.currentLocator?.path;
-    if (!sessionPath) throw new Error('Native session locator is unavailable');
+    if (!sessionPath) throw new Error("Native session locator is unavailable");
     const context = createRequestContext(c, engine);
-    const allowed = context.authorize?.(write ? 'sessions.write' : 'sessions.read', { kind: 'session', sessionId: ref.sessionId, sessionPath });
+    const allowed = context.authorize?.(
+      write ? "sessions.write" : "sessions.read",
+      { kind: "session", sessionId: ref.sessionId, sessionPath },
+    );
     if (!allowed?.allowed) {
-      const error: any = new Error('Insufficient access to this conversation'); error.status = 403; throw error;
+      const error: any = new Error("Insufficient access to this conversation");
+      error.status = 403;
+      throw error;
     }
-    if (ref.lifecycle && ref.lifecycle !== 'active') { const error: any = new Error('Conversation is not active'); error.status = 409; throw error; }
+    if (ref.lifecycle && ref.lifecycle !== "active") {
+      const error: any = new Error("Conversation is not active");
+      error.status = 409;
+      throw error;
+    }
     return sessionPath;
   }
-  const fail = (c: any, error: any) => c.json({ error: error.message || String(error) }, error.status || 400);
-  route.get('/enigma', async c => {
-    try { return c.json(await host.snapshot(await session(c))); } catch (error) { return fail(c, error); }
-  });
-  route.post('/enigma/connect', async c => {
+  const fail = (c: any, error: any) =>
+    c.json({ error: error.message || String(error) }, error.status || 400);
+  route.get("/enigma", async (c) => {
     try {
-      const body = await safeJson(c), sessionPath = await session(c, true, body);
-      if (typeof body.root !== 'string' || !body.root.trim()) throw new Error('Select an engineering workspace directory');
-      return c.json(await host.connect(sessionPath, body.root, body.memory === true));
-    } catch (error) { return fail(c, error); }
+      return c.json(await host.snapshot(await session(c)));
+    } catch (error) {
+      return fail(c, error);
+    }
   });
-  route.post('/enigma/model', async c => {
+  route.post("/enigma/connect", async (c) => {
     try {
-      const body = await safeJson(c), sessionPath = await session(c, true, body);
-      if (typeof body.provider !== 'string' || typeof body.modelId !== 'string') throw new Error('Select a configured provider and model');
-      return c.json(await host.requestModel(sessionPath, body.provider, body.modelId));
-    } catch (error) { return fail(c, error); }
+      const body = await safeJson(c),
+        sessionPath = await session(c, true, body);
+      if (typeof body.root !== "string" || !body.root.trim())
+        throw new Error("Select an engineering workspace directory");
+      return c.json(
+        await host.connect(sessionPath, body.root, body.memory === true),
+      );
+    } catch (error) {
+      return fail(c, error);
+    }
   });
-  route.post('/enigma/model-policy', async c => {
-    try { const body=await safeJson(c);return c.json(await host.configureModelPolicy(await session(c,true,body),body.policy)); }
-    catch(error){return fail(c,error);}
+  route.post("/enigma/model", async (c) => {
+    try {
+      const body = await safeJson(c),
+        sessionPath = await session(c, true, body);
+      if (typeof body.provider !== "string" || typeof body.modelId !== "string")
+        throw new Error("Select a configured provider and model");
+      return c.json(
+        await host.requestModel(sessionPath, body.provider, body.modelId),
+      );
+    } catch (error) {
+      return fail(c, error);
+    }
+  });
+  route.post("/enigma/model-policy", async (c) => {
+    try {
+      const body = await safeJson(c);
+      return c.json(
+        await host.configureModelPolicy(
+          await session(c, true, body),
+          body.policy,
+        ),
+      );
+    } catch (error) {
+      return fail(c, error);
+    }
   });
   route.get("/enigma/model-policy-default", async (c) => {
     try {
@@ -50,51 +92,297 @@ export function createEnigmaRoute(engine: any) {
       return c.json({ policy: await host.getDefaultModelPolicy() });
     } catch (error) { return fail(c, error); }
   });
-  route.post('/enigma/model-policy-default', async c => {
+  route.post("/enigma/model-policy-default", async (c) => {
     try {
-      const context=createRequestContext(c,engine),allowed=context.authorize?.('settings.write');
-      if(!allowed?.allowed)return c.json({error:'Settings permission required'},403);
-      const body=await safeJson(c);return c.json(await host.configureDefaultModelPolicy(body.policy));
+      const context = createRequestContext(c, engine),
+        allowed = context.authorize?.("settings.write");
+      if (!allowed?.allowed)
+        return c.json({ error: "Settings permission required" }, 403);
+      const body = await safeJson(c);
+      return c.json(await host.configureDefaultModelPolicy(body.policy));
+    } catch (error) {
+      return fail(c, error);
+    }
+  });
+  route.post("/enigma/conductor/new", async (c) => {
+    try {
+      const body = await safeJson(c);
+      return c.json(
+        await host.createConductor(await session(c, true, body), body.limits),
+      );
+    } catch (error) {
+      return fail(c, error);
+    }
+  });
+  route.post("/enigma/conductor/report", async (c) => {
+    try {
+      const body = await safeJson(c);
+      return c.json(
+        await host.conductor(await session(c, true, body)).report(),
+      );
+    } catch (error) {
+      return fail(c, error);
+    }
+  });
+  route.post('/enigma/conductor/cancel',async c=>{
+    try{const body=await safeJson(c),sessionPath=await session(c,true,body);if(typeof body.id!=='string'||!body.id.trim())return c.json({error:'请选择当前管家创建的工作对话'},400);return c.json(await host.conductor(sessionPath).cancel(body.id));}
+    catch(error){return fail(c,error);}
+  });
+  route.post('/enigma/runtime/cancel',async c=>{
+    try{
+      const body=await safeJson(c),sessionPath=await session(c,true,body);
+      if(!['service','background','wait'].includes(body.kind)||typeof body.id!=='string'||!body.id.trim())return c.json({error:'请选择已登记的服务、后台任务或等待'},400);
+      const controller=await host.controller(sessionPath),workspace=controller.options.workspace,task=controller.chat.session;
+      const result=body.kind==='service'?await new ServiceManager(workspace).stop(body.id):body.kind==='background'?await new BackgroundRuns(workspace).cancel(body.id,task):await new TaskEvents(workspace).cancel(body.id,task);
+      host.publish(sessionPath,'refresh',{event:'settled'});return c.json(controller.safeSnapshot(result));
     }catch(error){return fail(c,error);}
   });
-  route.post('/enigma/conductor/new',async c=>{try{const body=await safeJson(c);return c.json(await host.createConductor(await session(c,true,body),body.limits));}catch(error){return fail(c,error);}});
-  route.post('/enigma/conductor/report',async c=>{try{const body=await safeJson(c);return c.json(await host.conductor(await session(c,true,body)).report());}catch(error){return fail(c,error);}});
-  route.post('/enigma/guardian/start',async c=>{try{const body=await safeJson(c);return c.json(await host.guardian.start(await session(c,true,body),body.config));}catch(error){return fail(c,error);}});
-  route.post('/enigma/guardian/stop',async c=>{try{const body=await safeJson(c);return c.json(await host.guardian.stop(await session(c,true,body)));}catch(error){return fail(c,error);}});
-  route.get('/enigma/guardian/status',async c=>{try{return c.json(await host.guardian.status(await session(c)));}catch(error){return fail(c,error);}});
-  route.post('/enigma/guardian/diagnose',async c=>{try{const body=await safeJson(c);return c.json(await host.guardian.diagnose(await session(c,false,body),body.question));}catch(error){return fail(c,error);}});
-  route.post('/enigma/guardian/act',async c=>{try{const body=await safeJson(c);return c.json(await host.guardian.act(await session(c,true,body),body));}catch(error){return fail(c,error);}});
-  route.get('/enigma/data/:group', async c => {
-    try { return c.json(await host.data(await session(c), c.req.param('group'), c.req.query('query') || '')); } catch (error) { return fail(c, error); }
-  });
-  route.post('/enigma/action', async c => {
+  route.post("/enigma/guardian/start", async (c) => {
     try {
-      const body = await safeJson(c), sessionPath = await session(c, true, body);
-      if (typeof body.action !== 'string' || !body.args || typeof body.args !== 'object' || Array.isArray(body.args)) throw new Error('Invalid engineering operation');
+      const body = await safeJson(c);
+      return c.json(
+        await host.guardian.start(await session(c, true, body), body.config),
+      );
+    } catch (error) {
+      return fail(c, error);
+    }
+  });
+  route.post("/enigma/guardian/stop", async (c) => {
+    try {
+      const body = await safeJson(c);
+      return c.json(await host.guardian.stop(await session(c, true, body)));
+    } catch (error) {
+      return fail(c, error);
+    }
+  });
+  route.get("/enigma/guardian/status", async (c) => {
+    try {
+      return c.json(await host.guardian.status(await session(c)));
+    } catch (error) {
+      return fail(c, error);
+    }
+  });
+  route.post("/enigma/guardian/diagnose", async (c) => {
+    try {
+      const body = await safeJson(c);
+      return c.json(
+        await host.guardian.diagnose(
+          await session(c, false, body),
+          body.question,
+        ),
+      );
+    } catch (error) {
+      return fail(c, error);
+    }
+  });
+  route.post("/enigma/guardian/act", async (c) => {
+    try {
+      const body = await safeJson(c);
+      return c.json(
+        await host.guardian.act(await session(c, true, body), body),
+      );
+    } catch (error) {
+      return fail(c, error);
+    }
+  });
+  route.get("/enigma/memory-dream", async (c) => {
+    try {
+      return c.json(await host.memoryWork.list(await session(c)));
+    } catch (error) {
+      return fail(c, error);
+    }
+  });
+  route.post("/enigma/memory-dream", async (c) => {
+    try {
+      const body = await safeJson(c);
+      return c.json(
+        await host.memoryWork.start(
+          await session(c, true, body),
+          body.sources,
+          body.maxRequests,
+        ),
+      );
+    } catch (error) {
+      return fail(c, error);
+    }
+  });
+  route.post("/enigma/memory-dream/control", async (c) => {
+    try {
+      const body = await safeJson(c);
+      if (!["pause", "cancel", "resume", "publish", "recover"].includes(body.action))
+        throw new Error("Select a memory work action");
+      return c.json(
+        await host.memoryWork.action(
+          await session(c, true, body),
+          body.id,
+          body.action,
+        ),
+      );
+    } catch (error) {
+      return fail(c, error);
+    }
+  });
+  route.post("/enigma/memory-feedback", async (c) => {
+    try {
+      const body = await safeJson(c);
+      return c.json(
+        await host.memoryWork.feedback(
+          await session(c, true, body),
+          body.id,
+          body.verdict,
+        ),
+      );
+    } catch (error) {
+      return fail(c, error);
+    }
+  });
+  route.post("/enigma/document/register", async (c) => {
+    try {
+      const body = await safeJson(c),sessionPath=await session(c,true,body);
+      if(isReadOnlyPermissionMode(engine.getSessionPermissionMode(sessionPath)))return c.json({error:'当前对话只读，不能登记文档'},403);
+      const controller = await host.controller(sessionPath);
+      return c.json(
+        await new DocumentationStore(controller.options.workspace).register(
+          body.document,
+        ),
+      );
+    } catch (error) {
+      return fail(c, error);
+    }
+  });
+  route.post("/enigma/document/example", async (c) => {
+    try {
+      const body = await safeJson(c),
+        sessionPath = await session(c, true, body),
+        controller = await host.controller(sessionPath),
+        store = new DocumentationStore(controller.options.workspace),
+        document = await store.read(body.id),
+        example = document.record.examples?.find(
+          (item) => item.id === body.example,
+        );
+      if (!example) throw new Error("Select a registered example");
+      if (
+        (await host.confirm(sessionPath, {
+          kind: "confirm",
+          title: "运行文档示例",
+          message: JSON.stringify(example),
+        })) !== true
+      )
+        throw new Error("Document example was not approved");
+      return c.json(
+        await withNativeEngineeringExecution(
+          engine,
+          controller.options.workspace,
+          sessionPath,
+          () => store.runExample(body.id, body.example),
+        ),
+      );
+    } catch (error) {
+      return fail(c, error);
+    }
+  });
+  route.get('/enigma/choices', async c => {
+    try { const sources=(c.req.query('sources')||'').split(',').filter(Boolean);return c.json(await host.choices(await session(c),sources,c.req.query('query')||'')); }
+    catch(error){return fail(c,error);}
+  });
+  route.get("/enigma/data/:group", async (c) => {
+    try {
+      return c.json(
+        await host.data(
+          await session(c),
+          c.req.param("group"),
+          c.req.query("query") || "",
+          {offset:c.req.query('offset')===undefined?undefined:Number(c.req.query('offset'))},
+        ),
+      );
+    } catch (error) {
+      return fail(c, error);
+    }
+  });
+  route.post("/enigma/action", async (c) => {
+    try {
+      const body = await safeJson(c),
+        sessionPath = await session(c, true, body);
+      if (
+        typeof body.action !== "string" ||
+        !body.args ||
+        typeof body.args !== "object" ||
+        Array.isArray(body.args)
+      )
+        throw new Error("Invalid engineering operation");
       return c.json(await host.action(sessionPath, body.action, body.args));
-    } catch (error) { return fail(c, error); }
+    } catch (error) {
+      return fail(c, error);
+    }
   });
-  route.post('/enigma/cancel', async c => {
-    try { const body = await safeJson(c); return c.json(await host.cancel(await session(c, true, body))); } catch (error) { return fail(c, error); }
+  route.post("/enigma/cancel", async (c) => {
+    try {
+      const body = await safeJson(c);
+      return c.json(await host.cancel(await session(c, true, body)));
+    } catch (error) {
+      return fail(c, error);
+    }
   });
-  route.get('/enigma/content', async c => {
-    try { return c.json(await host.content(await session(c), { repo: c.req.query('repo'), file: c.req.query('file'), resource: c.req.query('resource'), artifact: c.req.query('artifact') })); }
-    catch (error) { return fail(c, error); }
+  route.get("/enigma/content", async (c) => {
+    try {
+      return c.json(
+        await host.content(await session(c), {
+          repo: c.req.query("repo"),
+          file: c.req.query("file"),
+          resource: c.req.query("resource"),
+          artifact: c.req.query("artifact"),
+        }),
+      );
+    } catch (error) {
+      return fail(c, error);
+    }
   });
-  route.get('/enigma/files/:repo', async c => {
+  route.get("/enigma/files/:repo", async (c) => {
+    try {
+      const query=(c.req.query('query')||'').trim(),offset=Number(c.req.query('offset')||0),limit=Number(c.req.query('limit')||5000),expected=c.req.query('version');
+      if(query.length>500 || !Number.isInteger(offset) || offset<0 || offset>1_000_000 || !Number.isInteger(limit) || limit<1 || limit>5000 || expected&&!/^[a-f0-9]{64}$/.test(expected))return c.json({error:'请使用有效的文件查询和分页范围。'},400);
+      const controller = await host.controller(await session(c));
+      const files = await controller.options.workspace.files(
+        c.req.param("repo"),
+      );
+      const matched=files.filter(file=>file.toLowerCase().includes(query.toLowerCase())),version=hash(JSON.stringify({repo:c.req.param('repo'),query,files}));
+      if(expected&&expected!==version)return c.json({error:'仓库文件列表已变化，请刷新后重新浏览。'},409);
+      return c.json({
+        repo: c.req.param("repo"),
+        files: matched.slice(offset, offset+limit),
+        truncated: offset+limit<matched.length,
+        totalFiles:files.length,totalMatches:matched.length,offset,limit,version,
+        nextOffset:offset+limit<matched.length?offset+limit:null,
+      });
+    } catch (error) {
+      return fail(c, error);
+    }
+  });
+  route.get('/enigma/review/source',async c=>{
+    try{
+      const controller=await host.controller(await session(c)),review=c.req.query('review'),repo=c.req.query('repo'),file=c.req.query('file'),side=c.req.query('side')||'target';
+      if(!review||!repo||!file||!['baseline','target'].includes(side))return c.json({error:'请选择报告及其中的源码文件。'},400);
+      const start=Number(c.req.query('start')||1),end=Number(c.req.query('end')||start+179);
+      return c.json(await readStoredReviewSource(controller.options.workspace,review,controller.chat.session,repo,file,start,end,side as 'baseline'|'target'));
+    }catch(error){return fail(c,error);}
+  });
+  route.get("/enigma/artifact/:id", async (c) => {
     try {
       const controller = await host.controller(await session(c));
-      const files = await controller.options.workspace.files(c.req.param('repo'));
-      return c.json({ repo: c.req.param('repo'), files: files.slice(0, 5000), truncated: files.length > 5000 });
-    } catch (error) { return fail(c, error); }
-  });
-  route.get('/enigma/artifact/:id', async c => {
-    try {
-      const controller = await host.controller(await session(c));
-      const artifact = await new Artifacts(controller.options.workspace).read(c.req.param('id'), controller.chat.session);
-      return c.body(await fs.readFile(artifact.path), 200, { 'Content-Type': artifact.record.kind === 'screenshot' ? 'image/png' : 'application/octet-stream',
-        'Content-Disposition': `attachment; filename="${artifact.record.id}${artifact.record.extension}"`, 'Cache-Control': 'no-store' });
-    } catch (error) { return fail(c, error); }
+      const artifact = await new Artifacts(controller.options.workspace).read(
+        c.req.param("id"),
+        controller.chat.session,
+      );
+      const bytes = await fs.readFile(artifact.path);
+      return c.body(bytes, 200, {
+        "Content-Type": artifactPresentation(artifact.record, bytes).mediaType,
+        "Content-Disposition": artifactContentDisposition(artifact.record),
+        "X-Content-Type-Options": "nosniff",
+        "Cache-Control": "no-store",
+      });
+    } catch (error) {
+      return fail(c, error);
+    }
   });
   return route;
 }

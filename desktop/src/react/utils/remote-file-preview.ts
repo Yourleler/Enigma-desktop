@@ -21,6 +21,7 @@ import { extOfName, inferKindByExt, isMediaKind } from './file-kind';
 import { openMediaViewerForRef } from './open-media-viewer';
 import { showError } from './ui-helpers';
 import { isWebRuntime } from './platform-runtime';
+import { openMediaPreview } from './media-preview';
 
 export { isWebRuntime };
 
@@ -143,6 +144,7 @@ function remoteContentRefWithVersion(
 
 async function readContentForPreview(contentPath: string, previewType: string): Promise<PreviewContentSnapshot> {
   const res = await hanaFetch(contentPath);
+  if (!res.ok) throw new Error(res.status === 403 ? '文件访问权限已变化，请确认权限后重试' : res.status === 404 ? '文件已移动或不存在，请从工作台重新打开' : `文件加载失败（HTTP ${res.status}），请重试`);
   const fileVersion = fileVersionFromContentHeaders(res.headers);
   let content: string;
   if (BINARY_PREVIEW_TYPES.has(previewType)) {
@@ -173,7 +175,14 @@ async function readRemotePreviewContentWithRetry(
   const retryDelaysMs = options.retryDelaysMs ?? REMOTE_REFRESH_RETRY_DELAYS_MS;
   let lastRead: PreviewContentSnapshot = { content: '' };
   for (let attempt = 0; ; attempt += 1) {
-    const nextRead = await readContentForPreview(appendCacheBustQuery(contentPath, attempt), item.type);
+    if(item.type==='media') {
+      const response=await hanaFetch(contentPath,{method:'HEAD'});
+      return {content:'',fileVersion:fileVersionFromContentHeaders(response.headers)};
+    }
+    const office = item.type === 'docx' || item.type === 'xlsx';
+    const converted = office ? await readOfficePreviewItem(item) : null;
+    const nextRead = converted ? {content:converted.content,fileVersion:converted.fileVersion ?? undefined}
+      : await readContentForPreview(appendCacheBustQuery(contentPath, attempt), item.type);
     const canRetry = attempt < retryDelaysMs.length;
     const shouldRetryUnchanged = options.retryUnchanged && nextRead.content === item.content;
     if (!canRetry || !shouldRetryUnchanged) return nextRead;
@@ -191,6 +200,7 @@ async function openRemoteContentPreview({
   mediaRef,
   mediaContext,
   remoteContentRef,
+  resourceId,
 }: {
   contentPath: string;
   id: string;
@@ -199,14 +209,21 @@ async function openRemoteContentPreview({
   mediaRef?: FileRef;
   mediaContext: { origin: 'desk' | 'session'; sessionPath?: string };
   remoteContentRef?: RemoteWorkbenchContentRef;
+  resourceId?: string;
 }): Promise<void> {
   const mediaKind = inferKindByExt(ext);
-  if (isMediaKind(mediaKind) && mediaRef) {
-    openMediaViewerForRef(mediaRef, mediaContext);
+  if ((isMediaKind(mediaKind) || mediaKind === 'audio') && mediaRef) {
+    if (mediaContext.origin === 'desk' || mediaKind === 'audio') openMediaPreview(mediaRef, remoteContentRef);
+    else openMediaViewerForRef(mediaRef, mediaContext);
     return;
   }
 
   const previewType = PREVIEWABLE_EXTS[ext];
+  if(previewType==='docx'||previewType==='xlsx') {
+    const item: PreviewItem={id,type:previewType,title,ext,content:'',remoteContentRef,contentResourceId:resourceId,storageKind:'remote-content'};
+    openPreview(await readOfficePreviewItem(item));
+    return;
+  }
   if (previewType && previewType !== 'docx' && previewType !== 'xlsx') {
     const read = await readContentForPreview(contentPath, previewType);
     const fileVersion = read.fileVersion;
@@ -220,6 +237,7 @@ async function openRemoteContentPreview({
       storageKind: 'remote-content',
       fileVersion,
       remoteContentRef: remoteContentRefWithVersion(remoteContentRef, fileVersion),
+      contentResourceId: resourceId,
     };
     openPreview(previewItem);
     return;
@@ -234,6 +252,25 @@ async function openRemoteContentPreview({
     storageKind: 'remote-content',
     remoteContentRef,
   });
+}
+
+/** Restore content without activating tabs or changing the user's selection. */
+export async function readRemotePreviewItem(item: PreviewItem): Promise<PreviewItem> {
+  const ref = item.remoteContentRef;
+  if(item.type==='docx'||item.type==='xlsx')return readOfficePreviewItem(item);
+  if (!isRemoteWorkbenchContentRef(ref)&&!item.contentResourceId) return item;
+  const contentPath = isRemoteWorkbenchContentRef(ref)?encodeWorkbenchContentPath(ref):`/api/resources/${encodeURIComponent(item.contentResourceId!)}/content`;
+  if (item.type === 'media' || item.type === 'file-info') return {...item, status: 'available', remoteContentRef: ref?{...ref, contentPath}:undefined};
+  const read = await readContentForPreview(contentPath, item.type);
+  return {...item, content: read.content, status: 'available', fileVersion: read.fileVersion,
+    remoteContentRef: ref?{...ref, contentPath, version: read.fileVersion}:undefined};
+}
+
+async function readOfficePreviewItem(item: PreviewItem): Promise<PreviewItem> {
+  const response=await hanaFetch('/api/preview/office',{throwOnHttpError:false,method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({format:item.type,remoteContentRef:item.remoteContentRef,resourceId:item.contentResourceId})});
+  const data=await response.json();
+  if(!response.ok||typeof data.html!=='string')throw new Error(data.error||'文档预览失败，请重试');
+  return {...item,content:data.html,fileVersion:data.version,status:'available'};
 }
 
 export async function saveRemoteWorkbenchContent(
@@ -314,7 +351,7 @@ export async function openWorkbenchFilePreview(input: WorkbenchPreviewInput): Pr
   const name = input.file.name;
   const connection = resolveServerConnection(useStore.getState());
   const access = resolveWorkbenchFilePreviewAccess(input, { connection }, {
-    preferNativePath: input.preferNativePath,
+    preferNativePath: !isWebRuntime() && input.preferNativePath !== false,
   });
   if (access.mode === 'unsupported') return;
   if (access.mode === 'native-path') {
@@ -326,7 +363,7 @@ export async function openWorkbenchFilePreview(input: WorkbenchPreviewInput): Pr
   }
   const studioId = connection?.studioId || 'default';
   const mediaKind = inferKindByExt(access.ext);
-  const mediaRef: FileRef | undefined = isMediaKind(mediaKind)
+  const mediaRef: FileRef | undefined = (isMediaKind(mediaKind) || mediaKind === 'audio')
     ? {
         id: `workbench:${access.mountId}:${access.subdir}:${name}`,
         kind: mediaKind,
@@ -365,8 +402,9 @@ export async function openMobileWorkbenchPreview(input: WorkbenchPreviewInput): 
 
 export async function openFileRefPreview(file: FileRef, context: FileRefPreviewContext): Promise<void> {
   if (file.status === 'expired') return;
-  if (isMediaKind(file.kind)) {
-    openMediaViewerForRef(file, {
+  if (isMediaKind(file.kind) || file.kind === 'audio') {
+    if (context.origin === 'desk' || file.kind === 'audio') openMediaPreview(file);
+    else openMediaViewerForRef(file, {
       origin: context.origin,
       sessionPath: context.sessionPath,
     });
@@ -374,7 +412,7 @@ export async function openFileRefPreview(file: FileRef, context: FileRefPreviewC
   }
 
   const connection = resolveServerConnection(useStore.getState());
-  const access = resolveFileRefPreviewAccess(file, { connection });
+  const access = resolveFileRefPreviewAccess(file, { connection }, {preferNativePath: !isWebRuntime()});
   if (access.mode === 'native-path') {
     await openFilePreview(access.path, file.name, file.ext || extOfName(file.name) || '', {
       origin: context.origin,
@@ -391,6 +429,7 @@ export async function openFileRefPreview(file: FileRef, context: FileRefPreviewC
     await openRemoteContentPreview({
       contentPath: access.contentPath,
       id: previewId('resource', access.resourceId),
+      resourceId: access.resourceId,
       title: file.name,
       ext: file.ext || extOfName(file.name) || '',
       mediaContext: {

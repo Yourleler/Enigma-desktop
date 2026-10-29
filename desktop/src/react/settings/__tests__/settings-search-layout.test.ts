@@ -38,11 +38,11 @@ describe('settings page width contract', () => {
     expect(header).not.toMatch(/640px|960px/);
   });
 
-  it('keeps every tab on the full derived content track', () => {
+  it('keeps every tab on a bounded, responsive reading track', () => {
     const css = readProjectFile('desktop/src/react/settings/Settings.module.css');
 
     expect(css).toMatch(
-      /\.settings-main\s*>\s*\[data-settings-page\]\s*\{[^}]*width:\s*100%;[^}]*max-width:\s*100%;[^}]*min-width:\s*0;[^}]*overflow-x:\s*hidden;/s,
+      /\.settings-main\s*>\s*\[data-settings-page\]\s*\{[^}]*width:\s*100%;[^}]*max-width:\s*860px;[^}]*min-width:\s*0;[^}]*overflow-x:\s*hidden;/s,
     );
     expect(css).not.toMatch(/settings-main-wide|settings-panel-wide/);
   });

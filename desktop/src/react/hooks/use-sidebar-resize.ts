@@ -15,6 +15,8 @@ export function useSidebarResize(): void {
   const currentTab = useStore(s => s.currentTab);
   const currentChannel = useStore(s => s.currentChannel);
   const previewOpen = useStore(s => s.previewOpen);
+  const sidebarOpen = useStore(s => s.sidebarOpen);
+  const jianOpen = useStore(s => s.jianOpen);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -128,6 +130,15 @@ export function useSidebarResize(): void {
         applyPreviewWidth(clampWidth(savedPreviewWidth, PREVIEW_MIN, getPreviewMaxWidth()));
       }
     }
+
+    // A desktop window can shrink without dragging the panel handle. Keep
+    // the composer usable and reapply the preferred width when space returns.
+    let preferredPreviewWidth = Number(savedPreview) || cssWidth('--preview-panel-width', 580);
+    const fitPreviewToWindow = () => {
+      if (useStore.getState().previewOpen) applyPreviewWidth(clampWidth(preferredPreviewWidth, PREVIEW_MIN, getPreviewMaxWidth()));
+    };
+    fitPreviewToWindow();
+    window.addEventListener('resize', fitPreviewToWindow);
 
     const cleanupFns: Array<() => void> = [];
 
@@ -248,12 +259,13 @@ export function useSidebarResize(): void {
       previewHandle,
       () => previewPanel,
       () => previewPanel?.offsetWidth || 580,
-      (w) => applyPreviewWidth(w),
+      (w) => { preferredPreviewWidth = w; applyPreviewWidth(w); },
       PREVIEW_MIN, getPreviewMaxWidth, 'hana-preview-width', true,
     );
 
     return () => {
+      window.removeEventListener('resize', fitPreviewToWindow);
       for (const cleanup of cleanupFns) cleanup();
     };
-  }, [currentTab, currentChannel, previewOpen]);
+  }, [currentTab, currentChannel, previewOpen, sidebarOpen, jianOpen]);
 }

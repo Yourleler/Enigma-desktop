@@ -47,7 +47,7 @@ function mockConfigurablePlugin(initialValues: Record<string, unknown> = {
 }) {
   let savedValues = initialValues;
   hanaFetch.mockImplementation(async (path: string, options?: RequestInit) => {
-    if (path === '/api/plugins?source=community') return jsonResponse([configurablePlugin]);
+    if (path === '/api/plugins') return jsonResponse([configurablePlugin]);
     if (path === `/api/plugins/${configurablePlugin.id}/config` && options?.method === 'PUT') {
       const body = JSON.parse(String(options.body));
       savedValues = { ...savedValues, ...body.values };
@@ -114,6 +114,30 @@ describe('PluginsTab', () => {
       expect(item.getAttribute('aria-busy')).toBe('true');
       expect(item.disabled).toBe(true);
     }
+  });
+
+  it('manages native interaction plugins independently with source-qualified toggles', async () => {
+    let enabled = true;
+    hanaFetch.mockImplementation(async (path: string, options?: RequestInit) => {
+      if (path === '/api/plugins') return jsonResponse([
+        { id:'browser-control', name:'浏览器操作', status:enabled ? 'loaded' : 'disabled', source:'builtin', trust:'full-access', userToggleable:true, contributions:['native-tools'] },
+        { id:'computer-control', name:'电脑操作', status:'loaded', source:'builtin', trust:'full-access', userToggleable:true, contributions:['native-tools'] },
+        { id:'mandatory', name:'Mandatory core', status:'loaded', source:'builtin', trust:'full-access' },
+      ]);
+      if (path === '/api/plugins/browser-control/enabled') {
+        expect(JSON.parse(String(options?.body))).toEqual({enabled:false, source:'builtin'});
+        enabled = false; return jsonResponse({ok:true});
+      }
+      return jsonResponse([]);
+    });
+    const { PluginsTab } = await import('../PluginsTab'); render(<PluginsTab/>);
+    const browser = await screen.findByRole('switch',{name:'浏览器操作插件'});
+    expect(screen.queryByText('Mandatory core')).toBeNull();
+    expect(screen.queryByTitle('settings.plugins.deleteConfirm')).toBeNull();
+    fireEvent.click(browser);
+    await waitFor(() => expect(browser).toHaveAttribute('aria-checked','false'));
+    expect(screen.getByRole('switch',{name:'电脑操作插件'})).toHaveAttribute('aria-checked','true');
+    await waitFor(() => expect(browser).not.toBeDisabled());
   });
 
   it('preserves Backspace and multiline Enter edits, then saves parsed array and object values', async () => {

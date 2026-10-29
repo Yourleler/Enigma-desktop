@@ -152,6 +152,18 @@ async function makeEngine() {
 }
 
 describe("settings snapshot route", () => {
+  it('removes disabled native plugin tools from the settings snapshot', async () => {
+    const engine = await makeEngine();
+    let browserEnabled = false;
+    Object.assign(engine.pluginManager, {getNativeToolContribution: (name: string) => name === 'browser' && browserEnabled ? {} : null});
+    const app = new Hono();
+    app.route('/api', createSettingsSnapshotRoute(engine));
+    const disabled = await (await app.request('/api/settings/snapshot?agentId=agent-a')).json();
+    expect(disabled.config.availableTools).not.toContain('browser');
+    browserEnabled = true;
+    const enabled = await (await app.request('/api/settings/snapshot?agentId=agent-a')).json();
+    expect(enabled.config.availableTools).toContain('browser');
+  });
   afterEach(async () => {
     if (tmpRoot) {
       await fs.rm(tmpRoot, { recursive: true, force: true });

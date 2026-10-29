@@ -72,10 +72,8 @@ export default defineConfig({
         // Keep external — Electron runtime resolves from node_modules.
         "ws",
 
-        // mammoth / exceljs: large CJS deps with deep dependency trees.
-        // Kept external — electron-builder includes them from node_modules.
-        "mammoth",
-        "exceljs",
+        // Office parsing runs in the server artifact; the shell does not ship
+        // or dynamically require mammoth / exceljs.
       ],
     },
     target: "node24",

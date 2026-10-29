@@ -84,7 +84,7 @@ export function MemberAvatar({ info, className }: { info: MemberInfo; className?
 // ChannelListSidebar — 左侧边栏中的频道列表区块
 // ══════════════════════════════════════════════════════
 
-export function ChannelListSidebar() {
+export function ChannelListSidebar({ showCollapseButton = true }: { showCollapseButton?: boolean } = {}) {
   const { t } = useI18n();
   const channelsEnabled = useStore(s => s.channelsEnabled);
   const setChannelCreateOverlayVisible = useStore(s => s.setChannelCreateOverlayVisible);
@@ -133,11 +133,11 @@ export function ChannelListSidebar() {
               <line x1="5" y1="12" x2="19" y2="12"></line>
             </svg>
           </button>
-          <button className="sidebar-action-btn" title="" onClick={handleCollapse}>
+          {showCollapseButton && <button className="sidebar-action-btn" title={t('sidebar.collapse')} onClick={handleCollapse}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="15 6 9 12 15 18"></polyline>
             </svg>
-          </button>
+          </button>}
         </div>
       </div>
       <div className={styles.channelListWrap}>

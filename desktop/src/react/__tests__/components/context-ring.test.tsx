@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, waitFor } from '@testing-library/react';
+import { act, cleanup, render, waitFor } from '@testing-library/react';
 import { fireEvent, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -35,6 +35,7 @@ describe('ContextRing', () => {
     getWebSocketMock.mockReturnValue({ readyState: WebSocket.OPEN, send: sendMock });
     useStore.setState({
       agentYuan: 'hanako',
+      activeServerConnection:{connectionId:'local',baseUrl:'http://127.0.0.1:3000',token:null},
       currentSessionId: 'sess_a',
       currentSessionPath: '/session/a.jsonl',
       contextTokens: null,
@@ -68,6 +69,11 @@ describe('ContextRing', () => {
       expect(button).toBeTruthy();
       expect((button as HTMLButtonElement).disabled).toBe(true);
     });
+  });
+  it('loads capabilities when the startup connection arrives instead of failing once and staying disabled',async()=>{
+    useStore.setState({activeServerConnection:null,compactingSessions:[]});render(<ContextRing/>);expect(hanaFetchMock).not.toHaveBeenCalled();
+    act(()=>useStore.setState({activeServerConnection:{connectionId:'ready',baseUrl:'http://127.0.0.1:3000',token:null} as any}));
+    await waitFor(()=>expect(hanaFetchMock).toHaveBeenCalledTimes(1));
   });
 
   it('identifies instant simple compaction in the ring tooltip', async () => {

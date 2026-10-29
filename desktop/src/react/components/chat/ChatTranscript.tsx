@@ -246,7 +246,9 @@ const TranscriptRenderItemView = memo(function TranscriptRenderItemView({
         sessionPath={sessionPath}
         agentId={agentId}
         readOnly={readOnly}
-        turnCompletionAssistantIndexes={turnCompletionAssistantIndexes}
+        turnCompletionAssistantIndexes={isStreamingSession && latestAssistantIndex > latestUserIndex
+          ? new Set([...turnCompletionAssistantIndexes].filter(index => index !== latestAssistantIndex))
+          : turnCompletionAssistantIndexes}
         assistantTurnSelectionIdsByCompletionIndex={assistantTurnSelectionIdsByCompletionIndex}
         assistantTurnTargetsByCompletionIndex={assistantTurnTargetsByCompletionIndex}
         assistantTurnRetryMessagesByCompletionIndex={assistantTurnRetryMessagesByCompletionIndex}

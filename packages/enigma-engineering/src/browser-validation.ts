@@ -1,9 +1,11 @@
-import { join } from 'node:path';
+import { join,relative } from 'node:path';
+import {readdir} from 'node:fs/promises';
 import { chromium, type Browser, type BrowserContext } from 'playwright';
 import { ensureDir, hash, id, readJson, safeId, writeJson, redact } from './storage.js';
 import type { Workspace } from './workspace.js';
 import { ServiceManager } from './services.js';
 import type { Observation } from './types.js';
+import {Artifacts} from './artifacts.js';
 
 export type BrowserStep = { action: 'goto'; path: string } | { action: 'click' | 'check' | 'uncheck' | 'wait'; selector: string }
   | { action: 'fill' | 'select'; selector: string; value?: string; env?: string } | { action: 'press'; selector: string; key: string }
@@ -13,6 +15,9 @@ export interface BrowserReport {
   schema: 1; id: string; scenario: string; configuration: string; serviceRun: string; status: 'passed' | 'failed' | 'cancelled' | 'stale';
   steps: { index: number; action: string; status: string; error?: string }[]; errors: string[]; screenshots: string[]; trace?: string; createdAt: string; sourceCurrent: boolean;
   observation: Observation;
+  artifacts?:{id:string;title:string;kind:'screenshot'|'trace'}[];
+  artifactErrors?:string[];
+  scenarioLabel?:string;
 }
 export class BrowserValidation {
   constructor(readonly workspace: Workspace) {}
@@ -40,13 +45,13 @@ export class BrowserValidation {
     });
   }
   async list() { return await this.scenarios(); }
-  async run(scenarioId: string, options: { signal?: AbortSignal } = {}): Promise<BrowserReport> {
+  async run(scenarioId: string, options: { signal?: AbortSignal;task?:string;entry?:string } = {}): Promise<BrowserReport> {
     const scenario = (await this.scenarios()).find(scenario => scenario.id === scenarioId); if (!scenario) throw new Error('Unknown browser scenario');
     const services = new ServiceManager(this.workspace), service = await services.status(scenario.service);
     if (!service.ready || !('url' in service) || !service.url || !('run' in service) || !service.run) throw new Error('Browser scenario requires a ready owned HTTP service');
     const configuration = hash(JSON.stringify(scenario)), observation = await this.workspace.observe(), runId = id('browser');
     const directory = await ensureDir(join(await ensureDir(join(this.workspace.data, 'browser-runs')), runId));
-    const report: BrowserReport = { schema: 1, id: runId, scenario: scenario.id, configuration, serviceRun: service.run, status: 'failed', steps: [], errors: [], screenshots: [], createdAt: new Date().toISOString(), sourceCurrent: true, observation };
+    const report: BrowserReport = { schema: 1, id: runId, scenario: scenario.id,scenarioLabel:scenario.label, configuration, serviceRun: service.run, status: 'failed', steps: [], errors: [], screenshots: [], createdAt: new Date().toISOString(), sourceCurrent: true, observation };
     let browser: Browser | undefined, context: BrowserContext | undefined, tracing = false; const abort = () => { void browser?.close().catch(() => {}); };
     const controller = new AbortController(), timer = setTimeout(() => controller.abort(), scenario.timeoutMs ?? 60_000);
     const signal = options.signal ? AbortSignal.any([options.signal, controller.signal]) : controller.signal;
@@ -100,15 +105,29 @@ export class BrowserValidation {
       const currentScenario = (await this.scenarios()).find(item => item.id === scenario.id), currentService = await services.status(scenario.service);
       if (hash(JSON.stringify(currentScenario)) !== configuration || !('run' in currentService) || currentService.run !== service.run) report.sourceCurrent = false;
       if (report.status === 'passed' && !report.sourceCurrent) report.status = 'stale';
+      if(options.task){
+        const artifacts=new Artifacts(this.workspace);report.artifacts=[];report.artifactErrors=[];
+        for(const [index,file] of report.screenshots.entries())try{const record=await artifacts.add({title:`${scenario.label} · 截图 ${index+1}`,kind:'screenshot',task:options.task,entry:options.entry,runtime:relative(this.workspace.data,file)});report.artifacts.push({id:record.id,title:record.title,kind:'screenshot'});}catch{report.artifactErrors.push('截图成果登记失败，原运行目录中的文件仍保留。');}
+        if(report.trace)try{const record=await artifacts.add({title:`${scenario.label} · 浏览器轨迹`,kind:'trace',task:options.task,entry:options.entry,runtime:relative(this.workspace.data,report.trace)});report.artifacts.push({id:record.id,title:record.title,kind:'trace'});}catch{report.artifactErrors.push('轨迹成果登记失败，原文件仍保留。');}
+      }
       await writeJson(join(directory, 'report.json'), report);
     }
     return report;
   }
-  async read(run: string) {
+  async read(run: string,context?:{observation:Observation;services:Awaited<ReturnType<ServiceManager['list']>>}) {
     const report = await readJson<BrowserReport>(join(this.workspace.data, 'browser-runs', safeId(run), 'report.json'));
-    if (report.schema !== 1 || report.id !== run) throw new Error('Invalid browser report');
-    const scenario = (await this.scenarios()).find(item => item.id === report.scenario), service = scenario ? await new ServiceManager(this.workspace).status(scenario.service) : undefined;
-    return { report, sourceCurrent: JSON.stringify(report.observation) === JSON.stringify(await this.workspace.observe()), configurationCurrent: hash(JSON.stringify(scenario)) === report.configuration, serviceCurrent: !!service && 'run' in service && service.run === report.serviceRun,
+    if (report.schema !== 1 || report.id !== run||!Array.isArray(report.steps)||!Array.isArray(report.errors)||!Array.isArray(report.screenshots)) throw new Error('Invalid browser report');
+    const scenario = (await this.scenarios()).find(item => item.id === report.scenario), service = scenario ? context?context.services.find(item=>item.service.id===scenario.service):await new ServiceManager(this.workspace).status(scenario.service) : undefined;
+    return { report,scenarioLabel:report.scenarioLabel||scenario?.label, sourceCurrent: JSON.stringify(report.observation) === JSON.stringify(context?.observation||await this.workspace.observe()), configurationCurrent: hash(JSON.stringify(scenario)) === report.configuration, serviceCurrent: !!service && 'run' in service && service.run === report.serviceRun,serviceReady:!!service?.ready,
       note: 'Trace/screenshots can include sensitive application data. They stay local and are not published automatically. Passing this scenario is not universal task acceptance.' };
+  }
+  async reports(services?:Awaited<ReturnType<ServiceManager['list']>>) {
+    let names:string[];try{names=await readdir(join(this.workspace.data,'browser-runs'));}catch(error){if((error as NodeJS.ErrnoException).code==='ENOENT')return {items:[],total:0,unavailable:0};throw error;}
+    const records:BrowserReport[]=[];let unavailable=0;
+    for(const name of names)try{const record=await readJson<BrowserReport>(join(this.workspace.data,'browser-runs',safeId(name),'report.json'));if(record.schema!==1||record.id!==name)throw new Error('Invalid browser report');records.push(record);}catch(error){if((error as NodeJS.ErrnoException).code!=='ENOENT')unavailable++;}
+    records.sort((a,b)=>b.createdAt.localeCompare(a.createdAt));if(!records.length)return {items:[],total:0,unavailable};
+    const context={observation:await this.workspace.observe(),services:services||await new ServiceManager(this.workspace).list()},items=[];
+    for(const record of records.slice(0,20))try{items.push(await this.read(record.id,context));}catch{unavailable++;}
+    return {items,total:records.length,unavailable};
   }
 }

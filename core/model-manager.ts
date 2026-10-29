@@ -27,6 +27,7 @@ import { normalizeProviderHeaders, stripCredentialHeaders } from "../shared/prov
 import { syncModels } from "./model-sync.ts";
 import { enrichModelFromKnownMetadata } from "./model-known-enrichment.ts";
 import { lookupKnownProvider } from "../shared/known-models.ts";
+import {ModelCapabilityObservations} from './model-capability-observations.ts';
 import { migrateLegacyApiKeyAuthToProviders } from "./provider-auth-migration.ts";
 import {
   normalizePiSdkThinkingLevel,
@@ -135,12 +136,14 @@ export class ModelManager {
   declare _registeredSdkProviderIds: Set<string>;
   declare executionRouter: any;
   declare providerRegistry: any;
+  capabilityObservations: ModelCapabilityObservations;
   /**
    * @param {object} opts
    * @param {string} opts.hanakoHome - 用户数据根目录
    */
   constructor({ hanakoHome }) {
     this._hanakoHome = hanakoHome;
+    this.capabilityObservations = new ModelCapabilityObservations(hanakoHome);
     this._authStorage = null;
     this._authBackend = null;
     this._modelRegistry = null;
@@ -227,6 +230,7 @@ export class ModelManager {
   /** 刷新可用模型列表，用 Provider Catalog v2 过滤 */
   async refreshAvailable() {
     const allModels = await this._modelRegistry.getAvailable();
+    const capabilityRecords = this.capabilityObservations.read();
     const plans = this.providerRegistry.getChatProjectionPlans();
     const effectiveModelSets = new Map();
     const legacyRuntimeCatalogProviders = new Set();
@@ -247,6 +251,7 @@ export class ModelManager {
     })
       .map(m => applyProviderModelMetadata(m, metadataByModel))
       .map(enrichModelFromKnownMetadata)
+      .map(model=>this.capabilityObservations.apply(model,Date.now(),capabilityRecords))
       .map(m => this._withPersistedModelDefaultThinkingLevel(m));
     return this._availableModels;
   }

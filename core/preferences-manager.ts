@@ -234,6 +234,8 @@ export class PreferencesManager {
   getSandboxNetwork() {
     return this._cache.sandbox_network !== false;
   }
+  getEngineeringLocalServers(){return this._cache.engineering_local_servers===true;}
+  setEngineeringLocalServers(enabled){const prefs=this._mutableCopy();prefs.engineering_local_servers=enabled===true||enabled==='true';this.savePreferences(prefs);}
 
   /** 保存沙盒内命令出站联网偏好。 */
   setSandboxNetwork(enabled) {

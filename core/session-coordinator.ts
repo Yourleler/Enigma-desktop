@@ -573,24 +573,13 @@ function recordAssistantUsage({ ledger, event, sessionPath, sessionId, agentId, 
       sessionPath,
     },
   };
-  if (event.message?.usage) {
-    return ledger.record({
-      model: modelMeta,
-      usage: event.message.usage,
-      usageContext,
-      costRates,
-    });
-  }
+  const reportedUsage = event.message.usage && ['input','output','cacheRead','cacheWrite','totalTokens','total_tokens','input_tokens','output_tokens','prompt_tokens','completion_tokens','reasoning_tokens'].some(key=>Number(event.message.usage[key])>0) ? event.message.usage : null;
   const errorMessage = event.message?.errorMessage || event.message?.error?.message || null;
-  if (event.message?.stopReason === "error" || errorMessage) {
-    const request = ledger.start({
-      model: modelMeta,
-      usageContext,
-      costRates,
-    });
-    return ledger.recordError(request.requestId, new Error(errorMessage || "provider request failed"));
+  if (event.message?.stopReason === 'error' || event.message?.stopReason === 'aborted' || errorMessage) {
+    const request=ledger.start({model:modelMeta,usageContext,costRates});
+    return ledger.recordError(request.requestId,new Error(errorMessage||'request stopped'),event.message?.stopReason==='aborted'?'aborted':'error',{usage:reportedUsage,costRates});
   }
-  return null;
+  return ledger.record({model:modelMeta,usage:reportedUsage,usageContext,costRates});
 }
 
 function logDeepSeekReasoningVisibility({ event, model, sessionPath, agentId }: any) {
@@ -6272,8 +6261,19 @@ export class SessionCoordinator {
     }
     let live;
     try {
+      // Pi extensions are registered after buildTools. The creation snapshot
+      // includes them; a fresh host inventory alone would report every one as
+      // missing. Use only definitions still registered AND callable in this
+      // session. Existing host tools keep their live enablement/probe objects.
+      const tools=[...input.allToolObjects],names=new Set(tools.map(tool=>tool?.name));
+      const runtime=entry?.session;
+      const callable=new Set(runtime?.getCallableToolNames?.()||runtime?.getActiveToolNames?.()||[]);
+      for(const registered of runtime?.extensionRunner?.getAllRegisteredTools?.()||[]){
+        const name=registered?.definition?.name,definition=name&&runtime.getToolDefinition?.(name);
+        if(definition&&callable.has(name)&&!names.has(name)){tools.push(definition);names.add(name);}
+      }
       live = computeReminderLiveToolAvailability(
-        input.allToolObjects,
+        tools,
         input.agent.config,
         input.context,
         { warn: (msg) => log.warn(msg) },

@@ -1,10 +1,46 @@
 import path from "path";
+import fs from "node:fs";
+import os from "node:os";
 import { describe, expect, it, vi } from "vitest";
 import { ResourceWatchRegistry } from "../lib/resource-io/resource-watch-registry.ts";
 import { ResourceEventBus } from "../lib/resource-io/resource-event-bus.ts";
 import { resourceKeyForRef } from "../lib/resource-io/resource-refs.ts";
 
 describe("ResourceWatchRegistry", () => {
+  it("reports real directory changes through the isolated watcher and releases subscriptions", async () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'enigma-resource-watch-'));
+    const events = vi.fn();
+    const registry = new ResourceWatchRegistry({ emitEvent: events, debounceMs: 5 });
+    const subscription = registry.subscribe({ resource: { kind: 'local-file', path: root } });
+    try {
+      await [...registry.entries.values()][0].handle.ready;
+      const changedPath = path.join(root, 'note.md');
+      for (let attempt = 0; attempt < 10 && !events.mock.calls.length; attempt++) {
+        fs.writeFileSync(changedPath, String(attempt));
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+      expect(events).toHaveBeenCalledWith(expect.objectContaining({
+        type: 'resource.changed', resourceKey: resourceKeyForRef({ kind: 'local-file', path: changedPath }),
+      }), null);
+    } finally {
+      registry.unsubscribe(subscription.subscriptionId);
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+    expect(registry.diagnostics().watches).toEqual([]);
+  });
+
+  it("surfaces asynchronous native watcher failures without leaking host paths", async () => {
+    const missing = path.join(os.tmpdir(), `missing-enigma-watch-${crypto.randomUUID()}`);
+    const registry = new ResourceWatchRegistry({ emitEvent: vi.fn() });
+    const subscription = registry.subscribe({ resource: { kind: 'local-file', path: missing } });
+    try {
+      await [...registry.entries.values()][0].handle.ready;
+      expect(registry.diagnostics().lastErrorCode).toBe('ENOENT');
+      expect(registry.diagnostics().lastErrorMessage).toBe('Resource watch failed');
+    } finally {
+      registry.unsubscribe(subscription.subscriptionId);
+    }
+  });
   it("shares backend watches across subscriptions and reports diagnostics", () => {
     const filePath = path.join("/workspace", "notes", "a.md");
     const resourceKey = resourceKeyForRef({ kind: "local-file", path: filePath });

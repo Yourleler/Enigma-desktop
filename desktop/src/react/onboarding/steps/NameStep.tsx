@@ -74,7 +74,7 @@ export function NameStep({ preview, hanaFetch, agentId, verificationPlan, goToSt
             <span className="ob-memory-title">{t('onboarding.name.memoryTitle')}</span>
             <span className="ob-memory-hint">{t('onboarding.name.memoryHint')}</span>
           </div>
-          <Toggle on={memoryEnabled} onChange={setMemoryEnabled} label={t('onboarding.name.memoryTitle')} />
+          <Toggle on={memoryEnabled} onChange={setMemoryEnabled} ariaLabel={t('onboarding.name.memoryTitle')} />
         </div>
       </div>
       <div className="onboarding-actions">

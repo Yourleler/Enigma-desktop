@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { createHash } from 'node:crypto';
 import { createPluginContext } from "./plugin-context.ts";
 import {
   createPluginRouteRequestContext,
@@ -11,6 +12,7 @@ import { semverGte } from "../lib/plugin-versioning.ts";
 import { detectIncompatiblePluginFormat } from "../lib/plugin-format-guard.ts";
 import { createModuleLogger } from "../lib/debug-log.ts";
 import { getToolSessionPath, normalizeToolRuntimeContext } from "../lib/tools/tool-session.ts";
+import { bindNativePluginTool, canToggleNativePlugin, nativePluginPreferenceKey } from "./native-tool-contributions.ts";
 
 const log = createModuleLogger("plugin-manager");
 
@@ -245,6 +247,7 @@ export class PluginManager {
   declare _skillPaths: any;
   declare _slashRegistry: any;
   declare _tools: any;
+  declare _nativeToolFactories: any[];
   declare _widgets: any;
   declare routeRegistry: any;
   /**
@@ -290,6 +293,7 @@ export class PluginManager {
 
     // Contribution registries
     this._tools = [];
+    this._nativeToolFactories = [];
     this._commands = [];
     this._skillPaths = [];
     this._agentTemplates = [];
@@ -386,6 +390,10 @@ export class PluginManager {
   _cleanupPluginContributions(entry) {
     const pluginId = entry.id;
     const pluginKey = entry.pluginKey;
+    for (const item of this._nativeToolFactories.filter(item => item.pluginKey === pluginKey)) {
+      for (const controller of item.controllers) controller.abort(new Error('Interaction plugin disabled'));
+    }
+    this._nativeToolFactories = this._nativeToolFactories.filter(item => item.pluginKey !== pluginKey);
     this._tools = this._tools.filter(t => t._pluginKey !== pluginKey);
     this._commands = this._commands.filter(c => c._pluginKey !== pluginKey);
     this._slashRegistry?.unregisterBySource("plugin", pluginKey);
@@ -542,6 +550,7 @@ export class PluginManager {
       if (fs.existsSync(path.join(pluginDir, dir))) addContribution(contributions, dir);
     }
     if (fs.existsSync(path.join(pluginDir, "extensions"))) addContribution(contributions, "extensions");
+    if (manifest?.contributes?.nativeTools) addContribution(contributions, "native-tools");
     const hasLifecycle = resolvePluginEntry(pluginDir) !== null;
     if (hasLifecycle) addContribution(contributions, "lifecycle");
     if (manifest?.contributes?.configuration && hasConfigProperties(configSchema)) {
@@ -562,8 +571,9 @@ export class PluginManager {
     for (const desc of descriptors) {
       const entry = this._entryFromDescriptor(desc, { status: "loading", activationState: "inactive", activationReason: null, instance: null, _disposables: [] });
 
-      // builtin 插件不受 disabled 列表和全权开关约束，始终加载
-      if (entry.source === "community" && disabledList.includes(entry.id)) {
+      // Core builtins stay mandatory. Explicitly toggleable native plugins
+      // use a source-qualified preference so community ids cannot collide.
+      if ((entry.source === "community" || canToggleNativePlugin(entry)) && disabledList.includes(nativePluginPreferenceKey(entry))) {
         entry.status = "disabled";
         this._setPluginEntry(entry);
         continue;
@@ -724,6 +734,8 @@ export class PluginManager {
 
     // Full-access only: system-level extension points
     if (accessLevel === "full-access") {
+      this._assertActiveLoad(entry, loadToken);
+      await this._runLoadStageIf(entry, !!entry.manifest?.contributes?.nativeTools, "native tools", () => this._loadNativeTools(entry));
       this._assertActiveLoad(entry, loadToken);
       await this._runLoadStageIf(entry, this._hasContributionDir(entry, "routes"), "routes", () => this._loadRoutes(entry));
       this._assertActiveLoad(entry, loadToken);
@@ -945,6 +957,39 @@ export class PluginManager {
     return this._tools.filter((tool) => (
       includeShadowed || !tool._pluginKey || this._isPluginKeyRuntimeActive(tool._pluginKey)
     ));
+  }
+
+  async _loadNativeTools(entry) {
+    if (entry.source !== 'builtin') throw new Error('Native tool contributions require a bundled plugin');
+    const root = fs.realpathSync(entry.pluginDir);
+    for (const [name, source] of Object.entries(entry.manifest.contributes.nativeTools)) {
+      if (!['browser', 'computer'].includes(name) || typeof source !== 'string') throw new Error('Invalid native tool contribution');
+      const file = fs.realpathSync(path.resolve(root, source));
+      const relative = path.relative(root, file);
+      if (relative.startsWith('..') || path.isAbsolute(relative) || !isPluginSourceFile(file)) throw new Error('Native tool module must belong to its plugin');
+      const module = await freshImport(file);
+      if (typeof module.default !== 'function') throw new Error('Native tool module must export a factory');
+      const identity = `${entry.pluginKey}:${name}:${entry.version}:${createHash('sha256').update(fs.readFileSync(file)).digest('hex')}`;
+      this._nativeToolFactories.push({ name, identity, factory: module.default, pluginId: entry.id, pluginKey: entry.pluginKey, controllers: new Set<AbortController>() });
+    }
+  }
+
+  getNativeToolContribution(name: string) {
+    this.reconcileMissingPluginDirectories();
+    return this._nativeToolFactories.find(item => item.name === name
+      && !this._plugins.get(item.pluginKey)?._loadCancelled
+      && this._isPluginKeyRuntimeActive(item.pluginKey)) || null;
+  }
+
+  createNativeTool(contribution: any, args: any[], host: Record<string, Function> = {}) {
+    if (!contribution || this.getNativeToolContribution(contribution.name) !== contribution) return null;
+    const tool = contribution.factory(...args, host);
+    if (tool?.name !== contribution.name) throw new Error('Native tool name differs from its contribution');
+    return bindNativePluginTool(tool, {
+      pluginId: contribution.pluginId,
+      controllers: () => this.getNativeToolContribution(contribution.name).controllers,
+      isActive: () => this.getNativeToolContribution(contribution.name)?.identity === contribution.identity,
+    });
   }
 
   // ── Task 6: Skill paths + Command loader ────────────────────────────────
@@ -1501,7 +1546,7 @@ export class PluginManager {
     return this._enqueue(async () => {
       const entry = this._resolvePluginEntry(pluginId, options);
       if (!entry) throw new Error(`Plugin "${pluginId}" not found`);
-      if (entry.source === "builtin") throw new Error(`Builtin plugin "${pluginId}" cannot be disabled`);
+      if (entry.source === "builtin" && !canToggleNativePlugin(entry)) throw new Error(`Builtin plugin "${pluginId}" cannot be disabled`);
       if (entry.status === "loaded") {
         await this.unloadPlugin(entry.id, { pluginKey: entry.pluginKey });
       }
@@ -1511,8 +1556,9 @@ export class PluginManager {
         // the user's persisted disabled community plugin list.
       } else if (this._preferencesManager) {
         const disabled = this._preferencesManager.getDisabledPlugins();
-        if (!disabled.includes(entry.id)) {
-          this._preferencesManager.setDisabledPlugins([...disabled, entry.id]);
+        const key = nativePluginPreferenceKey(entry);
+        if (!disabled.includes(key)) {
+          this._preferencesManager.setDisabledPlugins([...disabled, key]);
         }
       } else {
         log.warn("disablePlugin: preferencesManager unavailable, preference not persisted");
@@ -1526,15 +1572,14 @@ export class PluginManager {
     return this._enqueue(async () => {
       const entry = this._resolvePluginEntry(pluginId, options);
       if (!entry) throw new Error(`Plugin "${pluginId}" not found`);
-      // builtin 插件始终 loaded，跳过偏好写入
-      if (entry.source === "builtin") return;
+      if (entry.source === "builtin" && !canToggleNativePlugin(entry)) return;
       if (entry.source === "dev" || options.persist === false) {
         // Dev plugin enablement is scoped to the dev slot and must not pollute
         // the user's persisted disabled community plugin list.
       } else if (this._preferencesManager) {
         const disabled = this._preferencesManager.getDisabledPlugins();
         this._preferencesManager.setDisabledPlugins(
-          disabled.filter(id => id !== entry.id)
+          disabled.filter(id => id !== nativePluginPreferenceKey(entry))
         );
       } else {
         log.warn("enablePlugin: preferencesManager unavailable, preference not persisted");
@@ -1698,6 +1743,7 @@ export class PluginManager {
         source: entry.source || "community",
         trust: entry.trust || "restricted",
         hidden: !!entry.hidden,
+        userToggleable: canToggleNativePlugin(entry),
         status: entry.status,
         shadowedBy: entry.shadowedBy || null,
         shadowedByPluginKey: entry.shadowedByPluginKey || null,

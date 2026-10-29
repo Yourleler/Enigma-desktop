@@ -122,22 +122,16 @@ describe('InterfaceTab appearance state', () => {
     expect(localStorage.getItem('hana-font-serif')).toBe('0');
   });
 
-  it('recomputes paper texture availability when the selected theme changes', () => {
-    localStorage.setItem('hana-theme', registry.DEFAULT_THEME);
-    localStorage.setItem('hana-paper-texture', '1');
-
+  it('switches the neutral light, dark and system modes while removing obsolete decoration controls', () => {
     render(React.createElement(InterfaceTab));
-
-    const paperSwitch = () => screen.getAllByRole('switch')[0] as HTMLButtonElement;
-    expect(paperSwitch().getAttribute('aria-checked')).toBe('true');
-    expect(paperSwitch().disabled).toBe(false);
-
-    const midnightTheme = screen.getByText('settings.appearance.midnight').closest('button');
-    expect(midnightTheme).toBeTruthy();
-    fireEvent.click(midnightTheme!);
-
-    expect(paperSwitch().getAttribute('aria-checked')).toBe('false');
-    expect(paperSwitch().disabled).toBe(true);
+    const dark = screen.getByText('深色').closest('button')!;
+    fireEvent.click(dark);
+    expect(globalThis.setTheme).toHaveBeenCalledWith(registry.AUTO_DARK_DEFAULT);
+    expect(dark.getAttribute('aria-pressed')).toBe('true');
+    fireEvent.click(screen.getByText('跟随系统').closest('button')!);
+    expect(globalThis.setTheme).toHaveBeenCalledWith('auto');
+    expect(screen.queryByText('settings.appearance.paperTexture')).toBeNull();
+    expect(screen.queryByText('settings.appearance.leavesOverlay')).toBeNull();
   });
 
   it('renders the hardware acceleration switch from settings config', () => {
@@ -153,7 +147,7 @@ describe('InterfaceTab appearance state', () => {
     render(React.createElement(InterfaceTab));
 
     expect(screen.getByText('settings.interface.hardwareAcceleration')).toBeTruthy();
-    expect(screen.getAllByRole('switch')[2].getAttribute('aria-checked')).toBe('false');
+    expect(within(screen.getByText('settings.interface.hardwareAcceleration').parentElement!.parentElement!).getByRole('switch').getAttribute('aria-checked')).toBe('false');
   });
 
   it('keeps hardware acceleration loading until settings config is ready', () => {
@@ -163,7 +157,7 @@ describe('InterfaceTab appearance state', () => {
 
     render(React.createElement(InterfaceTab));
 
-    const hardwareSwitch = screen.getAllByRole('switch')[2] as HTMLButtonElement;
+    const hardwareSwitch = within(screen.getByText('settings.interface.hardwareAcceleration').parentElement!.parentElement!).getByRole('switch') as HTMLButtonElement;
     expect(hardwareSwitch.getAttribute('aria-checked')).toBe('mixed');
     expect(hardwareSwitch.getAttribute('aria-busy')).toBe('true');
     expect(hardwareSwitch.disabled).toBe(true);

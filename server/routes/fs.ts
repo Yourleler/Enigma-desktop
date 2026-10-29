@@ -11,6 +11,7 @@ import fs from "fs";
 import path from "path";
 import { Hono } from "hono";
 import { safeReadFile } from "../../shared/safe-fs.ts";
+import { readOfficePreview } from '../../lib/document-preview.ts';
 
 function isInsideRoot(candidatePath, rootPath) {
   return candidatePath === rootPath || candidatePath.startsWith(rootPath + path.sep);
@@ -126,9 +127,7 @@ export function createFsRoute(engine) {
       const stat = fs.statSync(allowedPath);
       if (!stat.isFile()) return c.json({ error: "not a file" }, 400);
       if (stat.size > 20 * 1024 * 1024) return c.json({ error: "file too large" }, 413);
-      const mammoth = (await import("mammoth")).default;
-      const result = await mammoth.convertToHtml({ path: allowedPath });
-      return c.text(result.value);
+      return c.text((await readOfficePreview(allowedPath, 'docx')).html);
     } catch (err) {
       if (err?.code === "ENOENT") return c.json({ error: "file not found" }, 404);
       return c.json({ error: "docx parse failed" }, 500);
@@ -147,21 +146,7 @@ export function createFsRoute(engine) {
       const stat = fs.statSync(allowedPath);
       if (!stat.isFile()) return c.json({ error: "not a file" }, 400);
       if (stat.size > 20 * 1024 * 1024) return c.json({ error: "file too large" }, 413);
-      const ExcelJS = (await import("exceljs")).default;
-      const workbook = new ExcelJS.Workbook();
-      await workbook.xlsx.readFile(allowedPath);
-      const sheet = workbook.worksheets[0];
-      if (!sheet || sheet.rowCount === 0) return c.json({ error: "xlsx has no rows" }, 422);
-      let html = "<table>";
-      sheet.eachRow((row) => {
-        html += "<tr>";
-        for (let i = 1; i <= sheet.columnCount; i += 1) {
-          html += `<td>${escapeHtmlCell(row.getCell(i).text)}</td>`;
-        }
-        html += "</tr>";
-      });
-      html += "</table>";
-      return c.text(html);
+      return c.text((await readOfficePreview(allowedPath, 'xlsx')).html);
     } catch (err) {
       if (err?.code === "ENOENT") return c.json({ error: "file not found" }, 404);
       return c.json({ error: "xlsx parse failed" }, 500);

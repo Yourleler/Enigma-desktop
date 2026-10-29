@@ -124,7 +124,9 @@ export function useMediaTransform(opts: {
   const onWheel = useCallback((e: React.WheelEvent<HTMLElement>) => {
     if (e.deltaY === 0) return;
     e.preventDefault();
-    const rect = e.currentTarget.getBoundingClientRect();
+    // The image stage is already transformed. Zoom anchors must be measured
+    // from its untransformed viewport, including when it lives in a side pane.
+    const rect = (e.currentTarget.parentElement || e.currentTarget).getBoundingClientRect();
     const point = { x: e.clientX - rect.left, y: e.clientY - rect.top };
     const clampedDelta = clamp(e.deltaY, -120, 120);
     const sensitivity = e.ctrlKey || e.metaKey ? 0.005 : 0.002;

@@ -1227,6 +1227,24 @@ describe("session-coordinator tool snapshot (createSession)", () => {
       reminderUnavailableRevision: 3,
     });
   });
+  it("counts callable Pi extension definitions while retaining disabled, removed and live-probe outages",async()=>{
+    const stopped={...makeTool('mcp_stopped'),metadata:{reminderLiveAvailabilityProbe:()=>false}};
+    focusAgent.getToolsSnapshot=()=>[...HANAKO_CUSTOM_OBJS,stopped];
+    coord._d.buildTools=(_cwd,customTools)=>({tools:SDK_BUILTIN_OBJS,customTools});currentAgentConfig={tools:{disabled:[]}};
+    const {sessionPath}=await coord.createSession(null,tmpDir,true);
+    const entry=coord._sessions.get(sessionPath),definitions=['repo_read','repo_inactive','repo_removed','repo_new'].map(makeTool);
+    entry.toolNames=['read','browser','repo_read','repo_inactive','repo_removed','mcp_stopped'];
+    entry.session.extensionRunner={getAllRegisteredTools:()=>definitions.map(definition=>({definition}))};
+    entry.session.getToolDefinition=(name)=>name==='repo_removed'?undefined:definitions.find(tool=>tool.name===name);
+    entry.session.getCallableToolNames=()=>['read','repo_read','repo_removed','repo_new','mcp_stopped'];
+    const activeCalls=activeToolsSpy.mock.calls.length,frozen=[...entry.toolNames];
+    expect(coord._computeReminderUnavailableToolNamesForEntry(entry,sessionPath)).toEqual(['mcp_stopped','repo_inactive','repo_removed']);
+    currentAgentConfig.tools.disabled=['browser'];
+    expect(coord._computeReminderUnavailableToolNamesForEntry(entry,sessionPath)).toContain('browser');
+    Object.assign(definitions[0],{metadata:{reminderLiveAvailabilityProbe:()=>false}});
+    expect(coord._computeReminderUnavailableToolNamesForEntry(entry,sessionPath)).toContain('repo_read');
+    expect(entry.toolNames).toEqual(frozen);expect(activeToolsSpy.mock.calls).toHaveLength(activeCalls);
+  });
 
   it("Case A: a production-filtered temporary plugin outage does not rewrite the frozen contract", async () => {
     let pluginAvailable = false;

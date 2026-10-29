@@ -298,6 +298,8 @@ export interface ChatMessage {
   sourceEntryId?: string;  // Pi SDK session entry id，用于 branch-aware 的重新生成/编辑
   /** 本次 Agent turn 的真实输入 entry；隐藏后台输入也必须保留，不能猜到最近可见 user。 */
   turnInputEntryId?: string;
+  /** Persisted input time for this assistant turn, also available on history pages without its input. */
+  turnStartedAt?: number;
   /** false 表示真实 turn input 只用于模型上下文，不对应可见用户节点。 */
   turnInputVisible?: boolean;
   role: 'user' | 'assistant';

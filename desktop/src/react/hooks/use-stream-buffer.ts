@@ -49,6 +49,7 @@ interface Buffer {
   flushTimer: ReturnType<typeof setTimeout> | null;
   /** 当前 turn 绑定的 assistant message id */
   messageId: string | null;
+  receivedAt?: number;
 }
 
 function createBuffer(sessionPath: string): Buffer {
@@ -178,6 +179,7 @@ class StreamBufferManager {
     buf.cardAttrs = null;
     buf.cardDescAcc = '';
     buf.messageId = null;
+    buf.receivedAt = undefined;
   }
 
   private finishBufferTurn(buf: Buffer): void {
@@ -210,7 +212,8 @@ class StreamBufferManager {
     }
 
     const id = targetId || nextStreamMessageId();
-    const msg: ChatMessage = { id, role: 'assistant', blocks: [], timestamp: Date.now() };
+    buf.receivedAt ??= Date.now();
+    const msg: ChatMessage = { id, role: 'assistant', blocks: [], timestamp: buf.receivedAt };
     store.appendItem(buf.sessionPath, { type: 'message', data: msg });
     bumpMessageLiveVersion(buf.sessionPath);
     buf.messageId = id;
@@ -493,6 +496,12 @@ class StreamBufferManager {
         break;
 
       case 'turn_end':
+        if (Number.isFinite(msg.turnStartedAt) && msg.turnStartedAt > 0) {
+          this.updateTargetMessage(buf, message => ({...message, turnStartedAt:msg.turnStartedAt}));
+        }
+        if (Number.isFinite(msg.assistantTimestamp) && msg.assistantTimestamp > 0) {
+          this.updateTargetMessage(buf, message => ({...message, timestamp:msg.assistantTimestamp}));
+        }
         useStore.getState().bindPersistedTurnEntries?.(buf.sessionPath, {
           turnInputEntryId: msg.turnInputEntryId,
           userEntryId: msg.userEntryId,
@@ -552,6 +561,7 @@ class StreamBufferManager {
     return {
       hasContent: true,
       messageId: buf.messageId,
+      timestamp: buf.receivedAt,
       text: buf.textAcc,
       thinking: buf.thinkingAcc,
       mood: buf.inMood ? buf.moodAcc : cleanMoodText(buf.moodAcc),

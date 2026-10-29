@@ -28,6 +28,7 @@ export const CONFIG_SCHEMA = {
   timezone:                     { scope: 'global', setter: 'setTimezone',       getter: 'getTimezone', defaultValue: '' },
   sandbox:                      { scope: 'global', setter: 'setSandbox',        getter: 'getSandbox', defaultValue: true },
   sandbox_network:              { scope: 'global', setter: 'setSandboxNetwork', getter: 'getSandboxNetwork', defaultValue: true },
+  engineering_local_servers:    { scope: 'global', setter: 'setEngineeringLocalServers', getter: 'getEngineeringLocalServers', defaultValue: false },
   hardware_acceleration:        { scope: 'global', setter: 'setHardwareAcceleration', getter: 'getHardwareAcceleration', defaultValue: true },
   file_backup:                  { scope: 'global', setter: 'setFileBackup',    getter: 'getFileBackup' },
   update_channel:               { scope: 'global', setter: 'setUpdateChannel',  getter: 'getUpdateChannel', defaultValue: 'stable' },

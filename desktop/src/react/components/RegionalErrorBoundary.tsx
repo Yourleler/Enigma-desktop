@@ -1,5 +1,6 @@
 import { Component, type ReactNode } from 'react';
 import styles from './RegionalErrorBoundary.module.css';
+import {isModuleLoadError,reloadInterface,recoveryCopy} from '../utils/interface-recovery';
 
 const FALLBACK_TEXT: Record<string, { en: string; zh: string }> = {
   'error.regionUnavailable': {
@@ -98,10 +99,12 @@ export class RegionalErrorBoundary extends Component<Props, State> {
 
   handleRetry = () => {
     this.clearAutoRetryTimer();
+    if(isModuleLoadError(this.state.error)){reloadInterface();return;}
     this.setState({ error: null, autoRetryCount: 0, autoRetryPending: false });
   };
 
   private scheduleAutoRetry() {
+    if(isModuleLoadError(this.state.error))return;
     const config = this.props.autoRetry;
     if (!config) return;
     const attempts = Math.max(0, config.attempts ?? 1);
@@ -137,10 +140,11 @@ export class RegionalErrorBoundary extends Component<Props, State> {
         return <div className={styles.recovering} aria-hidden="true" />;
       }
       return (
-        <div className={styles.fallback}>
-          <p className={styles.message}>{tr('error.regionUnavailable')}</p>
+        <div className={styles.fallback} role="alert">
+          <p className={styles.message}>{isModuleLoadError(this.state.error)?recoveryCopy().moduleTitle:tr('error.regionUnavailable')}</p>
+          {isModuleLoadError(this.state.error)&&<p className={styles.message}>{recoveryCopy().moduleHint}</p>}
           <button className={styles.retry} onClick={this.handleRetry}>
-            {tr('action.retry')}
+            {isModuleLoadError(this.state.error)?recoveryCopy().reload:tr('action.retry')}
           </button>
         </div>
       );

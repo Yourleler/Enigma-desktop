@@ -1,0 +1,20 @@
+{
+  "scenario": "菜单搜索、时光机标签与用量弹层；Chrome当前设备，滚动180帧采样，非通用性能保证",
+  "focus": "关闭用量明细",
+  "height": 697,
+  "sample": {
+    "frameMaxMs": "32.40",
+    "frameMeanMs": "8.48",
+    "frameP95Ms": "9.90",
+    "frameSamples": "180",
+    "lastMapMs": "3.30",
+    "longTaskMaxMs": "56.00",
+    "longTasks": "1",
+    "sampledAt": "1793031616133",
+    "textureCount": "7"
+  },
+  "surfaces": 6,
+  "tone": "dark",
+  "width": 1512,
+  "pathsAndProviderNamesRedacted": true
+}

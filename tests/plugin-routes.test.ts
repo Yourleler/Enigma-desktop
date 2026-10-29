@@ -362,6 +362,22 @@ describe("plugin management API", () => {
   });
 
   describe("PUT /plugins/:id/enabled", () => {
+    it("passes the exact builtin source and rejects malformed toggle requests", async () => {
+      const disablePlugin = vi.fn(); const app = createApp(mockEngine({disablePlugin}));
+      const res = await app.request('/api/plugins/browser-control/enabled', {
+        method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({enabled:false, source:'builtin'}),
+      });
+      expect(res.status).toBe(200);
+      expect(disablePlugin).toHaveBeenCalledWith('browser-control',{source:'builtin'});
+      for (const body of [{enabled:'false'}, {enabled:false,source:'dev'}]) {
+        const invalid = await app.request('/api/plugins/browser-control/enabled', {
+          method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body),
+        });
+        expect(invalid.status).toBe(400);
+      }
+      expect(disablePlugin).toHaveBeenCalledTimes(1);
+    });
+
     it("enables a plugin", async () => {
       const enableFn = (vi.fn().mockResolvedValue as any)();
       const engine = mockEngine({ enablePlugin: enableFn });

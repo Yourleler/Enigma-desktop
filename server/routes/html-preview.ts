@@ -3,6 +3,8 @@ import fs from "fs";
 import path from "path";
 import { Hono } from "hono";
 import { guessMime } from "../http/file-content.ts";
+import { resolveWorkbenchPreviewSource } from '../http/workbench-preview-source.ts';
+import { isLocalOwnerPrincipal } from '../http/route-security.ts';
 
 const DEFAULT_TTL_MS = 10 * 60 * 1000;
 const DEFAULT_MAX_CONTENT_BYTES = 2 * 1024 * 1024;
@@ -11,6 +13,7 @@ const DEFAULT_MAX_ASSET_BYTES = 50 * 1024 * 1024;
 export const HTML_PREVIEW_CSP = buildHtmlPreviewCsp();
 
 export function createHtmlPreviewRoute({
+  engine = null,
   ttlMs = DEFAULT_TTL_MS,
   maxContentBytes = DEFAULT_MAX_CONTENT_BYTES,
   maxAssetBytes = DEFAULT_MAX_ASSET_BYTES,
@@ -18,7 +21,7 @@ export function createHtmlPreviewRoute({
   randomId = () => `pv_${crypto.randomBytes(16).toString("hex")}`,
   randomToken = () => crypto.randomBytes(32).toString("base64url"),
 } = {}) {
-  const route = new Hono();
+  const route = new Hono<{Variables: {authPrincipal: any}}>();
   const previews = new Map();
 
   route.post("/api/preview/html", async (c) => {
@@ -39,7 +42,15 @@ export function createHtmlPreviewRoute({
 
     const id = randomId();
     const token = randomToken();
-    const assetScope = resolvePreviewAssetScope(body?.sourceFilePath, body?.sourceRootPath);
+    let sourceFilePath = body?.sourceFilePath, sourceRootPath = body?.sourceRootPath;
+    if (engine && body?.remoteContentRef?.kind === 'workbench-file') {
+      const source = resolveWorkbenchPreviewSource(engine, c, body.remoteContentRef);
+      if (source.response) return source.response;
+      sourceFilePath = source.sourceFilePath; sourceRootPath = source.sourceRootPath;
+    } else if (engine && sourceFilePath && !isLocalOwnerPrincipal(c.get('authPrincipal'))) {
+      return c.json({error: 'Use an authorized workbench reference for file assets'}, 403);
+    }
+    const assetScope = resolvePreviewAssetScope(sourceFilePath, sourceRootPath);
     const requestUrl = new URL(c.req.url);
     const assetRootUrl = assetScope
       ? buildPreviewAssetUrl(requestUrl.origin, id, token, "", { trailingSlash: true })
@@ -126,7 +137,9 @@ function servePreviewAsset(c, previews, currentTime, maxAssetBytes, headOnly = f
   c.header("Content-Type", guessMime(assetPath));
   c.header("Cache-Control", "no-store");
   c.header("X-Content-Type-Options", "nosniff");
-  c.header("Cross-Origin-Resource-Policy", "same-origin");
+  // The preview iframe deliberately has an opaque sandbox origin. Its scoped
+  // asset URLs require the preview token; CORP same-origin would block them.
+  c.header("Cross-Origin-Resource-Policy", "cross-origin");
   return c.body(headOnly ? null : fs.readFileSync(assetPath));
 }
 

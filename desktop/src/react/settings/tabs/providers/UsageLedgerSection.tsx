@@ -1,3 +1,4 @@
+import { GlassSelection } from '../../../ui/GlassSelection';
 import React, { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { SettingsSection } from '../../components/SettingsSection';
 import { t } from '../../helpers';
@@ -97,8 +98,8 @@ function RefreshButton({ loading, onRefresh }: { loading: boolean; onRefresh: ()
 function UsageTabs({ view, onChange }: { view: UsageView; onChange: (view: UsageView) => void }) {
   const tabStyle = { '--usage-tab-index': USAGE_VIEW_ORDER.indexOf(view) } as CssVars;
   return (
-    <div className={styles['usage-tabs']} role="tablist" aria-label={t('settings.usage.title')} style={tabStyle}>
-      <span className={styles['usage-tab-slider']} aria-hidden="true" />
+    <div className={styles['usage-tabs']} role="tablist" aria-label={t('settings.usage.title')} style={tabStyle} data-glass-segmented="">
+      <GlassSelection selection={view}/>
       {USAGE_VIEW_ORDER.map(item => (
         <button
           key={item}

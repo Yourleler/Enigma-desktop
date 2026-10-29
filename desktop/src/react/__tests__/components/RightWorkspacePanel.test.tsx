@@ -72,11 +72,13 @@ const tMap: Record<string, string> = {
   'rightWorkspace.sessionFiles.sort.nameAsc': '名称↑',
   'rightWorkspace.sessionFiles.sort.nameDesc': '名称↓',
   'rightWorkspace.sessionFiles.sort.typeAsc': '类型↑',
-  'rightWorkspace.jian.collapse': '收起笺',
-  'rightWorkspace.jian.expand': '展开笺',
+  'rightWorkspace.jian.collapse': '收起文件夹说明',
+  'rightWorkspace.jian.expand': '展开文件夹说明',
   'desk.workspaceTitle': '工作台',
-  'desk.jianLabel': '笺',
+  'desk.jianLabel': '文件夹说明',
   'desk.jianPlaceholder': '写点什么...',
+  'desk.fullPath': '查看完整路径',
+  'desk.jianHint': '记录目录用途与处理要求；开启巡检后助手会读取这些要求。',
   'desk.openInFinder': '打开文件夹',
   'desk.sort.nameAscShort': '名称↑',
   'desk.sort.label': '排序',
@@ -176,8 +178,7 @@ describe('RightWorkspacePanel', () => {
     expect(tabList.closest('.universal-card')).toBe(container.querySelector('.universal-card'));
     expect(within(tabList).getByRole('tab', { name: '对话文件' })).toBeInTheDocument();
     expect(within(tabList).getByRole('tab', { name: '工作台' })).toHaveAttribute('aria-selected', 'true');
-    expect(container.querySelector('[data-right-workspace-tab-slider]')).toBeInTheDocument();
-    expect((tabList as HTMLElement).style.getPropertyValue('--right-workspace-active-tab-index')).toBe('1');
+    expect(tabList.querySelector('[data-glass-selection]')).toBeInTheDocument();
     expect(screen.getByText('hana-work')).toBeInTheDocument();
     expect(screen.queryByText(/工作台 ·/)).not.toBeInTheDocument();
   });
@@ -194,11 +195,11 @@ describe('RightWorkspacePanel', () => {
     render(<RightWorkspacePanel />);
 
     const tabList = screen.getByRole('tablist', { name: 'rightWorkspace.tabs.label' });
-    expect((tabList as HTMLElement).style.getPropertyValue('--right-workspace-active-tab-index')).toBe('1');
+    const lens = tabList.querySelector('[data-glass-selection]');
 
     fireEvent.click(screen.getByRole('tab', { name: '对话文件' }));
 
-    expect((tabList as HTMLElement).style.getPropertyValue('--right-workspace-active-tab-index')).toBe('0');
+    expect(tabList.querySelector('[data-glass-selection]')).toBe(lens);
     expect(screen.getByRole('tab', { name: '对话文件' })).toHaveAttribute('aria-selected', 'true');
   });
 
@@ -885,20 +886,20 @@ describe('RightWorkspacePanel', () => {
   it('collapses and expands the Jian drawer without unmounting its editor state', () => {
     render(<RightWorkspacePanel />);
 
-    const drawer = screen.getByRole('region', { name: '笺' });
+    const drawer = screen.getByRole('region', { name: '文件夹说明' });
     expect(drawer).toHaveAttribute('data-open', 'true');
     expect(screen.getByPlaceholderText('写点什么...')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: '收起笺' }));
+    fireEvent.click(screen.getByRole('button', { name: '收起文件夹说明' }));
 
     expect(drawer).toHaveAttribute('data-open', 'false');
-    expect(screen.getByRole('button', { name: '展开笺' })).toHaveAttribute('aria-expanded', 'false');
-    expect(screen.getByPlaceholderText('写点什么...')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '展开文件夹说明' })).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.getByPlaceholderText('写点什么...').closest('[inert]')).not.toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: '展开笺' }));
+    fireEvent.click(screen.getByRole('button', { name: '展开文件夹说明' }));
 
     expect(drawer).toHaveAttribute('data-open', 'true');
-    expect(screen.getByRole('button', { name: '收起笺' })).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('button', { name: '收起文件夹说明' })).toHaveAttribute('aria-expanded', 'true');
   });
 
   it('hides raw Jian execution status while preserving it when editing the instruction body', async () => {

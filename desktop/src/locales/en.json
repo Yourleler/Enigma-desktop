@@ -555,6 +555,7 @@
     "thinking": "{name} is thinking"
   },
   "yuan": {
+    "simpleMode": "Direct mode",
     "types": {
       "hanako": {
         "label": "Balanced assistant",
@@ -1058,6 +1059,7 @@
       "noResults": "No matching settings"
     },
     "tabs": {
+      "usage": "Usage",
       "interface": "Interface",
       "general": "General",
       "browser": "Browser",
@@ -2743,8 +2745,8 @@
       }
     },
     "jian": {
-      "collapse": "Collapse Jian",
-      "expand": "Expand Jian"
+      "collapse": "Collapse folder instructions",
+      "expand": "Expand folder instructions"
     }
   },
   "desk": {
@@ -2761,7 +2763,10 @@
     "cwdSkillShadowed": "Shadowed",
     "deleteSkill": "Delete Skill",
     "openInFinder": "Open Folder",
-    "jianLabel": "Jian",
+    "jianLabel": "Folder instructions",
+    "fullPath": "Show full path",
+    "jianHint": "Describe this folder and how to handle its files. Edits save automatically. Workspace patrol reads these instructions when enabled.",
+    "cwdSkillsHelp": "View the skills available in this folder and what they do",
     "jianPlaceholder": "Write something to tell the assistant how to handle files in this folder...",
     "execLogLabel": "Execution Log",
     "execLogDelete": "Delete this entry",

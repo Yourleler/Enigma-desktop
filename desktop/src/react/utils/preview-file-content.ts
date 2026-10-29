@@ -24,6 +24,11 @@ export interface PreviewReadResult {
 export async function readFileForPreviewType(filePath: string, previewType: string): Promise<PreviewReadResult | null> {
   const p = window.platform;
   if (!p) return null;
+  if (previewType === 'media') {
+    if (!p.statFile) return {content: ''};
+    const stat = await p.statFile(filePath);
+    return stat ? {content: '', fileVersion: stat} : null;
+  }
   if (previewType === 'file-info') return { content: '' };
   if (previewType === 'docx') {
     const content = await p.readDocxHtml?.(filePath);

@@ -24,24 +24,12 @@
     align-items: center;
     gap: 8px;
     height: 30px;
-    margin: 15px var(--space-8) 6px;
+    margin: 4px var(--space-8) 12px;
     padding: 0 8px;
     background: color-mix(in srgb, var(--sidebar-bg, var(--bg)) 97%, var(--text) 3%);
     border: none;
     border-radius: var(--radius-sm);
     -webkit-app-region: no-drag;
-}
-
-.sessionSearchBox::before {
-    content: "";
-    position: absolute;
-    left: 50%;
-    top: -10px;
-    width: 72%;
-    height: 1px;
-    transform: translateX(-50%);
-    background: color-mix(in srgb, var(--text-muted) 18%, transparent);
-    pointer-events: none;
 }
 
 .sessionSearchIcon {
@@ -225,7 +213,7 @@
     font-size: var(--fs-hint);
     color: var(--text-muted);
     margin-top: 1px;
-    opacity: 0.8;
+    opacity: 1;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

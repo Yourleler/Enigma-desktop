@@ -1,12 +1,13 @@
 import React from 'react';
 import { t } from '../../helpers';
-import { getYuanThinkingBlock } from '../../../../../../shared/yuan-metadata.ts';
+import {yuanAvatarAsset} from '../../../../../../shared/yuan-visuals';
 
 import kongBannerUrl from '../../../../assets/kong-banner.jpg';
 
 export function YuanSelector({ currentYuan, onChange }: { currentYuan: string; onChange: (key: string) => void }) {
   const types = t('yuan.types') || {};
   const entries = Object.entries(types) as [string, { label?: string; avatar?: string }][];
+  if(!entries.some(([id])=>id==='enigma'))entries.unshift(['enigma',{label:'Enigma',avatar:yuanAvatarAsset('enigma')}]);
   const hIdx = entries.findIndex(([k]) => k === 'hanako');
   if (hIdx >= 0 && entries.length >= 3) {
     const [h] = entries.splice(hIdx, 1);
@@ -20,23 +21,22 @@ export function YuanSelector({ currentYuan, onChange }: { currentYuan: string; o
     <div className="yuan-selector">
       <div className="yuan-chips">
         {chips.map(([key, meta]) => {
-          const thinkingBlock = getYuanThinkingBlock(key);
           return (
             <button
               key={key}
               className={`yuan-chip${key === currentYuan ? ' selected' : ''}`}
               type="button"
+              aria-pressed={key === currentYuan}
               onClick={() => { if (key !== currentYuan) onChange(key); }}
             >
               <img
                 className="yuan-chip-avatar"
-                src={`assets/${meta.avatar || 'Hanako.png'}`}
+                src={`assets/${yuanAvatarAsset(key,meta.avatar)}`}
                 draggable={false}
               />
               <div className="yuan-chip-info">
                 <span className="yuan-chip-name">{key}</span>
                 <span className="yuan-chip-desc">{meta.label || ''}</span>
-                {thinkingBlock && <span className="yuan-chip-tag">{thinkingBlock}</span>}
               </div>
             </button>
           );
@@ -49,7 +49,7 @@ export function YuanSelector({ currentYuan, onChange }: { currentYuan: string; o
           style={{ backgroundImage: `url(${kongBannerUrl})` }}
           onClick={() => { if (currentYuan !== 'kong') onChange('kong'); }}
         >
-          <span className="yuan-kong-name">{'\u65E0'}</span>
+          <span className="yuan-kong-name">{t('yuan.simpleMode')}</span>
           <span className="yuan-kong-desc">{kongMeta.label || ''}</span>
         </button>
       )}

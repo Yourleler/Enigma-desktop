@@ -1,4 +1,5 @@
 import { Component, type ReactNode } from 'react';
+import {isModuleLoadError,reloadInterface,recoveryCopy} from '../utils/interface-recovery';
 
 interface Props {
   children: ReactNode;
@@ -52,26 +53,19 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   handleRetry = () => {
+    if(isModuleLoadError(this.state.error)){reloadInterface();return;}
     this.setState({ error: null, errorType: 'unknown' });
   };
 
   render() {
     if (this.state.error) {
       const { errorType } = this.state;
-      const region = this.props.region;
-
-      const title = errorType === 'network'
-        ? 'Connection issue'
-        : 'Something went wrong';
-
-      const hint = errorType === 'network'
-        ? 'Check your connection and try again.'
-        : region
-          ? `An error occurred in ${region}.`
-          : 'An unexpected error occurred.';
+      const moduleFailure=isModuleLoadError(this.state.error),copy=recoveryCopy();
+      const title=moduleFailure?copy.moduleTitle:errorType==='network'?copy.networkTitle:copy.renderTitle;
+      const hint=moduleFailure?copy.moduleHint:errorType==='network'?copy.networkHint:copy.renderHint;
 
       return (
-        <div style={{
+        <div role="alert" style={{
           padding: '24px',
           color: 'var(--text-secondary, #888)',
           fontSize: '13px',
@@ -91,8 +85,9 @@ export class ErrorBoundary extends Component<Props, State> {
               fontSize: '12px',
             }}
           >
-            Retry
+            {moduleFailure?copy.reload:copy.retry}
           </button>
+          {!moduleFailure&&<button onClick={reloadInterface} style={{marginInlineStart:'12px',color:'inherit'}}>{copy.reload}</button>}
         </div>
       );
     }

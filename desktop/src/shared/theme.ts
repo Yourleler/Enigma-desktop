@@ -8,12 +8,13 @@
  * 所有主题元信息来自 theme-registry ESM adapter，这里不再镜像任何常量表。
  */
 import registry, { type ThemeId } from './theme-registry';
+import {createThemeStylesheetSwitch} from './theme-stylesheet';
 import {
   loadPaperTexturePreference,
   setPaperTexturePreference,
 } from './appearance-preferences';
 
-const themeSheet = document.getElementById('themeSheet') as HTMLLinkElement | null;
+const switchThemeStylesheet = createThemeStylesheetSwitch(document);
 
 function systemIsDark(): boolean {
   return window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -22,10 +23,11 @@ function systemIsDark(): boolean {
 function applyConcreteTheme(concrete: string): void {
   const entry = registry.THEMES[concrete as ThemeId];
   if (!entry) return;
-  document.documentElement.setAttribute('data-theme', concrete);
-  if (themeSheet) themeSheet.href = entry.cssPath;
-  loadPaperTexturePreference();
-  (window as unknown as { hana?: { syncWindowTheme?: (theme: string) => void } }).hana?.syncWindowTheme?.(concrete);
+  switchThemeStylesheet(entry.cssPath, () => {
+    document.documentElement.setAttribute('data-theme', concrete);
+    loadPaperTexturePreference();
+    (window as unknown as { hana?: { syncWindowTheme?: (theme: string) => void } }).hana?.syncWindowTheme?.(concrete);
+  });
 }
 
 let systemThemeListener: ((e: MediaQueryListEvent) => void) | null = null;

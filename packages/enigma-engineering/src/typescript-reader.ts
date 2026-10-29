@@ -50,8 +50,10 @@ export async function analyzeTypescript(workspace: Workspace, term: string, opti
   if (pending.length > options.maxFiles) truncated = true;
   const registered = new Map(pending.map(candidate => [compilerPath(resolve(workspace.repo(candidate.repo).root, candidate.file)), candidate]));
   const roots = new Set([...texts.keys(), ...registered.keys()].map(path => compilerPath(dirname(path))));
+  const directories=new Set(roots);
+  for(const root of roots){let current=root;for(;;){const parent=compilerPath(dirname(current));if(parent===current)break;directories.add(parent);current=parent;}}
   const moduleHost: ts.ModuleResolutionHost = { fileExists: path => texts.has(compilerPath(path)), readFile: path => texts.get(compilerPath(path)),
-    directoryExists: path => [...roots].some(root => root === compilerPath(path) || root.startsWith(compilerPath(path) + '/')), getCurrentDirectory: () => compilerPath(workspace.root) };
+    directoryExists: path => directories.has(compilerPath(path)), getCurrentDirectory: () => compilerPath(workspace.root) };
   const compilerOptions = (repoId: string, file: string, seen = new Set<string>()): ts.CompilerOptions => {
     const path = compilerPath(file), text = texts.get(path); if (!text) return {};
     if (seen.has(path) || seen.size > 8) { diagnostics.push(`Cyclic or excessive tsconfig extends: ${repoId}:${file}`); return {}; }
@@ -130,7 +132,7 @@ export async function analyzeTypescript(workspace: Workspace, term: string, opti
     const ast = node.getSourceFile(), unit = units.get(compilerPath(ast.fileName)); if (!unit) return undefined;
     const line = ast.getLineAndCharacterOfPosition(node.getStart(ast)).line + 1, endLine = ast.getLineAndCharacterOfPosition(node.getEnd()).line + 1;
     return { repo: unit.repo, file: unit.file, line, endLine, symbol, kind, hash: unit.hash,
-      snippet: ast.text.split('\n').slice(line - 1, Math.min(endLine, line + 17)).join('\n') };
+      snippet: ast.text.split('\n').slice(line - 1, Math.min(endLine, line + 17)).join('\n'), ...(endLine > line + 17 ? {truncated:true} : {}) };
   };
   for (const repo of workspace.config.repos) {
     const optionsForRepo = projectOptions.get(repo.id)!;
@@ -170,6 +172,35 @@ export async function analyzeTypescript(workspace: Workspace, term: string, opti
     for (const unit of units.values()) {
       if (unit.repo !== repo.id) continue;
       const visit = (node: ts.Node) => {
+        if (ts.isCallExpression(node)) {
+          // Follow calls made by the queried function, as well as its callers.
+          // Stop at the nearest function so an uncalled nested helper is not
+          // presented as an operation of its enclosing function.
+          let owner: ts.Node | undefined = node.parent;
+          while (owner && !ts.isFunctionLike(owner)) owner = owner.parent;
+          if (owner && (ts.isArrowFunction(owner) || ts.isFunctionExpression(owner))
+            && (ts.isVariableDeclaration(owner.parent) || ts.isPropertyAssignment(owner.parent))) owner = owner.parent;
+          const ownerName = (owner as ts.NamedDeclaration | undefined)?.name;
+          const ownerSymbol = ownerName && unalias(checker.getSymbolAtLocation(ownerName));
+          if (ownerSymbol && targets.has(ownerSymbol)) {
+            const expression = ts.isPropertyAccessExpression(node.expression) ? node.expression.name : node.expression;
+            const callee = unalias(checker.getSymbolAtLocation(expression));
+            const declaration = callee?.declarations?.find(item => units.has(compilerPath(item.getSourceFile().fileName)) && (
+              (ts.isFunctionDeclaration(item) || ts.isMethodDeclaration(item)) && !!item.body
+              || (ts.isVariableDeclaration(item) || ts.isPropertyAssignment(item)) && !!item.initializer
+                && (ts.isArrowFunction(item.initializer) || ts.isFunctionExpression(item.initializer))));
+            const found = location(node, expression.getText(unit.ast), 'outgoing-call');
+            const destination = declaration && location(declaration, callee!.name, 'definition');
+            const key = found && `outgoing:${found.repo}:${found.file}:${node.pos}:${found.symbol}`;
+            if (found && destination && key && !seenLocations.has(key)) {
+              seenLocations.add(key);
+              references.push({ ...found, owner: ownerSymbol.name, target: destination, confidence: 'confirmed',
+                reason: 'TypeScript static call binding inside the queried function; runtime dispatch may still differ.' });
+            } else if (found && !destination) {
+              diagnostics.push(`Call target not resolved statically: ${found.repo}:${found.file}:${found.line} ${found.symbol}`);
+            }
+          }
+        }
         if ((ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) && node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier)) {
           const resolved = resolveModule(node.moduleSpecifier.text, unit.path), target = resolved && units.get(compilerPath(resolved.resolvedFileName));
           imports.push({ repo: unit.repo, file: unit.file, line: unit.ast.getLineAndCharacterOfPosition(node.getStart()).line + 1,

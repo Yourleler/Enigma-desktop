@@ -1,6 +1,6 @@
 import { workerEnvironment } from './execution-boundary.js';
 import { spawn } from 'node:child_process';
-import { readdir } from 'node:fs/promises';
+import { readdir,writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Workspace } from './workspace.js';
@@ -18,7 +18,7 @@ export interface WaitSpec extends WaitInput { schema: 1; id: string; root: strin
 export interface WaitState { schema: 1; id: string; status: 'waiting' | 'completed' | 'failed' | 'cancelled' | 'timeout'; workerPid: number; workerIdentity?: string; updatedAt: string; polls: number; lastError?: string; result?: unknown }
 export interface TaskEvent { schema: 1; id: string; watch: string; task: string; entry?: string; label: string; outcome: WaitState['status']; result: unknown; createdAt: string; observation: Observation; resume: boolean }
 
-export async function evaluateWait(workspace: Workspace, condition: WaitCondition): Promise<{ done: boolean; failed?: boolean; result: unknown }> {
+export async function evaluateWait(workspace: Workspace, condition: WaitCondition, signal?:AbortSignal): Promise<{ done: boolean; failed?: boolean; result: unknown }> {
   if (condition.kind === 'delegation') {
     const task = await new (await import('./delegation.js')).Delegations(workspace).status(condition.task);
     return { done: task.terminal, failed: task.terminal && task.state.status !== 'completed', result: { id: task.spec.id, target: task.spec.target, status: task.status, goal: task.spec.goal, answer: task.state.answer, error: task.state.error, requests: task.state.requests, verification: task.state.verification } };
@@ -29,10 +29,12 @@ export async function evaluateWait(workspace: Workspace, condition: WaitConditio
   }
   if (condition.kind === 'service') {
     const service = await new ServiceManager(workspace).status(condition.service);
-    const failed = ['failed', 'configuration-changed', 'dependency-changed', 'source-changed'].includes(service.status) || service.status === 'unknown' && ('executionTerminal' in service && service.executionTerminal);
-    return { done: failed || (condition.state === 'ready' ? service.ready : ['passed', 'failed', 'cancelled', 'timeout', 'not-started'].includes(service.status)), failed, result: service };
+    const unknown = service.status === 'unknown' && service.executionTerminal===true;
+    if(condition.state==='stopped')return {done:unknown||service.status==='not-started'||service.executionTerminal===true,failed:unknown,result:service};
+    const failed = ['failed', 'cancelled', 'timeout', 'passed', 'configuration-changed', 'dependency-changed', 'source-changed','readiness-timeout'].includes(service.status) || unknown;
+    return { done: failed || service.ready, failed, result: service };
   }
-  const response = await runProcess(['gh', 'api', `repos/${condition.repo}/actions/runs/${condition.run}`], workspace.root, { timeoutMs: 15000, limit: 64000 });
+  const response = await runProcess(['gh', 'api', `repos/${condition.repo}/actions/runs/${condition.run}`], workspace.root, { timeoutMs: 15000, limit: 64000,signal });
   if (response.status !== 'passed' || response.truncated) throw new Error(`GitHub run query failed: ${response.output.slice(0, 1000)}`);
   const run = JSON.parse(response.output) as { id: number; status: string; conclusion?: string; head_sha?: string; html_url?: string };
   if (run.id !== condition.run) throw new Error('GitHub run identity mismatch');
@@ -57,6 +59,8 @@ export class TaskEvents {
     await writeJson(join(directory, 'input.json'), spec);
     const child = spawn(process.execPath, [fileURLToPath(new URL('./wait-worker.js', import.meta.url)), join(directory, 'input.json')], { cwd: this.workspace.root, detached: true, stdio: 'ignore', env: workerEnvironment(process.env) });
     await new Promise<void>((resolve, reject) => { child.once('spawn', resolve); child.once('error', reject); }); child.unref();
+    const owner=child.pid?await processIdentity(child.pid):undefined;
+    await writeJson(join(directory,'owner.json'),{pid:child.pid,identity:owner?.identity,fingerprint:spec.fingerprint});
     return spec;
   }
   async status(watch: string, task?: string) {
@@ -66,10 +70,19 @@ export class TaskEvents {
     if (task && spec.task !== task) throw new Error('Wait belongs to another task');
     let state: WaitState;
     try { state = await readJson<WaitState>(join(directory, 'state.json')); }
-    catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; return { spec, state: { schema: 1 as const, id: watch, status: 'waiting' as const, workerPid: 0, updatedAt: spec.createdAt, polls: 0 }, worker: { state: 'unknown' as const } }; }
-    if (state.schema !== 1 || state.id !== watch || !['waiting', 'completed', 'failed', 'cancelled', 'timeout'].includes(state.status)) throw new Error('Invalid wait observation');
+    catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+      const owner=await readJson<{pid:number;identity?:string;fingerprint:string}>(join(directory,'owner.json')).catch(()=>null);
+      state={schema:1,id:watch,status:'waiting',workerPid:owner?.fingerprint===fingerprint?owner.pid:0,workerIdentity:owner?.fingerprint===fingerprint?owner.identity:undefined,updatedAt:spec.createdAt,polls:0};
+    }
+    const validState=(value:WaitState)=>value.schema===1&&value.id===watch&&['waiting','completed','failed','cancelled','timeout'].includes(value.status)&&Number.isSafeInteger(value.workerPid)&&value.workerPid>=0&&Number.isFinite(Date.parse(value.updatedAt))&&Number.isSafeInteger(value.polls)&&value.polls>=0;
+    if(!validState(state))throw new Error('Invalid wait observation');
     const worker = await processIdentity(state.workerPid);
-    return { spec, state, worker, workerCurrent: worker.state === 'alive' && state.workerIdentity === worker.identity, observationFresh: Date.now() - Date.parse(state.updatedAt) < Math.max(spec.pollMs * 3, 20000) };
+    if(state.status==='waiting')try{state=await readJson<WaitState>(join(directory,'state.json'));}catch(error){if((error as NodeJS.ErrnoException).code!=='ENOENT')throw error;}
+    if(!validState(state))throw new Error('Invalid wait observation');
+    const workerCurrent=worker.state==='alive'&&!!state.workerIdentity&&state.workerIdentity===worker.identity;
+    const workerStopped=worker.state==='gone'||worker.state==='alive'&&!!worker.identity&&!!state.workerIdentity&&worker.identity!==state.workerIdentity;
+    return { spec, state, worker, workerCurrent, runtimeState:state.status!=='waiting'?'settled':workerStopped?'interrupted':workerCurrent?'active':'unknown', observationFresh: Date.now() - Date.parse(state.updatedAt) < Math.max(spec.pollMs * 3, 20000) };
   }
   async list(task?: string) {
     const directory = await ensureDir(join(this.workspace.data, 'waits')), results = [];
@@ -77,8 +90,22 @@ export class TaskEvents {
     return results;
   }
   async cancel(watch: string, task?: string) {
-    const value = await this.status(watch, task); if (value.state.status === 'waiting') await writeJson(join(await this.directory(watch), 'control.json'), { id: watch, fingerprint: value.spec.fingerprint, action: 'cancel' }); return value;
+    let value = await this.status(watch, task);const directory=await this.directory(watch);
+    await writeJson(join(directory, 'control.json'), { id: watch, fingerprint: value.spec.fingerprint, action: 'cancel' });
+    if(value.state.status!=='waiting')return value;
+    if(value.runtimeState==='interrupted'){await this.finishCancelled(value.spec,value.state);return this.status(watch,task);}
+    if(value.workerCurrent)try{process.kill(value.state.workerPid,'SIGTERM');}catch(error){if((error as NodeJS.ErrnoException).code!=='ESRCH')throw error;}
+    const until=Date.now()+5000;
+    while(Date.now()<until){await new Promise(resolve=>setTimeout(resolve,50));value=await this.status(watch,task);if(value.state.status!=='waiting')return value;if(value.runtimeState==='interrupted'){await this.finishCancelled(value.spec,value.state);return this.status(watch,task);}}
+    return {...value,cancelRequested:true,note:'已请求停止等待，尚未确认等待器结束。目标命令或服务不会被取消。'};
   }
+  private async finishCancelled(spec:WaitSpec,state:WaitState){
+    const now=new Date().toISOString(),result={error:'等待器已退出，取消剩余等待；目标任务结果未被改写。'};
+    await writeJson(join(await this.directory(spec.id),'state.json'),{...state,status:'cancelled',updatedAt:now,lastError:result.error});
+    const event:TaskEvent={schema:1,id:`event-${spec.id}`,watch:spec.id,task:spec.task,entry:spec.entry,label:spec.label,outcome:'cancelled',result,createdAt:now,observation:spec.observation,resume:false};
+    await writeFile(join(await ensureDir(join(this.workspace.data,'events')),`${event.id}.json`),JSON.stringify(event),{flag:'wx',mode:0o600}).catch(error=>{if((error as NodeJS.ErrnoException).code!=='EEXIST')throw error;});
+  }
+  async cancelled(watch:string){const directory=await this.directory(watch),spec=await readJson<WaitSpec>(join(directory,'input.json'));try{const control=await readJson<{id:string;action:string;fingerprint:string}>(join(directory,'control.json'));return control.id===watch&&control.action==='cancel'&&control.fingerprint===spec.fingerprint;}catch(error){if((error as NodeJS.ErrnoException).code==='ENOENT')return false;throw error;}}
   async events(task?: string) {
     const directory = await ensureDir(join(this.workspace.data, 'events')), events = [];
     for (const file of await readdir(directory)) if (file.endsWith('.json')) {

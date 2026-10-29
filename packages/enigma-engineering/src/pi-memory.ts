@@ -154,7 +154,7 @@ export function createMemoryExtension(options: { enabled?: boolean; workspace?: 
     } });
     pi.registerCommand('memory-organize', { description: 'Consolidate up to three evidence-checked drafts while idle and refresh the rebuildable index', async handler(_text, ctx) {
       requireActive(); if (!ctx.isIdle() || ctx.hasPendingMessages()) throw new Error('Memory organization requires an idle session');
-      ctx.ui.notify(JSON.stringify(await store.organize({ signal: ctx.signal }), null, 2), 'info');
+      ctx.ui.notify(JSON.stringify(await store.organize({ signal: ctx.signal,access:access(ctx) }), null, 2), 'info');
     } });
   };
 }

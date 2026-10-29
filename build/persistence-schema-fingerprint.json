@@ -299,7 +299,7 @@
         "write-file",
         "mkdir"
       ],
-      "linePattern": "(?:file,redact|path\\.dirname\\(file\\))",
+      "linePattern": "(?:file,\\s*redact|path\\.dirname\\(file\\))",
       "ownerModule": "packages/enigma-engineering/src/artifacts.ts",
       "reason": "Writes a bounded report under the explicit engineering workspace's approved runs result directory; Artifacts owns its immutable version. This external project content must not be traversed by Hana epoch rollback.",
       "sourceFile": "plugins/enigma/conductor.ts"
@@ -310,7 +310,7 @@
       "kinds": [
         "atomic-write"
       ],
-      "linePattern": "statePath|workspace\\.data|fork\\.data",
+      "linePattern": "statePath|workspace\\.data|fork\\.data|originPath,\\{\\.\\.\\.origin,piSession",
       "ownerModule": "packages/enigma-engineering/src/pi-extension.ts",
       "reason": "Writes schema-1 engineering state in an explicit external workspace, outside HANA_HOME. Its repository checkpoint, user-requirement and cumulative-budget protocol is independently verified by Enigma; host epoch rollback must not traverse external repositories.",
       "sourceFile": "plugins/enigma/host.ts"
@@ -691,7 +691,7 @@
     ],
     "version": 3
   },
-  "payloadFingerprint": "sha256:b33a8bd5489f975a03bcf6beae712de113685ea5f124906bee892bd6ff4764f5",
+  "payloadFingerprint": "sha256:f9fcf9856d026e206d70cd76ac8dbc9cfab79423438f6a85b6451067deea49a2",
   "registry": [
     {
       "affectedByEpochMigration": true,
@@ -912,6 +912,42 @@
         "contract": "agent config and authored Markdown/image profile protocol",
         "kind": "directory-contract",
         "module": "core/agent-manager.ts"
+      }
+    },
+    {
+      "affectedByEpochMigration": false,
+      "bootstrapSafety": null,
+      "checkpointPolicy": "Retain completed downloads as user-visible artifacts; do not checkpoint an in-progress transfer as completed.",
+      "epochPolicy": "compatible",
+      "exemption": null,
+      "firstPossibleOpenPhase": "engine_construct",
+      "firstPossibleWritePhase": "runtime_ready",
+      "format": "mixed-directory",
+      "id": "browser-downloads",
+      "identityContract": "Each profile/session hash has its own transfer ledger; UUID and validated filename determine the only allowed path.",
+      "migrationEntry": [],
+      "openEntry": [
+        "BrowserDownloads constructor"
+      ],
+      "ownerModule": "shared/browser-downloads.cjs",
+      "pathExclusions": [],
+      "pathKind": "tree",
+      "pathPattern": "cache/browser-downloads/{sessionHash}/",
+      "pathPatterns": [
+        "cache/browser-downloads/{sessionHash}/"
+      ],
+      "preCoordinatorReadProjection": null,
+      "protocolModules": [],
+      "restorePolicy": "Reconcile the index with existing files; interrupted transfers never become completed by restoring metadata alone.",
+      "schemaContract": {
+        "compatibility": "New additive managed-download directory. Existing browser cold-state schema and files remain unchanged.",
+        "kind": "protocol",
+        "source": "shared/browser-downloads.cjs"
+      },
+      "schemaSource": {
+        "contract": "Managed download files plus an atomic array index; UUID filenames, owning session hash, completed/interrupted/cancelled/missing states",
+        "kind": "directory-contract",
+        "module": "shared/browser-downloads.cjs"
       }
     },
     {
@@ -1703,7 +1739,7 @@
       "protocolModules": [],
       "restorePolicy": "Restore only through the schema 1 binding reader; external workspace/code recovery remains an explicit Enigma operation.",
       "schemaContract": {
-        "compatibility": "An additive plugin-owned file; existing Hana stores and DATA_EPOCH remain unchanged.",
+        "compatibility": "An additive plugin-owned file; existing Hana stores and DATA_EPOCH remain unchanged. Material search returns query/count metadata over HTTP without changing these schema 1 bindings or their restore semantics.",
         "kind": "runtime-source",
         "source": "plugins/enigma/host.ts"
       },
@@ -2050,6 +2086,43 @@
         "contract": "normalizeMcpConfig read-time normalization (servers/connectors alias, auth and OAuth field defaults, per-connector permission policy defaults, deferred-loading defaults)",
         "kind": "runtime-contract",
         "module": "core/mcp/manager.ts"
+      }
+    },
+    {
+      "affectedByEpochMigration": false,
+      "bootstrapSafety": null,
+      "checkpointPolicy": "Optional capability cache; never contains credentials or input images.",
+      "epochPolicy": "compatible",
+      "exemption": null,
+      "firstPossibleOpenPhase": "engine_construct",
+      "firstPossibleWritePhase": "runtime_ready",
+      "format": "json",
+      "id": "model-capability-observations",
+      "identityContract": "Profile-local provider/model signature with proof image digest and observation time.",
+      "migrationEntry": [],
+      "openEntry": [
+        "ModelCapabilityObservations.apply",
+        "ModelCapabilityObservations.recordImageSupport"
+      ],
+      "ownerModule": "core/model-capability-observations.ts",
+      "pathExclusions": [],
+      "pathKind": "file",
+      "pathPattern": "model-capability-observations.json",
+      "pathPatterns": [
+        "model-capability-observations.json"
+      ],
+      "preCoordinatorReadProjection": null,
+      "protocolModules": [],
+      "restorePolicy": "Drop incompatible observations; original provider declarations remain authoritative until a new probe succeeds.",
+      "schemaContract": {
+        "compatibility": "New optional file. Missing, expired, or unmatched records leave model declarations unchanged. No existing model configuration is migrated.",
+        "kind": "runtime-source",
+        "source": "core/model-capability-observations.ts"
+      },
+      "schemaSource": {
+        "contract": "Array of verified image-readback records keyed by provider/model and endpoint/declaration signature; observations expire after 30 days",
+        "kind": "runtime-contract",
+        "module": "core/model-capability-observations.ts"
       }
     },
     {
@@ -3122,7 +3195,9 @@
         ],
         "reason": "Desktop startup reads only these named optional fields before the epoch transition; removal or semantic reinterpretation requires moving the read behind the coordinator."
       },
-      "protocolModules": [],
+      "protocolModules": [
+        "shared/workspace-ui-state.ts"
+      ],
       "restorePolicy": "Restore only through the owning module after reader compatibility is established.",
       "schemaContract": {
         "compatibility": "PreferencesManager is intentionally permissive; _dataVersion is the legacy migration cursor, not a strict schema validator. Unreadable source bytes are preserved before any replacement document is written.",
@@ -3292,8 +3367,8 @@
   ],
   "review": {
     "classification": "compatible",
-    "compatibilityReason": "Read existing default model policy and improve form layout; persisted formats unchanged.",
-    "payloadFingerprint": "sha256:b33a8bd5489f975a03bcf6beae712de113685ea5f124906bee892bd6ff4764f5"
+    "compatibilityReason": "Desktop browser download presentation and settings shortcut handlers change only runtime source. Existing window bounds, version bookmarks, download index records and cache paths retain their schemas; a standalone browser uses the same hashed download directory convention. DATA_EPOCH remains 1 and no migration is required.",
+    "payloadFingerprint": "sha256:f9fcf9856d026e206d70cd76ac8dbc9cfab79423438f6a85b6451067deea49a2"
   },
   "schemas": [
     {
@@ -3379,6 +3454,13 @@
       "storeId": "agent-profile"
     },
     {
+      "contract": "Managed download files plus an atomic array index; UUID filenames, owning session hash, completed/interrupted/cancelled/missing states",
+      "kind": "directory-contract",
+      "module": "shared/browser-downloads.cjs",
+      "sourceHash": "sha256:90697317beb34bb349c3a3a114dd4722bf8167369fee716de70edca7703db764",
+      "storeId": "browser-downloads"
+    },
+    {
       "contract": "channel YAML parser, serializer, and generation contract",
       "kind": "runtime-contract",
       "module": "lib/channels/channel-store.ts",
@@ -3389,7 +3471,7 @@
       "contract": "token-scoped import plan/package and export package protocol",
       "kind": "directory-contract",
       "module": "lib/character-cards/service.ts",
-      "sourceHash": "sha256:407c0265bf71fb054c6e4df2bd10320114e24b03e9a1b7e6e837db70165e66c6",
+      "sourceHash": "sha256:130916a7499565b97ddebf09a8e579db33db806f2925954d54103a36798f72bd",
       "storeId": "character-card-staging"
     },
     {
@@ -3476,7 +3558,7 @@
       "contract": "update channel record version, device identifier, activation flag, update feed address, activation time, and held invite codes",
       "kind": "runtime-contract",
       "module": "desktop/auto-updater.cjs",
-      "sourceHash": "sha256:c55d64f0b00c7ea454b2f7adaba35633703702b3625985f3994fd8501271151f",
+      "sourceHash": "sha256:16eb3dee7f24c6fcd24f5c73147c4bad2a77a6f90365f3e10294d65bba9573e3",
       "storeId": "desktop-update-channel"
     },
     {
@@ -3490,7 +3572,7 @@
       "contract": "desktop window bounds, release announcement bookmark, and update cache version marker readers",
       "kind": "directory-contract",
       "module": "desktop/main.cjs",
-      "sourceHash": "sha256:01d8babd69c27000a9b45b9b97d00e9b70cde6c87367b24a062fec154ab02d1b",
+      "sourceHash": "sha256:05e726744cc15ea206d029815183439caa330e281c0b660af1c54f2907c45811",
       "storeId": "desktop-window-version-state"
     },
     {
@@ -3504,28 +3586,28 @@
       "contract": "schema 1 manager identity, explicit limits, owned projects/conversations, resumable interrupted tasks, selected integration previews and original acceptance evidence",
       "kind": "runtime-contract",
       "module": "plugins/enigma/conductor.ts",
-      "sourceHash": "sha256:a64a8d628562a91bd02c5eeadbef7c859c833fa2aad2600ce2aa9d567a6178a8",
+      "sourceHash": "sha256:ee98da2b7a7c5a6cc838ff47294fb9bd6dd320e76a6ec24bedcc9e6e4c1ab07e",
       "storeId": "enigma-conductor-ledgers"
     },
     {
       "contract": "immutable hash-named SBPL profiles derived from the current native sandbox, repository rights and network policy",
       "kind": "directory-contract",
       "module": "plugins/enigma/execution-policy.ts",
-      "sourceHash": "sha256:d3e00d1614c03fab79ec30f603bfec2f0580b6016a37ceb1b1f75a6a4db83cde",
+      "sourceHash": "sha256:4cd5e3d12006bff89a22355eeb8b60dde366ecf9a0a0fc29ef0425333a884636",
       "storeId": "enigma-execution-policies"
     },
     {
       "contract": "managerId/taskId owned isolated workspace roots; code/Enigma state have independently verified protocols",
       "kind": "directory-contract",
       "module": "plugins/enigma/conductor.ts",
-      "sourceHash": "sha256:a64a8d628562a91bd02c5eeadbef7c859c833fa2aad2600ce2aa9d567a6178a8",
+      "sourceHash": "sha256:ee98da2b7a7c5a6cc838ff47294fb9bd6dd320e76a6ec24bedcc9e6e4c1ab07e",
       "storeId": "enigma-managed-workspace-roots"
     },
     {
       "contract": "schema 1 native-session/workspace binding, absolute roots, explicit memory flag, validated source identity, manager model grants and bounded guardian configuration/usage",
       "kind": "runtime-contract",
       "module": "plugins/enigma/host.ts",
-      "sourceHash": "sha256:d4aece8919873e27f1f513abf489745e7d4552298ce64c0e4c9401e248c04547",
+      "sourceHash": "sha256:1d821eb5784f98a877fb3084a4921042816f25f9f60e63aa66adc51b2376f373",
       "storeId": "enigma-session-bindings"
     },
     {
@@ -3581,7 +3663,7 @@
       "contract": "installed manifest, install receipt, backup, and source-package directory protocols",
       "kind": "directory-contract",
       "module": "core/plugin-manager.ts",
-      "sourceHash": "sha256:78098ac67519299dd169da7eab6abef5f960141551fb63a5266c3d36210d9497",
+      "sourceHash": "sha256:e5a7162b63eda5eae43b17da6724cb40427bcc1cad84dafafc7889499a113db7",
       "storeId": "installed-plugins"
     },
     {
@@ -3609,7 +3691,7 @@
       "contract": "LoopStore schemaVersion-1 sessionId-keyed record shape, corrupt-file quarantine, and atomic serializer",
       "kind": "runtime-contract",
       "module": "lib/loop/loop-store.ts",
-      "sourceHash": "sha256:ecd35c3e891fd553e0a1ce992947df946fd14d28612cb522e026fe7a7ef2561d",
+      "sourceHash": "sha256:27807f4dc09a69f1e3742f72561147423dc85c3c8c83f0723579dd9f3e860dc6",
       "storeId": "loop-state"
     },
     {
@@ -3625,6 +3707,13 @@
       "module": "core/mcp/manager.ts",
       "sourceHash": "sha256:cbd5857f080b687f62e61aa43f046cc9d2b8122e40f1d9711237738ec237304c",
       "storeId": "mcp-config"
+    },
+    {
+      "contract": "Array of verified image-readback records keyed by provider/model and endpoint/declaration signature; observations expire after 30 days",
+      "kind": "runtime-contract",
+      "module": "core/model-capability-observations.ts",
+      "sourceHash": "sha256:f28af6158a0503389fc3ad65b3ae7fc0b6dfbf31cb1b9d27c6c84056d43b32de",
+      "storeId": "model-capability-observations"
     },
     {
       "contract": "job.json/input.html request contract and generated PDF output lifecycle",
@@ -3651,7 +3740,7 @@
       "contract": "verified plugin release ZIP naming by pluginId/version and expected sha256",
       "kind": "directory-contract",
       "module": "server/routes/plugins.ts",
-      "sourceHash": "sha256:7aca9bf305209962b8db0710cd36df12ff761c41715c85b0965b5088a6a97bac",
+      "sourceHash": "sha256:53fd983bd65ba96a41ad1f5c662e1cc307e079dd3936331330484c4fa16dc89d",
       "storeId": "plugin-download-cache"
     },
     {
@@ -3720,7 +3809,7 @@
       "contract": "server-info writer and desktop bootstrap reader",
       "kind": "runtime-contract",
       "module": "server/index.ts",
-      "sourceHash": "sha256:a63a67ce8d4f09cb70a3aaab7728146cae2dab7c32a6efa4e24bdf7efe7e36db",
+      "sourceHash": "sha256:6dfae1d0553cd7baea26fb1098d04afdae9c7a1020ba1f4cf63c1e8c9e0bd3d9",
       "storeId": "server-runtime-info"
     },
     {
@@ -3742,7 +3831,7 @@
         {
           "contract": "core/session-coordinator.ts Hana metadata extensions",
           "module": "core/session-coordinator.ts",
-          "sourceHash": "sha256:1f3a2cd17df1efb3a8d9f3c8d74ced4e5cf0be095b79b85c6b1874d35336ad23"
+          "sourceHash": "sha256:fe680fe00ad1cae30dd704988b5d3984e880b14f56983ed193896ef39428656b"
         },
         {
           "contract": "core/session-jsonl-file.ts repair contract",
@@ -3889,14 +3978,20 @@
       "contract": "UsageLedger reader and atomic serializer",
       "kind": "runtime-contract",
       "module": "lib/llm/usage-ledger.ts",
-      "sourceHash": "sha256:00a7790fb4ac8bd6bb3ea801272e804fd222dd3314c66f5d68c7e1a5953e7af8",
+      "sourceHash": "sha256:b3feefa4165a74e96820f0875d9f903e93df0efb4f51c85b5c7f457a06e952c8",
       "storeId": "usage-ledger"
     },
     {
       "contract": "PreferencesManager defaults, coercion, and _dataVersion migration driver",
       "kind": "runtime-contract",
       "module": "core/preferences-manager.ts",
-      "sourceHash": "sha256:08db73ab9defe36e3c0f64e4a37298785293e89031f82379e13ba7b47be09def",
+      "protocolModules": [
+        {
+          "module": "shared/workspace-ui-state.ts",
+          "sourceHash": "sha256:316fb703612bf2d5cd2d808c4f08d13eb72bee6e157a9618bcc6654ce3c326cf"
+        }
+      ],
+      "sourceHash": "sha256:d728b587608a2b2c154138dca1993b1bea9e60864fc9526095c27100bf11b4fc",
       "storeId": "user-preferences"
     },
     {
@@ -4499,6 +4594,22 @@
     },
     {
       "exemptionId": "cross-store-first-run-bootstrap",
+      "kind": "copy-file",
+      "ordinal": 0,
+      "reason": "First-run seeds several registered stores from packaged templates. Flow-sensitive attribution moves into the future coordinator; this exact composition file is not ignored by directory.",
+      "sourceFile": "core/first-run.ts",
+      "storeId": null
+    },
+    {
+      "exemptionId": "cross-store-first-run-bootstrap",
+      "kind": "mkdir",
+      "ordinal": 0,
+      "reason": "First-run seeds several registered stores from packaged templates. Flow-sensitive attribution moves into the future coordinator; this exact composition file is not ignored by directory.",
+      "sourceFile": "core/first-run.ts",
+      "storeId": null
+    },
+    {
+      "exemptionId": "cross-store-first-run-bootstrap",
       "kind": "mkdir",
       "ordinal": 0,
       "reason": "First-run seeds several registered stores from packaged templates. Flow-sensitive attribution moves into the future coordinator; this exact composition file is not ignored by directory.",
@@ -4572,6 +4683,14 @@
     {
       "exemptionId": "cross-store-first-run-bootstrap",
       "kind": "rename",
+      "ordinal": 0,
+      "reason": "First-run seeds several registered stores from packaged templates. Flow-sensitive attribution moves into the future coordinator; this exact composition file is not ignored by directory.",
+      "sourceFile": "core/first-run.ts",
+      "storeId": null
+    },
+    {
+      "exemptionId": "cross-store-first-run-bootstrap",
+      "kind": "secret-write",
       "ordinal": 0,
       "reason": "First-run seeds several registered stores from packaged templates. Flow-sensitive attribution moves into the future coordinator; this exact composition file is not ignored by directory.",
       "sourceFile": "core/first-run.ts",
@@ -5432,6 +5551,14 @@
       "reason": "The legacy migration orchestrator mutates many registered targets. Each target is inventoried, while exact-site flow attribution remains prerequisite work for the coordinator.",
       "sourceFile": "core/migrations.ts",
       "storeId": null
+    },
+    {
+      "exemptionId": null,
+      "kind": "secret-write",
+      "ordinal": 0,
+      "reason": "Writes a verified, bounded-age capability observation through the private file writer.",
+      "sourceFile": "core/model-capability-observations.ts",
+      "storeId": "model-capability-observations"
     },
     {
       "exemptionId": null,
@@ -9114,12 +9241,36 @@
       "storeId": null
     },
     {
-      "exemptionId": null,
+      "exemptionId": "external-enigma-session-state",
       "kind": "atomic-write",
       "ordinal": 0,
-      "reason": "Writes the native engineering binding map only.",
+      "reason": "Writes schema-1 engineering state in an explicit external workspace, outside HANA_HOME. Its repository checkpoint, user-requirement and cumulative-budget protocol is independently verified by Enigma; host epoch rollback must not traverse external repositories.",
       "sourceFile": "plugins/enigma/host.ts",
-      "storeId": "enigma-session-bindings"
+      "storeId": null
+    },
+    {
+      "exemptionId": "external-enigma-session-state",
+      "kind": "atomic-write",
+      "ordinal": 0,
+      "reason": "Writes schema-1 engineering state in an explicit external workspace, outside HANA_HOME. Its repository checkpoint, user-requirement and cumulative-budget protocol is independently verified by Enigma; host epoch rollback must not traverse external repositories.",
+      "sourceFile": "plugins/enigma/host.ts",
+      "storeId": null
+    },
+    {
+      "exemptionId": "external-enigma-session-state",
+      "kind": "atomic-write",
+      "ordinal": 0,
+      "reason": "Writes schema-1 engineering state in an explicit external workspace, outside HANA_HOME. Its repository checkpoint, user-requirement and cumulative-budget protocol is independently verified by Enigma; host epoch rollback must not traverse external repositories.",
+      "sourceFile": "plugins/enigma/host.ts",
+      "storeId": null
+    },
+    {
+      "exemptionId": "external-enigma-session-state",
+      "kind": "atomic-write",
+      "ordinal": 0,
+      "reason": "Writes schema-1 engineering state in an explicit external workspace, outside HANA_HOME. Its repository checkpoint, user-requirement and cumulative-budget protocol is independently verified by Enigma; host epoch rollback must not traverse external repositories.",
+      "sourceFile": "plugins/enigma/host.ts",
+      "storeId": null
     },
     {
       "exemptionId": null,
@@ -9136,6 +9287,22 @@
       "reason": "Writes the native engineering binding map only.",
       "sourceFile": "plugins/enigma/host.ts",
       "storeId": "enigma-session-bindings"
+    },
+    {
+      "exemptionId": null,
+      "kind": "atomic-write",
+      "ordinal": 1,
+      "reason": "Writes the native engineering binding map only.",
+      "sourceFile": "plugins/enigma/host.ts",
+      "storeId": "enigma-session-bindings"
+    },
+    {
+      "exemptionId": null,
+      "kind": "write-file",
+      "ordinal": 0,
+      "reason": "Copies a restored Pi session into its owning native session directory with exclusive creation and verified identity; preserves the native Pi schema.",
+      "sourceFile": "plugins/enigma/host.ts",
+      "storeId": "session-jsonl"
     },
     {
       "exemptionId": null,
@@ -10056,6 +10223,54 @@
       "reason": "The archive codec writes caller-selected archive/extraction paths; signed artifact ownership is assigned at its callers.",
       "sourceFile": "shared/artifact-core/ustar.cjs",
       "storeId": null
+    },
+    {
+      "exemptionId": null,
+      "kind": "mkdir",
+      "ordinal": 0,
+      "reason": "Creates managed downloads and atomically replaces their session-scoped index.",
+      "sourceFile": "shared/browser-downloads.cjs",
+      "storeId": "browser-downloads"
+    },
+    {
+      "exemptionId": null,
+      "kind": "remove-path",
+      "ordinal": 0,
+      "reason": "Creates managed downloads and atomically replaces their session-scoped index.",
+      "sourceFile": "shared/browser-downloads.cjs",
+      "storeId": "browser-downloads"
+    },
+    {
+      "exemptionId": null,
+      "kind": "remove-path",
+      "ordinal": 0,
+      "reason": "Creates managed downloads and atomically replaces their session-scoped index.",
+      "sourceFile": "shared/browser-downloads.cjs",
+      "storeId": "browser-downloads"
+    },
+    {
+      "exemptionId": null,
+      "kind": "remove-path",
+      "ordinal": 0,
+      "reason": "Creates managed downloads and atomically replaces their session-scoped index.",
+      "sourceFile": "shared/browser-downloads.cjs",
+      "storeId": "browser-downloads"
+    },
+    {
+      "exemptionId": null,
+      "kind": "rename",
+      "ordinal": 0,
+      "reason": "Creates managed downloads and atomically replaces their session-scoped index.",
+      "sourceFile": "shared/browser-downloads.cjs",
+      "storeId": "browser-downloads"
+    },
+    {
+      "exemptionId": null,
+      "kind": "write-file",
+      "ordinal": 0,
+      "reason": "Creates managed downloads and atomically replaces their session-scoped index.",
+      "sourceFile": "shared/browser-downloads.cjs",
+      "storeId": "browser-downloads"
     },
     {
       "exemptionId": null,

@@ -1,3 +1,4 @@
+import { GlassSelection } from '../../ui/GlassSelection';
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode, type WheelEvent } from 'react';
 import styles from './AutomationPanel.module.css';
 
@@ -175,7 +176,7 @@ export function AgentTabScroller({
         ref={scrollerRef}
         onWheel={handleWheel}
       >
-        <div className={styles.agentTabs} role="tablist" aria-label={ariaLabel}>
+        <div className={styles.agentTabs} role="tablist" aria-label={ariaLabel} data-glass-segmented=""><GlassSelection selection={activeId || ""}/>
           {items.map((item, index) => {
             const active = index === activeIndex;
             return (

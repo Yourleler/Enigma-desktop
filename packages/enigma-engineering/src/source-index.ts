@@ -45,12 +45,18 @@ export class SourceIndex {
     return { sources, reused, refreshed, truncated, diagnostics };
   }
   async select(query: string, options: { language?: IndexedSource['language']; maxFiles?: number; signal?: AbortSignal } = {}) {
+    const maximum = options.maxFiles ?? 160;
+    if(!Number.isSafeInteger(maximum)||maximum<0||maximum>50000)throw new Error('Invalid source selection budget');
     const index = await this.refresh({ signal: options.signal });
     const terms = query.match(/[\p{L}_$][\p{L}\p{N}_$]{1,100}/gu) ?? [];
     const ranked = index.sources.filter(item => !options.language || item.language === options.language).map(item => ({ ...item,
       score: terms.reduce((score, term) => score + (item.terms.includes(term) ? 4 : 0) + (item.file.includes(term) ? 2 : 0), 0) }));
     ranked.sort((a, b) => b.score - a.score || Number(/test|spec/.test(a.file)) - Number(/test|spec/.test(b.file)) || `${a.repo}:${a.file}`.localeCompare(`${b.repo}:${b.file}`));
-    const maximum = options.maxFiles ?? 160;
     return { files: ranked.slice(0, maximum), candidates: ranked, total: ranked.length, truncated: index.truncated || ranked.length > maximum, reused: index.reused, refreshed: index.refreshed, diagnostics: index.diagnostics };
   }
+}
+/** Public navigation responses carry paths and scores, not the internal corpus. */
+export function sourceSelectionView(selection:Awaited<ReturnType<SourceIndex['select']>>){
+  const {candidates:_all,files,...metadata}=selection;
+  return {...metadata,files:files.map(({terms:_terms,...file})=>file)};
 }

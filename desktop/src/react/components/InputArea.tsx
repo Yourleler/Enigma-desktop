@@ -5,7 +5,7 @@
  * 斜杠命令逻辑在 ./input/slash-commands.ts。
  */
 
-import { useState, useEffect, useRef, useCallback, useMemo, type ChangeEvent } from 'react';
+import { useState, useEffect,useLayoutEffect, useRef, useCallback, useMemo, type ChangeEvent } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import type { Editor, JSONContent } from '@tiptap/core';
 import { useStore } from '../stores';
@@ -36,6 +36,7 @@ import { InputContextRow } from './input/InputContextRow';
 import { InputControlBar } from './input/InputControlBar';
 import type { PermissionMode } from './input/PlanModeButton';
 import { SessionConfirmationPrompt } from './input/SessionConfirmationPrompt';
+import { TokenMeterPill } from './input/TokenMeterPill';
 import { serializeEditor } from '../utils/editor-serializer';
 import {
   buildFileMentionItems,
@@ -545,7 +546,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
   const [audioRecordingStartedAt, setAudioRecordingStartedAt] = useState<number | null>(null);
   const [audioRecordingElapsed, setAudioRecordingElapsed] = useState(0);
   const [audioRecordingError, setAudioRecordingError] = useState<string | null>(null);
-  const inputLocked = deletedAgentReadOnly || continuingDeletedAgentSession;
+  const inputLocked = deletedAgentReadOnly || continuingDeletedAgentSession || !!pendingSessionSwitchPath;
 
   useEffect(() => {
     setContinuingDeletedAgentSession(false);
@@ -587,13 +588,14 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
 
   // ── Welcome 模式 placeholder tip（mount、i18n ready、每次 welcome 重新激活时随机一条） ──
   const pickRandomWelcomeTip = useCallback((): string => {
+    if(agentYuan==='enigma')return '描述目标、项目背景和需要保留的要求…';
     const tipsRaw: unknown = t('welcome.placeholderTips');
     const tips = Array.isArray(tipsRaw)
       ? tipsRaw.filter((tip): tip is string => typeof tip === 'string' && tip.length > 0)
       : [];
     if (tips.length === 0) return '';
     return tips[Math.floor(Math.random() * tips.length)];
-  }, [t]);
+  }, [t,agentYuan]);
 
   const [welcomeTip, setWelcomeTip] = useState<string>(() =>
     welcomeVisible ? pickRandomWelcomeTip() : '',
@@ -660,7 +662,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
     },
   });
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     editor?.setEditable?.(!inputLocked);
     if (inputLocked) {
       setSlashMenuOpen(false);
@@ -959,8 +961,8 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
 
   const handleSlashToggle = useCallback(() => {
     if (slashMenuOpen) dismissSlashMenu();
-    else openSlashMenu();
-  }, [slashMenuOpen, dismissSlashMenu, openSlashMenu]);
+    else { editor?.commands.focus?.(); openSlashMenu(); }
+  }, [slashMenuOpen, dismissSlashMenu, openSlashMenu,editor]);
 
   const handleBrowserFileInputChange = useCallback(async (event: ChangeEvent<HTMLInputElement>) => {
     if (inputLocked) {
@@ -1410,7 +1412,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
   const draftDoc = useStore(s => (
     draftKey ? sessionScopedValue(s, s.draftDocs, draftKey) : undefined
   ));
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!editor || !draftKey) return;
     const draft = draftText;
     const draftDocValue = draftDoc;
@@ -2254,6 +2256,8 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
           />
         )}
       </div>
+      <TokenMeterPill />
+      {pendingSessionSwitchPath&&<p role="status" className={styles['session-switch-hint']}>{locale?.startsWith('zh')?'正在打开目标对话，草稿就绪后即可输入…':'Opening the selected chat; input resumes when its draft is ready…'}</p>}
       <div className={styles['input-stack']}>
         {visibleSessionConfirmation && (
           <SessionConfirmationPrompt
@@ -2261,7 +2265,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
             exiting={sessionConfirmationExiting}
           />
         )}
-        <div className={styles['input-wrapper']} ref={inputCardRef}>
+        <div className={styles['input-wrapper']} ref={inputCardRef} data-liquid="composer">
           <input
             ref={browserFileInputRef}
             className={styles['browser-file-input']}

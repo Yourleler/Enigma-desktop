@@ -63,7 +63,7 @@ export function chapterRailHoverHit(
 
 function isEditable(previewItem: PreviewItem | null): boolean {
   if (!previewItem) return false;
-  if (previewItem.status === 'missing') return false;
+  if (previewItem.status === 'missing' || previewItem.status === 'unavailable') return false;
   return EDITABLE_TYPES.has(previewItem.type)
     && (!!previewItem.filePath || isRemoteWorkbenchContentRef(previewItem.remoteContentRef));
 }
@@ -317,14 +317,14 @@ export function PreviewPanel() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (!previewOpen || !(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== 'f') return;
+      if (!previewOpen || previewItem?.type === 'browser' || !(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== 'f') return;
       event.preventDefault();
       event.stopPropagation();
       setFindOpen(true);
     };
     window.addEventListener('keydown', onKeyDown, true);
     return () => window.removeEventListener('keydown', onKeyDown, true);
-  }, [previewOpen]);
+  }, [previewOpen, previewItem?.type]);
 
   useEffect(() => {
     setFindIndex(0);
@@ -395,7 +395,7 @@ export function PreviewPanel() {
             />
           )}
           <ClassicFindBox
-            open={findOpen}
+            open={findOpen && previewItem?.type !== 'browser'}
             query={findQuery}
             resultIndex={Math.min(findIndex, Math.max(0, findCount - 1))}
             resultCount={findCount}
@@ -404,7 +404,7 @@ export function PreviewPanel() {
             onNext={() => goFind(1)}
             onClose={() => setFindOpen(false)}
           />
-          {previewOpen && previewItem && previewItem.status !== 'missing' && (
+          {previewOpen && previewItem && !['browser', 'media', 'pdf', 'file-info'].includes(previewItem.type) && !['missing','unavailable'].includes(previewItem.status||'') && (
             <FloatingActions
               content={previewItem.content}
               filePath={previewItem.filePath}

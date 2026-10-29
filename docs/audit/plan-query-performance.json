@@ -1,0 +1,18 @@
+{
+  "scenario": "11 steps, shared prerequisites, one verification evidence",
+  "before": {
+    "steps": 11,
+    "completed": 11,
+    "evidenceReads": 177,
+    "durationMs": 5095
+  },
+  "after": {
+    "steps": 11,
+    "completed": 11,
+    "evidenceReads": 1,
+    "durationMs": 34
+  },
+  "scope": "One local fixture, not a universal latency guarantee",
+  "freshness": "Cache is scoped to one view; subsequent source changes invalidate evidence",
+  "pathsAndProviderNamesRedacted": true
+}

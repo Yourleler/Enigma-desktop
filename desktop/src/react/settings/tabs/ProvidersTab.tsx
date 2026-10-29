@@ -7,7 +7,7 @@ import { loadSettingsConfig } from '../actions';
 import { ProviderDetail } from './providers/ProviderDetail';
 import { AddCustomButton, AddProviderOverlay } from './providers/ProviderList';
 import { OtherModelsSection } from './providers/OtherModelsSection';
-import { UsageLedgerSection } from './providers/UsageLedgerSection';
+
 import { SettingsSection } from '../components/SettingsSection';
 import { ProviderIcon } from '@/ui';
 import styles from '../Settings.module.css';
@@ -191,7 +191,7 @@ export function ProvidersTab() {
         <OtherModelsSection providers={providers} />
       </SettingsSection>
 
-      <UsageLedgerSection />
+      <button type="button" onClick={()=>useSettingsStore.setState({activeTab:'usage'})}>查看用量统计与历史记录</button>
     </div>
   );
 }

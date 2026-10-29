@@ -1,10 +1,26 @@
 import assert from 'node:assert/strict';
-import { readFile, writeFile, symlink, rm } from 'node:fs/promises';
+import { readFile, writeFile, symlink, rm,chmod,stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import test from 'node:test';
 import { runProcess } from '../src/process.js';
 import { repoGraph, traceCode } from '../src/reading.js';
 import { fixture } from './fixtures.js';
+
+test('failed restoration compensates executable-bit changes even when file contents are unchanged',async()=>{
+ const {root,workspace}=await fixture();try{
+  const modeFile=join(root,'library','a-mode.txt'),later=join(root,'library','z-later.txt');await writeFile(modeFile,'same');await chmod(modeFile,0o644);await writeFile(later,'old');const target=await workspace.checkpoint('old');
+  await chmod(modeFile,0o755);await writeFile(later,'new');const expected=await workspace.checkpoint('current'),original=workspace.path.bind(workspace);let calls=0;
+  workspace.path=async(repo,file,access)=>{if(repo==='library'&&file==='z-later.txt'&&access==='write'&&++calls===2)throw new Error('injected later write failure');return original(repo,file,access);};
+  await assert.rejects(workspace.exclusive(()=>workspace.restore(target.id,expected.id)),/changes rolled back/);assert.equal((await stat(modeFile)).mode&0o777,0o755);assert.equal(await readFile(later,'utf8'),'new');
+ }finally{await rm(root,{recursive:true,force:true});}
+});
+test('an external file-mode change after restore preflight is not overwritten',async()=>{
+ const {root,workspace}=await fixture();try{
+  const file=join(root,'library','mode.txt');await writeFile(file,'old');await chmod(file,0o644);const target=await workspace.checkpoint('old');await writeFile(file,'new');const expected=await workspace.checkpoint('current'),original=workspace.path.bind(workspace);let changed=false;
+  workspace.path=async(repo,name,access)=>{const result=await original(repo,name,access);if(!changed&&repo==='library'&&name==='mode.txt'&&access==='write'){changed=true;await chmod(file,0o755);}return result;};
+  await assert.rejects(workspace.exclusive(()=>workspace.restore(target.id,expected.id)),/Concurrent edit/);assert.equal((await stat(file)).mode&0o777,0o755);assert.equal(await readFile(file,'utf8'),'new');
+ }finally{await rm(root,{recursive:true,force:true});}
+});
 
 test('three repositories: dependency order, source locations, and joint verification', async () => {
   const { root, workspace } = await fixture();
@@ -106,4 +122,13 @@ test('no checks is unverified; failed and timed out checks are not completion', 
     assert.equal(cancelled.status, 'cancelled');
     const missing = await runProcess(['missing-enigma-executable'], root); assert.equal(missing.status, 'unknown');
   } finally { await rm(root, { recursive: true, force: true }); }
+});
+test('same-process workspace adapters serialize legitimate operations while retaining disk lock and nested-operation protection',async()=>{
+  const {root,workspace}=await fixture();try{
+    const {Workspace}=await import('../src/workspace.js'),other=await Workspace.open(root);let release!:()=>void,started!:()=>void;const began=new Promise<void>(resolve=>{started=resolve;});
+    const first=workspace.exclusive(async()=>{started();await new Promise<void>(resolve=>{release=resolve;});await workspace.addCheck({id:'first',repo:'library',argv:[process.execPath,'-e','process.exit(0)']});});await began;
+    let completed=false;const second=other.exclusive(async()=>{await other.addCheck({id:'second',repo:'sdk',argv:[process.execPath,'-e','process.exit(0)']});completed=true;});
+    await new Promise(resolve=>setTimeout(resolve,20));assert.equal(completed,false);release();await Promise.all([first,second]);await workspace.reload();assert(workspace.config.checks.some(check=>check.id==='first')&&workspace.config.checks.some(check=>check.id==='second'));
+    await assert.rejects(workspace.exclusive(()=>other.exclusive(async()=>{})),/already active/);
+  }finally{await rm(root,{recursive:true,force:true});}
 });

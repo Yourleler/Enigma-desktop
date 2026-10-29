@@ -2,6 +2,7 @@ export const COMPUTER_USE_ERRORS = Object.freeze({
   DISABLED: "COMPUTER_USE_DISABLED",
   REQUIRES_VISION_MODEL: "COMPUTER_USE_REQUIRES_VISION_MODEL",
   OS_PERMISSION_DENIED: "OS_PERMISSION_DENIED",
+  SCREEN_LOCKED: "SCREEN_LOCKED",
   APP_APPROVAL_REQUIRED: "APP_APPROVAL_REQUIRED",
   LEASE_NOT_FOUND: "LEASE_NOT_FOUND",
   LEASE_RELEASED: "LEASE_RELEASED",
@@ -13,6 +14,9 @@ export const COMPUTER_USE_ERRORS = Object.freeze({
   ACTION_REQUIRES_INPUT_INJECTION_APPROVAL: "ACTION_REQUIRES_INPUT_INJECTION_APPROVAL",
   PROVIDER_UNAVAILABLE: "PROVIDER_UNAVAILABLE",
   PROVIDER_CRASHED: "PROVIDER_CRASHED",
+  CANCELLED: "COMPUTER_OPERATION_CANCELLED",
+  INPUT_RELEASE_FAILED: "INPUT_RELEASE_FAILED",
+  OBSERVATION_FAILED_AFTER_ACTION: "OBSERVATION_FAILED_AFTER_ACTION",
 });
 
 export class ComputerUseError extends Error {
@@ -20,7 +24,7 @@ export class ComputerUseError extends Error {
   declare details: Record<string, any>;
 
   constructor(code: any, message: any, details: Record<string, any> = {}) {
-    super(message ? `${code}: ${message}` : code);
+    super(message ? String(message).startsWith(`${code}:`) ? message : `${code}: ${message}` : code);
     this.name = "ComputerUseError";
     this.code = code;
     this.details = details;

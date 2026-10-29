@@ -1,11 +1,12 @@
 import fs from "fs";
 import path from "path";
 import crypto from "crypto";
+import { createIsolatedFileWatcher } from "../isolated-file-watcher.ts";
 import { ResourceEventBus } from "./resource-event-bus.ts";
 import { normalizeResourceRef, resourceKeyForRef } from "./resource-refs.ts";
 import type { ResourceRef } from "./types.ts";
 
-type WatchHandle = { close: () => void };
+type WatchHandle = { close: () => void; ready?: Promise<void> };
 type WatchChange =
   | { kind: "exact"; path: string }
   | { kind: "rescan"; path?: string | null; reason?: string };
@@ -78,14 +79,14 @@ export class ResourceWatchRegistry {
     eventBus,
     debounceMs = 80,
     resolveWatchTarget = defaultResolveWatchTarget,
-    watchPath = defaultWatchPath,
+    watchPath,
     statPath = defaultStatPath,
   }: Options) {
     this.entries = new Map();
     this.subscriptions = new Map();
     this.debounceMs = debounceMs;
     this.resolveWatchTarget = resolveWatchTarget;
-    this.watchPath = watchPath;
+    this.watchPath = watchPath ?? ((target, handler) => defaultWatchPath(target, handler, error => this.recordError(error)));
     this.statPath = statPath;
     this.eventBus = eventBus || new ResourceEventBus({ emit: emitEvent });
     this.droppedEventCount = 0;
@@ -349,10 +350,10 @@ function localWatchSnapshot(filePath: string): WatchResourceSnapshot {
   };
 }
 
-function defaultWatchPath(targetPath: string, handler: (changedPath?: WatchChangeInput) => void): WatchHandle {
+function defaultWatchPath(targetPath: string, handler: (changedPath?: WatchChangeInput) => void, onError: (error: Error) => void): WatchHandle {
   const rootPath = path.normalize(targetPath);
   const rootIsDirectory = safeIsDirectory(rootPath);
-  const watcher = fs.watch(rootPath, { persistent: false }, (_eventType, filename) => {
+  const watcher = createIsolatedFileWatcher({ root: rootPath, onError, onEvent: filename => {
     if (rootIsDirectory) {
       if (!filename) {
         handler({ kind: "rescan", path: rootPath, reason: "filename_unavailable" });
@@ -366,8 +367,8 @@ function defaultWatchPath(targetPath: string, handler: (changedPath?: WatchChang
       return;
     }
     handler(rootPath);
-  });
-  return { close: () => watcher.close() };
+  } });
+  return { ready: watcher.ready, close: () => { void watcher.close(); } };
 }
 
 function normalizeWatchPath(value: string): string {

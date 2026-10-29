@@ -285,8 +285,8 @@ export function QuickChatApp() {
     async function bootstrap() {
       try {
         const [serverPort, serverToken] = await Promise.all([
-          window.hana?.getServerPort?.(),
-          window.hana?.getServerToken?.(),
+          (window.hana || window.platform)?.getServerPort?.(),
+          (window.hana || window.platform)?.getServerToken?.(),
         ]);
         const local = createLocalServerConnection({ serverPort, serverToken });
         if (!local) throw new Error('server connection unavailable');

@@ -123,6 +123,8 @@ export function SettingsModalShell() {
           className={`${styles.card} ${styles[visualState]}`}
           data-state={visualState}
           role="dialog"
+          data-glass-frame="settings"
+          data-glass-controls=""
           aria-modal="true"
           aria-label={t('settings.title')}
         >

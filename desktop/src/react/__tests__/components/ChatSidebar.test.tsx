@@ -5,7 +5,7 @@ import React from 'react';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useStore } from '../../stores';
-import { ChatSidebarContent } from '../../components/app/ChatSidebar';
+import { ChatSidebar, ChatSidebarContent } from '../../components/app/ChatSidebar';
 
 vi.mock('../../components/channels/ChannelList', () => ({
   ChannelListSidebar: () => <section data-testid="channel-list-sidebar" />,
@@ -55,6 +55,16 @@ describe('ChatSidebarContent', () => {
 
   afterEach(() => {
     cleanup();
+  });
+
+  it('keeps the desktop collapse control in the titlebar and disables hidden sidebar content', () => {
+    const props = { onNewSession: vi.fn(), onCollapse: vi.fn(), includeChannels: false };
+    const { container, rerender } = render(<ChatSidebar open {...props} />);
+    expect(screen.queryByRole('button', { name: '收起' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '新对话' })).toBeInTheDocument();
+    rerender(<ChatSidebar open={false} {...props} />);
+    expect(container.querySelector('#sidebar')).toHaveAttribute('inert');
+    expect(screen.queryByRole('button', { name: '新对话' })).not.toBeInTheDocument();
   });
 
   it('opens the skills panel from the activity bar below automation', () => {

@@ -555,6 +555,7 @@
     "thinking": "{name} が考えています"
   },
   "yuan": {
+    "simpleMode": "シンプルモード",
     "types": {
       "hanako": {
         "label": "バランス型アシスタント",
@@ -1058,6 +1059,7 @@
       "noResults": "一致する設定がありません"
     },
     "tabs": {
+      "usage": "使用量",
       "interface": "インターフェース",
       "general": "一般",
       "browser": "ブラウザ",
@@ -2744,8 +2746,8 @@
       }
     },
     "jian": {
-      "collapse": "Jian をたたむ",
-      "expand": "Jian を開く"
+      "collapse": "フォルダーの指示を閉じる",
+      "expand": "フォルダーの指示を開く"
     }
   },
   "desk": {
@@ -2762,7 +2764,10 @@
     "cwdSkillShadowed": "優先元により無効",
     "deleteSkill": "スキルを削除",
     "openInFinder": "フォルダを開く",
-    "jianLabel": "Jian",
+    "jianLabel": "フォルダーの指示",
+    "fullPath": "完全なパスを表示",
+    "jianHint": "フォルダーの用途とファイルの処理方法を記入します。自動保存され、巡回を有効にすると参照されます。",
+    "cwdSkillsHelp": "このフォルダーで使えるスキルと用途を確認",
     "jianPlaceholder": "このフォルダのファイルの扱い方をアシスタントに伝えましょう...",
     "execLogLabel": "実行記録",
     "execLogDelete": "この記録を削除",

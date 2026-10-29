@@ -1,13 +1,17 @@
 import { openFilePreview } from './file-preview';
 import { extOfName } from './file-kind';
+import { resolveWorkbenchMarkdownLink, type WorkbenchLinkScope } from './workbench-markdown';
+import type { RemoteWorkbenchContentRef } from '../types';
 
 export type LinkTarget =
   | { kind: 'web'; url: string }
   | { kind: 'file'; filePath: string; ext: string; label: string }
+  | { kind: 'workbench'; ref: RemoteWorkbenchContentRef; label: string }
   | { kind: 'anchor'; href: string }
   | { kind: 'external'; href: string };
 
 export interface LinkOpenContext {
+  workbenchScope?: WorkbenchLinkScope;
   baseFilePath?: string | null;
   label?: string | null;
   origin?: 'desk' | 'session';
@@ -128,6 +132,8 @@ export function resolveLinkTarget(href: string, context: LinkOpenContext = {}): 
   const raw = String(href || '').trim();
   if (!raw) return { kind: 'external', href: raw };
   if (raw.startsWith('#')) return { kind: 'anchor', href: raw };
+  const workbench = resolveWorkbenchMarkdownLink(raw, context.workbenchScope);
+  if (workbench) return {kind:'workbench',ref:workbench,label:context.label || workbench.name};
 
   const webUrl = normalizeWebUrl(raw);
   if (webUrl) return { kind: 'web', url: webUrl };
@@ -155,8 +161,17 @@ export async function openInternalLink(href: string, context: LinkOpenContext = 
   const target = resolveLinkTarget(href, context);
   if (target.kind === 'anchor') return false;
 
+  if (target.kind === 'workbench') {
+    const {openWorkbenchFilePreview} = await import('./remote-file-preview');
+    await openWorkbenchFilePreview({file:{name:target.ref.name,isDir:false},mountId:target.ref.mountId,rootId:target.ref.rootId,subdir:target.ref.subdir,preferNativePath:false});
+    return true;
+  }
+
   if (target.kind === 'web') {
-    if (hasDesktopBrowserViewer() && typeof window.platform?.openBrowserViewer === 'function') {
+    if (hasDesktopBrowserViewer() && window.platform?.sidebarBrowserBind) {
+      const { openBrowserPreview } = await import('./browser-preview');
+      openBrowserPreview({url: target.url, sessionPath: context.sessionPath});
+    } else if (hasDesktopBrowserViewer() && typeof window.platform?.openBrowserViewer === 'function') {
       window.platform.openBrowserViewer(context.sessionPath
         ? { url: target.url, sessionPath: context.sessionPath }
         : target.url);
@@ -184,6 +199,7 @@ export async function openInternalLink(href: string, context: LinkOpenContext = 
 export function openExternalLink(href: string, context: LinkOpenContext = {}): boolean {
   const target = resolveLinkTarget(href, context);
   if (target.kind === 'anchor') return false;
+  if (target.kind === 'workbench') { void openInternalLink(href, context); return true; }
   if (target.kind === 'file') {
     window.platform?.openFile?.(target.filePath);
     return true;
@@ -195,6 +211,7 @@ export function openExternalLink(href: string, context: LinkOpenContext = {}): b
 export function copyValueForLink(href: string, context: LinkOpenContext = {}): string {
   const target = resolveLinkTarget(href, context);
   if (target.kind === 'file') return target.filePath;
+  if (target.kind === 'workbench') return [target.ref.subdir,target.ref.name].filter(Boolean).join('/');
   if (target.kind === 'web') return target.url;
   return target.href;
 }

@@ -1,6 +1,4 @@
 import { readFile, mkdir, writeFile, readdir, lstat } from 'node:fs/promises';
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
 import { join, dirname, relative, resolve, sep, isAbsolute } from 'node:path';
 import { createTwoFilesPatch } from 'diff';
 import { Workspace, excluded } from './workspace.js';
@@ -8,8 +6,8 @@ import { git, runProcess } from './process.js';
 import { hash, id, safeId, ensureDir, writeJson, readJson, redact } from './storage.js';
 import { TaskReadingStore, type TaskReading } from './task-reading.js';
 import type { Repo } from './types.js';
-import { guardedArgv } from './execution-boundary.js';
-const exec = promisify(execFile);
+import { readGitBlobs } from './git-blobs.js';
+import {emitActivity,measured} from './telemetry.js';
 
 export interface ChangeReadingInput {
   kind: 'working' | 'staged' | 'commit' | 'merge-request';
@@ -18,6 +16,7 @@ export interface ChangeReadingInput {
 interface FileContent { hash: string; mode: string; content?: string; omitted?: string }
 export interface ChangeFile {
   repo: string; file: string; change: string; before?: FileContent; after?: FileContent; patch?: string;
+  patchTruncated?: boolean;
 }
 export interface ChangeReading {
   schema: 1; id: string; createdAt: string; input: ChangeReadingInput; version: string;
@@ -46,14 +45,16 @@ export class ChangeReadings {
     const files: Record<string, FileContent> = Object.create(null);
     const entries = working ? (await this.workspace.files(repo.id)).map(file => ({ file, mode: '100644', oid: '' }))
       : revision === undefined ? (await git(repo.root, ['ls-files', '--stage', '-z'])).split('\0').filter(Boolean).map(item => {
-        const match = /^(\d+) ([a-f0-9]+) (\d)\t(.+)$/.exec(item); if (!match || match[3] !== '0') throw new Error(`Unmerged index in ${repo.id}`);
+        const match = /^(\d+) ([a-f0-9]+) (\d)\t([\s\S]+)$/.exec(item); if (!match || match[3] !== '0') throw new Error(`Unmerged index in ${repo.id}`);
         return { file: match[4]!, mode: match[1]!, oid: match[2]! };
       }) : revision ? (await git(repo.root, ['ls-tree', '-r', '-z', revision])).split('\0').filter(Boolean).map(item => {
-        const match = /^(\d+) (\w+) ([a-f0-9]+)\t(.+)$/.exec(item); if (!match) throw new Error('Invalid Git tree');
+        const match = /^(\d+) (\w+) ([a-f0-9]+)\t([\s\S]+)$/.exec(item); if (!match) throw new Error('Invalid Git tree');
         return { file: match[4]!, mode: match[1]!, oid: match[3]! };
       }) : [];
     if (entries.length > 50000) throw new Error('Change source exceeds the file budget');
+    const blobs = working ? undefined : readGitBlobs(repo.root, entries.filter(entry => !excluded(entry.file) && ['100644','100755'].includes(entry.mode)).map(entry => entry.oid), {signal});
     let total = 0;
+    try {
     for (const entry of entries) {
       signal?.throwIfAborted(); if (excluded(entry.file)) continue;
       const path = await this.workspace.path(repo.id, entry.file);
@@ -65,12 +66,10 @@ export class ChangeReadings {
           entry.mode = stat.mode & 0o111 ? '100755' : '100644'; bytes = await readFile(path);
         } catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') continue; throw error; }
       } else {
-        const argv = guardedArgv(['git', 'cat-file', 'blob', entry.oid], true);
-        try { bytes = (await exec(argv[0]!, argv.slice(1), { cwd: repo.root, signal, timeout: 5000, maxBuffer: 512000, encoding: 'buffer' })).stdout; }
-        catch (error) {
-          if ((error as NodeJS.ErrnoException).code === 'ERR_CHILD_PROCESS_STDIO_MAXBUFFER') { files[entry.file] = { hash: entry.oid, mode: entry.mode, omitted: 'File exceeds reading budget' }; gaps.push(`${repo.id}:${entry.file}: reading budget`); continue; }
-          throw error;
-        }
+        const next = await blobs!.next();
+        if(next.done || next.value.oid !== entry.oid)throw new Error('Git blob sequence does not match source tree');
+        if(!next.value.bytes) { files[entry.file] = { hash: entry.oid, mode: entry.mode, omitted: 'File exceeds reading budget' }; gaps.push(`${repo.id}:${entry.file}: reading budget`); continue; }
+        bytes = next.value.bytes;
       }
       total += bytes.length;
       const digest = hash(bytes);
@@ -80,16 +79,19 @@ export class ChangeReadings {
       if (omitted) gaps.push(`${repo.id}:${entry.file}: ${omitted}`);
       files[entry.file] = { hash: digest, mode: entry.mode, content, omitted };
     }
+    if(blobs && !(await blobs.next()).done)throw new Error('Unexpected Git blobs after source tree');
+    } finally { await blobs?.return(undefined); }
     return files;
   }
   async capture(input: ChangeReadingInput, signal?: AbortSignal) {
     if (!input.goal?.trim() || input.goal.length > 4000 || !['working', 'staged', 'commit', 'merge-request'].includes(input.kind)) throw new Error('Provide a change source and goal');
     safeId(input.task);
     if (input.kind === 'merge-request' && (!input.url || !input.base || !input.target)) throw new Error('MR reading needs its URL and exact per-repository base/target revisions');
-    return this.workspace.exclusive(async () => {
+    return measured('reading.capture',{detail:'正在冻结变更来源与源码版本'},()=>this.workspace.exclusive(async () => {
       const observation = await this.workspace.observe(), recordId = id('change-reading'), gaps: string[] = [], changes: ChangeFile[] = [];
       const repositories: ChangeReading['repositories'] = [], trees: { repo: Repo; files: Record<string, FileContent> }[] = [];
       for (const repo of this.workspace.config.repos) {
+        emitActivity({kind:'update',stage:'reading.capture',repo:repo.id,detail:`正在读取 ${repo.id} 的前后版本`},this.workspace.activity);
         const base = await this.revision(repo, input.base?.[repo.id], input.kind === 'commit' ? 'HEAD^' : 'HEAD');
         const target = input.kind === 'commit' || input.kind === 'merge-request' ? await this.revision(repo, input.target?.[repo.id], 'HEAD') : undefined;
         const before = await this.tree(repo, base, false, gaps, signal), after = await this.tree(repo, target, input.kind === 'working', gaps, signal);
@@ -98,13 +100,15 @@ export class ChangeReadings {
           const a = before[file], b = after[file];
           if (a?.content !== undefined && b?.content !== undefined ? a.content === b.content && a.mode === b.mode : a?.hash === b?.hash && a?.mode === b?.mode) continue;
           const text = (!a || a.content !== undefined) && (!b || b.content !== undefined);
-          const patch = text ? createTwoFilesPatch(`${repo.id}/${file}`, `${repo.id}/${file}`, a?.content ?? '', b?.content ?? '').slice(0, 120000) : undefined;
-          changes.push({ repo: repo.id, file, change: !a ? 'added' : !b ? 'deleted' : 'modified', before: a, after: b, patch });
+          const fullPatch = text ? createTwoFilesPatch(`${repo.id}/${file}`, `${repo.id}/${file}`, a?.content ?? '', b?.content ?? '') : undefined;
+          const patchTruncated=fullPatch!==undefined&&fullPatch.length>120000;
+          if(patchTruncated)gaps.push(`${repo.id}:${file}: 差异预览超过显示上限；保存的前后完整文本仍可用于重新生成。`);
+          changes.push({ repo: repo.id, file, change: !a ? 'added' : !b ? 'deleted' : 'modified', before: a, after: b, patch:fullPatch?.slice(0,120000),...(patchTruncated?{patchTruncated:true}:{}) });
         }
       }
       signal?.throwIfAborted();
       const sourceRoot = join(await this.directory(), recordId, 'source'); await mkdir(sourceRoot, { recursive: true });
-      const frozen = await Workspace.open(sourceRoot);
+      const frozen = await Workspace.open(sourceRoot);frozen.activity=this.workspace.activity;
       let common = this.workspace.config.repos[0]?.root ?? this.workspace.root;
       while (!this.workspace.config.repos.every(repo => { const r = relative(common, repo.root); return r !== '..' && !r.startsWith('..' + sep) && !isAbsolute(r); })) common = dirname(common);
       for (const tree of trees) {
@@ -121,7 +125,7 @@ export class ChangeReadings {
       let targetMatchesWorkspace = true;
       for (const tree of trees) {
         const current = await this.workspace.snapshotRepo(tree.repo.id, false);
-        if (Object.keys(current.files).length !== Object.keys(tree.files).length || Object.entries(tree.files).some(([file, value]) => current.files[file]?.hash !== value.hash)) targetMatchesWorkspace = false;
+        if (Object.keys(current.files).length !== Object.keys(tree.files).length || Object.entries(tree.files).some(([file, value]) => current.files[file]?.hash !== value.hash||current.files[file]?.mode!==(parseInt(value.mode,8)&0o777))) targetMatchesWorkspace = false;
       }
       const version = hash(JSON.stringify({ repositories, trees: trees.map(tree => ({ repo: tree.repo.id, files: tree.files })), checks: this.workspace.config.checks }));
       const record: ChangeReading = { schema: 1, id: recordId, createdAt: new Date().toISOString(), input, version, repositories, changes,
@@ -130,17 +134,17 @@ export class ChangeReadings {
       if (JSON.stringify(final) !== JSON.stringify(observation)) throw new Error('Workspace changed during change capture; retry with the current version');
       await writeJson(await this.path(record.id), JSON.parse(redact(JSON.stringify(record), this.workspace.secrets)));
       await writeJson(join(await this.directory(), `latest-${safeId(input.task)}.json`), { id: record.id }); return record;
-    });
+    }),this.workspace.activity);
   }
   async build(input: ChangeReadingInput, options: { signal?: AbortSignal; explain?: (report: TaskReading, changes: ChangeFile[]) => Promise<Parameters<TaskReadingStore['annotate']>[2]> } = {}) {
     const record = await this.capture(input, options.signal);
     try {
       record.status = 'reading'; await writeJson(await this.path(record.id), record);
-      const frozen = await Workspace.open(record.sourceRoot), store = new TaskReadingStore(frozen);
-      const report = await store.build({ goal: input.goal, task: input.task, expectedRepos: [...new Set(record.changes.map(file => file.repo))],
-        changes: record.changes.map(({ before: _before, after: _after, ...change }) => change), maxQueries: 20 }, options.signal);
+      const frozen = await Workspace.open(record.sourceRoot);frozen.activity=this.workspace.activity;const store = new TaskReadingStore(frozen);
+      const report = await measured('reading.analyze',{detail:`分析 ${record.changes.length} 个变更文件的源码关系`},()=>store.build({ goal: input.goal, task: input.task, expectedRepos: [...new Set(record.changes.map(file => file.repo))],
+        changes: record.changes.map(({ before: _before, after: _after, ...change }) => change), maxQueries: 20 }, options.signal),this.workspace.activity);
       record.reading=report;
-      record.reading = options.explain && report.nodes.length ? await store.annotate(report.id, report.revision, await options.explain(report, record.changes), input.task) : report;
+      record.reading = options.explain && report.nodes.length ? await measured('reading.explain',{detail:'根据已冻结的源码节点生成讲解'},async()=>store.annotate(report.id, report.revision, await options.explain!(report, record.changes), input.task),this.workspace.activity) : report;
       record.gaps.push(...record.reading.gaps); record.status = 'ready';
     } catch (error) { record.status = 'failed'; record.error = redact(String(error), this.workspace.secrets); }
     await writeJson(await this.path(record.id), record); return record;
@@ -148,8 +152,10 @@ export class ChangeReadings {
   async open(recordId: string, task: string) {
     const record = await readJson<ChangeReading>(await this.path(recordId));
     if (record.schema !== 1 || record.input.task !== task) throw new Error('Change reading belongs to another task');
-    const matchesWorkspace = record.targetMatchesWorkspace && JSON.stringify(await this.workspace.observe()) === JSON.stringify(record.observation);
-    return { record, matchesWorkspace, immutable: true };
+    const observation=await this.workspace.observe();
+    const sourceMatchesWorkspace=record.targetMatchesWorkspace&&JSON.stringify(observation.fingerprints)===JSON.stringify(record.observation.fingerprints);
+    const configurationMatches=observation.configuration===record.observation.configuration,environmentMatches=observation.environment===record.observation.environment;
+    return { record, matchesWorkspace:sourceMatchesWorkspace&&configurationMatches&&environmentMatches, sourceMatchesWorkspace,configurationMatches,environmentMatches, immutable: true };
   }
   async latest(task: string) {
     try { const pointer = await readJson<{ id: string }>(join(await this.directory(), `latest-${safeId(task)}.json`)); return this.open(pointer.id, task); }

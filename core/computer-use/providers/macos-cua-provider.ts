@@ -26,12 +26,15 @@ const HANA_CURSOR_MOTION = Object.freeze({
 const MACOS_CUA_ALLOWED_ACTIONS = [
   "click_element",
   "type_text",
+  "set_value",
+  "click_point",
+  "double_click",
+  "drag",
   "press_key",
   "scroll",
   "perform_secondary_action",
   "stop",
 ];
-const MACOS_CUA_DISABLED_PIXEL_ACTIONS = new Set(["click_point", "double_click", "drag"]);
 
 function expandHome(filePath: any, homeDir = os.homedir()) {
   const value = typeof filePath === "string" ? filePath.trim() : "";
@@ -170,7 +173,7 @@ export function resolveCuaDriverCommand({
 
 function parseJsonMaybe(stdout: any) {
   const text = String(stdout || "").trim();
-  if (!text) return {};
+  if (!text) return null;
   try {
     return JSON.parse(text);
   } catch {
@@ -281,7 +284,7 @@ function selectLaunchWindow(windows: any, targetWindowId: any = null) {
   if (!Array.isArray(windows) || !windows.length) return null;
   if (targetWindowId) {
     const explicit = windows.find((win) => String(win.windowId) === String(targetWindowId));
-    if (explicit) return explicit;
+    return explicit || null;
   }
   return [...windows].sort((a, b) => scoreLaunchWindow(b) - scoreLaunchWindow(a))[0] || null;
 }
@@ -291,7 +294,7 @@ function normalizeLaunchPayload(payload: any, target: any) {
   const windows = normalizeWindows(data.windows);
   const pid = data.pid ?? data.process_id ?? data.processId ?? target?.pid ?? null;
   const selectedWindow = selectLaunchWindow(windows, target?.windowId);
-  const windowId = target?.windowId || selectedWindow?.windowId || null;
+  const windowId = selectedWindow?.windowId || null;
   if (pid == null || windowId == null) {
     throw computerUseError(
       COMPUTER_USE_ERRORS.TARGET_NOT_FOUND,
@@ -356,6 +359,19 @@ function normalizeRunningAppLease(app: any, windows: any, target: any = {}) {
 function sleep(ms: number) {
   if (!ms) return Promise.resolve();
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function keyboardPayload(action: any, pid: number, windowId: number) {
+  const raw=String(action.key||'').trim();
+  if(!raw)throw computerUseError(COMPUTER_USE_ERRORS.TARGET_NOT_FOUND,'press_key requires a key.');
+  const aliases:Record<string,string>={cmd:'cmd',command:'cmd',meta:'cmd',shift:'shift',ctrl:'ctrl',control:'ctrl',alt:'option',option:'option',fn:'fn'};
+  const parts=raw.length>1&&raw.includes('+')?raw.split('+'):[raw];
+  const key=parts.pop()!;
+  const modifiers=[...parts,...(action.modifiers||[])].map(value=>aliases[String(value).toLowerCase()]);
+  if(modifiers.some(value=>!value)||!key)throw computerUseError(COMPUTER_USE_ERRORS.TARGET_NOT_FOUND,'Use a single key and supported modifiers (cmd, shift, ctrl, option).');
+  const keys:Record<string,string>={enter:'return',arrowleft:'left',arrowright:'right',arrowup:'up',arrowdown:'down'};
+  return {pid,key:keys[key.toLowerCase()]||key.toLowerCase(),...(modifiers.length?{modifiers:[...new Set(modifiers)]}:{}),
+    ...(action.elementId?{window_id:windowId,element_index:requireElementIndex(action)}:{})};
 }
 
 function parseElementsFromMarkdown(markdown: any) {
@@ -475,8 +491,8 @@ function positiveNumber(value: any, fallback = 1) {
 
 function normalizeScreenshotDisplay(structured: any = {}) {
   const source = structured.display || structured.screen || {};
-  const width = positiveNumber(structured.screenshot_width ?? source.width, 1568);
-  const height = positiveNumber(structured.screenshot_height ?? source.height, 1000);
+  const width = positiveNumber(structured.screenshot_width ?? structured.screenshotWidth ?? source.width, 0);
+  const height = positiveNumber(structured.screenshot_height ?? structured.screenshotHeight ?? source.height, 0);
   const originalWidth = positiveNumber(
     structured.screenshot_original_width ?? source.originalWidth ?? source.original_width,
     width,
@@ -514,12 +530,12 @@ function requireElementIndex(action: any) {
   );
 }
 
-function rejectDisabledPixelAction(action: any = {}) {
-  throw computerUseError(
-    COMPUTER_USE_ERRORS.CAPABILITY_UNSUPPORTED,
-    `macOS Cua pixel input is disabled for clean background control: ${action.type}`,
-    { action: action.type || null },
-  );
+function requireScreenshotPoint(action: any, x: any, y: any) {
+  const display=action.snapshotDisplay;
+  if(!display?.width||!display?.height)throw computerUseError(COMPUTER_USE_ERRORS.STALE_SNAPSHOT,'The screenshot dimensions are unavailable; read a fresh app state.');
+  if(typeof x!=='number'||typeof y!=='number'||!Number.isFinite(x)||!Number.isFinite(y)||x<0||y<0||x>=display.width||y>=display.height)
+    throw computerUseError(COMPUTER_USE_ERRORS.TARGET_NOT_FOUND,'Coordinates must be inside the observed window screenshot.');
+  return {x,y};
 }
 
 function advertisedActions(snapshotElement: any = {}) {
@@ -609,6 +625,8 @@ export function createMacosCuaProvider({
       result = await runner.run(command, args, {
         timeoutMs: options.timeoutMs || timeoutMs,
         env: runEnv(options.env),
+        ...(options.signal ? {signal: options.signal} : {}),
+        ...(options.onStderr ? {onStderr: options.onStderr} : {}),
       });
     } catch (err) {
       if (err?.code === "ENOENT") {
@@ -624,29 +642,38 @@ export function createMacosCuaProvider({
         { providerId, command, launchCode: err?.code || null },
       );
     }
-    if (result.exitCode !== 0) {
+    if (result.exitCode !== 0 || (!parseJsonMaybe(result.stdout) && result.stderr?.trim())) {
       const stderr = result.stderr || "";
       const parsed = parseJsonMaybe(result.stdout);
       const helperMessage = getText(parsed);
-      const permissionDenied = /permission|accessibility|screen recording|tcc/i.test(stderr);
+      const permissionDenied = /permission|accessibility|screen recording|tcc|用户拒绝.*捕捉/i.test(`${stderr}\n${helperMessage}`);
       throw computerUseError(
-        permissionDenied ? COMPUTER_USE_ERRORS.OS_PERMISSION_DENIED : COMPUTER_USE_ERRORS.PROVIDER_CRASHED,
+        /COMPUTER_OPERATION_CANCELLED/.test(`${stderr}\n${helperMessage}`) ? COMPUTER_USE_ERRORS.CANCELLED
+          : /TARGET_NOT_FOUND|No window with window_id \d+ exists|App with pid \d+ is not running/i.test(`${stderr}\n${helperMessage}`) ? COMPUTER_USE_ERRORS.TARGET_NOT_FOUND
+          : /ACTION_REQUIRES_FOREGROUND/.test(`${stderr}\n${helperMessage}`) ? COMPUTER_USE_ERRORS.ACTION_REQUIRES_FOREGROUND
+          : /SCREEN_LOCKED/.test(`${stderr}\n${helperMessage}`) ? COMPUTER_USE_ERRORS.SCREEN_LOCKED
+          : permissionDenied ? COMPUTER_USE_ERRORS.OS_PERMISSION_DENIED : COMPUTER_USE_ERRORS.PROVIDER_CRASHED,
         helperMessage || stderr.trim() || `cua-driver exited with code ${result.exitCode}`,
         { providerId, exitCode: result.exitCode },
       );
     }
     const parsed = parseJsonMaybe(result.stdout);
+    if (!parsed || typeof parsed !== 'object') {
+      throw computerUseError(COMPUTER_USE_ERRORS.PROVIDER_CRASHED,'Computer helper returned no valid result. The action is unverified; obtain a fresh window state before retrying.',{providerId});
+    }
     if (parsed?.isError) {
-      throw computerUseError(COMPUTER_USE_ERRORS.PROVIDER_CRASHED, getText(parsed) || "Cua Driver returned an error", { providerId });
+      const message=getText(parsed)||'Cua Driver returned an error';
+      const denied=/permission|accessibility.*(?:denied|not granted)|screen recording.*(?:denied|not granted)|tcc|用户拒绝.*捕捉/i.test(message);
+      throw computerUseError(/SCREEN_LOCKED/.test(message)?COMPUTER_USE_ERRORS.SCREEN_LOCKED:denied?COMPUTER_USE_ERRORS.OS_PERMISSION_DENIED:COMPUTER_USE_ERRORS.PROVIDER_CRASHED,message,{providerId});
     }
     return parsed;
   }
 
-  async function runTool(name: any, payload: any = null) {
+  async function runTool(name: any, payload: any = null, options: any = {}) {
     const args = payload == null
       ? [name, "--raw", "--compact", "--socket", socketPath]
       : [name, JSON.stringify(payload), "--raw", "--compact", "--socket", socketPath];
-    return runRaw(args);
+    return runRaw(args, options);
   }
 
   async function isDaemonRunning() {
@@ -825,13 +852,15 @@ export function createMacosCuaProvider({
 
   async function tryCreateLeaseFromRunningApp(target: any = {}) {
     const appsResult = await runTool("list_apps");
-    const app = normalizeAppsPayload(getStructured(appsResult)).find((candidate) => appMatchesTarget(candidate, target));
-    const pid = runningPid(app);
-    if (!pid) return null;
-
-    const windowsResult = await runTool("list_windows", { pid });
-    const windows = normalizeWindowsPayload(getStructured(windowsResult));
-    return normalizeRunningAppLease(app, windows, target);
+    const apps = normalizeAppsPayload(getStructured(appsResult)).filter((candidate) => appMatchesTarget(candidate, target));
+    for(const app of apps) {
+      const pid = runningPid(app);if(!pid)continue;
+      const windowsResult = await runTool("list_windows", { pid });
+      const found=normalizeRunningAppLease(app, normalizeWindowsPayload(getStructured(windowsResult)), target);
+      if(found)return found;
+    }
+    if(target.windowId)throw computerUseError(COMPUTER_USE_ERRORS.TARGET_NOT_FOUND,'The requested window is no longer available. List windows again instead of falling back to another window.',{windowId:target.windowId});
+    return null;
   }
 
   function ensureDarwin() {
@@ -851,10 +880,10 @@ export function createMacosCuaProvider({
       screenshot: true,
       accessibilityTree: true,
       elementActions: true,
-      elementDoubleClick: false,
+      elementDoubleClick: true,
       backgroundControl: "full",
-      pointClick: "unsupported",
-      drag: "unsupported",
+      pointClick: "pidScoped",
+      drag: "pidScoped",
       textInput: "semantic",
       keyboardInput: "pidScoped",
       requiresForegroundForInput: false,
@@ -906,6 +935,14 @@ export function createMacosCuaProvider({
       await ensureDaemonRunning();
       const result = await runTool("list_apps");
       return normalizeAppsPayload(getStructured(result));
+    },
+
+    async listWindows(_ctx:any,appId:string) {
+      ensureDarwin();await ensureDaemonRunning();
+      const apps=normalizeAppsPayload(getStructured(await runTool('list_apps'))).filter(app=>appMatchesTarget(app,{appId}));
+      const windows=[];
+      for(const app of apps){const pid=runningPid(app);if(!pid)continue;for(const window of normalizeWindowsPayload(getStructured(await runTool('list_windows',{pid}))))windows.push({...window,appId:app.appId,pid});}
+      return windows;
     },
 
     async createLease(_ctx: any, target: any = {}) {
@@ -981,8 +1018,38 @@ export function createMacosCuaProvider({
       if (!pid || !windowId) {
         throw computerUseError(COMPUTER_USE_ERRORS.TARGET_NOT_FOUND, "Cua lease is missing native pid/windowId.", { leaseId: lease.leaseId });
       }
-      if (MACOS_CUA_DISABLED_PIXEL_ACTIONS.has(action.type)) {
-        rejectDisabledPixelAction(action);
+      _ctx?.signal?.throwIfAborted();
+      if (action.type === 'click_point' || action.type === 'double_click') {
+        const payload:any={pid,window_id:windowId};
+        if(action.type==='double_click'&&action.elementId)payload.element_index=requireElementIndex(action);
+        else Object.assign(payload,requireScreenshotPoint(action,action.x,action.y));
+        if(action.modifiers?.length)payload.modifier=action.modifiers;
+        return getStructured(await runTool(action.type==='double_click'?'double_click':'click',payload)) || {ok:true};
+      }
+      if(action.type==='drag') {
+        const from=requireScreenshotPoint(action,action.fromX,action.fromY),to=requireScreenshotPoint(action,action.toX,action.toY);
+        if(action.foreground === true) {
+          if(!bundledHanaHelper)throw computerUseError(COMPUTER_USE_ERRORS.CAPABILITY_UNSUPPORTED,'Foreground drag requires the Enigma computer helper.');
+          let inputTrace='';
+          try {
+            const result=await runTool('drag_foreground',{pid,window_id:windowId,from_x:from.x,from_y:from.y,to_x:to.x,to_y:to.y,
+              screenshot_width:action.snapshotDisplay.width,screenshot_height:action.snapshotDisplay.height,
+              duration_ms:Math.max(100,Math.min(2000,Number(action.durationMs)||500)),modifier:action.modifiers||[]},
+              {signal:_ctx?.signal,onStderr:(chunk:string)=>{inputTrace=(inputTrace+chunk).slice(-8192);}});
+            return {ok:true,mode:'foreground-input',message:getText(result)};
+          } finally {
+            if(inputTrace.lastIndexOf('ENIGMA_FOREGROUND_POINTER_DOWN')>inputTrace.lastIndexOf('ENIGMA_FOREGROUND_POINTER_UP')) {
+              try { await runTool('release_foreground_input',{}, {timeoutMs:3000}); }
+              catch(error) { throw computerUseError(COMPUTER_USE_ERRORS.INPUT_RELEASE_FAILED,'Foreground input stopped, but pointer release could not be verified. Release the mouse button before continuing.',{cause:error.message}); }
+            }
+          }
+        }
+        return getStructured(await runTool('drag',{pid,window_id:windowId,from_x:from.x,from_y:from.y,to_x:to.x,to_y:to.y,
+          duration_ms:Math.max(100,Math.min(2000,Number(action.durationMs)||500)),...(action.modifiers?.length?{modifier:action.modifiers}:{})})) || {ok:true};
+      }
+      if(action.type==='set_value') {
+        if(typeof action.value!=='string')throw computerUseError(COMPUTER_USE_ERRORS.TARGET_NOT_FOUND,'set_value requires a string value.');
+        return getStructured(await runTool('set_value',{pid,window_id:windowId,element_index:requireElementIndex(action),value:action.value})) || {ok:true};
       }
 
       if (action.type === "click_element") {
@@ -1009,7 +1076,7 @@ export function createMacosCuaProvider({
         return getStructured(await runTool("type_text", payload)) || { ok: true };
       }
       if (action.type === "press_key") {
-        return getStructured(await runTool("press_key", { pid, key: action.key })) || { ok: true };
+        return getStructured(await runTool("press_key", keyboardPayload(action,pid,windowId))) || { ok: true };
       }
       if (action.type === "scroll") {
         const payload: Record<string, any> = { pid, direction: action.direction, amount: action.amount || 3 };

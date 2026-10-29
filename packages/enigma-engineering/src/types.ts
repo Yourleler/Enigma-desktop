@@ -27,6 +27,7 @@ export interface RepoSnapshot {
   ignored?: string[];
 }
 export interface Checkpoint {
+  purpose?: 'dependency-input' | 'integration-proposal';
   schema: 1;
   id: string;
   label: string;

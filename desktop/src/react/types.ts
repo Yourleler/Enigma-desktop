@@ -1,4 +1,5 @@
 import type { ThinkingLevel } from './stores/model-slice';
+import type { FileRef } from './types/file-ref';
 
 // ── Auto-update ──
 
@@ -365,7 +366,12 @@ export interface PreviewItem {
   storageKind?: string;
   sourceUrl?: string;
   sourceRootPath?: string;
+  /** Explicit owner of a live browser preview; never inferred from another tab. */
+  browserSessionPath?: string | null;
+  mediaRef?: FileRef;
+  contentResourceId?: string;
   status?: 'available' | 'expired' | string;
+  loadError?: string;
   missingAt?: number | null;
   fileVersion?: FileVersion | null;
   remoteContentRef?: RemoteContentRef | null;
@@ -500,16 +506,20 @@ export interface PluginUiHostCapabilityGrant {
 }
 
 export interface BrowserViewerTab {
+  dialog?: BrowserPageDialog | null;
   tabId: string;
   title?: string;
   url?: string | null;
   canGoBack?: boolean;
   canGoForward?: boolean;
+  loading?: boolean;
+  error?: string | null;
   createdAt?: number;
   updatedAt?: number;
 }
 
 export interface BrowserViewerUpdate {
+  dialog?: BrowserPageDialog | null;
   title?: string;
   url?: string | null;
   canGoBack?: boolean;
@@ -528,6 +538,28 @@ export interface BrowserViewerOpenTarget {
   sessionPath?: string | null;
 }
 
+export interface SidebarBrowserState extends BrowserViewerUpdate {
+  surfaceId: string;
+  loading?: boolean;
+  error?: string | null;
+  previewImage?: string;
+  detached?: boolean;
+  downloads?: Array<{id:string;filename:string;state:string;receivedBytes:number;totalBytes:number;filePath?:string}>;
+}
+
+export interface SidebarBrowserCommand {
+  surfaceId: string;
+  action: 'navigate' | 'back' | 'forward' | 'reload' | 'stop' | 'newTab' | 'switchTab' | 'closeTab' | 'detach' | 'emergencyStop' | 'handleDialog' | 'cancelDownload' | 'revealDownload';
+  downloadId?: string;
+  dialogId?: string;
+  accept?: boolean;
+  text?: string;
+  tabId?: string | null;
+  url?: string;
+}
+
+export interface BrowserPageDialog {dialogId:string;type:'alert'|'confirm'|'prompt'|'beforeunload';message:string;defaultPrompt?:string;url?:string}
+
 // ── Platform API 类型声明 ──
 export interface PlatformApi {
   getServerPort(): Promise<string>;
@@ -540,6 +572,7 @@ export interface PlatformApi {
   selectSkill(): Promise<string | null>;
   selectPlugin?(): Promise<string | null>;
   readFile(path: string): Promise<string | null>;
+  statFile?(path: string): Promise<{size: number; mtimeMs: number} | null>;
   writeFile(filePath: string, content: string): Promise<boolean>;
   writeFileBinary?(filePath: string, base64Data: string): Promise<boolean>;
   copyFile?(sourcePath: string, destinationPath: string): Promise<boolean>;
@@ -590,6 +623,13 @@ export interface PlatformApi {
   onMaximizeChange?(callback: (maximized: boolean) => void): void;
 
   // ── Browser viewer ──
+  browserHandleDialog?(command: {sessionPath: string | null; tabId: string; dialogId: string; accept: boolean; text?: string}): Promise<unknown>;
+  browserViewerState?(): Promise<BrowserViewerUpdate>;
+  sidebarBrowserBind?(target: { surfaceId: string; sessionPath?: string | null }): Promise<SidebarBrowserState>;
+  sidebarBrowserLayout?(layout: { surfaceId: string; sequence: number; bounds: { x: number; y: number; width: number; height: number }; visible: boolean }): void;
+  sidebarBrowserRelease?(surfaceId: string): Promise<unknown>;
+  sidebarBrowserCommand?(command: SidebarBrowserCommand): Promise<SidebarBrowserState>;
+  onSidebarBrowserUpdate?(callback: (state: SidebarBrowserState) => void): () => void;
   onBrowserUpdate?(callback: (data: BrowserViewerUpdate) => void): void | (() => void);
   closeBrowserViewer?(): void;
   closeBrowser?(): void;
@@ -606,7 +646,7 @@ export interface PlatformApi {
 
   // ── Splash / Onboarding ──
   getAvatarPath?(role: string): Promise<string | null>;
-  getSplashInfo?(): Promise<{ agentName?: string; locale?: string; yuan?: string } | null>;
+  getSplashInfo?(): Promise<{ agentName?: string; locale?: string; yuan?: string; productName?:string } | null>;
   reloadMainWindow?(): Promise<void>;
   onboardingComplete?(): Promise<void>;
 

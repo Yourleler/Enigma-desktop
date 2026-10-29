@@ -42,6 +42,7 @@ import {
 import { persistAppearancePreferences } from './services/appearance-sync';
 import { errorBus as _errorBus } from '../../../shared/error-bus.ts';
 import { AppError as _AppError } from '../../../shared/errors.ts';
+import {pauseConversationViewTracking,restoreConversationView,trackConversationView} from './engineering/conversation-view';
 
 declare const i18n: {
   locale: string;
@@ -83,6 +84,7 @@ window.addEventListener('unhandledrejection', (e) => {
 // ── 主初始化流程 ──
 
 export async function initApp(): Promise<void> {
+  pauseConversationViewTracking();
   const platform = window.platform;
   initQuotedSelectionLifecycle();
   initInputDraftPersistence();
@@ -218,6 +220,7 @@ export async function initApp(): Promise<void> {
     // 3. 加载 i18n
     await i18n.load(globalConfig.locale || 'zh-CN');
     useStore.setState({ locale: i18n.locale });
+    try { localStorage.setItem('enigma-last-locale',i18n.locale); } catch { /* Optional startup preference. */ }
 
     // 4. 应用 agent 身份
     await applyAgentIdentity({
@@ -250,7 +253,8 @@ export async function initApp(): Promise<void> {
   await loadModels();
 
   // 10. 加载 agents + sessions
-  useStore.setState(pendingNewSessionIdentityPatch());
+  const existingView = useStore.getState();
+  if (!existingView.currentSessionPath && !existingView.pendingSessionSwitchPath) useStore.setState(pendingNewSessionIdentityPatch());
   await loadPendingNewSessionPermissionDefault();
   await loadAgents();
   await loadSessions();
@@ -263,6 +267,8 @@ export async function initApp(): Promise<void> {
 
   // 11. 初始化书桌
   initJian();
+  await restoreConversationView(switchSession);
+  trackConversationView();
 
   // 12. 注册派生 viewer 窗口关闭事件（清 pinnedViewers store）
   initViewerEvents();

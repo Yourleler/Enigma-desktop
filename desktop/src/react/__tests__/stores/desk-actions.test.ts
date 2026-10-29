@@ -1037,6 +1037,28 @@ describe('desk-actions workspace roots', () => {
     expect(useStore.getState().jianDrawerOpen).toBe(true);
     expect(useStore.getState().workspaceDeskStateByRoot['/workspace-b'].jianDrawerOpen).toBe(true);
   });
+  it('does not let an old persisted reply override a later visit to the same workspace',async()=>{
+    const pending=deferred<Response>();let first=true;
+    mockHanaFetch.mockImplementation(async(url:string)=>{if(url.startsWith('/api/preferences/workspace-ui-state')){if(first){first=false;return pending.promise;}return jsonResponse({state:null});}return jsonResponse({});});
+    const {activateWorkspaceDesk}=await import('../../stores/desk-actions');
+    const old=activateWorkspaceDesk('/same',{reload:false});await Promise.resolve();
+    await activateWorkspaceDesk('/other',{reload:false});await activateWorkspaceDesk('/same',{reload:false});
+    useStore.setState({jianDrawerOpen:true});pending.resolve(jsonResponse({state:{jianDrawerOpen:false,rightWorkspaceTab:'session-files'}}));await old;
+    expect(useStore.getState().deskBasePath).toBe('/same');expect(useStore.getState().jianDrawerOpen).toBe(true);expect(useStore.getState().rightWorkspaceTab).toBe('workspace');
+  });
+  it('keeps a newly opened preview instead of replacing it with a slow saved layout',async()=>{
+    const pending=deferred<Response>();mockHanaFetch.mockImplementation(async(url:string)=>url.startsWith('/api/preferences/workspace-ui-state')?pending.promise:jsonResponse({}));
+    const {activateWorkspaceDesk}=await import('../../stores/desk-actions');const loading=activateWorkspaceDesk('/fresh',{reload:false});await Promise.resolve();
+    useStore.setState({previewOpen:true,openTabs:['new-tab'],activeTabId:'new-tab'});
+    pending.resolve(jsonResponse({state:{previewOpen:false,openTabs:[]}}));await loading;
+    expect(useStore.getState().previewOpen).toBe(true);expect(useStore.getState().openTabs).toEqual(['new-tab']);
+  });
+  it('ignores a saved-layout reply from a previous server even when its workspace path matches',async()=>{
+    const pending=deferred<Response>();mockHanaFetch.mockImplementation(async(url:string)=>url.startsWith('/api/preferences/workspace-ui-state')?pending.promise:jsonResponse({}));
+    const {activateWorkspaceDesk}=await import('../../stores/desk-actions');const loading=activateWorkspaceDesk('/shared',{reload:false});await Promise.resolve();
+    useStore.setState({activeServerConnectionId:'different-server',jianDrawerOpen:true});pending.resolve(jsonResponse({state:{jianDrawerOpen:false}}));await loading;
+    expect(useStore.getState().jianDrawerOpen).toBe(true);
+  });
 
   it('uses the mobile surface bucket for persisted workspace state in the PWA shell', async () => {
     (globalThis as any).document = {

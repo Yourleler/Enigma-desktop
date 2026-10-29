@@ -124,6 +124,11 @@ function resolveAgentMemoryPaths(agent, key) {
 }
 
 const USER_ONLY_SETTINGS = {
+  engineering_local_servers: {
+    type: 'toggle',
+    label: '工程开发服务器',
+    description: '允许工程命令启动开发服务器，仅用户可以在安全设置中修改；监听范围取决于项目。',
+  },
   sandbox: {
     type: "toggle",
     get label() { return t("toolDef.updateSettings.sandbox"); },

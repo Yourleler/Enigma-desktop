@@ -62,7 +62,9 @@ export function PlanModeButton({ mode, onChange, locked = false }: {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
     document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    const escape=(event:KeyboardEvent)=>{if(event.key==='Escape'){event.preventDefault();setOpen(false);ref.current?.querySelector('button')?.focus();}};
+    document.addEventListener('keydown',escape,true);
+    return () => {document.removeEventListener('mousedown', handler);document.removeEventListener('keydown',escape,true);};
   }, [open]);
 
   const selectMode = useCallback(async (nextMode: PermissionMode) => {
@@ -119,10 +121,12 @@ export function PlanModeButton({ mode, onChange, locked = false }: {
         <PermissionModeIcon mode={mode} />
       </button>
       {open && (
-        <div className={`${styles['thinking-dropdown']} ${styles['plan-mode-dropdown']}`}>
+        <div className={`${styles['thinking-dropdown']} ${styles['plan-mode-dropdown']}`} data-liquid="menu" data-menu-surface="" data-menu-position="absolute">
           {PERMISSION_MODES.map((permissionMode) => (
             <button
               key={permissionMode}
+              data-menu-row=""
+              data-current={permissionMode===mode}
               className={`${styles['thinking-option']} ${styles['plan-mode-option']} ${styles[`plan-mode-option-${permissionMode}`] || ''}${permissionMode === mode ? ` ${styles.active}` : ''}`}
               onClick={() => selectMode(permissionMode)}
             >

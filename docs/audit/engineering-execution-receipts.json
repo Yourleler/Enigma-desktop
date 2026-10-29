@@ -1,0 +1,1242 @@
+{
+  "collectedAt": "2026-10-27T05:36:27.434Z",
+  "profile": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions",
+  "receiptCount": 133,
+  "scope": "Observed audit-profile invocations only, not a claim that all action combinations are validated.",
+  "receipts": [
+    {
+      "action": "skills-paths",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T05-08-13-469Z_01a17bc2-4c1d-7504-9b09-e8acc0da076f.jsonl",
+      "entry": "b3ccdf2b",
+      "operation": "c7634f0e-b74f-4fbf-a2b2-cdaf3f4a7c96",
+      "createdAt": "2026-10-27T05:33:53.353Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "skills-read",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T05-08-13-469Z_01a17bc2-4c1d-7504-9b09-e8acc0da076f.jsonl",
+      "entry": "de3b5b48",
+      "operation": "2b671fa3-a49a-4f39-b6f6-6b99af86a814",
+      "createdAt": "2026-10-27T05:32:46.617Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "material-raw",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T05-08-13-469Z_01a17bc2-4c1d-7504-9b09-e8acc0da076f.jsonl",
+      "entry": "3a9beee9",
+      "operation": "28531aed-476b-4ad8-a597-a09e5a728ec8",
+      "createdAt": "2026-10-27T05:32:17.641Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "artifact-add",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T05-08-13-469Z_01a17bc2-4c1d-7504-9b09-e8acc0da076f.jsonl",
+      "entry": "a6ebd1fd",
+      "operation": "5d1c4b62-0eed-4263-b6ab-e3f550b74365",
+      "createdAt": "2026-10-27T05:24:19.875Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "changes-build",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T05-08-13-469Z_01a17bc2-4c1d-7504-9b09-e8acc0da076f.jsonl",
+      "entry": "445a1890",
+      "operation": "7ff06988-786b-4412-ae7f-d637e4b4a895",
+      "createdAt": "2026-10-27T05:20:25.963Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "skills-read",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T05-08-13-469Z_01a17bc2-4c1d-7504-9b09-e8acc0da076f.jsonl",
+      "entry": "4f4150c2",
+      "operation": "291af3fb-a1df-4ce4-9356-904c0817ae4e",
+      "createdAt": "2026-10-27T05:19:32.601Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "skills-paths",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T05-08-13-469Z_01a17bc2-4c1d-7504-9b09-e8acc0da076f.jsonl",
+      "entry": "9c1315d7",
+      "operation": "d5ac8005-b067-445f-8b0a-01c8567d4676",
+      "createdAt": "2026-10-27T05:19:09.173Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "document-example",
+      "state": "completed",
+      "outcome": "passed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T05-08-13-469Z_01a17bc2-4c1d-7504-9b09-e8acc0da076f.jsonl",
+      "entry": "4040b2d4",
+      "operation": "1edb2bad-dd93-4a03-ac14-7d6e492e8b97",
+      "createdAt": "2026-10-27T05:18:24.012Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "document-register",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T05-08-13-469Z_01a17bc2-4c1d-7504-9b09-e8acc0da076f.jsonl",
+      "entry": "260a3309",
+      "operation": "04aa1bd8-ac1d-4b61-9c9e-3ae722ea3fc8",
+      "createdAt": "2026-10-27T05:18:13.247Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "material-raw",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T05-08-13-469Z_01a17bc2-4c1d-7504-9b09-e8acc0da076f.jsonl",
+      "entry": "0898f6f2",
+      "operation": "17db3194-7106-43c4-b941-6aaed712e236",
+      "createdAt": "2026-10-27T05:16:46.312Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "material-fetch",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T05-08-13-469Z_01a17bc2-4c1d-7504-9b09-e8acc0da076f.jsonl",
+      "entry": "1edd9139",
+      "operation": "1890b519-ef44-434e-866f-c57db670b5c9",
+      "createdAt": "2026-10-27T05:16:05.105Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "material-note",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T05-08-13-469Z_01a17bc2-4c1d-7504-9b09-e8acc0da076f.jsonl",
+      "entry": "0ca7a434",
+      "operation": "7e437ce1-e517-4b3d-a0ec-17c3f166e5e4",
+      "createdAt": "2026-10-27T05:14:08.196Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "material-file",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T05-08-13-469Z_01a17bc2-4c1d-7504-9b09-e8acc0da076f.jsonl",
+      "entry": "f9b78e1a",
+      "operation": "1d2b77a1-421c-4348-b27d-4393d0d039f6",
+      "createdAt": "2026-10-27T05:13:39.922Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "verify",
+      "state": "completed",
+      "outcome": "verified",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T05-08-13-469Z_01a17bc2-4c1d-7504-9b09-e8acc0da076f.jsonl",
+      "entry": "52208de4",
+      "operation": "2967d06a-656d-47d7-bd7f-270195d9a6b1",
+      "createdAt": "2026-10-27T05:12:26.138Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "check-add",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T05-08-13-469Z_01a17bc2-4c1d-7504-9b09-e8acc0da076f.jsonl",
+      "entry": "a6df3a99",
+      "operation": "189e6542-d401-4f2f-a0d9-e4018952cb1f",
+      "createdAt": "2026-10-27T05:12:10.414Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "repo-dependencies",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T05-08-13-469Z_01a17bc2-4c1d-7504-9b09-e8acc0da076f.jsonl",
+      "entry": "a8dc6765",
+      "operation": "f27c7245-39e0-49ce-999f-1a54a70e4248",
+      "createdAt": "2026-10-27T05:09:51.516Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "repo-add",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T05-08-13-469Z_01a17bc2-4c1d-7504-9b09-e8acc0da076f.jsonl",
+      "entry": "e79280ec",
+      "operation": "6c06ae43-e5df-4b56-a581-1e5420d2c342",
+      "createdAt": "2026-10-27T05:09:23.980Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "repo-add",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T05-08-13-469Z_01a17bc2-4c1d-7504-9b09-e8acc0da076f.jsonl",
+      "entry": "107d2dda",
+      "operation": "9f316d19-a9ff-44f5-8794-386f1dad9190",
+      "createdAt": "2026-10-27T05:08:52.155Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "code-fork",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-17-10-306Z_01a17b93-8ea2-70b0-ad65-6dc44ab5757b.jsonl",
+      "entry": "1671d443",
+      "operation": "96eed6d3-0c86-4147-8b0a-a2e5e1c189f7",
+      "createdAt": "2026-10-27T05:00:50.645Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "restore",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-17-10-306Z_01a17b93-8ea2-70b0-ad65-6dc44ab5757b.jsonl",
+      "entry": "009f7da0",
+      "operation": "b7e56a4f-d822-42ad-aada-3c4e2bf50555",
+      "createdAt": "2026-10-27T04:58:18.460Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "restore-preview",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-17-10-306Z_01a17b93-8ea2-70b0-ad65-6dc44ab5757b.jsonl",
+      "entry": "de90a1dc",
+      "operation": "47a21364-3ecc-4bab-b7f8-286ef94286f1",
+      "createdAt": "2026-10-27T04:58:04.879Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "checkpoint",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-17-10-306Z_01a17b93-8ea2-70b0-ad65-6dc44ab5757b.jsonl",
+      "entry": "0aad883f",
+      "operation": "8a8a3741-8078-4941-bf6f-86439c2cce60",
+      "createdAt": "2026-10-27T04:56:53.394Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "code-fork",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-17-10-306Z_01a17b93-8ea2-70b0-ad65-6dc44ab5757b.jsonl",
+      "entry": "e1fa2c2e",
+      "operation": "7402fd9f-80bd-438a-9438-9c829063ace7",
+      "createdAt": "2026-10-27T04:56:17.509Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "restore",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-17-10-306Z_01a17b93-8ea2-70b0-ad65-6dc44ab5757b.jsonl",
+      "entry": "a9863df9",
+      "operation": "a8301e7d-7841-4bff-8c19-4edbe15e45d0",
+      "createdAt": "2026-10-27T04:53:22.583Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "restore-preview",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-17-10-306Z_01a17b93-8ea2-70b0-ad65-6dc44ab5757b.jsonl",
+      "entry": "e2f9508e",
+      "operation": "6ad5b656-dcec-474d-a1ec-f6419801c105",
+      "createdAt": "2026-10-27T04:52:47.249Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "checkpoint",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-17-10-306Z_01a17b93-8ea2-70b0-ad65-6dc44ab5757b.jsonl",
+      "entry": "b7421822",
+      "operation": "7fcb0cf4-d170-4d0f-99e8-b67dafa3c7ce",
+      "createdAt": "2026-10-27T04:52:39.841Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "checkpoint",
+      "state": "unknown",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-56-19-199Z_01a17bb7-65ff-77b3-a2e8-80338aee34d5.jsonl",
+      "entry": "b7421822",
+      "operation": "7fcb0cf4-d170-4d0f-99e8-b67dafa3c7ce",
+      "createdAt": "2026-10-27T04:52:39.841Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "checkpoint",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-17-10-306Z_01a17b93-8ea2-70b0-ad65-6dc44ab5757b.jsonl",
+      "entry": "f39b16ca",
+      "operation": "2f6ec870-6f7b-4545-b688-17822d534b5c",
+      "createdAt": "2026-10-27T04:51:29.985Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "checkpoint",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-56-19-199Z_01a17bb7-65ff-77b3-a2e8-80338aee34d5.jsonl",
+      "entry": "f39b16ca",
+      "operation": "2f6ec870-6f7b-4545-b688-17822d534b5c",
+      "createdAt": "2026-10-27T04:51:29.985Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "experiment-select",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T17-36-56-983Z_01a17949-6a96-7406-a87d-d974361c53d5.jsonl",
+      "entry": "e5dd938a",
+      "operation": "5a372341-269b-4eb8-b31e-443193c36094",
+      "createdAt": "2026-10-27T04:44:32.953Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "experiment-evaluate",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T17-36-56-983Z_01a17949-6a96-7406-a87d-d974361c53d5.jsonl",
+      "entry": "a298a12c",
+      "operation": "069f6668-6285-4a41-b0e4-500a0435e091",
+      "createdAt": "2026-10-27T04:43:45.337Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "experiment-create",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T17-36-56-983Z_01a17949-6a96-7406-a87d-d974361c53d5.jsonl",
+      "entry": "444bf599",
+      "operation": "b1b265c1-874e-4c81-8150-f0b5481fc799",
+      "createdAt": "2026-10-27T04:43:30.162Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "service-start",
+      "state": "completed",
+      "outcome": "readiness-timeout",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-17-10-306Z_01a17b93-8ea2-70b0-ad65-6dc44ab5757b.jsonl",
+      "entry": "99c622dc",
+      "operation": "a9c59132-e142-41c8-a4f5-360492fecaad",
+      "createdAt": "2026-10-27T04:38:35.342Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "service-start",
+      "state": "completed",
+      "outcome": "readiness-timeout",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-56-19-199Z_01a17bb7-65ff-77b3-a2e8-80338aee34d5.jsonl",
+      "entry": "99c622dc",
+      "operation": "a9c59132-e142-41c8-a4f5-360492fecaad",
+      "createdAt": "2026-10-27T04:38:35.342Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "service-add",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-17-10-306Z_01a17b93-8ea2-70b0-ad65-6dc44ab5757b.jsonl",
+      "entry": "a26d4496",
+      "operation": "79ee4b96-82b8-4bd1-8474-af07e0f65e9a",
+      "createdAt": "2026-10-27T04:38:21.333Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "service-add",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-56-19-199Z_01a17bb7-65ff-77b3-a2e8-80338aee34d5.jsonl",
+      "entry": "a26d4496",
+      "operation": "79ee4b96-82b8-4bd1-8474-af07e0f65e9a",
+      "createdAt": "2026-10-27T04:38:21.333Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "service-add",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-17-10-306Z_01a17b93-8ea2-70b0-ad65-6dc44ab5757b.jsonl",
+      "entry": "1623442f",
+      "operation": "88471785-f3c5-4271-a292-3c8398d083eb",
+      "createdAt": "2026-10-27T04:37:45.609Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "service-add",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-56-19-199Z_01a17bb7-65ff-77b3-a2e8-80338aee34d5.jsonl",
+      "entry": "1623442f",
+      "operation": "88471785-f3c5-4271-a292-3c8398d083eb",
+      "createdAt": "2026-10-27T04:37:45.609Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "wait-start",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-17-10-306Z_01a17b93-8ea2-70b0-ad65-6dc44ab5757b.jsonl",
+      "entry": "c8955d52",
+      "operation": "2e500f06-f3f9-4ec9-a288-fe4628c4c76e",
+      "createdAt": "2026-10-27T04:36:52.216Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "wait-start",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-56-19-199Z_01a17bb7-65ff-77b3-a2e8-80338aee34d5.jsonl",
+      "entry": "c8955d52",
+      "operation": "2e500f06-f3f9-4ec9-a288-fe4628c4c76e",
+      "createdAt": "2026-10-27T04:36:52.216Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "background-start",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-17-10-306Z_01a17b93-8ea2-70b0-ad65-6dc44ab5757b.jsonl",
+      "entry": "f211247e",
+      "operation": "3baf81d9-cdfd-471b-b80c-33431f947362",
+      "createdAt": "2026-10-27T04:36:36.142Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "background-start",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-56-19-199Z_01a17bb7-65ff-77b3-a2e8-80338aee34d5.jsonl",
+      "entry": "f211247e",
+      "operation": "3baf81d9-cdfd-471b-b80c-33431f947362",
+      "createdAt": "2026-10-27T04:36:36.142Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "background-start",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-17-10-306Z_01a17b93-8ea2-70b0-ad65-6dc44ab5757b.jsonl",
+      "entry": "6371dbe3",
+      "operation": "4b3b2d5b-8155-4c28-8abf-2a8677f1b7da",
+      "createdAt": "2026-10-27T04:32:49.473Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "background-start",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-56-19-199Z_01a17bb7-65ff-77b3-a2e8-80338aee34d5.jsonl",
+      "entry": "6371dbe3",
+      "operation": "4b3b2d5b-8155-4c28-8abf-2a8677f1b7da",
+      "createdAt": "2026-10-27T04:32:49.473Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "browser-report",
+      "state": "completed",
+      "outcome": "passed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-17-10-306Z_01a17b93-8ea2-70b0-ad65-6dc44ab5757b.jsonl",
+      "entry": "da99f976",
+      "operation": "46586e77-c0fd-40d1-bcd2-87099da3cf8e",
+      "createdAt": "2026-10-27T04:31:40.108Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "browser-report",
+      "state": "completed",
+      "outcome": "passed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-56-19-199Z_01a17bb7-65ff-77b3-a2e8-80338aee34d5.jsonl",
+      "entry": "da99f976",
+      "operation": "46586e77-c0fd-40d1-bcd2-87099da3cf8e",
+      "createdAt": "2026-10-27T04:31:40.108Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "service-restart",
+      "state": "completed",
+      "outcome": "ready",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-17-10-306Z_01a17b93-8ea2-70b0-ad65-6dc44ab5757b.jsonl",
+      "entry": "aec0c7e7",
+      "operation": "4208c982-1d79-41fc-8135-b583a8e6a9f1",
+      "createdAt": "2026-10-27T04:30:17.755Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "service-restart",
+      "state": "completed",
+      "outcome": "ready",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-56-19-199Z_01a17bb7-65ff-77b3-a2e8-80338aee34d5.jsonl",
+      "entry": "aec0c7e7",
+      "operation": "4208c982-1d79-41fc-8135-b583a8e6a9f1",
+      "createdAt": "2026-10-27T04:30:17.755Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "browser-run",
+      "state": "completed",
+      "outcome": "passed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-17-10-306Z_01a17b93-8ea2-70b0-ad65-6dc44ab5757b.jsonl",
+      "entry": "d7ff7784",
+      "operation": "62c2b433-f42c-4bc6-997b-96790be755ed",
+      "createdAt": "2026-10-27T04:27:23.736Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "browser-run",
+      "state": "completed",
+      "outcome": "passed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-56-19-199Z_01a17bb7-65ff-77b3-a2e8-80338aee34d5.jsonl",
+      "entry": "d7ff7784",
+      "operation": "62c2b433-f42c-4bc6-997b-96790be755ed",
+      "createdAt": "2026-10-27T04:27:23.736Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "browser-add",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-17-10-306Z_01a17b93-8ea2-70b0-ad65-6dc44ab5757b.jsonl",
+      "entry": "0f1307bb",
+      "operation": "02c3940b-996a-4744-8a15-4cf32eb8cc3b",
+      "createdAt": "2026-10-27T04:26:13.352Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "browser-add",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-56-19-199Z_01a17bb7-65ff-77b3-a2e8-80338aee34d5.jsonl",
+      "entry": "0f1307bb",
+      "operation": "02c3940b-996a-4744-8a15-4cf32eb8cc3b",
+      "createdAt": "2026-10-27T04:26:13.352Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "service-start",
+      "state": "completed",
+      "outcome": "ready",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-17-10-306Z_01a17b93-8ea2-70b0-ad65-6dc44ab5757b.jsonl",
+      "entry": "e5655cfa",
+      "operation": "87eefe6b-7dc6-480d-a702-175b68a10ab8",
+      "createdAt": "2026-10-27T04:22:34.491Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "service-start",
+      "state": "completed",
+      "outcome": "ready",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-56-19-199Z_01a17bb7-65ff-77b3-a2e8-80338aee34d5.jsonl",
+      "entry": "e5655cfa",
+      "operation": "87eefe6b-7dc6-480d-a702-175b68a10ab8",
+      "createdAt": "2026-10-27T04:22:34.491Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "service-add",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-17-10-306Z_01a17b93-8ea2-70b0-ad65-6dc44ab5757b.jsonl",
+      "entry": "a9929468",
+      "operation": "58b452e6-b92b-4871-ba54-1088fd22eedc",
+      "createdAt": "2026-10-27T04:21:35.326Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "service-add",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T04-56-19-199Z_01a17bb7-65ff-77b3-a2e8-80338aee34d5.jsonl",
+      "entry": "a9929468",
+      "operation": "58b452e6-b92b-4871-ba54-1088fd22eedc",
+      "createdAt": "2026-10-27T04:21:35.326Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "schema-read",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T03-27-54-420Z_01a17b66-7434-770b-9960-baaf6c5cca71.jsonl",
+      "entry": "6e8350e3",
+      "operation": "3018181b-dd77-4214-885c-e31a052ee08c",
+      "createdAt": "2026-10-27T03:38:58.852Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "reading-open",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T03-27-54-420Z_01a17b66-7434-770b-9960-baaf6c5cca71.jsonl",
+      "entry": "b46125ff",
+      "operation": "0a2abb58-d27e-4b79-97e2-7ed2c854f5a5",
+      "createdAt": "2026-10-27T03:37:17.128Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "reading-open",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T03-27-54-420Z_01a17b66-7434-770b-9960-baaf6c5cca71.jsonl",
+      "entry": "823e4c00",
+      "operation": "d58d5242-296c-4d23-b94a-474a68b7d810",
+      "createdAt": "2026-10-27T03:36:21.779Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "reading-open",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T03-27-54-420Z_01a17b66-7434-770b-9960-baaf6c5cca71.jsonl",
+      "entry": "10448bb2",
+      "operation": "5d136db6-b05a-4359-9688-69ee2c1bf750",
+      "createdAt": "2026-10-27T03:34:52.245Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "reading-open",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T03-27-54-420Z_01a17b66-7434-770b-9960-baaf6c5cca71.jsonl",
+      "entry": "cbdf6ba6",
+      "operation": "2f99ea80-abf3-48ca-8183-49346e906f67",
+      "createdAt": "2026-10-27T03:33:37.612Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "code-read",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T03-27-54-420Z_01a17b66-7434-770b-9960-baaf6c5cca71.jsonl",
+      "entry": "c7b24758",
+      "operation": "e47d3992-e295-4829-8dc2-9742bca219d1",
+      "createdAt": "2026-10-27T03:32:39.755Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "source-index",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T03-27-54-420Z_01a17b66-7434-770b-9960-baaf6c5cca71.jsonl",
+      "entry": "7704b0e0",
+      "operation": "e69c255b-0268-4484-89e4-9886a63db87b",
+      "createdAt": "2026-10-27T03:31:15.154Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "handoff-inspect",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T01-57-15-664Z_01a17b13-7710-7701-b4e5-1a2624487cbe.jsonl",
+      "entry": "7c89a90c",
+      "operation": "f4281edd-38ac-4ec3-9935-ca27450f89e3",
+      "createdAt": "2026-10-27T02:30:31.906Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "new-context",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T01-57-15-664Z_01a17b13-7710-7701-b4e5-1a2624487cbe.jsonl",
+      "entry": "00a8852a",
+      "operation": "e055e399-ab31-48ee-8640-435bec496df7",
+      "createdAt": "2026-10-27T02:13:20.108Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "handoff-export",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T01-57-15-664Z_01a17b13-7710-7701-b4e5-1a2624487cbe.jsonl",
+      "entry": "1a48ff40",
+      "operation": "6eee1129-0707-44f1-ab3c-776ee5d4e38d",
+      "createdAt": "2026-10-27T02:11:23.201Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "handoff-inspect",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T01-57-15-664Z_01a17b13-7710-7701-b4e5-1a2624487cbe.jsonl",
+      "entry": "d8595a5e",
+      "operation": "ae65b79a-01cb-4178-a99f-ce71c7fea040",
+      "createdAt": "2026-10-27T02:09:55.881Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "handoff-inspect",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T01-57-15-664Z_01a17b13-7710-7701-b4e5-1a2624487cbe.jsonl",
+      "entry": "e5537c3b",
+      "operation": "f8ce5df9-a4a0-4adf-ab0c-6578ae5a124f",
+      "createdAt": "2026-10-27T02:08:02.296Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "handoff-export",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T01-57-15-664Z_01a17b13-7710-7701-b4e5-1a2624487cbe.jsonl",
+      "entry": "f4e6d176",
+      "operation": "62999073-79f2-4221-85f9-aac18b1a51e0",
+      "createdAt": "2026-10-27T02:07:27.820Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "memory-search",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T00-36-54-944Z_01a17ac9-e820-73d1-a282-ae071bfe1acc.jsonl",
+      "entry": "4ea87f97",
+      "operation": "28ed51b5-6558-40e3-9daa-d7d2deba0889",
+      "createdAt": "2026-10-27T01:21:59.864Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "memory-reindex",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T00-36-54-944Z_01a17ac9-e820-73d1-a282-ae071bfe1acc.jsonl",
+      "entry": "45c1d59c",
+      "operation": "182bc0ee-3a2b-4a47-b145-4c0756eea3ae",
+      "createdAt": "2026-10-27T01:10:54.492Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "memory-organize",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T00-36-54-944Z_01a17ac9-e820-73d1-a282-ae071bfe1acc.jsonl",
+      "entry": "bc281479",
+      "operation": "8b683dcb-5c2e-48a7-8bbe-12ba9453a533",
+      "createdAt": "2026-10-27T00:57:49.016Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "knowledge-draft",
+      "state": "completed",
+      "outcome": "queued",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T00-36-54-944Z_01a17ac9-e820-73d1-a282-ae071bfe1acc.jsonl",
+      "entry": "436e3f59",
+      "operation": "d411aa71-d935-4fb9-938c-78e1ee71d906",
+      "createdAt": "2026-10-27T00:55:03.240Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "memory-organize",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T00-36-54-944Z_01a17ac9-e820-73d1-a282-ae071bfe1acc.jsonl",
+      "entry": "0798b0f8",
+      "operation": "ad608835-134b-43c3-9676-180600c7835b",
+      "createdAt": "2026-10-27T00:48:23.926Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "knowledge-draft",
+      "state": "completed",
+      "outcome": "queued",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T00-36-54-944Z_01a17ac9-e820-73d1-a282-ae071bfe1acc.jsonl",
+      "entry": "9257a2b7",
+      "operation": "0e0b5a5e-3181-4347-badd-e8212b00791a",
+      "createdAt": "2026-10-27T00:47:40.010Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "memory-forget",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T00-36-54-944Z_01a17ac9-e820-73d1-a282-ae071bfe1acc.jsonl",
+      "entry": "8b817095",
+      "operation": "d190a49d-e1e6-4459-b7c7-aa254a24c1a2",
+      "createdAt": "2026-10-27T00:46:58.355Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "memory-save",
+      "state": "completed",
+      "outcome": "user-stated",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T00-36-54-944Z_01a17ac9-e820-73d1-a282-ae071bfe1acc.jsonl",
+      "entry": "60e042df",
+      "operation": "9d76ed93-422f-4220-9c1e-cb8099e30671",
+      "createdAt": "2026-10-27T00:46:24.667Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "memory-read",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-27T00-36-54-944Z_01a17ac9-e820-73d1-a282-ae071bfe1acc.jsonl",
+      "entry": "1ece223d",
+      "operation": "f0814d15-354a-4a4b-8940-64c3556f2cf6",
+      "createdAt": "2026-10-27T00:45:53.713Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "verify",
+      "state": "completed",
+      "outcome": "verified",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T23-18-55-358Z_01a17a82-807e-73d1-a282-ae05bde5a66c.jsonl",
+      "entry": "43597ee2",
+      "operation": "883ad942-c9a2-4047-938a-011a4ab831ba",
+      "createdAt": "2026-10-26T23:41:26.787Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "package-restore",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T22-27-26-737Z_01a17a53-5f91-73cc-a1f7-480951066558.jsonl",
+      "entry": "3f71233c",
+      "operation": "54c74d12-43c7-4d3c-86f4-56fe6210af42",
+      "createdAt": "2026-10-26T23:18:50.688Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "package-inspect",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T22-27-26-737Z_01a17a53-5f91-73cc-a1f7-480951066558.jsonl",
+      "entry": "8d812ef5",
+      "operation": "126fe164-6517-445f-9682-cdbf8d495c89",
+      "createdAt": "2026-10-26T23:16:13.743Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "package-restore",
+      "state": "failed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T22-27-26-737Z_01a17a53-5f91-73cc-a1f7-480951066558.jsonl",
+      "entry": "82315b33",
+      "operation": "64529fb8-4adc-4b1e-814a-d633d116c219",
+      "createdAt": "2026-10-26T23:02:30.665Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "package-inspect",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T22-27-26-737Z_01a17a53-5f91-73cc-a1f7-480951066558.jsonl",
+      "entry": "0abe7015",
+      "operation": "7e7ecddd-a15d-4d4b-ba1b-c785a137e7a8",
+      "createdAt": "2026-10-26T22:58:39.418Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "package-export",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T22-27-26-158Z_01a17a53-5d4e-73cc-a1f7-48072e110be8.jsonl",
+      "entry": "0260e630",
+      "operation": "80b8bb5a-c8c3-4b47-a790-fa697ffd8d13",
+      "createdAt": "2026-10-26T22:51:10.996Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "package-export",
+      "state": "failed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T22-27-26-158Z_01a17a53-5d4e-73cc-a1f7-48072e110be8.jsonl",
+      "entry": "82109599",
+      "operation": "85c26f3c-a576-4450-ae42-3f29c172bdeb",
+      "createdAt": "2026-10-26T22:46:52.327Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "recipe-report",
+      "state": "completed",
+      "outcome": "unknown",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T21-39-05-635Z_01a17a27-1b23-75df-aa7f-80c626dfebdd.jsonl",
+      "entry": "d4ae0fb8",
+      "operation": "27c13427-235f-4dce-8b03-95d5e9c5de9b",
+      "createdAt": "2026-10-26T21:58:12.212Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "verify",
+      "state": "completed",
+      "outcome": "verified",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T21-39-05-635Z_01a17a27-1b23-75df-aa7f-80c626dfebdd.jsonl",
+      "entry": "56126757",
+      "operation": "73e89d82-f7a4-4899-8c9e-afdcb79046cc",
+      "createdAt": "2026-10-26T21:56:26.281Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "acknowledge",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T21-39-05-635Z_01a17a27-1b23-75df-aa7f-80c626dfebdd.jsonl",
+      "entry": "58ed9a9f",
+      "operation": "2e03917c-ab85-4a29-a679-9fe4b97f62a3",
+      "createdAt": "2026-10-26T21:50:26.953Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "recover",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T21-39-05-635Z_01a17a27-1b23-75df-aa7f-80c626dfebdd.jsonl",
+      "entry": "052ff72a",
+      "operation": "757e7644-b1a9-43a6-a9b0-a8e455a3ebb0",
+      "createdAt": "2026-10-26T21:49:37.291Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "recipe-reconcile",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T21-39-05-635Z_01a17a27-1b23-75df-aa7f-80c626dfebdd.jsonl",
+      "entry": "05c661b9",
+      "operation": "c51d3417-87b4-403b-b987-39fb0c71c0a5",
+      "createdAt": "2026-10-26T21:46:39.881Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "recipe-report",
+      "state": "completed",
+      "outcome": "passed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T21-39-05-635Z_01a17a27-1b23-75df-aa7f-80c626dfebdd.jsonl",
+      "entry": "5d515b2d",
+      "operation": "64a9ae9e-0151-4891-80d7-4c038f15a607",
+      "createdAt": "2026-10-26T21:45:04.994Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "recipe-run",
+      "state": "completed",
+      "outcome": "passed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T21-39-05-635Z_01a17a27-1b23-75df-aa7f-80c626dfebdd.jsonl",
+      "entry": "a2521bf2",
+      "operation": "d31a3109-6d5f-416c-8efa-3612883e1837",
+      "createdAt": "2026-10-26T21:44:49.079Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "recipe-save",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T21-39-05-635Z_01a17a27-1b23-75df-aa7f-80c626dfebdd.jsonl",
+      "entry": "7b4acba8",
+      "operation": "e09c5dec-ddd9-41b4-8e31-ccfae7c18fc5",
+      "createdAt": "2026-10-26T21:44:00.146Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "recipe-propose",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T21-39-05-635Z_01a17a27-1b23-75df-aa7f-80c626dfebdd.jsonl",
+      "entry": "4056062f",
+      "operation": "4edfa55b-7a57-477a-be5b-fa548d59463a",
+      "createdAt": "2026-10-26T21:42:07.636Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "plan-step",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T21-39-05-635Z_01a17a27-1b23-75df-aa7f-80c626dfebdd.jsonl",
+      "entry": "54c27e5b",
+      "operation": "deb7124b-594e-4ba1-b393-484b24944e02",
+      "createdAt": "2026-10-26T21:41:30.832Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "verify",
+      "state": "completed",
+      "outcome": "verified",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T21-39-05-635Z_01a17a27-1b23-75df-aa7f-80c626dfebdd.jsonl",
+      "entry": "61f980fb",
+      "operation": "5aa4ac6e-2448-4cad-aa05-c325d9d076cd",
+      "createdAt": "2026-10-26T21:40:45.472Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "map-coverage",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T21-15-03-251Z_01a17a11-18d3-7767-bc02-a97a9ac2a5a2.jsonl",
+      "entry": "99e4b5a3",
+      "operation": "432f30cb-f57d-4df7-830c-138e956fe1a8",
+      "createdAt": "2026-10-26T21:26:44.674Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "map-coverage",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T21-15-03-251Z_01a17a11-18d3-7767-bc02-a97a9ac2a5a2.jsonl",
+      "entry": "5bcafb80",
+      "operation": "00effe31-28fc-466d-9714-17861285ebef",
+      "createdAt": "2026-10-26T21:24:41.956Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "verify",
+      "state": "completed",
+      "outcome": "verified",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T21-15-03-251Z_01a17a11-18d3-7767-bc02-a97a9ac2a5a2.jsonl",
+      "entry": "c6300d79",
+      "operation": "ae7b9039-1b6a-4957-99d2-1cd71dae7e35",
+      "createdAt": "2026-10-26T21:23:30.468Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "map-annotate",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T21-15-03-251Z_01a17a11-18d3-7767-bc02-a97a9ac2a5a2.jsonl",
+      "entry": "05d9d39d",
+      "operation": "29cc33bd-de69-42b4-9dbe-8fd68a249633",
+      "createdAt": "2026-10-26T21:22:51.811Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "map-build",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T21-15-03-251Z_01a17a11-18d3-7767-bc02-a97a9ac2a5a2.jsonl",
+      "entry": "10b163dd",
+      "operation": "525492e6-afa9-4525-8609-879c5b76533e",
+      "createdAt": "2026-10-26T21:21:59.779Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "map-build",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T21-15-03-251Z_01a17a11-18d3-7767-bc02-a97a9ac2a5a2.jsonl",
+      "entry": "7843739a",
+      "operation": "bc0160f8-a479-474f-b3e5-ececaa2feb07",
+      "createdAt": "2026-10-26T21:18:29.738Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "recipe-save",
+      "state": "failed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T20-31-03-779Z_01a179e8-d263-775a-a390-c9f7aa72ed27.jsonl",
+      "entry": "3f22f962",
+      "operation": "a46a3902-ae27-4745-8ced-4491b48fc46f",
+      "createdAt": "2026-10-26T20:44:56.433Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "recipe-save",
+      "state": "failed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T20-31-03-779Z_01a179e8-d263-775a-a390-c9f7aa72ed27.jsonl",
+      "entry": "48c3be7a",
+      "operation": "3afd1524-3114-4dbe-ac52-71fd6f0aeef1",
+      "createdAt": "2026-10-26T20:42:17.794Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "recipe-save",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T20-31-03-779Z_01a179e8-d263-775a-a390-c9f7aa72ed27.jsonl",
+      "entry": "485fa8e9",
+      "operation": "32faf10b-5d0e-4527-b522-11cbb15f035a",
+      "createdAt": "2026-10-26T20:39:45.850Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "recipe-run",
+      "state": "cancelled",
+      "outcome": "cancelled",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T20-31-03-779Z_01a179e8-d263-775a-a390-c9f7aa72ed27.jsonl",
+      "entry": "7740f8d4",
+      "operation": "104ed372-067f-4d0c-955a-38e92238b54c",
+      "createdAt": "2026-10-26T20:38:42.467Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "recipe-run",
+      "state": "completed",
+      "outcome": "passed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T20-31-03-779Z_01a179e8-d263-775a-a390-c9f7aa72ed27.jsonl",
+      "entry": "8c5128da",
+      "operation": "4a4a76a4-21d9-491b-91c3-83869bd5fa9a",
+      "createdAt": "2026-10-26T20:38:14.747Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "recipe-save",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T20-31-03-779Z_01a179e8-d263-775a-a390-c9f7aa72ed27.jsonl",
+      "entry": "4de1c78e",
+      "operation": "affc4ac5-d686-4627-8d58-f3167363b071",
+      "createdAt": "2026-10-26T20:35:03.794Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "review-run",
+      "state": "completed",
+      "outcome": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T20-10-02-746Z_01a179d5-947a-71a8-95ff-fc0bdc5b8df2.jsonl",
+      "entry": "6114696e",
+      "operation": "3b10e278-4c9f-49a7-9512-0565bbe20a02",
+      "createdAt": "2026-10-26T20:10:39.264Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "plan-create",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T17-36-56-983Z_01a17949-6a96-7406-a87d-d974361c53d5.jsonl",
+      "entry": "99737ad2",
+      "operation": "1a093303-cd0b-4fc0-83eb-8b826363020e",
+      "createdAt": "2026-10-26T19:32:24.997Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "material-raw",
+      "state": "failed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T17-36-56-983Z_01a17949-6a96-7406-a87d-d974361c53d5.jsonl",
+      "entry": "0cc6b6ca",
+      "operation": "9bfc44dc-61fc-4d4e-be53-91aba04e9b92",
+      "createdAt": "2026-10-26T19:32:24.980Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "verify",
+      "state": "completed",
+      "outcome": "verified",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T17-36-56-983Z_01a17949-6a96-7406-a87d-d974361c53d5.jsonl",
+      "entry": "061354df",
+      "operation": "c25b920f-7072-490c-b736-24201045a5b6",
+      "createdAt": "2026-10-26T19:10:47.603Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "verify",
+      "state": "completed",
+      "outcome": "verified",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T17-36-56-983Z_01a17949-6a96-7406-a87d-d974361c53d5.jsonl",
+      "entry": "c257443b",
+      "operation": "1c11753c-0c1d-41d1-93f9-f7def8939078",
+      "createdAt": "2026-10-26T19:03:34.086Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "material-remove",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T17-36-56-983Z_01a17949-6a96-7406-a87d-d974361c53d5.jsonl",
+      "entry": "73b4cfb6",
+      "operation": "c670d8c5-8fc5-4c97-927c-a295159b96b2",
+      "createdAt": "2026-10-26T18:08:54.107Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "material-refresh",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T17-36-56-983Z_01a17949-6a96-7406-a87d-d974361c53d5.jsonl",
+      "entry": "bb98688c",
+      "operation": "b093e580-d0ae-4370-833e-f30402f67d39",
+      "createdAt": "2026-10-26T18:03:05.564Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "delegate-merge",
+      "state": "completed",
+      "outcome": "verified",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T17-36-56-983Z_01a17949-6a96-7406-a87d-d974361c53d5.jsonl",
+      "entry": "bcf64cc9",
+      "operation": "76febb24-cb23-4d90-901d-c7371591aad7",
+      "createdAt": "2026-10-26T17:50:37.618Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "delegate-preview",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T17-36-56-983Z_01a17949-6a96-7406-a87d-d974361c53d5.jsonl",
+      "entry": "5dc46abf",
+      "operation": "7e6c48e9-2991-493e-bf3a-e95c5ee0f259",
+      "createdAt": "2026-10-26T17:50:04.869Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "delegate-preview",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T17-36-56-983Z_01a17949-6a96-7406-a87d-d974361c53d5.jsonl",
+      "entry": "03dbba97",
+      "operation": "80c9bbf7-efa9-4df9-8bcb-8a719eb8ba1b",
+      "createdAt": "2026-10-26T17:48:09.015Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "delegate-preview",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T17-36-56-983Z_01a17949-6a96-7406-a87d-d974361c53d5.jsonl",
+      "entry": "249e5832",
+      "operation": "9673d037-92bc-441d-99e4-2666275dceaa",
+      "createdAt": "2026-10-26T17:46:49.328Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "plan-step",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T17-36-56-983Z_01a17949-6a96-7406-a87d-d974361c53d5.jsonl",
+      "entry": "ad5383a6",
+      "operation": "0258e9d9-18c5-4d09-ab22-5de1f3c1a3d0",
+      "createdAt": "2026-10-26T17:44:30.073Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "verify",
+      "state": "completed",
+      "outcome": "verified",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T17-36-56-983Z_01a17949-6a96-7406-a87d-d974361c53d5.jsonl",
+      "entry": "9ca90268",
+      "operation": "e2c12311-1ac1-401e-b92e-b1a80092d419",
+      "createdAt": "2026-10-26T17:42:52.987Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "delegate-preview",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T17-36-56-983Z_01a17949-6a96-7406-a87d-d974361c53d5.jsonl",
+      "entry": "a3722b2c",
+      "operation": "4f11fe93-ca87-417a-ae8a-2a217bef143f",
+      "createdAt": "2026-10-26T17:40:56.775Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "document-example",
+      "state": "cancelled",
+      "outcome": "cancelled",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T14-19-26-351Z_01a17894-970f-72cf-8098-742fcfb2aef0.jsonl",
+      "entry": "8a66bd35",
+      "operation": "c75b9575-0e0f-4742-9644-60a5c511ebe2",
+      "createdAt": "2026-10-26T17:22:30.878Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "document-example",
+      "state": "completed",
+      "outcome": "passed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T14-19-26-351Z_01a17894-970f-72cf-8098-742fcfb2aef0.jsonl",
+      "entry": "971bd9f8",
+      "operation": "d8c5139e-54e5-440b-b99b-228e20c520f2",
+      "createdAt": "2026-10-26T16:31:02.138Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "document-example",
+      "state": "cancelled",
+      "outcome": "cancelled",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T14-19-26-351Z_01a17894-970f-72cf-8098-742fcfb2aef0.jsonl",
+      "entry": "00fe9ddd",
+      "operation": "5634e896-e5b9-448a-bc1f-cf8a9b5c9439",
+      "createdAt": "2026-10-26T16:28:09.358Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "memory-read",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T14-19-26-351Z_01a17894-970f-72cf-8098-742fcfb2aef0.jsonl",
+      "entry": "a2d10f91",
+      "operation": "21368452-f780-4522-8210-c3e985c43535",
+      "createdAt": "2026-10-26T15:52:46.440Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "memory-read",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T14-19-26-351Z_01a17894-970f-72cf-8098-742fcfb2aef0.jsonl",
+      "entry": "0f8a4e4d",
+      "operation": "8b0fb0b6-ff57-4eff-88eb-fd2af3774103",
+      "createdAt": "2026-10-26T15:40:02.195Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "memory-read",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T14-19-26-351Z_01a17894-970f-72cf-8098-742fcfb2aef0.jsonl",
+      "entry": "a89978bf",
+      "operation": "cea2b78f-b27d-4432-887a-10062c134beb",
+      "createdAt": "2026-10-26T15:23:08.946Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "document-example",
+      "state": "completed",
+      "outcome": "passed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T14-19-26-351Z_01a17894-970f-72cf-8098-742fcfb2aef0.jsonl",
+      "entry": "0aeffe0c",
+      "operation": "2fde600a-b5ee-4f07-8b4d-1c67458decf2",
+      "createdAt": "2026-10-26T14:54:50.814Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "document-example",
+      "state": "cancelled",
+      "outcome": "cancelled",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T14-19-26-351Z_01a17894-970f-72cf-8098-742fcfb2aef0.jsonl",
+      "entry": "02750283",
+      "operation": "21e23bfc-30df-4c71-9c74-5d47aed0b6e9",
+      "createdAt": "2026-10-26T14:51:55.314Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "document-example",
+      "state": "cancelled",
+      "outcome": "cancelled",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T14-19-26-351Z_01a17894-970f-72cf-8098-742fcfb2aef0.jsonl",
+      "entry": "f38d2c97",
+      "operation": "ab2b932e-3ad4-4e86-aab7-a700af236802",
+      "createdAt": "2026-10-26T14:22:39.342Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "document-example",
+      "state": "completed",
+      "outcome": "passed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T14-19-26-351Z_01a17894-970f-72cf-8098-742fcfb2aef0.jsonl",
+      "entry": "4aae79bc",
+      "operation": "41a95484-29bc-4cfc-a18f-a7c375a82751",
+      "createdAt": "2026-10-26T14:21:07.788Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    },
+    {
+      "action": "restore-preview",
+      "state": "completed",
+      "sessionPath": "LOCAL_AUDIT_ROOT/2026-10-26/enigma-12h/ui-stream-r3/home/agents/enigma/sessions/2026-10-26T12-51-03-501Z_01a17843-accd-70ff-8858-6b30690a4ee0.jsonl",
+      "entry": "d9f74568",
+      "operation": "f0fa7f4a-0b0b-488f-b343-9862f9816576",
+      "createdAt": "2026-10-26T14:09:43.116Z",
+      "scope": "Actual request paired with authentic operation receipt in isolated audit profile. Proves invocation and recorded state; workflow completion requires scenario-specific evidence."
+    }
+  ],
+  "pathsAndProviderNamesRedacted": true
+}

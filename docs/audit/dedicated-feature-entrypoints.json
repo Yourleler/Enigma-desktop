@@ -1,0 +1,365 @@
+{
+  "reviewedAt": "2026-10-27T05:04:00+08:00",
+  "scope": "专用宿主功能的UI入口；与71项通用action表单分开核对。该表只记录入口与已执行证据，不把可发现等同于全功能验收。",
+  "features": [
+    {
+      "id": "guardian",
+      "entry": "全部工程操作 → 托管与独立诊断；工具栏 → 运行状态",
+      "operations": [
+        "start",
+        "stop",
+        "diagnose"
+      ],
+      "evidence": [
+        "guardian-host-restart.json",
+        "guardian-repair-r3/report.json",
+        "compaction-failure-r1/report.json",
+        "guardian-panel.test.tsx"
+      ]
+    },
+    {
+      "id": "guardian-act",
+      "entry": "独立管家进程内部按已保存授权调用，无任意手动执行按钮",
+      "operations": [
+        "notify",
+        "cancel-and-resume",
+        "refresh-observer",
+        "propose-repair"
+      ],
+      "evidence": [
+        "guardian-actions.test.ts",
+        "guardian.test.ts",
+        "enigma-guardian-control.test.ts"
+      ]
+    },
+    {
+      "id": "model-policy",
+      "entry": "全部工程操作 → 多模型分工与切换；更多功能 → 模型分工",
+      "operations": [
+        "current",
+        "future",
+        "both"
+      ],
+      "evidence": [
+        "model-boundaries-r3/report.json",
+        "model-policy-dialog.test.tsx",
+        "CUA目录到设置实际打开"
+      ]
+    },
+    {
+      "id": "model-switch",
+      "entry": "输入框模型选择器，运行中在下一请求生效",
+      "operations": [
+        "model"
+      ],
+      "evidence": [
+        "model-boundaries-r3/report.json",
+        "ModelSelector.test.tsx"
+      ]
+    },
+    {
+      "id": "memory-dream",
+      "entry": "全部工程操作 → 记忆整理与反馈；侧栏 → 记忆",
+      "operations": [
+        "start",
+        "pause",
+        "cancel",
+        "resume",
+        "publish",
+        "recover",
+        "feedback"
+      ],
+      "evidence": [
+        "memory-restart-live.json",
+        "memory-priority-r1/report.json",
+        "memory-panel.test.tsx",
+        "enigma-memory-scheduling.test.ts"
+      ]
+    },
+    {
+      "id": "conductor-new",
+      "entry": "全部工程操作 → 创建任务编排管家；侧栏 → 新建管家任务",
+      "operations": [
+        "new"
+      ],
+      "evidence": [
+        "ConductorCreate.tsx",
+        "conductor-navigation.test.tsx",
+        "dependency-chain-r1/report.json"
+      ]
+    },
+    {
+      "id": "conductor-control",
+      "entry": "管家对话 → 任务群；目录 → 任务群控制",
+      "operations": [
+        "cancel",
+        "report",
+        "preview-draft",
+        "resume-draft"
+      ],
+      "evidence": [
+        "conductor-navigation.test.tsx",
+        "dependency-chain-r1/report.json",
+        "ui/conductor-dependencies.png"
+      ]
+    },
+    {
+      "id": "documents",
+      "entry": "更多功能 → 文档维护，使用通用document-register/document-example操作",
+      "operations": [
+        "register",
+        "example"
+      ],
+      "legacyEndpoints": "/document/register与/document/example仍兼容旧调用；新版UI使用可跟踪的action生命周期",
+      "evidence": [
+        "document-long-summary.json",
+        "document-cancel.json",
+        "documentation.test.ts"
+      ]
+    },
+    {
+      "id": "connection",
+      "entry": "项目按钮与更多功能 → 切换工程工作区",
+      "operations": [
+        "connect"
+      ],
+      "evidence": [
+        "Engineering.tsx ConnectDialog",
+        "useSideAction.ts"
+      ]
+    },
+    {
+      "id": "runtime-history",
+      "entry": "全部工程操作 → 运行回执与历史；工具栏 → 运行状态",
+      "operations": [
+        "status",
+        "history"
+      ],
+      "evidence": [
+        "runtime-status.test.tsx",
+        "workbench-observer-live.json",
+        "operation-history.test.ts",
+        "CUA实际展开5条历史回执"
+      ]
+    },
+    {
+      "id": "runtime-stop",
+      "entry": "环境页对应服务、命令和等待的直接停止按钮",
+      "operations": [
+        "service-stop",
+        "background-cancel",
+        "wait-cancel"
+      ],
+      "evidence": [
+        "enigma-runtime-cancel-route.test.ts",
+        "environment.test.tsx",
+        "2026-10-27/enigma-12h/wait-ui-r1/report.json"
+      ],
+      "notes": "主Agent运行时可用；停止等待不会取消目标，也不会继续自动唤起主任务"
+    },
+    {
+      "id": "plan-live",
+      "entry": "Task plan panel",
+      "operations": [
+        "live-progress",
+        "current-check-evidence-selection",
+        "step-update",
+        "stale-prerequisite-display"
+      ],
+      "evidence": [
+        "plan-collaboration-r1/report.json",
+        "plan.test.tsx",
+        "form-choices.test.ts",
+        "plan-query-performance.json"
+      ]
+    },
+    {
+      "id": "collaboration-live",
+      "entry": "Collaboration panel",
+      "operations": [
+        "child-outcome",
+        "merge-preview",
+        "merge-confirmation",
+        "comparison-evaluation",
+        "verified-candidate-selection"
+      ],
+      "evidence": [
+        "plan-collaboration-r1/report.json",
+        "collaboration.test.tsx",
+        "action-dialog-state.test.tsx",
+        "delegation.test.ts"
+      ]
+    },
+    {
+      "id": "materials-guided",
+      "entry": "More features / Materials / selected material",
+      "operations": [
+        "search-limit-and-scope",
+        "saved-source-freshness",
+        "refresh-selected-record",
+        "remove-and-return",
+        "partial-import-label"
+      ],
+      "evidence": [
+        "plan-collaboration-r1/materials-report.json",
+        "materials.test.tsx",
+        "material-search-performance.json"
+      ]
+    },
+    {
+      "id": "artifact-presentation",
+      "entry": "成果 / selected artifact",
+      "operations": [
+        "image-preview",
+        "image-original-size",
+        "download-original-name",
+        "decode-error-retry",
+        "unavailable-file-isolation"
+      ],
+      "evidence": [
+        "plan-collaboration-r1/artifacts-report.json",
+        "artifacts.test.tsx",
+        "artifact-presentation.test.ts",
+        "enigma-artifact-route.test.ts",
+        "csp-sync.test.ts"
+      ]
+    },
+    {
+      "id": "whole-host-crash-recovery",
+      "entry": "Task group / recovered worker / let manager inspect continuation",
+      "operations": [
+        "SIGKILL-cold-load",
+        "explicit-resume",
+        "preserve-workspace-and-session",
+        "persisted-request-accounting",
+        "revalidate-check-evidence"
+      ],
+      "evidence": [
+        "host-crash-r2/report.json",
+        "host-crash-r2/status-performance.json",
+        "enigma-conductor-scope.test.ts",
+        "conductor-navigation.test.tsx"
+      ]
+    },
+    {
+      "id": "full-repository-browse",
+      "entry": "Project / browse source or Changes / repository files",
+      "operations": [
+        "full-path-search",
+        "versioned-pagination",
+        "open-current-source",
+        "changed-list-retry"
+      ],
+      "evidence": [
+        "file-browser-r1/report.json",
+        "file-tree.test.tsx",
+        "enigma-files-route.test.ts"
+      ]
+    },
+    {
+      "id": "acceptance-live",
+      "entry": "More features / Requirements and acceptance",
+      "operations": [
+        "live-blockers",
+        "missing-evidence",
+        "direct-related-panels",
+        "manual-check-receipt-link"
+      ],
+      "evidence": [
+        "plan-collaboration-r1/acceptance-report.json",
+        "task-acceptance.test.ts",
+        "workbench-verification.test.ts",
+        "acceptance.test.tsx"
+      ]
+    },
+    {
+      "id": "operation-request-reconciliation",
+      "entry": "Requirements and acceptance / Workbench operations",
+      "operations": [
+        "pair-source-entry-and-receipt",
+        "retain-goal-inputs",
+        "retain-failed-and-unknown-actions",
+        "draft-review-without-replay",
+        "project-authentic-user-text"
+      ],
+      "evidence": [
+        "plan-collaboration-r1/operation-scope-report.json",
+        "operation-history.test.ts",
+        "user-note-projection.test.ts",
+        "task-acceptance.test.ts",
+        "acceptance.test.tsx"
+      ]
+    },
+    {
+      "id": "runtime-extension-availability",
+      "entry": "Native session reminder preflight, before model input",
+      "operations": [
+        "actual-registered-and-callable-extension-inventory",
+        "preserve-host-live-probes",
+        "no-tool-loadout-mutation"
+      ],
+      "evidence": [
+        "tool-inventory-r4/report.json",
+        "session-coordinator-tool-snapshot.test.ts",
+        "tool-availability.test.ts",
+        "session-reminders.test.ts"
+      ]
+    },
+    {
+      "id": "independent-review-reader",
+      "entry": "More features / Review / report / frozen source",
+      "operations": [
+        "read-report-prose",
+        "revalidate-source-and-evidence",
+        "task-scope",
+        "frozen-vs-current-source",
+        "deleted-baseline-read",
+        "line-range",
+        "review_changes-pagination"
+      ],
+      "evidence": [
+        "review-ui-r1/report.json",
+        "review.test.ts",
+        "review.test.tsx",
+        "enigma-review-source-route.test.ts"
+      ]
+    },
+    {
+      "id": "recipe-workflow",
+      "entry": "Skills and recipes / Recipes",
+      "operations": [
+        "create",
+        "versioned-edit",
+        "descriptive-parameter-run",
+        "original-check-evidence",
+        "cancel-current-recipe",
+        "retained-subtab"
+      ],
+      "evidence": [
+        "recipe-ui-r1/report.json",
+        "recipe-workbench.test.ts",
+        "recipes.test.tsx",
+        "workflow-state.test.tsx"
+      ]
+    },
+    {
+      "id": "session-layout-transition",
+      "entry": "Conversation sidebar / engineering panel / workspace preview",
+      "operations": [
+        "prepaint-session-binding",
+        "reject-stale-form",
+        "retain-accepted-origin-receipt",
+        "ignore-late-same-root-layout",
+        "preserve-user-preview-choice",
+        "scope-operation-errors"
+      ],
+      "evidence": [
+        "session-transition-r1/report.json",
+        "session-transition.test.tsx",
+        "workflow-state.test.tsx",
+        "desk-actions.test.ts"
+      ]
+    }
+  ],
+  "pathsAndProviderNamesRedacted": true
+}

@@ -15,6 +15,7 @@ describe("macOS seatbelt sandbox policy projection", () => {
 
     expect(profile).toContain("(allow network-outbound)");
     expect(profile).not.toContain("(deny network*)");
+    expect(profile).not.toContain('network-bind');expect(profile).not.toContain('network-inbound');
   });
 
   it("denies network only when sandbox network is explicitly disabled", () => {
@@ -22,5 +23,9 @@ describe("macOS seatbelt sandbox policy projection", () => {
 
     expect(profile).toContain("(deny network*)");
     expect(profile).not.toContain("(allow network-outbound)");
+  });
+  it('requires explicit server opt-in and keeps explicit network denial',()=>{
+    const enabled=__testing.generateProfile(policy,{allowLocalServers:true});expect(enabled).toContain('(allow network-bind (local ip))');
+    const off=__testing.generateProfile(policy,{allowNetwork:false,allowLocalServers:true});expect(off).toContain('(deny network*)');expect(off).not.toContain('network-bind');
   });
 });

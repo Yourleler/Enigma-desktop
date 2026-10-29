@@ -66,7 +66,7 @@
 }
 
 .title {
-    font-family: "Songti SC", "Noto Serif CJK SC", serif;
+    font-family: var(--font-ui);
     font-size: var(--fs-body);
     font-weight: 600;
     color: var(--accent);
@@ -106,7 +106,7 @@
     font-size: var(--fs-caption);
     color: var(--text);
     text-align: right;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    white-space: normal;
 }

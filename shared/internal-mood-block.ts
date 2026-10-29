@@ -2,6 +2,7 @@ export const INTERNAL_MOOD_TAGS = Object.freeze([
   "mood",
   "pulse",
   "reflect",
+  "work",
 ] as const);
 
 export type InternalMoodTag = (typeof INTERNAL_MOOD_TAGS)[number];

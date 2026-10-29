@@ -32,8 +32,13 @@ function agentDir(engine: any, id: string) {
 
 function hideDisabledGlobalToolsForSettings(toolNames: string[], engine: any) {
   const computerUseEnabled = engine?.getComputerUseSettings?.()?.enabled === true;
-  if (computerUseEnabled) return toolNames;
-  return (toolNames || []).filter((name) => name !== "computer");
+  const plugins = engine?.pluginManager;
+  return (toolNames || []).filter(name => {
+    if (name === 'computer' && !computerUseEnabled) return false;
+    if (['browser', 'computer'].includes(name) && typeof plugins?.getNativeToolContribution === 'function')
+      return !!plugins.getNativeToolContribution(name);
+    return true;
+  });
 }
 
 function normalizeExperienceConfigForResponse(config: Record<string, any>) {

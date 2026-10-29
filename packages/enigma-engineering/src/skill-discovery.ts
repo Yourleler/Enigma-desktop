@@ -76,13 +76,17 @@ export class SkillDiscovery {
       diagnostics: catalogue.diagnostics, unavailable: catalogue.unavailable, method: 'lexical intent matching against native Pi skill summaries',
       note: 'A discovery path grants no repository write permission. Manual-only skills are excluded unless explicitly requested; invocation remains owned by Pi.' };
   }
-  async open(id: string, expectedVersion: string) {
-    const catalogue = await this.catalogue(), skill = catalogue.skills.find(skill => skill.id === id);
-    if (!skill) throw new Error('Skill is no longer in the native catalogue; search again');
-    if (!skill.modelInvocation) throw new Error('Manual-only skill: invoke its native /skill command explicitly');
-    if (skill.version !== expectedVersion) throw new Error('Skill changed; search again before reading');
-    const content = await readFile(skill.file, 'utf8');
+  async open(id: string, expectedVersion: string, options:{manualRead?:boolean} = {}) {
+    const catalogue = await this.load();
+    if(catalogue.skills.length>1000)throw new Error('Skill catalogue exceeds the discovery budget');
+    const native=catalogue.skills.find(skill=>hash(skill.filePath)===id);
+    if (!native) throw new Error('Skill is no longer in the native catalogue; search again');
+    if (native.disableModelInvocation&&!options.manualRead) throw new Error('Manual-only skill: invoke its native /skill command explicitly');
+    const file=await realpath(native.filePath),stat=await lstat(file);
+    if(!stat.isFile()||stat.size>256000)throw new Error('Skill file exceeds the 256 KB read budget');
+    const content = await readFile(file, 'utf8');
     if (Buffer.byteLength(content) > 256000 || hash(content) !== expectedVersion) throw new Error('Skill changed while reading');
+    const skill:SkillSummary={id,name:native.name,description:native.description.slice(0,3000),file,version:expectedVersion,source:native.sourceInfo,modelInvocation:!native.disableModelInvocation,command:`/skill:${native.name}`};
     return { skill, content, role: 'selected skill reference', note: 'Native skill content does not expand host permissions or replace current user requirements.' };
   }
 }

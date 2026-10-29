@@ -31,6 +31,7 @@ export interface RecipeRun {
   evidence?: string; error?: string;
 }
 interface RecipeConfig { schema: 1; recipes: Recipe[] }
+interface RecipeOwner { token: string; pid: number; identity?: string; createdAt?: string; recipe?: string; task?: string }
 const placeholder = /^\{\{([a-zA-Z0-9][a-zA-Z0-9._-]*)\}\}$/;
 
 /** Executable procedures are explicitly promoted operator configuration, not generated agent policy. */
@@ -110,23 +111,54 @@ export class RecipeStore {
       await ensureDir(join(this.workspace.data, 'recipe-proposals')); await this.persist(join(this.workspace.data, 'recipe-proposals', `${proposal.id}.json`), proposal); return proposal;
     });
   }
+  async proposals(task?:string,recipes?:Recipe[]) {
+    let files:string[];try{files=await readdir(join(this.workspace.data,'recipe-proposals'));}catch(error){if((error as NodeJS.ErrnoException).code==='ENOENT')return {items:[],unavailable:0,truncated:false};throw error;}
+    const records:RecipeProposal[]=[];let unavailable=0;
+    for(const file of files.filter(file=>file.endsWith('.json')))try{
+      const proposal=await readJson<RecipeProposal>(join(this.workspace.data,'recipe-proposals',file));
+      if(proposal.task&&proposal.task!==task)continue;
+      if(proposal.schema!==1||file!==`${safeId(proposal.id)}.json`||!Array.isArray(proposal.goals)||!Array.isArray(proposal.origin?.evidence))throw new Error('Invalid recipe proposal');
+      this.validate(proposal.input);records.push(proposal);
+    }catch{unavailable++;}
+    records.sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
+    const saved=recipes||await this.list(),observed=records.length?await this.workspace.observe():undefined,validity=new Map<string,boolean>(),items=[];
+    for(const proposal of records.slice(0,30)){
+      for(const evidence of proposal.origin.evidence)if(!validity.has(evidence))try{
+        const entry=await readJson<import('./types.js').Evidence>(join(this.workspace.data,'evidence',`${safeId(evidence)}.json`));
+        validity.set(evidence,entry.kind==='check'&&entry.validAtCapture===true&&(entry.data as any)?.status==='verified'&&entry.environment===observed!.environment&&entry.configuration===observed!.configuration&&JSON.stringify(entry.fingerprints)===JSON.stringify(observed!.fingerprints));
+      }catch{validity.set(evidence,false);}
+      items.push({...proposal,sourceCurrent:proposal.origin.evidence.length>0&&proposal.origin.evidence.every(id=>validity.get(id)),savedRecipe:saved.find(recipe=>recipe.id===proposal.input.id)});
+    }
+    return {items,unavailable,truncated:records.length>30};
+  }
+  async interruption() {
+    let owner:RecipeOwner;try{owner=await readJson<RecipeOwner>(join(this.workspace.data,'recipe.lock'));}catch(error){if((error as NodeJS.ErrnoException).code==='ENOENT')return null;throw error;}
+    safeId(owner.token);if(!Number.isSafeInteger(owner.pid)||owner.pid<1)throw new Error('配方占用记录不完整，请核对原进程。');
+    const state=await processIdentity(owner.pid);
+    const canReconcile=state.state==='gone'||state.state==='alive'&&!!owner.identity&&!!state.identity&&owner.identity!==state.identity;
+    return {...owner,canReconcile,processState:state.state};
+  }
   private async persist(path: string, data: unknown) { await writeJson(path, JSON.parse(redact(JSON.stringify(data), this.workspace.secrets))); }
   async run(recipeId: string, supplied: Record<string, string>, options: { task?: string; entry?: string; signal?: AbortSignal; expectedVersion?: string } = {}) {
     const token = id('recipe-owner'), lock = join(this.workspace.data, 'recipe.lock'), temporary = `${lock}.${token}.tmp`, identity = await processIdentity(process.pid);
     try {
-      await writeJson(temporary, { token, pid: process.pid, identity: identity.identity, createdAt: new Date().toISOString() }); await link(temporary, lock);
+      await writeJson(temporary, { token, pid: process.pid, identity: identity.identity, createdAt: new Date().toISOString(),recipe:recipeId,task:options.task }); await link(temporary, lock);
     } catch (error) { if ((error as NodeJS.ErrnoException).code === 'EEXIST') throw new Error('Another recipe is active or interrupted; inspect recipe.lock before operator reconciliation'); throw error; }
     finally { await rm(temporary, { force: true }); }
     try { return await this.execute(recipeId, supplied, options); }
     finally { if ((await readJson<{ token: string }>(lock)).token === token) await rm(lock); }
   }
-  async reconcileLock(observation: string) {
-    if (!observation.trim()) throw new Error('Describe inspected effects before reconciling an interrupted recipe');
-    const path = join(this.workspace.data, 'recipe.lock'), owner = await readJson<{ token: string; pid: number; identity?: string }>(path), state = await processIdentity(owner.pid);
-    if (state.state !== 'gone' && !(state.state === 'alive' && owner.identity && state.identity && owner.identity !== state.identity)) throw new Error('Recipe owner is still alive or its identity is unknown');
-    if (JSON.stringify(await readJson(path)) !== JSON.stringify(owner)) throw new Error('Recipe ownership changed during reconciliation');
-    await this.persist(join(this.workspace.data, `recipe-reconciliation-${safeId(owner.token)}.json`), { owner, observation, reconciledAt: new Date().toISOString() });
-    await rm(path); return { reconciled: owner.token, note: 'No execution was replayed and unresolved workspace effects remain blocked.' };
+  async reconcileLock(observation: string,expectedOwner?:string) {
+    if (!observation.trim()||observation.length>6000) throw new Error('请填写已核对的实际效果，最多6000字。');
+    const path = join(this.workspace.data, 'recipe.lock'), owner = await this.interruption();
+    if(!owner)throw new Error('当前没有等待释放的配方占用，无需重复核对。');
+    if(expectedOwner!==undefined&&owner.token!==expectedOwner)throw new Error('配方占用已变化，请关闭表单，核对最新运行状态。');
+    if(!owner.canReconcile)throw new Error('原配方进程仍在运行或状态不能确定，请先核对进程。');
+    const {canReconcile,processState,...storedOwner}=owner;
+    if (JSON.stringify(await readJson(path)) !== JSON.stringify(storedOwner)) throw new Error('配方占用在核对期间变化，请重新读取。');
+    const reconciledAt=new Date().toISOString(),unresolved=(await this.workspace.operations()).filter(operation=>['pending','unknown'].includes(operation.status)).length;
+    await this.persist(join(this.workspace.data, `recipe-reconciliation-${safeId(owner.token)}.json`), { owner:storedOwner, observation, reconciledAt });
+    await rm(path); return { reconciled: owner.token, observation:JSON.parse(redact(JSON.stringify(observation),this.workspace.secrets)),reconciledAt,unresolved, note: 'No execution was replayed and unresolved workspace effects remain blocked.' };
   }
   private async execute(recipeId: string, supplied: Record<string, string>, options: { task?: string; entry?: string; signal?: AbortSignal; expectedVersion?: string }) {
     const recipe = await this.read(recipeId);
@@ -182,19 +214,26 @@ export class RecipeStore {
     }
     clearTimeout(timer); run.finishedAt = new Date().toISOString(); await this.persist(path, run); return await this.readRun(runId, options.task);
   }
-  async readRun(runId: string, task?: string) {
+  async readRun(runId: string, task?: string,observation?:Observation,identities=new Map<number,ReturnType<typeof processIdentity>>()) {
     const run = await readJson<RecipeRun>(join(this.workspace.data, 'recipe-runs', safeId(runId), 'status.json'));
     if (run.schema !== 1 || run.id !== runId || task !== undefined && run.task !== task || !Array.isArray(run.steps)) throw new Error('Invalid recipe run or task ownership');
-    const identity = await processIdentity(run.pid);
+    let identityRead=identities.get(run.pid);if(!identityRead){identityRead=processIdentity(run.pid);identities.set(run.pid,identityRead);}const identity=await identityRead;
     const live = identity.state === 'alive' && !!run.processIdentity && identity.identity === run.processIdentity;
     const status = run.status === 'running' && !live ? 'unknown' : run.status;
-    const current = run.after ? JSON.stringify(run.after) === JSON.stringify(await this.workspace.observe()) : false;
-    return { run, status, current, sourceAlive: live, note: 'Unknown execution is never replayed automatically. Passed means this procedure and registered checks passed at that version; it is not independent proof of every task requirement.' };
+    const observed=run.after?observation||await this.workspace.observe():undefined;
+    let current = !!run.after&&JSON.stringify(run.after) === JSON.stringify(observed),evidenceCurrent=false;
+    if(run.evidence&&observed)try{const entry=await readJson<import('./types.js').Evidence>(join(this.workspace.data,'evidence',safeId(run.evidence)+'.json'));evidenceCurrent=entry.kind==='check'&&entry.validAtCapture===true&&(entry.data as any)?.status==='verified'&&entry.environment===observed.environment&&entry.configuration===observed.configuration&&JSON.stringify(entry.fingerprints)===JSON.stringify(observed.fingerprints);}catch{/* Missing original evidence is never current acceptance. */}
+    if(run.status==='passed'&&!evidenceCurrent)current=false;
+    let recipeLabel:string|undefined;
+    try{const saved=await readJson<Recipe>(join(this.workspace.data,'recipes',`${safeId(run.recipe)}-${run.revision}.json`));if(saved.version===run.version&&saved.id===run.recipe&&saved.revision===run.revision)recipeLabel=saved.label;}catch{/* A missing historical definition does not hide the execution receipt. */}
+    return { run, status, current,evidenceCurrent,recipeLabel, sourceAlive: live, note: 'Unknown execution is never replayed automatically. Passed means this procedure and registered checks passed at that version; it is not independent proof of every task requirement.' };
   }
   async runs(task?: string) {
     let files: string[]; try { files = await readdir(join(this.workspace.data, 'recipe-runs')); } catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return []; throw error; }
-    const runs = [];
-    for (const name of files.slice(-100)) { const result = await this.readRun(safeId(name)); if (task === undefined || result.run.task === task) runs.push(result); }
+    const records:RecipeRun[]=[];
+    for(const name of files)try{const run=await readJson<RecipeRun>(join(this.workspace.data,'recipe-runs',safeId(name),'status.json'));if(task!==undefined&&run.task!==task)continue;if(run.id!==name||run.schema!==1)throw new Error('Recipe receipt identity mismatch');records.push(run);}catch(error){if((error as NodeJS.ErrnoException).code!=='ENOENT')throw error;}
+    records.sort((a,b)=>b.createdAt.localeCompare(a.createdAt));const selected=records.slice(0,100),observed=selected.some(run=>run.after)?await this.workspace.observe():undefined,identities=new Map<number,ReturnType<typeof processIdentity>>(),runs=[];
+    for (const run of selected) runs.push(await this.readRun(run.id,task,observed,identities));
     return runs;
   }
 }

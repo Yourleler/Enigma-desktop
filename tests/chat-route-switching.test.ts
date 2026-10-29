@@ -7,6 +7,16 @@ import {
 import { TURN_INPUT_CONSUMPTION_EVENT_TYPE } from "../lib/turn-input-presentation.ts";
 
 describe("chat route model switch guard", () => {
+  it('forwards only scoped engineering invalidations without raw operation data or model-stream events',()=>{
+    let createHandlers,subscriber;const upgradeWebSocket=vi.fn(factory=>{createHandlers=factory;return()=>new Response(null);});
+    const hub={subscribe:vi.fn(fn=>{subscriber=fn;}),send:vi.fn(async()=>{}),eventBus:{emit:vi.fn()}};
+    const engine={agentName:'Enigma',abortAllStreaming:vi.fn(async()=>{}),getSessionByPath:vi.fn(()=>({entries:[],sessionManager:{getBranch:()=>[]}})),isSessionStreaming:()=>false,isSessionSwitching:()=>false,slashDispatcher:null};
+    createChatRoute(engine,hub,{upgradeWebSocket});const handlers=createHandlers({}),ws={readyState:1,send:vi.fn()};handlers.onOpen({},ws);ws.send.mockClear();
+    subscriber({type:'enigma_event',event:'refresh',data:{event:'settled',private:'not sent'}},'/tmp/owned.jsonl');
+    subscriber({type:'enigma_event',event:'text_delta',data:{text:'raw content'}},'/tmp/owned.jsonl');
+    subscriber({type:'enigma_event',event:'settled'},null);
+    const messages=ws.send.mock.calls.map(([raw])=>JSON.parse(raw));expect(messages).toHaveLength(1);expect(messages[0]).toMatchObject({type:'enigma_event',event:'settled',sessionPath:'/tmp/owned.jsonl'});expect(JSON.stringify(messages)).not.toContain('not sent');expect(JSON.stringify(messages)).not.toContain('raw content');
+  });
   it("uses a minute-scale default WS disconnect abort grace and allows disabling it", () => {
     expect(DEFAULT_DISCONNECT_ABORT_GRACE_MS).toBeGreaterThanOrEqual(60_000);
     expect(resolveDisconnectAbortGraceMs(undefined)).toBe(DEFAULT_DISCONNECT_ABORT_GRACE_MS);
@@ -341,6 +351,7 @@ describe("chat route model switch guard", () => {
       {
         type: "custom_message",
         id: "hidden-input",
+        timestamp: "2026-05-07T05:42:00.000Z",
         parentId: "visible-assistant",
         customType: "hana-background-result",
         content: '<hana-background-result task-id="task-1" status="success" type="subagent">done</hana-background-result>',
@@ -378,6 +389,7 @@ describe("chat route model switch guard", () => {
       .find((payload) => payload.type === "turn_end");
     expect(turnEnd).toMatchObject({
       turnInputEntryId: "hidden-input",
+      turnStartedAt: Date.parse("2026-05-07T05:42:00.000Z"),
       userEntryId: null,
       assistantEntryId: "background-assistant",
     });
@@ -946,6 +958,40 @@ describe("chat route model switch guard", () => {
     handlers.onClose({}, ws);
   });
 
+  it("streams ordinary Responses text before text_end instead of waiting for the entire answer", () => {
+    let factory, subscriber;
+    const hub={subscribe:vi.fn(fn=>{subscriber=fn;}),send:vi.fn(async()=>{})};
+    const engine={agentName:'Enigma',abortAllStreaming:vi.fn(async()=>{}),getSessionByPath:vi.fn(()=>({entries:[]})),isSessionStreaming:vi.fn(()=>false),isSessionSwitching:vi.fn(()=>false),steerSession:vi.fn(()=>false),slashDispatcher:null};
+    createChatRoute(engine,hub,{upgradeWebSocket:vi.fn(fn=>{factory=fn;return()=>new Response(null);})});
+    const handlers=factory({}),ws={readyState:1,send:vi.fn()};handlers.onOpen({},ws);
+    const partial={role:'assistant',api:'openai-responses',provider:'gateway',model:'test',content:[{type:'text',text:'持续显示文字。'}]};
+    subscriber({type:'message_update',message:partial,assistantMessageEvent:{type:'text_delta',contentIndex:0,delta:'持续显示文字。',partial}},'/tmp/real-stream.jsonl');
+    expect(ws.send.mock.calls.map(([raw])=>JSON.parse(raw)).filter(p=>p.type==='text_delta').map(p=>p.delta).join('')).toContain('持续显示');
+    const before=ws.send.mock.calls.filter(([raw])=>JSON.parse(raw).type==='text_delta').length;
+    subscriber({type:'message_update',message:partial,assistantMessageEvent:{type:'text_end',contentIndex:0,content:'持续显示文字。',partial}},'/tmp/real-stream.jsonl');
+    expect(ws.send.mock.calls.filter(([raw])=>JSON.parse(raw).type==='text_delta')).toHaveLength(before);
+    handlers.onClose({},ws);
+  });
+
+  it("rehydrates the last run meter for an authorized context query after reconnect", async () => {
+    let factory,subscriber;
+    const sessionPath='/tmp/rehydrate-meter.jsonl';
+    const hub={subscribe:vi.fn(fn=>{subscriber=fn;}),send:vi.fn(async()=>{})};
+    const engine={agentName:'Enigma',abortAllStreaming:vi.fn(async()=>{}),getSessionByPath:vi.fn(()=>({entries:[],getContextUsage:()=>({tokens:100})})),isSessionStreaming:vi.fn(()=>false),isSessionSwitching:vi.fn(()=>false),steerSession:vi.fn(()=>false),slashDispatcher:null};
+    createChatRoute(engine,hub,{upgradeWebSocket:vi.fn(fn=>{factory=fn;return()=>new Response(null);})});
+    const handlers=factory({}),ws={readyState:1,send:vi.fn()};handlers.onOpen({},ws);
+    subscriber({type:'session_status',isStreaming:true},sessionPath);
+    const partial={role:'assistant',api:'openai-responses',provider:'gateway',model:'test',content:[{type:'text',text:'完成'}]};
+    subscriber({type:'message_update',message:partial,assistantMessageEvent:{type:'text_delta',contentIndex:0,delta:'完成',partial}},sessionPath);
+    subscriber({type:'message_end',message:{...partial,usage:{input:100,output:2}}},sessionPath);
+    subscriber({type:'session_status',isStreaming:false},sessionPath);
+    ws.send.mockClear();handlers.onMessage({data:JSON.stringify({type:'context_usage',sessionPath})},ws);
+    await new Promise(resolve=>setTimeout(resolve,0));
+    const received=ws.send.mock.calls.map(([raw])=>JSON.parse(raw));
+    expect(received.find(p=>p.type==='token_meter')).toMatchObject({sessionPath,meter:{state:'done',up:{tokens:100,estimated:false},down:{tokens:2,estimated:false}}});
+    handlers.onClose({},ws);
+  });
+
   it("buffers OpenAI Responses text until text_end and suppresses commentary phase", () => {
     let createHandlers;
     let subscriber;
@@ -1025,16 +1071,18 @@ describe("chat route model switch guard", () => {
         partial: { ...commentaryPartial, content: [finalContent[0]] },
       },
     }, sessionPath);
+    const unphasedFinal = [finalContent[0], { type: 'text', text: '已经查到状态。' }];
     subscriber?.({
       type: "message_update",
-      message: { ...commentaryPartial, content: finalContent },
+      message: { ...commentaryPartial, content: unphasedFinal },
       assistantMessageEvent: {
         type: "text_delta",
         contentIndex: 1,
         delta: "已经查到状态。",
-        partial: { ...commentaryPartial, content: finalContent },
+        partial: { ...commentaryPartial, content: unphasedFinal },
       },
     }, sessionPath);
+    expect(ws.send.mock.calls.map(([raw]) => JSON.parse(raw)).filter(payload => payload.type === 'text_delta')).toHaveLength(0);
     subscriber?.({
       type: "message_update",
       message: { ...commentaryPartial, content: finalContent },

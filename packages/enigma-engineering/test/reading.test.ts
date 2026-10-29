@@ -5,6 +5,18 @@ import test from 'node:test';
 import { traceCode, repoGraph } from '../src/reading.js';
 import { fixture } from './fixtures.js';
 
+test('outgoing calls use bound implementations and do not invent targets for callbacks or nested functions', async () => {
+  const { root, workspace } = await fixture();
+  try {
+    await writeFile(join(root,'app','index.js'),'import { call as upstream } from "../sdk/index.js";\nexport function main(callback) {\n function unused() { return upstream(); }\n callback();\n return upstream();\n}\n');
+    const reading=await traceCode(workspace,'main',{repo:'app'});
+    const outgoing=reading.references.filter(ref=>ref.kind==='outgoing-call');
+    assert.equal(outgoing.length,1);
+    assert.equal(outgoing[0]?.line,5);assert.equal(outgoing[0]?.target?.repo,'sdk');
+    assert(reading.diagnostics?.some(text=>text.includes('callback')));
+  } finally { await rm(root,{recursive:true,force:true}); }
+});
+
 test('AST reading follows aliases and excludes comments and strings from confirmed references', async () => {
   const { root, workspace } = await fixture();
   try {

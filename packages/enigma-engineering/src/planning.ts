@@ -103,19 +103,31 @@ export class PlanStore {
     const current = plan ?? await this.current(); if (!current) return undefined;
     this.validate(current);
     const graph = await repoGraph(this.workspace);
-    const stateById = new Map<string, PlanView['steps'][number]>();
-    const resolveStep = async (stepId: string): Promise<PlanView['steps'][number]> => {
+    // Cache pending work as well as resolved values: diamond dependencies may
+    // reach the same step many times before its evidence read completes.
+    const stateById = new Map<string, Promise<PlanView['steps'][number]>>();
+    const evidenceById = new Map<string, ReturnType<Workspace['evidenceStatus']>>();
+    const resolveStep = (stepId: string): Promise<PlanView['steps'][number]> => {
       const cached = stateById.get(stepId); if (cached) return cached;
+      const pending = (async () => {
       const step = current.steps.find(item => item.id === stepId)!;
       const dependencies = await Promise.all(step.requires.map(resolveStep));
       const blockedBy = dependencies.filter(item => item.state !== 'verified').map(item => item.id);
       let accepted;
-      try { accepted = step.evidence ? await this.workspace.evidenceStatus(step.evidence) : undefined; }
+      try {
+        if (step.evidence) {
+          let evidence = evidenceById.get(step.evidence);
+          if (!evidence) { evidence = this.workspace.evidenceStatus(step.evidence); evidenceById.set(step.evidence, evidence); }
+          accepted = await evidence;
+        }
+      }
       catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
       const stale = step.phase === 'verified' && !accepted?.valid;
       const state = blockedBy.length ? 'blocked' : stale ? 'stale' : step.phase === 'verified' ? 'verified'
         : step.phase === 'running' ? 'running' : step.phase === 'failed' ? 'failed' : 'ready';
-      const result = { ...step, state, blockedBy } as PlanView['steps'][number]; stateById.set(stepId, result); return result;
+      return { ...step, state, blockedBy } as PlanView['steps'][number];
+      })();
+      stateById.set(stepId, pending); return pending;
     };
     const steps = await Promise.all(current.steps.map(step => resolveStep(step.id)));
     const gaps = current.steps.filter(step => !step.checks.length).map(step => `${step.id}: no acceptance checks; cannot be verified`);

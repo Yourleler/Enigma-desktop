@@ -92,6 +92,11 @@ describe('WelcomeScreen workspace picker', () => {
     vi.unstubAllGlobals();
   });
 
+  it('shows the Enigma product avatar even when the locale has only older personas', async () => {
+    const {WelcomeScreen}=await import('../../components/WelcomeScreen');useStore.setState({agentName:'Enigma',agentYuan:'enigma',currentAgentId:'hanako',agents:[{id:'hanako',name:'Enigma',yuan:'enigma',hasAvatar:false} as any]});
+    render(<WelcomeScreen/>);expect(screen.getByRole('img',{name:'Enigma'})).toHaveAttribute('src','assets/enigma/avatar.png');
+  });
+
   it('groups primary workspace selection before extra folders', async () => {
     const { WelcomeScreen } = await import('../../components/WelcomeScreen');
 
