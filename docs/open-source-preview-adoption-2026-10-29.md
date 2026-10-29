@@ -16,7 +16,7 @@ OpenAI 官方文档说明内置浏览器与连接已有 Chrome 等浏览器标�
 | PDF | [Mozilla PDF.js](https://github.com/mozilla/pdf.js/releases/tag/v5.6.205)，Apache-2.0 | 直接复用官方完整 generic viewer，替换自写工具栏。上游负责缩略图、大纲、附件、图层、查找、打印、属性和阅读布局；本项目只适配文件、主题、下载与权限。 | 0.452.93 源码已接入；Web 实测，原生待验收 |
 | DOCX | [docx-preview](https://github.com/VolodymyrBaydalka/docxjs)，Apache-2.0 | 从当前 Mammoth 语义转换改为保留版式的渲染；检查页眉页脚、图片、表格、显式分页，保留纯文本回退。库对分页/域等有明确限制，不承诺与 Word 像素一致。 | 0.452.99 源码已接入；Web 实测通过，原生待验收 |
 | XLSX / CSV | [Univer](https://github.com/dream-num/univer)，Apache-2.0 OSS 核心 | 验证真实表格交互，替换截断 HTML 表格。其官方文件导入导出、打印等列在 Pro 范围；必须先验证不依赖商业服务的本地导入路径及样式保真，不能把 OSS 内核误说成免费完整 Office。 | 0.452.110 已接入 OSS 表格与本地 ExcelJS/PapaParse 导入，Web 实测通过，原生待验收 |
-| 图片 | [PhotoSwipe](https://github.com/dimsemenov/PhotoSwipe)，MIT | 用成熟缩放、拖动、触控和画廊交互替换重复的自写控制层，接入现有文件身份、下载与主题。 | 候选 |
+| 图片 | [PhotoSwipe](https://github.com/dimsemenov/PhotoSwipe)，MIT | 用成熟缩放、拖动、触控和画廊交互替换重复的自写控制层，接入现有文件身份、下载与主题。 | 0.452.118 已接入 PhotoSwipe 共用侧栏/画廊，Web 实测通过，原生待验收 |
 | 音视频 | [Video.js](https://github.com/videojs/video.js)、[Media Chrome](https://github.com/muxinc/media-chrome) | 以当前稳定发布的完整播放器/React 集成为首选。Media Chrome README 已说明相关团队合流到新版 Video.js；不盲搬旧控件。接入前核对所用包许可证、离线资源、字幕、键盘、全屏和恢复。 | 候选，尚未替换现有播放器 |
 | Markdown / 代码 | 已有 CodeMirror、Markdown 渲染与 Mermaid | 保留成熟依赖；补完整目录、搜索、行定位、折叠、主题与导出。避免另起解析器或把页面源码直接当产品浏览器。 | 已有基础，继续统一 |
 
@@ -42,3 +42,6 @@ DOCX 后续已按上述选择落地，详见 [Word 预览实现与验收](docx-p
 
 
 交互表格与 CSV 编辑保留已落地，范围、导入保真限制和保存修复见 [表格预览验收](spreadsheet-preview-adoption-2026-10-29.md)。
+
+
+图片缩放/拖动与画廊已迁移到 PhotoSwipe，见 [图片预览验收](photoswipe-preview-adoption-2026-10-29.md)。

@@ -388,6 +388,7 @@ export async function openWorkbenchFilePreview(input: WorkbenchPreviewInput): Pr
         path: '',
         ext: access.ext,
         version: access.version,
+        workbenchScope:{mountId:access.mountId,subdir:access.subdir,rootKey:useStore.getState().deskBasePath},
         resource: {
           resourceId: `workbench:${access.mountId}:${access.subdir}:${name}`,
           studioId,

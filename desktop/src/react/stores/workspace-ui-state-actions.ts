@@ -221,6 +221,9 @@ export async function hydratePersistedPreviewItems(
       base.mediaRef = {id: tab.id, name: base.title, path: '', kind: inferKindByExt(tab.ext), source: 'desk', ext: tab.ext,
         resource: {resourceId: tab.id, studioId: 'default', links: {self: contentPath, content: contentPath}}};
     }
+    if(type==='media'&&base.mediaRef&&remoteContentRef?.kind==='workbench-file'){
+      base.mediaRef={...base.mediaRef,workbenchScope:{mountId:remoteContentRef.mountId||remoteContentRef.rootId||'default',subdir:remoteContentRef.subdir,rootKey:normalizedRoot}};
+    }
     try {
       if (remoteContentRef || tab.contentResourceId) {
         const {readRemotePreviewItem} = await import('../utils/remote-file-preview');

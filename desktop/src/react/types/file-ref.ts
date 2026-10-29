@@ -45,6 +45,8 @@ export interface FileRef {
   createdAt?: number;
   timestamp?: number;
   version?: FileVersion | null;
+  /** Origin of a listed workbench file, used only to select same-directory gallery neighbors. */
+  workbenchScope?: {mountId:string;subdir:string;rootKey:string};
   sessionMessageId?: string;
   sessionBlockIdx?: number;
   inlineData?: { base64: string; mimeType: string };

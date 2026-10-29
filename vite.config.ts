@@ -267,6 +267,7 @@ function copyLegacyFiles(): Plugin {
       const srcDir = path.resolve(__dirname, 'desktop/src');
       const outDir = path.resolve(__dirname, 'desktop/dist-renderer');
 
+      const licenses=path.join(outDir,'assets/licenses');fs.mkdirSync(licenses,{recursive:true});fs.copyFileSync(path.resolve(__dirname,'node_modules/photoswipe/LICENSE'),path.join(licenses,'PhotoSwipe-LICENSE'));
       const dirs = ['lib', 'modules', 'themes', 'assets', 'locales'];
       const files = ['styles.css', 'animations.css', 'mobile-manifest.webmanifest', 'mobile-sw.js', 'icon.png'];
 

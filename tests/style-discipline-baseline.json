@@ -189,11 +189,6 @@
     "hardcoded-color": 5,
     "bare-duration": 0
   },
-  "desktop/src/react/components/shared/MediaViewer/MediaViewer.module.css": {
-    "bare-spacing": 3,
-    "hardcoded-color": 14,
-    "bare-duration": 1
-  },
   "desktop/src/react/components/shared/TimelineRailNavigator.module.css": {
     "bare-spacing": 0,
     "hardcoded-color": 1,

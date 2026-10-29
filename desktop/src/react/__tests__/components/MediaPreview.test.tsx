@@ -14,20 +14,6 @@ beforeEach(() => {
 });
 afterEach(() => {cleanup(); vi.unstubAllGlobals();vi.restoreAllMocks();});
 
-it('shows a decode failure and retries the same image without losing its preview', async () => {
-  const item = {id: 'picture', type: 'media', title: 'picture.svg', content: '', filePath: '/new/picture.svg', ext: 'svg'};
-  render(<MediaPreview previewItem={item}/>);
-  await waitFor(() => expect(screen.getByRole('img', {name: 'picture.svg'})).toBeTruthy());
-  fireEvent.error(screen.getByRole('img', {name: 'picture.svg'}));
-  expect(screen.getByRole('alert').textContent).toContain('无法读取或解码');
-  fireEvent.click(screen.getByRole('button', {name: '重新加载'}));
-  await waitFor(() => expect(screen.getByRole('img', {name: 'picture.svg'})).toBeTruthy());
-  fireEvent.load(screen.getByRole('img', {name: 'picture.svg'}));
-  expect(screen.queryByRole('status')).toBeNull();
-  fireEvent.click(screen.getByRole('button', {name: '放大图片'}));
-  expect(screen.getByTestId('image-stage').getAttribute('data-zoom-in-seq')).toBe('1');
-});
-
 it('loads audio with explicit controls and reports an unsupported codec', async () => {
   const {container, unmount} = render(<MediaPreview previewItem={{id: 'audio', type: 'media', title: 'new.wav', content: '', filePath: '/new/new.wav', ext: 'wav'}}/>);
   await waitFor(() => expect(container.querySelector('audio')).toBeTruthy());

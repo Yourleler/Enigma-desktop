@@ -799,6 +799,13 @@ describe('desk-actions workspace roots', () => {
     expect(window.platform?.readFileSnapshot).toHaveBeenCalledWith('/workspace/src/react/App.tsx');
   });
 
+  it('restores same-directory gallery provenance from the workspace owning saved media',async()=>{
+    const {hydratePersistedPreviewItems}=await import('../../stores/workspace-ui-state-actions');
+    const contentPath='/api/workbench/content?mountId=images&subdir=photos&name=a.png';
+    const items=await hydratePersistedPreviewItems('/workspace',{previewTabs:[{id:'media:a',type:'media',title:'a.png',ext:'png',remoteContentRef:{kind:'workbench-file',mountId:'images',subdir:'photos',name:'a.png',contentPath},mediaRef:{id:'workbench:images:photos:a.png',source:'desk',kind:'image',name:'a.png',path:'',resource:{resourceId:'a',studioId:'s',links:{self:contentPath,content:contentPath}}}}]});
+    expect(items[0].mediaRef?.workbenchScope).toEqual({mountId:'images',subdir:'photos',rootKey:'/workspace'});
+  });
+
   it('hydrates persisted preview metadata needed by PDF and HTML renderers', async () => {
     const {
       hydratePersistedPreviewItems,

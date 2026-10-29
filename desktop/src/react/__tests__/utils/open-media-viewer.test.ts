@@ -263,3 +263,11 @@ describe('openMediaViewerFromContext', () => {
     expect(mv!.currentId).toBe('sess:/s/1:m2:block:0:screenshot');
   });
 });
+
+it('includes current Web workbench neighbors without exposing native paths',async()=>{
+ const {workbenchGalleryFiles}=await import('../../utils/open-media-viewer');
+ const ref={id:'workbench:m:images:a.png',source:'desk',kind:'image',name:'a.png',path:'',workbenchScope:{mountId:'m',subdir:'images',rootKey:'mount:m'}} as const;
+ const state={deskBasePath:'mount:m',deskWorkspaceMountId:'m',deskCurrentPath:'images',deskFiles:[{name:'a.png',isDir:false},{name:'b.webm',isDir:false},{name:'c.txt',isDir:false}]} as any;
+ const files=workbenchGalleryFiles(state,ref);expect(files.map(file=>file.name)).toEqual(['a.png','b.webm']);expect(files.every(file=>file.path==='')).toBe(true);expect(files[1].resource?.links.content).toBe('/api/workbench/content?mountId=m&subdir=images&name=b.webm');
+ expect(workbenchGalleryFiles({...state,deskBasePath:'other'},ref)).toEqual([]);
+});

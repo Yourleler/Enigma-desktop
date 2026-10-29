@@ -1,7 +1,9 @@
 import { useStore } from '../stores';
 import { selectDeskFiles, selectSessionFiles } from '../stores/selectors/file-refs';
 import type { FileRef, FileKind, FileSource } from '../types/file-ref';
-import { isMediaKind, buildFileRefId } from './file-kind';
+import {encodeWorkbenchContentPath} from '../services/resource-access';
+import {resolveServerConnection} from '../services/server-connection';
+import { isMediaKind, inferKindByExt,extOfName,buildFileRefId } from './file-kind';
 
 interface OpenInput {
   filePath: string;
@@ -100,7 +102,8 @@ export function openMediaViewerForRef(ref: FileRef, opts: {
   sessionPath?: string;
 }): void {
   const state = useStore.getState();
-  const rawFiles: readonly FileRef[] = opts.origin === 'session'
+  const rawFiles: readonly FileRef[] = opts.origin === 'desk'&&ref.workbenchScope
+    ? workbenchGalleryFiles(state,ref) : opts.origin === 'session'
     ? selectSessionFiles(state, opts.sessionPath ?? '')
     : selectDeskFiles(state);
   const files = rawFiles.filter(f => isMediaKind(f.kind));
@@ -110,4 +113,17 @@ export function openMediaViewerForRef(ref: FileRef, opts: {
   } else {
     state.setMediaViewer({ files: [ref], currentId: ref.id, origin: opts.origin });
   }
+}
+
+/** Only the matching, currently listed mount/directory may supply neighbors.
+ * Saved previews from another directory stay solo rather than reusing wrong files. */
+export function workbenchGalleryFiles(state:ReturnType<typeof useStore.getState>,ref:FileRef):FileRef[]{
+  const mount=state.deskWorkspaceMountId||'default',scope=ref.workbenchScope,subdir=scope?.subdir||'';
+  if(!scope||scope.mountId!==mount||scope.rootKey!==state.deskBasePath||ref.id!==`workbench:${mount}:${subdir}:${ref.name}`)return [];
+  const files=state.deskTreeFilesByPath?.[subdir]||(subdir===(state.deskCurrentPath||'')?state.deskFiles:[]);
+  const connection=resolveServerConnection(state);
+  return files.filter(file=>!file.isDir&&isMediaKind(inferKindByExt(extOfName(file.name)))).map(file=>{
+    const id=`workbench:${mount}:${subdir}:${file.name}`,content=encodeWorkbenchContentPath({mountId:mount,subdir,name:file.name});
+    return {id,workbenchScope:scope,source:'desk',kind:inferKindByExt(extOfName(file.name)),ext:extOfName(file.name),name:file.name,path:'',version:typeof file.size==='number'&&file.mtime?{size:file.size,mtimeMs:Date.parse(file.mtime)}:undefined,resource:{resourceId:id,studioId:connection?.studioId||'default',links:{self:content,content}}};
+  });
 }
