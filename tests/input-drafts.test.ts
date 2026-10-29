@@ -82,7 +82,14 @@ describe("input drafts shared normalization", () => {
     expect(Object.keys(file.surfaces).sort()).toEqual(["electron", "pwa"]);
     expect(file.surfaces.electron.home?.text).toBe("draft");
     expect(Object.keys(file.surfaces.electron.sessions)).toEqual(["good"]);
-    expect(file.surfaces.pwa).toEqual({ home: null, sessions: {} });
-    expect(normalizeInputDraftsFile(null).surfaces.electron).toEqual({ home: null, sessions: {} });
+    expect(file.surfaces.pwa).toEqual({ home: null, sessions: {}, revisions: {} });
+    expect(normalizeInputDraftsFile(null).surfaces.electron).toEqual({ home: null, sessions: {}, revisions: {} });
   });
+});
+
+
+it('preserves meaningful rich editor atoms even when their serialized text is empty',()=>{
+ const doc={type:'doc',content:[{type:'paragraph',content:[{type:'skillBadge',attrs:{name:'testing'}}]}]};
+ expect(normalizeInputDraftEntry({text:'',doc})?.doc).toEqual(doc);
+ expect(normalizeInputDraftEntry({text:'',doc:{type:'doc',content:[{type:'paragraph'}]}})).toBeNull();
 });

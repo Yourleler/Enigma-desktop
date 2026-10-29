@@ -1,7 +1,7 @@
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { InputDraftsStore } from "../core/input-drafts-store.ts";
 
 describe("InputDraftsStore", () => {
@@ -53,11 +53,31 @@ describe("InputDraftsStore", () => {
   it("quarantines a corrupt file and restarts from empty state", () => {
     fs.writeFileSync(filePath(), "{ not json !!!");
     const store = new InputDraftsStore({ hanakoHome: home });
-    expect(store.getAll("electron")).toEqual({ home: null, sessions: {} });
+    expect(store.getAll("electron")).toEqual({ protocol: 2, home: null, sessions: {}, revisions: {} });
     const quarantined = fs.readdirSync(home).filter((f) => f.includes(".corrupt-"));
     expect(quarantined).toHaveLength(1);
     // 新状态可正常写入
     store.setHome("electron", { text: "fresh" });
     expect(JSON.parse(fs.readFileSync(filePath(), "utf8")).surfaces.electron.home.text).toBe("fresh");
   });
+});
+
+
+it('does not acknowledge or mutate the cached draft when disk write fails',()=>{
+ const home=fs.mkdtempSync(path.join(os.tmpdir(),'draft-disk-failure-'));try{
+  const store=new InputDraftsStore({hanakoHome:home});const first=store.setHome('electron',{text:'keep'});
+  vi.spyOn(store,'_save').mockImplementationOnce(()=>{throw Error('disk unavailable')});
+  expect(()=>store.setHome('electron',{text:'replacement',expectedRevision:first.revision})).toThrow('disk unavailable');
+  expect(store.getAll('electron').home.text).toBe('keep');
+  expect(new InputDraftsStore({hanakoHome:home}).getAll('electron').home.text).toBe('keep');
+ }finally{fs.rmSync(home,{recursive:true,force:true})}
+});
+it('reloads an externally restored draft before accepting a later write',()=>{
+ const home=fs.mkdtempSync(path.join(os.tmpdir(),'draft-external-'));try{
+  const first=new InputDraftsStore({hanakoHome:home});first.setHome('electron',{text:'initial'});
+  const second=new InputDraftsStore({hanakoHome:home});second.setHome('electron',{text:'external restored copy with more text'});
+  expect(first.getAll('electron').home.text).toBe('external restored copy with more text');
+  first.setSession('electron','session',{text:'independent'});
+  expect(new InputDraftsStore({hanakoHome:home}).getAll('electron').home.text).toBe('external restored copy with more text');
+ }finally{fs.rmSync(home,{recursive:true,force:true})}
 });

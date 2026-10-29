@@ -12,7 +12,7 @@
  */
 import { Hono } from "hono";
 import { safeJson } from "../hono-helpers.ts";
-import { normalizeInputDraftSurface } from "../../shared/input-drafts.ts";
+import { normalizeInputDraftSurface, INPUT_DRAFT_MAX_ENTRY_CHARS } from "../../shared/input-drafts.ts";
 
 export function createInputDraftsRoute(engine) {
   const route = new Hono();
@@ -35,14 +35,18 @@ export function createInputDraftsRoute(engine) {
       }
       const surface = normalizeInputDraftSurface(body.surface);
       if (!surface) return c.json({ error: "input draft surface is invalid" }, 400);
+      if (typeof body.text !== "string") return c.json({ error: "draft text must be a string" }, 400);
+      if (body.expectedRevision !== undefined && (!Number.isSafeInteger(body.expectedRevision) || body.expectedRevision < 0)) return c.json({ error: "invalid draft revision" }, 400);
+      if (JSON.stringify({text:body.text,doc:body.doc}).length > INPUT_DRAFT_MAX_ENTRY_CHARS - 100) return c.json({error:"draft is too large; original retained"},413);
       const entry = {
         text: typeof body.text === "string" ? body.text : "",
         doc: body.doc,
         updatedAt: Date.now(),
+        expectedRevision: body.expectedRevision,
       };
       if (body.scope === "home") {
-        engine.setHomeInputDraft(surface, entry);
-        return c.json({ ok: true });
+        const result = engine.setHomeInputDraft(surface, entry);
+        return c.json(result || {ok:true}, result?.conflict ? 409 : 200);
       }
       // session 身份：sessionId 直取；sessionPath 在边界解析，失败显式报错（底线：禁止拿 path 当键）
       let sessionId = typeof body.sessionId === "string" && body.sessionId.trim() ? body.sessionId.trim() : null;
@@ -53,8 +57,10 @@ export function createInputDraftsRoute(engine) {
       if (!sessionId) {
         return c.json({ error: "draft scope requires 'home', a sessionId, or a resolvable sessionPath" }, 400);
       }
-      engine.setSessionInputDraft(surface, sessionId, entry);
-      return c.json({ ok: true });
+      if (["__home__", "__proto__", "constructor", "prototype"].includes(sessionId)) return c.json({error:"invalid session identifier"},400);
+      if (engine.getSessionManifest && !engine.getSessionManifest(sessionId)) return c.json({error:"session is no longer available"},400);
+      const result = engine.setSessionInputDraft(surface, sessionId, entry);
+      return c.json(result || {ok:true}, result?.conflict ? 409 : 200);
     } catch (err) {
       return c.json({ error: err.message }, 400);
     }

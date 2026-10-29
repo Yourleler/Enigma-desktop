@@ -10,6 +10,8 @@ import path from "path";
 import { atomicWriteSync } from "../shared/safe-fs.ts";
 import {
   INPUT_DRAFT_SURFACES,
+  HOME_DRAFT_KEY,
+  INPUT_DRAFT_MAX_SESSIONS_PER_SURFACE,
   normalizeInputDraftEntry,
   normalizeInputDraftsFile,
   upsertSurfaceSessionDrafts,
@@ -21,15 +23,23 @@ const log = createModuleLogger("input-drafts");
 export class InputDraftsStore {
   declare _path: string;
   declare _cache: any;
+  declare _stamp: string;
 
   constructor({ hanakoHome }) {
     if (!hanakoHome) throw new Error("InputDraftsStore requires hanakoHome");
     this._path = path.join(hanakoHome, "input-drafts.v1.json");
     this._cache = null;
+    this._stamp = '';
+  }
+
+  _fileStamp() {
+    try { const stat = fs.statSync(this._path); return `${stat.ino}:${stat.mtimeMs}:${stat.size}`; }
+    catch { return "missing"; }
   }
 
   _load() {
-    if (this._cache) return this._cache;
+    const stamp = this._fileStamp();
+    if (this._cache && this._stamp === stamp) return this._cache;
     let raw = null;
     if (fs.existsSync(this._path)) {
       try {
@@ -47,53 +57,58 @@ export class InputDraftsStore {
       }
     }
     this._cache = normalizeInputDraftsFile(raw);
+    this._stamp = this._fileStamp();
     return this._cache;
   }
 
-  _save() {
+  _save(next = this._cache) {
     fs.mkdirSync(path.dirname(this._path), { recursive: true });
-    atomicWriteSync(this._path, JSON.stringify(this._cache));
+    atomicWriteSync(this._path, JSON.stringify(next));
+    this._cache = next;
+    this._stamp = this._fileStamp();
   }
 
   /** surface 必须已由调用方（route）归一化 */
   getAll(surface) {
     const data = this._load();
     const bucket = data.surfaces[surface];
-    return { home: bucket?.home || null, sessions: { ...(bucket?.sessions || {}) } };
+    return { protocol: 2, home: bucket?.home || null, sessions: { ...(bucket?.sessions || {}) }, revisions: { ...(bucket?.revisions || {}) } };
   }
 
-  setHome(surface, rawEntry) {
-    const data = this._load();
-    data.surfaces[surface].home = normalizeInputDraftEntry(rawEntry);
-    this._save();
-  }
-
-  setSession(surface, sessionId, rawEntry) {
-    const data = this._load();
+  _set(surface, key, rawEntry) {
+    const data = this._load(), bucket = data.surfaces[surface];
+    const current = key === HOME_DRAFT_KEY ? bucket.home : bucket.sessions[key] || null;
+    const revision = bucket.revisions[key] || 0;
+    if (rawEntry.expectedRevision !== undefined && rawEntry.expectedRevision !== revision) {
+      return { conflict: true, revision, entry: current };
+    }
     const entry = normalizeInputDraftEntry(rawEntry);
-    data.surfaces[surface].sessions = upsertSurfaceSessionDrafts(
-      data.surfaces[surface].sessions,
-      sessionId,
-      entry,
-    );
-    this._save();
+    if (key !== HOME_DRAFT_KEY && entry && !bucket.sessions[key] && Object.keys(bucket.sessions).length >= INPUT_DRAFT_MAX_SESSIONS_PER_SURFACE) {
+      throw new Error("Draft storage is full; existing drafts have been preserved");
+    }
+    const nextRevision = Object.values(bucket.revisions).reduce<number>((max, value) => Math.max(max, Number(value)), data.sequence) + 1;
+    const nextBucket = { ...bucket, revisions: { ...bucket.revisions, [key]: nextRevision } };
+    if (key === HOME_DRAFT_KEY) nextBucket.home = entry;
+    else nextBucket.sessions = upsertSurfaceSessionDrafts(bucket.sessions, key, entry);
+    this._save({ ...data, sequence: nextRevision, surfaces: { ...data.surfaces, [surface]: nextBucket } });
+    return { ok: true, revision: nextRevision, entry };
   }
+
+  setHome(surface, rawEntry) { return this._set(surface, HOME_DRAFT_KEY, rawEntry); }
+  setSession(surface, sessionId, rawEntry) { return this._set(surface, sessionId, rawEntry); }
 
   /** session 永久删除时清掉所有 surface 下的草稿 */
   deleteSession(sessionId) {
     if (typeof sessionId !== "string" || !sessionId.trim()) return;
-    const data = this._load();
-    let changed = false;
+    const data = this._load(), surfaces = { ...data.surfaces };
+    let sequence = data.sequence, changed = false;
     for (const surface of INPUT_DRAFT_SURFACES) {
-      if (data.surfaces[surface].sessions[sessionId]) {
-        data.surfaces[surface].sessions = upsertSurfaceSessionDrafts(
-          data.surfaces[surface].sessions,
-          sessionId,
-          null,
-        );
+      const bucket = data.surfaces[surface];
+      if (bucket.sessions[sessionId]) {
+        surfaces[surface] = { ...bucket, sessions: upsertSurfaceSessionDrafts(bucket.sessions, sessionId, null), revisions: { ...bucket.revisions, [sessionId]: ++sequence } };
         changed = true;
       }
     }
-    if (changed) this._save();
+    if (changed) this._save({ ...data, sequence, surfaces });
   }
 }

@@ -1,3 +1,4 @@
+import {hydrateInputDrafts,initInputDraftPersistence} from '../stores/input-draft-persistence';
 import { useStore } from '../stores';
 import { hanaFetch } from '../hooks/use-hana-fetch';
 import { sessionIdForPathFromLocatorState, sessionScopedValue } from '../stores/session-slice';
@@ -91,6 +92,7 @@ export async function initializeMobileRuntime(principal: MobilePrincipal): Promi
     welcomeVisible: true,
   });
 
+  initInputDraftPersistence();
   const bootstrapRes = await hanaFetch('/api/mobile/bootstrap');
   const bootstrap = await bootstrapRes.json() as MobileBootstrap;
   const permissionDefault = await rawJson<{ permissionMode?: SessionPermissionMode }>('/api/preferences/session-permission-default');
@@ -143,6 +145,7 @@ export async function initializeMobileRuntime(principal: MobilePrincipal): Promi
     activateMobileWelcomeDesk(),
   ]);
 
+  await hydrateInputDrafts();
   connectWebSocket();
   await restoreConversationView(switchSession);
   trackConversationView();

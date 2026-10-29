@@ -75,3 +75,31 @@ describe("input drafts route", () => {
     expect((await put({ surface: "electron", text: "x" })).status).toBe(400);
   });
 });
+
+it('uses conditional revisions to reject stale writes including a stale clear after reload',async()=>{
+ const home=fs.mkdtempSync(path.join(os.tmpdir(),'draft-cas-'));
+ try{
+  let store=new InputDraftsStore({hanakoHome:home});
+  const engine={getInputDrafts:(s:string)=>store.getAll(s),setHomeInputDraft:(s:string,e:any)=>store.setHome(s,e)};
+  const app=new Hono().route('/api',createInputDraftsRoute(engine));
+  const put=(text:string,expectedRevision:number)=>app.request('/api/input-drafts',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({surface:'electron',scope:'home',text,expectedRevision})});
+  const first=await (await put('first',0)).json();expect(first.revision).toBeGreaterThan(0);
+  const changed=await (await put('new input',first.revision)).json();
+  store=new InputDraftsStore({hanakoHome:home});
+  const stale=await put('',first.revision);expect(stale.status).toBe(409);expect(await stale.json()).toMatchObject({entry:{text:'new input'},revision:changed.revision});
+  const cleared=await (await put('',changed.revision)).json();expect(cleared.entry).toBeNull();
+  expect((await put('stale resurrection',changed.revision)).status).toBe(409);
+  expect((await app.request('/api/input-drafts?surface=electron')).status).toBe(200);
+ }finally{fs.rmSync(home,{recursive:true,force:true})}
+});
+
+it('rejects invalid and oversized writes without clearing the original',async()=>{
+ const home=fs.mkdtempSync(path.join(os.tmpdir(),'draft-validation-'));try{
+  const store=new InputDraftsStore({hanakoHome:home});store.setHome('pwa',{text:'keep'});
+  const app=new Hono().route('/api',createInputDraftsRoute({getInputDrafts:(s:string)=>store.getAll(s),setHomeInputDraft:(s:string,e:any)=>store.setHome(s,e)}));
+  for(const body of [{surface:'pwa',scope:'home'}, {surface:'pwa',scope:'home',text:'new',expectedRevision:-1},{surface:'pwa',scope:'home',text:'x'.repeat(600000)}]){
+   const res=await app.request('/api/input-drafts',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify(body)});expect([400,413]).toContain(res.status);
+  }
+  expect(store.getAll('pwa').home.text).toBe('keep');
+ }finally{fs.rmSync(home,{recursive:true,force:true})}
+});

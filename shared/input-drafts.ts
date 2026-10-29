@@ -25,11 +25,19 @@ function serializedChars(entry: any) {
   }
 }
 
+/** Preserve non-text editor atoms such as a skill/file badge. */
+export function hasInputDraftDocumentContent(doc: any): boolean {
+  if (!doc || typeof doc !== "object" || Array.isArray(doc)) return false;
+  if (typeof doc.text === "string" && doc.text.trim()) return true;
+  if (typeof doc.type === "string" && !["doc", "paragraph", "text", "hardBreak"].includes(doc.type) && doc.attrs && Object.keys(doc.attrs).length) return true;
+  return Array.isArray(doc.content) && doc.content.some(hasInputDraftDocumentContent);
+}
+
 /** 归一化单条草稿；空文本/非法输入返回 null（语义 = 删除该条目） */
 export function normalizeInputDraftEntry(raw: any) {
   if (!raw || typeof raw !== "object") return null;
   const text = typeof raw.text === "string" ? raw.text : "";
-  if (!text.trim()) return null;
+  if (!text.trim() && !hasInputDraftDocumentContent(raw.doc)) return null;
   const doc = raw.doc && typeof raw.doc === "object" && !Array.isArray(raw.doc) ? raw.doc : undefined;
   const updatedAt = Number.isFinite(raw.updatedAt) ? raw.updatedAt : Date.now();
   let entry = doc ? { text, doc, updatedAt } : { text, updatedAt };
@@ -78,7 +86,11 @@ export function normalizeInputDraftsFile(raw: any) {
       const entry = normalizeInputDraftEntry(value);
       if (entry) sessions = upsertSurfaceSessionDrafts(sessions, sessionId, entry);
     }
-    surfaces[surface] = { home, sessions };
+    const revisions: Record<string, number> = {};
+    for (const [key, value] of Object.entries(source?.revisions || {})) {
+      if (key !== "__proto__" && Number.isSafeInteger(value) && (value as number) >= 0) revisions[key] = value as number;
+    }
+    surfaces[surface] = { home, sessions, revisions };
   }
-  return { version: 1, surfaces };
+  return { version: 1, sequence: Number.isSafeInteger(raw?.sequence) && raw.sequence >= 0 ? raw.sequence : 0, surfaces };
 }

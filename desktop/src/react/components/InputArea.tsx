@@ -1,3 +1,4 @@
+import {DraftSaveNotice} from './input/DraftSaveNotice';
 /**
  * InputArea — 聊天输入区域 React 组件
  *
@@ -11,7 +12,7 @@ import type { Editor, JSONContent } from '@tiptap/core';
 import { useStore } from '../stores';
 import { HOME_DRAFT_KEY } from '../../../../shared/input-drafts.ts';
 import { selectPreviewItems, selectActiveTabId } from '../stores/preview-slice';
-import { sessionScopedListIncludes, sessionScopedValue } from '../stores/session-slice';
+import { sessionScopedKey, sessionScopedListIncludes, sessionScopedValue } from '../stores/session-slice';
 import { getSessionCompactionMode, isSessionCompacting } from '../stores/context-slice';
 import { selectSessionFiles } from '../stores/selectors/file-refs';
 import { isImageFile, isVideoFile } from '../utils/format';
@@ -2260,6 +2261,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
         )}
       </div>
       <TokenMeterPill />
+      <DraftSaveNotice draftKey={draftKey ? (sessionScopedKey(useStore.getState(),draftKey)||draftKey) : null}/>
       {pendingSessionSwitchPath&&<p role="status" className={styles['session-switch-hint']}>{locale?.startsWith('zh')?'正在打开目标对话，草稿就绪后即可输入…':'Opening the selected chat; input resumes when its draft is ready…'}</p>}
       <div className={styles['input-stack']}>
         {visibleSessionConfirmation && (
