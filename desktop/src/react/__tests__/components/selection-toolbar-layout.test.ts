@@ -49,7 +49,7 @@ describe('selection quote action surface layout', () => {
 
     expect(declarationValue(hitZone, 'top')).toBe('-20px');
     expect(declarationValue(hitZone, 'right')).toBe('-20px');
-    expect(declarationValue(hitZone, 'padding')).toBe('28px');
+    expect(declarationValue(hitZone, 'padding')).toBe('var(--space-28)');
     expect(declarationValue(surface, 'opacity')).toBe('0');
     expect(declarationValue(surface, 'pointer-events')).toBe('none');
     expect(previewCss).toContain('.floatingActions:hover .floatingActionsSurface');

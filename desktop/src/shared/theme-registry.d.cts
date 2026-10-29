@@ -1,4 +1,5 @@
 export interface ThemeEntry {
+  colorScheme: 'light' | 'dark';
   cssPath: string;
   backgroundColor: string;
   i18nName: string;
@@ -45,3 +46,5 @@ export function resolveSavedTheme(raw: unknown, isDark: boolean): ResolvedTheme;
 export function getThemeIds(): ThemeId[];
 export function getAllUIOptions(): ThemeUIOption[];
 export function isPaperTextureBlockedTheme(themeId: unknown): boolean;
+
+export function isDarkTheme(themeId: unknown): boolean;

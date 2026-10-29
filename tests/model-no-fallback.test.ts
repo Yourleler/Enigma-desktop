@@ -495,7 +495,7 @@ describe("模型选择无 fallback", () => {
       const mm = new ModelManager({ hanakoHome: tempDir });
       setupRouter(mm);
       expect(() => mm.resolveUtilityConfig({}, {}, {}))
-        .toThrow(/noUtilityModel|utility 模型|utility model/);
+        .toThrow(/noUtilityModel|utility 模型|utility model|尚未配置辅助模型/);
     });
 
     it("utility_large 未配置时抛错", () => {
@@ -503,7 +503,7 @@ describe("模型选择无 fallback", () => {
       setupRouter(mm);
       mm._availableModels = [{ id: "some-model", provider: "x" }];
       expect(() => mm.resolveUtilityConfig({}, { utility: { id: "some-model", provider: "x" } }, {}))
-        .toThrow(/noUtilityLargeModel|utility_large 模型|utility_large model/);
+        .toThrow(/noUtilityLargeModel|utility_large 模型|utility_large model|尚未配置深度辅助模型/);
     });
 
     it("明确 small-only 调用时不要求 utility_large", () => {
@@ -658,7 +658,7 @@ describe("模型选择无 fallback", () => {
       const mm = new ModelManager({ hanakoHome: tempDir });
       // 以前会 fallback 到 "doubao-seed-2-0-mini-260215"，现在应该抛错
       expect(() => mm.resolveUtilityConfig({}, {}, {}))
-        .toThrow(/noUtilityModel|utility 模型|utility model/);
+        .toThrow(/noUtilityModel|utility 模型|utility model|尚未配置辅助模型/);
     });
   });
 });

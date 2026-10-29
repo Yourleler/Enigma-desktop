@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import {serializeModelRuntimeRefresh} from './model-runtime-refresh.ts';
 import { ModelRuntime, ModelRegistry, getAgentDir } from '@earendil-works/pi-coding-agent';
 type ProviderConfigInput = Parameters<ModelRegistry['registerProvider']>[1];
 import type { Credential, OAuthCredential } from '@earendil-works/pi-ai';
@@ -50,6 +51,7 @@ export class AuthStorage {
     if (!this.runtimePromise) {
       this.modelsPath=modelsPath;
       this.runtimePromise=ModelRuntime.create({credentials:this.store,modelsPath,refreshOnCreate:false}).then(async runtime=>{
+        serializeModelRuntimeRefresh(runtime);
         for (const [provider,key] of this.runtimeKeys) await runtime.setRuntimeApiKey(provider,key);
         this.runtimeValue=runtime;return runtime;
       });

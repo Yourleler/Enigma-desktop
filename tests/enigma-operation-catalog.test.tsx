@@ -49,14 +49,14 @@ it('uses named service definitions inside live status records for service and br
  const {ActionDialog}=await import('../desktop/src/react/engineering/Engineering');
  const action=uiActions.find(a=>a.id==='browser-add')!;
  useEngineering.setState({sessionPath:'audit',formSession:'audit',form:action,choices:{services:[{service:{id:'web',label:'本地服务'},status:'ready',run:'process-a'}]},formLoading:false,formError:''});
- render(<ActionDialog/>);const select=screen.getByRole('combobox',{name:'已配置服务'}) as HTMLSelectElement;fireEvent.change(select,{target:{value:'web'}});expect(select.value).toBe('web');expect(screen.getByRole('option',{name:'本地服务'})).toBeInTheDocument();
+ render(<ActionDialog/>);const select=screen.getByRole('button',{name:'已配置服务'});fireEvent.click(select);fireEvent.click(screen.getByRole('option',{name:'本地服务'}));expect(select).toHaveTextContent('本地服务');
 });
 
 it('switching dependency target loads its actual prior dependencies and excludes itself',async()=>{
  const {ActionDialog}=await import('../desktop/src/react/engineering/Engineering');const action=uiActions.find(a=>a.id==='repo-dependencies')!;
  useEngineering.setState({sessionPath:'audit',formSession:'audit',form:action,choices:{repos:[{id:'api',dependsOn:[]},{id:'client',dependsOn:['api']}]},formLoading:false,formError:''});render(<ActionDialog/>);
- fireEvent.change(screen.getByRole('combobox',{name:'仓库'}),{target:{value:'client'}});expect(screen.getByRole('checkbox',{name:'api'})).toBeChecked();expect(screen.queryByRole('checkbox',{name:'client'})).toBeNull();
- fireEvent.change(screen.getByRole('combobox',{name:'仓库'}),{target:{value:'api'}});expect(screen.getByRole('checkbox',{name:'client'})).not.toBeChecked();expect(screen.queryByRole('checkbox',{name:'api'})).toBeNull();
+ fireEvent.click(screen.getByRole('button',{name:'仓库'}));fireEvent.click(screen.getByRole('option',{name:'client'}));expect(screen.getByRole('checkbox',{name:'api'})).toBeChecked();expect(screen.queryByRole('checkbox',{name:'client'})).toBeNull();
+ fireEvent.click(screen.getByRole('button',{name:'仓库'}));fireEvent.click(screen.getByRole('option',{name:'api'}));expect(screen.getByRole('checkbox',{name:'client'})).not.toBeChecked();expect(screen.queryByRole('checkbox',{name:'api'})).toBeNull();
 });
 
 it('shows and requires the default background wait target before the source is ever changed',async()=>{
@@ -64,14 +64,13 @@ it('shows and requires the default background wait target before the source is e
  const action=uiActions.find(a=>a.id==='wait-start')!;
  useEngineering.setState({sessionPath:'audit',formSession:'audit',form:action,choices:{background:[{id:'job-a',label:'本地检查'}]},formLoading:false,formError:''});
  render(<ActionDialog/>);
- expect(screen.getByRole('combobox',{name:'来源'})).toHaveValue('background');
- expect(screen.getByRole('combobox',{name:'选择后台运行'})).toBeVisible();
+ expect(screen.getByRole('button',{name:'来源'})).toHaveTextContent('后台');
+ expect(screen.getByRole('button',{name:'选择后台运行'})).toBeVisible();
  expect(validateFields(action.fields,{label:'等待本地检查'})).toContain('选择后台运行');
- fireEvent.change(screen.getByRole('combobox',{name:'选择后台运行'}),{target:{value:'job-a'}});
- expect(screen.getByRole('combobox',{name:'选择后台运行'})).toHaveValue('job-a');
- fireEvent.change(screen.getByRole('combobox',{name:'来源'}),{target:{value:'service'}});
- expect(screen.queryByRole('combobox',{name:'选择后台运行'})).toBeNull();
- expect(screen.getByRole('option',{name:'委派子任务'})).toBeInTheDocument();
+ fireEvent.click(screen.getByRole('button',{name:'选择后台运行'}));fireEvent.click(screen.getByRole('option',{name:'本地检查'}));
+ expect(screen.getByRole('button',{name:'选择后台运行'})).toHaveTextContent('本地检查');
+ fireEvent.click(screen.getByRole('button',{name:'来源'}));expect(screen.getByRole('option',{name:'委派子任务'})).toBeInTheDocument();fireEvent.click(screen.getByRole('option',{name:'项目服务'}));
+ expect(screen.queryByRole('button',{name:'选择后台运行'})).toBeNull();
  expect(activeFieldValues(action.fields,{label:'等待本地检查',condition:{run:'job-a'}})).toMatchObject({condition:{kind:'background',run:'job-a'}});
 });
 
@@ -86,7 +85,7 @@ it('submits displayed nested readiness defaults and preserves explicit false, ze
 it('keeps the independent status entry available while the main task is running',()=>{
  useEngineering.setState({snapshot:{state:{idle:false},actions:uiActions}});
  render(<ActionCatalog close={()=>{}}/>);
- expect(screen.getByRole('button',{name:/询问运行状态 · 独立旁路/})).toBeEnabled();
+ expect(screen.getByRole('button',{name:/询问运行状态 · 不打断当前任务/})).toBeEnabled();
  expect(screen.getByRole('button',{name:/加入仓库/})).toBeDisabled();
 });
 it('finds dedicated supervision and model settings even though they are not domain action forms',()=>{

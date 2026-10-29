@@ -1,23 +1,23 @@
-.enigma-workspace-chooser { display:grid; gap:18px; font-size:14px; line-height:1.6; }
+.enigma-workspace-chooser { display:grid; gap:var(--space-18); font-size:14px; line-height:1.6; }
 .enigma-workspace-intro { margin:0; color:var(--text-muted); }
 body.enigma-surface .enigma-workspace-chooser p { opacity:1; }
-.enigma-workspace-folder { display:flex; align-items:center; gap:14px; min-width:0; padding:18px; border:1px solid var(--eg-stroke); border-radius:15px; background:linear-gradient(130deg,color-mix(in srgb,var(--eg-accent) 9%,transparent),transparent),color-mix(in srgb,var(--eg-card) 65%,transparent); }
+.enigma-workspace-folder { display:flex; align-items:center; gap:var(--space-14); min-width:0; padding:var(--space-18); border:1px solid var(--eg-stroke); border-radius:15px; background:linear-gradient(130deg,color-mix(in srgb,var(--eg-accent) 9%,transparent),transparent),color-mix(in srgb,var(--eg-card) 65%,transparent); }
 .enigma-workspace-folder-icon { display:flex; align-items:center; justify-content:center; width:48px; height:48px; flex:none; border:1px solid var(--eg-stroke); border-radius:13px; color:var(--eg-accent); background:color-mix(in srgb,var(--eg-card) 70%,transparent); }
 .enigma-workspace-folder-copy { flex:1; min-width:0; }
 .enigma-workspace-folder-copy strong { display:block; font-size:16px; font-weight:600; overflow-wrap:anywhere; }
-.enigma-workspace-folder-copy > span { display:block; margin-top:3px; font-size:12px; color:var(--text-muted); overflow-wrap:anywhere; user-select:text; }
-body.enigma-surface .enigma-modal .enigma-workspace-browse { flex:none; border:1px solid var(--eg-stroke-strong); border-radius:9px; padding:8px 12px; background:var(--eg-card); color:var(--text); font-size:12px; white-space:nowrap; }
+.enigma-workspace-folder-copy > span { display:block; margin-top:var(--space-3); font-size:12px; color:var(--text-muted); overflow-wrap:anywhere; user-select:text; }
+body.enigma-surface .enigma-modal .enigma-workspace-browse { flex:none; border:1px solid var(--eg-stroke-strong); border-radius:9px; padding:var(--space-8) var(--space-12); background:var(--eg-card); color:var(--text); font-size:12px; white-space:nowrap; }
 body.enigma-surface .enigma-modal .enigma-workspace-manual { justify-self:start; padding:0; border:0; background:none; color:var(--eg-accent); font-size:12px; }
-.enigma-workspace-path { display:grid; gap:7px; font-size:12px; }
-.enigma-workspace-path input { width:100%; min-width:0; padding:10px 12px; border:1px solid var(--border); border-radius:10px; background:var(--bg-card); color:var(--text); font:13px/1.5 var(--font-ui); }
+.enigma-workspace-path { display:grid; gap:var(--space-7); font-size:12px; }
+.enigma-workspace-path input { width:100%; min-width:0; padding:var(--space-10) var(--space-12); border:1px solid var(--border); border-radius:10px; background:var(--bg-card); color:var(--text); font:13px/1.5 var(--font-ui); }
 .enigma-workspace-path small { color:var(--text-muted); font-size:12px; }
-.enigma-workspace-memory { display:flex; align-items:center; justify-content:space-between; gap:18px; padding:2px 0; }
+.enigma-workspace-memory { display:flex; align-items:center; justify-content:space-between; gap:var(--space-18); padding:var(--space-2) 0; }
 .enigma-workspace-memory strong { font-size:14px; font-weight:500; }
-.enigma-workspace-memory p { margin:3px 0 0; color:var(--text-muted); font-size:12px; }
+.enigma-workspace-memory p { margin:var(--space-3) 0 0; color:var(--text-muted); font-size:12px; }
 body.enigma-surface .enigma-workspace-memory .hana-toggle { padding:0; }
-.enigma-workspace-actions { display:flex; justify-content:flex-end; align-items:center; gap:10px; padding-top:16px; border-top:1px solid var(--border); }
+.enigma-workspace-actions { display:flex; justify-content:flex-end; align-items:center; gap:var(--space-10); padding-top:var(--space-16); border-top:1px solid var(--border); }
 .enigma-workspace-actions > span { margin-right:auto; font-size:12px; color:var(--text-muted); }
-body.enigma-surface .enigma-modal .enigma-workspace-actions button { padding:9px 15px; border-radius:10px; font-size:13px; cursor:pointer; }
+body.enigma-surface .enigma-modal .enigma-workspace-actions button { padding:var(--space-9) var(--space-15); border-radius:10px; font-size:13px; cursor:pointer; }
 body.enigma-surface .enigma-workspace-chooser button:disabled { opacity:.45; cursor:default; }
-.enigma-workspace-error { margin:0; padding:9px 12px; border-radius:10px; background:color-mix(in srgb,var(--danger) 7%,transparent); color:var(--danger); font-size:13px; }
-@media(max-width:520px) { .enigma-workspace-folder { flex-wrap:wrap; padding:14px; } .enigma-workspace-browse { margin-left:62px; } .enigma-workspace-actions { flex-wrap:wrap; } }
+.enigma-workspace-error { margin:0; padding:var(--space-9) var(--space-12); border-radius:10px; background:color-mix(in srgb,var(--danger) 7%,transparent); color:var(--danger); font-size:13px; }
+@media(max-width:520px) { .enigma-workspace-folder { flex-wrap:wrap; padding:var(--space-14); } .enigma-workspace-browse { margin-left:var(--space-62); } .enigma-workspace-actions { flex-wrap:wrap; } }

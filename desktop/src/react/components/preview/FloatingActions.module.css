@@ -3,16 +3,16 @@
     top: -20px;
     right: -20px;
     z-index: 5;
-    padding: 28px;
+    padding: var(--space-28);
 }
 
 .floatingActionsSurface {
     position: relative;
     display: flex;
-    gap: 3px;
+    gap: var(--space-3);
     background: var(--bg-card, var(--bg));
     border-radius: var(--radius-sm);
-    padding: 2px;
+    padding: var(--space-2);
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
     opacity: 0;
     pointer-events: none;
@@ -33,8 +33,8 @@
 .actionBtn {
     display: flex;
     align-items: center;
-    gap: 3px;
-    padding: 2px 6px;
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-6);
     font-size: var(--fs-hint);
     color: var(--text-muted);
     background: transparent;
@@ -73,7 +73,7 @@
     right: 0;
     z-index: 20;
     min-width: 132px;
-    padding: 4px;
+    padding: var(--space-4);
     border: 1px solid var(--overlay-light);
     border-radius: var(--radius-sm);
     background: var(--bg-card, var(--bg));
@@ -87,7 +87,7 @@
     align-items: center;
     gap: var(--space-4);
     width: 100%;
-    padding: 6px 8px;
+    padding: var(--space-6) var(--space-8);
     border: 0;
     border-radius: var(--radius-sm);
     background: transparent;
@@ -221,7 +221,7 @@
 .coverGalleryName {
     display: block;
     overflow: hidden;
-    margin-top: 5px;
+    margin-top: var(--space-5);
     color: var(--text-muted);
     font-size: 0.62rem;
     line-height: 1.25;
@@ -246,4 +246,4 @@
 
 .inlineActions{position:relative;top:auto;right:auto;padding:0;margin-inline-start:auto;z-index:15;}
 .inlineActions .floatingActionsSurface{opacity:1;pointer-events:auto;transform:none;box-shadow:none;background:transparent;flex-wrap:wrap;}
-.inlineActions .actionBtn{min-height:30px;padding:4px 7px;cursor:pointer;}
+.inlineActions .actionBtn{min-height:30px;padding:var(--space-4) var(--space-7);cursor:pointer;}

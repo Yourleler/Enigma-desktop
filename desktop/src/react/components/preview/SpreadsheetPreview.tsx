@@ -1,3 +1,4 @@
+import {isDarkTheme} from '../../../shared/theme-registry';
 import {useEffect,useMemo,useRef,useState} from 'react';
 import type {PreviewItem} from '../../types';
 import {useStore} from '../../stores';
@@ -21,7 +22,7 @@ export default function SpreadsheetPreview({previewItem}:{previewItem:PreviewIte
     const saved=positions.get(key);
     const controller=new AbortController();let alive=true,ready=false,sent=false;raw.current=null;setStatus('loading');setMessage('');setWarnings([]);setSheets([]);setSelection(null);setCopying(false);
     const timer=setTimeout(()=>{if(alive){controller.abort();setStatus('error');setMessage('表格加载超时，可重新加载或使用系统应用打开。');}},40000);
-    const dark=()=>document.documentElement.dataset.theme?.startsWith('midnight')||false;
+    const dark=()=>isDarkTheme(document.documentElement.dataset.theme);
     const send=()=>{if(!ready||sent||!raw.current||!alive)return;sent=true;post('load',{bytes:previewItem.type==='csv'?undefined:raw.current,csv:previewItem.type==='csv'?previewItem.content:undefined,name:previewItem.title,id:channel,dark:dark()});};
     const receive=(event:MessageEvent)=>{
       if(event.source!==frame.current?.contentWindow||event.data?.channel!==channel)return;const data=event.data;

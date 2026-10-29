@@ -138,6 +138,10 @@ describe("fs route", () => {
     const res = await app.request(`/api/fs/xlsx-html?path=${encodeURIComponent(workbookPath)}`);
 
     expect(res.status).toBe(200);
-    expect(await res.text()).toBe("<table><tr><td>Name</td><td>Value</td></tr><tr><td>A&amp;B</td><td>&lt;42&gt;</td></tr></table>");
+    const html=await res.text();
+    expect(html).toContain('<summary>Budget · 2 行</summary>');
+    expect(html).toContain('<tr><td>Name</td><td>Value</td></tr>');
+    expect(html).toContain('<tr><td>A&amp;B</td><td>&lt;42&gt;</td></tr>');
+    expect(html).not.toContain('<42>');
   });
 });

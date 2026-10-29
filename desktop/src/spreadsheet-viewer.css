@@ -1,1 +1,2 @@
-html,body,#app{width:100%;height:100%;margin:0;overflow:hidden}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}#error{position:absolute;inset:0;background:#f6f3fc;color:#443b52;padding:32px;z-index:99999}#error[hidden]{display:none}
+@import url('./design-tokens.css');
+html,body,#app{width:100%;height:100%;margin:0;overflow:hidden}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}#error{position:absolute;inset:0;background:var(--marble-preview-paper);color:var(--spreadsheet-preview-ink);padding:var(--space-32);z-index:99999}#error[hidden]{display:none}

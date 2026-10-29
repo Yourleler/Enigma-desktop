@@ -9,7 +9,7 @@ import {ConductorCreateDialog} from './ConductorCreate';
 const dedicatedFeatures=[
   {id:'guardian',title:'托管与独立诊断',description:'持续观察、停止观察、查询进展，在允许范围内处理明确故障。',group:'observer'},
   {id:'runtime-history',title:'运行回执与历史',description:'查看当前阶段、等待原因和重启后仍保留的操作结果。',group:'observer'},
-  {id:'memory-dream',title:'记忆整理与反馈',description:'在后台整理记忆：选择来源、查看候选、确认保存，并评价整理效果。',group:'memory'},
+  {id:'memory-dream',keywords:'做梦 dream',title:'记忆整理与反馈',description:'在后台整理记忆：选择来源、查看候选、确认保存，并评价整理效果。',group:'memory'},
   {id:'model-policy',title:'多模型分工与切换',description:'设置规划、执行、复核模型，以及当前对话或未来任务的请求预算。',dialog:'models'},
   {id:'create-conductor',title:'创建任务编排管家',description:'用独立对话安排工作任务、依赖、模型和并发范围。',dialog:'conductor'},
   {id:'conductor-controls',title:'任务群控制',description:'查看前置成果、停止单个工作对话、预览成果并生成工作报告。',group:'conductor'},
@@ -23,7 +23,7 @@ export function ActionCatalog({close}:{close:()=>void}) {
   const actions=(snapshot?.actions||[]).map(presentAction).filter((a:any)=>`${a.title} ${a.description} ${groups.find(g=>g.id===a.group)?.label}`.toLowerCase().includes(query.toLowerCase()));
   const busy=snapshot?.state?.idle===false||snapshot?.state?.operation?.state==='running';
   const assisted=assistedOperations.filter(action=>(action.id!=='conductor-plan'||snapshot?.kind==='manager')&&`${action.title} ${action.description}`.includes(query));
-  const dedicated=dedicatedFeatures.filter(feature=>(feature.id!=='conductor-controls'||snapshot?.kind==='manager')&&`${feature.title} ${feature.description}`.includes(query));
+  const dedicated=dedicatedFeatures.filter(feature=>(feature.id!=='conductor-controls'||snapshot?.kind==='manager')&&`${feature.title} ${feature.description} ${feature.keywords||''}`.toLocaleLowerCase().includes(query.toLocaleLowerCase()));
   if(dialog==='models')return <ModelPolicyDialog close={close}/>;
   if(dialog==='conductor')return <ConductorCreateDialog close={close}/>;
   return <SurfaceModal onClose={close} initialFocus="input"><div className="enigma-modal-backdrop"><section className="enigma-modal enigma-operation-catalog" role="dialog" data-glass-frame="sheet" data-glass-controls="" aria-modal="true" aria-label="全部工程操作">

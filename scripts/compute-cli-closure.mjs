@@ -217,6 +217,10 @@ export const NFT_TRACE_ROOTS = CLOSURE_ROOTS.filter((root) => root.inputType ===
 
 export const DYNAMIC_CALL_ALLOWLIST = Object.freeze([
   {
+    file:'lib/isolated-directory-reader.ts',callee:'spawn',argText:'process.execPath',
+    reason:'Runs the current Node executable with a fixed repository-owned directory snapshot script. The directory is passed as a separate argv value, not interpolated code. The script only uses node:fs and node:path; output size, concurrency and duration are bounded. An alternate source is available only through direct code injection for tests, never from the directory argument.',
+  },
+  {
     file:'node_modules/@earendil-works/pi-coding-agent/dist/utils/shell.js',callee:'spawn',argText:'join(process.env.SystemRoot || "C:\\\\Windows", "System32", "taskkill.exe")',
     displayArgText:'join(SystemRoot, "System32", "taskkill.exe")',
     reason:'Pi 1.4 Windows process-tree cancellation invokes the OS taskkill binary, not repo JavaScript. The caller PID is supplied as an argv value; the Mac validation does not execute this branch.',

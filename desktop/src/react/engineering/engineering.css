@@ -164,12 +164,12 @@
 .enigma-diff-document header {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-6);
   padding: var(--space-8) var(--space-12);
   font-size: var(--fs-hint);
   background: color-mix(in srgb, var(--text) 5%, transparent);
 }
-.enigma-diff-document > :is(p,button) { margin: 10px 12px; }
+.enigma-diff-document > :is(p,button) { margin: var(--space-10) var(--space-12); }
 .enigma-diff-document pre {
   font: 10px/1.8 var(--font-mono);
   white-space: pre;
@@ -312,11 +312,11 @@
 
 /* ── 文件树 ── */
 .enigma-files { display: flex; flex-direction: column; }
-.enigma-file-search { display: flex; flex-wrap: wrap; gap: 6px; margin-block: 10px; }
+.enigma-file-search { display: flex; flex-wrap: wrap; gap: var(--space-6); margin-block: var(--space-10); }
 .enigma-file-search input { flex: 1 1 180px; min-width: 0; }
-.enigma-review-report { border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-top: 14px; }
+.enigma-review-report { border: 1px solid var(--border); border-radius: 12px; padding: var(--space-12); margin-top: var(--space-14); }
 .enigma-review-report > summary { cursor: pointer; overflow-wrap: anywhere; }
-.enigma-review-report > summary small { display: block; margin-top: 6px; color: var(--text-muted); }
+.enigma-review-report > summary small { display: block; margin-top: var(--space-6); color: var(--text-muted); }
 .enigma-task-maps pre { max-width: 100%; max-height: 40vh; overflow: auto; white-space: pre; font: var(--fs-hint)/1.7 var(--font-mono); }
 .enigma-task-maps .enigma-inline-actions button { max-width: 100%; white-space: normal; overflow-wrap: anywhere; text-align: left; }
 .enigma-package-result { min-width: 0; overflow-wrap: anywhere; }
@@ -325,24 +325,24 @@
 .enigma-source-reading pre { max-width: 100%; max-height: 45vh; overflow: auto; font: var(--fs-hint)/1.7 var(--font-mono); }
 .enigma-schema-table { max-width:100%; overflow:auto; }
 .enigma-schema-table table { border-collapse:collapse; width:100%; font-size:var(--fs-caption); }
-.enigma-schema-table th,.enigma-schema-table td { padding:8px; text-align:left; border-bottom:1px solid var(--border); }
+.enigma-schema-table th,.enigma-schema-table td { padding:var(--space-8); text-align:left; border-bottom:1px solid var(--border); }
 .enigma-runtime-log { max-width:100%; max-height:38vh; overflow:auto; white-space:pre-wrap; overflow-wrap:anywhere; font:var(--fs-hint)/1.7 var(--font-mono); }
 .enigma-package-result pre { max-width: 100%; max-height: 38vh; overflow: auto; }
-.enigma-review-text { margin-block: 16px; line-height: 1.7; overflow-wrap: anywhere; }
+.enigma-review-text { margin-block: var(--space-16); line-height: 1.7; overflow-wrap: anywhere; }
 .enigma-review-text pre,.enigma-review-source pre { overflow: auto; max-height: 55vh; }
-.enigma-review-source { margin-block: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 12px; }
+.enigma-review-source { margin-block: var(--space-12); padding: var(--space-12); border: 1px solid var(--border); border-radius: 12px; }
 .enigma-review-source form { align-items: end; }
-.enigma-review-source form label { display: grid; gap: 4px; flex: 1 1 90px; min-width: 0; }
+.enigma-review-source form label { display: grid; gap: var(--space-4); flex: 1 1 90px; min-width: 0; }
 .enigma-review-source form input { width: 100%; min-width: 0; box-sizing: border-box; }
-.enigma-recipes { margin-top: 20px; border-top: 1px solid var(--border); padding-top: 12px; }
-.enigma-recipe-card { padding: 14px; margin-block: 12px; border: 1px solid var(--border); border-radius: 12px; overflow-wrap: anywhere; }
+.enigma-recipes { margin-top: var(--space-20); border-top: 1px solid var(--border); padding-top: var(--space-12); }
+.enigma-recipe-card { padding: var(--space-14); margin-block: var(--space-12); border: 1px solid var(--border); border-radius: 12px; overflow-wrap: anywhere; }
 .enigma-recipe-card pre { max-height: 38vh; overflow: auto; }
-.enigma-recipe-card dt { margin-top: 8px; font-weight: 600; }
-.enigma-recipe-card dd { margin: 4px 0 10px; color: var(--text-muted); }
-.enigma-recipe-card li { margin-block: 8px; }
-.enigma-skill-description { margin-block: 8px; color: var(--text-muted); font-size: var(--fs-hint); line-height: 1.6; }
+.enigma-recipe-card dt { margin-top: var(--space-8); font-weight: 600; }
+.enigma-recipe-card dd { margin: var(--space-4) 0 var(--space-10); color: var(--text-muted); }
+.enigma-recipe-card li { margin-block: var(--space-8); }
+.enigma-skill-description { margin-block: var(--space-8); color: var(--text-muted); font-size: var(--fs-hint); line-height: 1.6; }
 .enigma-skill-description summary { cursor: pointer; }
-.enigma-file-search input,.enigma-review-source form input { border: 1px solid var(--border); border-radius: 8px; background: var(--bg-input, var(--bg-secondary)); color: var(--text-primary); font: inherit; padding: 8px 10px; min-height: 36px; }
+.enigma-file-search input,.enigma-review-source form input { border: 1px solid var(--border); border-radius: 8px; background: var(--bg-input, var(--bg-secondary)); color: var(--text-primary); font: inherit; padding: var(--space-8) var(--space-10); min-height: 36px; }
 .enigma-file-search input:focus-visible,.enigma-review-source form input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .enigma-repo-picker {
   display: flex;
@@ -1065,7 +1065,7 @@ body.enigma-surface .enigma-modal { background: var(--lg-panel-strong); border: 
 .enigma-memory-feedback { margin-top: var(--space-10); font-size: var(--fs-hint); color: var(--text-muted); }
 .enigma-memory-feedback summary { cursor: pointer; }
 .enigma-inline-actions { display: flex; gap: var(--space-4); flex-wrap: wrap; margin-top: var(--space-6); }
-.enigma-artifact-image { overflow: auto; max-height: min(65vh, 760px); margin-block: 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-secondary); }
+.enigma-artifact-image { overflow: auto; max-height: min(65vh, 760px); margin-block: var(--space-16); border: 1px solid var(--border); border-radius: 12px; background: var(--bg-secondary); }
 .enigma-artifact-image img { display: block; width: auto; height: auto; max-width: 100%; margin-inline: auto; }
 .enigma-artifact-image[data-original="true"] img { max-width: none; margin: 0; }
 .enigma-section-title { margin: var(--space-20,var(--space-24)) 0 var(--space-8); }
@@ -1080,40 +1080,40 @@ body.enigma-surface .enigma-modal { background: var(--lg-panel-strong); border: 
 
 /* Recovery guidance: intent first, source details when needed. */
 .enigma-feature-intro { line-height: 1.7; color: var(--text-muted); }
-.enigma-time-help { padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; margin: 12px 0 24px; }
+.enigma-time-help { padding: var(--space-12) var(--space-14); border: 1px solid var(--border); border-radius: 10px; margin: var(--space-12) 0 var(--space-24); }
 .enigma-time-help summary { cursor: pointer; font-weight: 500; }
-.enigma-time-help dt { margin-top: 14px; font-weight: 600; }
-.enigma-time-help dd { margin: 5px 0 0; color: var(--text-muted); line-height: 1.7; }
-.enigma-section-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 16px; }
-.enigma-section-heading h3 { margin: 0 0 5px; }
+.enigma-time-help dt { margin-top: var(--space-14); font-weight: 600; }
+.enigma-time-help dd { margin: var(--space-5) 0 0; color: var(--text-muted); line-height: 1.7; }
+.enigma-section-heading { display: flex; justify-content: space-between; align-items: center; gap: var(--space-12); margin-top: var(--space-16); }
+.enigma-section-heading h3 { margin: 0 0 var(--space-5); }
 .enigma-section-heading small { color: var(--text-muted); }
-.enigma-time-machine .enigma-checkpoint time { display: block; color: var(--text-muted); font-size: 12px; margin-top: 4px; }
-.enigma-time-machine .enigma-checkpoint { padding: 14px 0; }
-.enigma-time-machine .enigma-inline-actions { margin-top: 10px; }
-.enigma-time-machine .enigma-inline-actions button { border: 1px solid var(--border); font-size: 12px; padding: 6px 9px; }
-.enigma-time-rewinds { padding-top: 20px; margin-top: 14px; border-top: 1px solid var(--border); }
-.enigma-time-rewinds > details { margin: 16px 0; }
-.enigma-timeline-search { width: 100%; box-sizing: border-box; border: 1px solid var(--border); background: var(--bg-card); color: var(--text); padding: 8px 10px; border-radius: 8px; margin: 8px 0; }
-.enigma-restore-preview { border: 1px solid var(--border); background: var(--eg-secondary); border-radius: 12px; padding: 16px; margin: 0 0 20px; }
+.enigma-time-machine .enigma-checkpoint time { display: block; color: var(--text-muted); font-size: 12px; margin-top: var(--space-4); }
+.enigma-time-machine .enigma-checkpoint { padding: var(--space-14) 0; }
+.enigma-time-machine .enigma-inline-actions { margin-top: var(--space-10); }
+.enigma-time-machine .enigma-inline-actions button { border: 1px solid var(--border); font-size: 12px; padding: var(--space-6) var(--space-9); }
+.enigma-time-rewinds { padding-top: var(--space-20); margin-top: var(--space-14); border-top: 1px solid var(--border); }
+.enigma-time-rewinds > details { margin: var(--space-16) 0; }
+.enigma-timeline-search { width: 100%; box-sizing: border-box; border: 1px solid var(--border); background: var(--bg-card); color: var(--text); padding: var(--space-8) var(--space-10); border-radius: 8px; margin: var(--space-8) 0; }
+.enigma-restore-preview { border: 1px solid var(--border); background: var(--eg-secondary); border-radius: 12px; padding: var(--space-16); margin: 0 0 var(--space-20); }
 .enigma-restore-preview h3 { margin-top: 0; }
 .enigma-restore-preview p { overflow-wrap: anywhere; }
-.enigma-restore-file { padding: 10px 0; border-top: 1px solid var(--border); }
+.enigma-restore-file { padding: var(--space-10) 0; border-top: 1px solid var(--border); }
 .enigma-restore-file summary { cursor: pointer; overflow-wrap: anywhere; }
 .enigma-restore-file pre { overflow: auto; max-height: 280px; white-space: pre; font: 12px/1.6 var(--font-mono); }
 .enigma-panel button:disabled, .enigma-modal button:disabled { opacity: .5; cursor: not-allowed; }
 .enigma-time-machine [role="tabpanel"][hidden] { display: none; }
-.enigma-time-machine .enigma-view-tabs { margin: 12px 0; }
-.enigma-time-steps { display: flex; flex-wrap: wrap; gap: 6px; font-size: 12px; color: var(--text-muted); margin: 16px 0 4px; }
-.enigma-time-guide { background: var(--eg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 24px; }
+.enigma-time-machine .enigma-view-tabs { margin: var(--space-12) 0; }
+.enigma-time-steps { display: flex; flex-wrap: wrap; gap: var(--space-6); font-size: 12px; color: var(--text-muted); margin: var(--space-16) 0 var(--space-4); }
+.enigma-time-guide { background: var(--eg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: var(--space-14); margin-bottom: var(--space-24); }
 .enigma-time-guide h3 { margin-top: 0; }
 .enigma-time-guide p { line-height: 1.7; }
-.enigma-time-guide button { border: 1px solid var(--border); background: var(--eg-accent-soft); color: var(--eg-text); padding: 8px 12px; }
-.enigma-time-guide small { display: block; color: var(--text-muted); margin-top: 8px; line-height: 1.6; }
-.enigma-dismiss-preview { float: right; margin: -8px -8px 4px 8px; }
-.enigma-multi-choice { border: 1px solid var(--border); border-radius: 10px; padding: 10px; margin: 12px 0; min-width: 0; }
-.enigma-multi-choice legend { font-size: 13px; padding: 0 5px; }
+.enigma-time-guide button { border: 1px solid var(--border); background: var(--eg-accent-soft); color: var(--eg-text); padding: var(--space-8) var(--space-12); }
+.enigma-time-guide small { display: block; color: var(--text-muted); margin-top: var(--space-8); line-height: 1.6; }
+.enigma-dismiss-preview { float: right; margin: calc(var(--space-8) * -1) calc(var(--space-8) * -1) var(--space-4) var(--space-8); }
+.enigma-multi-choice { border: 1px solid var(--border); border-radius: 10px; padding: var(--space-10); margin: var(--space-12) 0; min-width: 0; }
+.enigma-multi-choice legend { font-size: 13px; padding: 0 var(--space-5); }
 .enigma-multi-choice > div { max-height: 200px; overflow: auto; overscroll-behavior: contain; }
-.enigma-multi-choice label { display: flex; align-items: flex-start; gap: 8px; padding: 7px 4px; font-size: 13px; }
+.enigma-multi-choice label { display: flex; align-items: flex-start; gap: var(--space-8); padding: var(--space-7) var(--space-4); font-size: 13px; }
 .enigma-multi-choice label span { overflow-wrap: anywhere; }
-.enigma-multi-choice input[type=checkbox] { margin-top: 4px; }
-.enigma-multi-choice input[type=search] { width: 100%; box-sizing: border-box; padding: 7px 10px; border: 1px solid var(--border); border-radius: 7px; background: var(--bg); color: var(--text); }
+.enigma-multi-choice input[type=checkbox] { margin-top: var(--space-4); }
+.enigma-multi-choice input[type=search] { width: 100%; box-sizing: border-box; padding: var(--space-7) var(--space-10); border: 1px solid var(--border); border-radius: 7px; background: var(--bg); color: var(--text); }

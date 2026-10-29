@@ -1,7 +1,7 @@
-.bar { flex: 0 0 auto; display:flex; align-items:center; flex-wrap:wrap; gap:4px 16px; min-height:28px; padding:5px 20px; font:12px/1.5 var(--font-ui); color:var(--text-muted); border-bottom:1px solid var(--border,rgba(128,128,128,.15)); font-variant-numeric:tabular-nums; }
-.bar span { display:inline-flex; align-items:center; gap:5px; }
+.bar { flex: 0 0 auto; display:flex; align-items:center; flex-wrap:wrap; gap:var(--space-4) var(--space-16); min-height:28px; padding:var(--space-5) var(--space-20); font:12px/1.5 var(--font-ui); color:var(--text-muted); border-bottom:1px solid var(--border,rgba(128,128,128,.15)); font-variant-numeric:tabular-nums; }
+.bar span { display:inline-flex; align-items:center; gap:var(--space-5); }
 .bar time { color:var(--text); }
 .run strong { font-weight:600; color:var(--text); }
 .run[data-active="true"]::before { content:''; width:6px; height:6px; border-radius:50%; background:var(--accent); }
 .detail { font-size:11px; }
-@media(max-width:600px){.bar {padding:5px 12px;gap:3px 10px;}}
+@media(max-width:600px){.bar {padding:var(--space-5) var(--space-12);gap:var(--space-3) var(--space-10);}}

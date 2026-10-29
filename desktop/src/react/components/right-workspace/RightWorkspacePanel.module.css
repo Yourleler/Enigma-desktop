@@ -30,14 +30,14 @@
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: 7px;
-    padding: 12px var(--space-12) 8px;
+    gap: var(--space-7);
+    padding: var(--space-12) var(--space-12) var(--space-8);
 }
 
 .workspaceTitle {
     display: flex;
     align-items: flex-start;
-    gap: 8px;
+    gap: var(--space-8);
     min-width: 0;
     max-width: 100%;
     overflow-wrap: anywhere;
@@ -52,7 +52,7 @@
     display: flex;
     align-items: flex-start;
     flex-wrap: wrap;
-    gap: 6px 12px;
+    gap: var(--space-6) var(--space-12);
 }
 
 .workspacePath {
@@ -63,16 +63,16 @@
 }
 
 .workspacePath summary { cursor: pointer; width: fit-content; }
-.workspacePath code { display: block; margin-top: 6px; overflow-wrap: anywhere; white-space: normal; user-select: text; }
+.workspacePath code { display: block; margin-top: var(--space-6); overflow-wrap: anywhere; white-space: normal; user-select: text; }
 
 .tabs {
     position: relative;
     flex: 0 0 auto;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 2px;
+    gap: var(--space-2);
     margin: 0 var(--space-8);
-    padding: 2px;
+    padding: var(--space-2);
     border-radius: 12px;
     background: var(--overlay-subtle);
     border: 1px solid var(--overlay-light);
@@ -149,9 +149,9 @@
 .sessionFilesSortButton {
     display: inline-flex;
     align-items: center;
-    gap: 3px;
+    gap: var(--space-3);
     min-height: 20px;
-    padding: 2px 7px;
+    padding: var(--space-2) var(--space-7);
     border: none;
     border-radius: var(--radius-sm);
     background: transparent;
@@ -203,7 +203,7 @@
     min-height: 0;
     overflow-y: auto;
     display: block;
-    padding: 4px 2px var(--panel-edge-gap);
+    padding: var(--space-4) var(--space-2) var(--panel-edge-gap);
     scroll-padding-bottom: var(--panel-edge-gap);
     outline: none;
 }
@@ -212,11 +212,11 @@
     position: relative;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: var(--space-6);
     min-width: 0;
     height: 28px;
-    padding: 0 8px;
-    margin: 0 2px;
+    padding: 0 var(--space-8);
+    margin: 0 var(--space-2);
     border-radius: 4px;
     color: var(--text);
     font-size: var(--fs-caption);
@@ -291,7 +291,7 @@
     transform: translateY(-50%);
     display: inline-flex;
     align-items: center;
-    gap: 2px;
+    gap: var(--space-2);
     opacity: 0;
     padding-left: var(--space-8);
     background: linear-gradient(
@@ -306,7 +306,7 @@
 
 .fileRow:hover .fileMain,
 .fileRow:focus-within .fileMain {
-    padding-right: 122px;
+    padding-right: var(--space-122);
 }
 
 .fileRow:hover .fileActions,
@@ -366,7 +366,7 @@
     height: min(300px, 40vh);
     max-height: 50%;
     min-height: 40px;
-    margin: 8px var(--panel-edge-gap) var(--panel-edge-gap);
+    margin: var(--space-8) var(--panel-edge-gap) var(--panel-edge-gap);
     overflow: hidden;
     border-radius: var(--radius-md);
     border: 1px solid var(--overlay-light);
@@ -382,8 +382,8 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 8px;
-    padding: 8px 12px;
+    gap: var(--space-8);
+    padding: var(--space-8) var(--space-12);
     border: 0;
     background: transparent;
     color: var(--text);
@@ -394,7 +394,7 @@
 .jianHeader:hover { background: var(--overlay-subtle); }
 .jianHeader:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
 .jianTitle { font-family: var(--font-ui); font-size: var(--fs-caption); font-weight: 600; overflow-wrap: anywhere; }
-.jianHint { flex-shrink: 0; margin: 0; padding: 0 12px 8px; font-size: var(--fs-caption); line-height: 1.5; color: var(--text-muted); }
+.jianHint { flex-shrink: 0; margin: 0; padding: 0 var(--space-12) var(--space-8); font-size: var(--fs-caption); line-height: 1.5; color: var(--text-muted); }
 .jianBody { min-height: 0; flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
 .jianDrawer[data-open="false"] .jianBody { visibility: hidden; pointer-events: none; }
 .jianBody :global([data-desk-editor]) { height: auto; flex: 1; min-height: 50px; margin: 0; border: none; border-radius: 0; box-shadow: none; background: transparent; }

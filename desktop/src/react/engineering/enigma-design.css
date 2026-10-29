@@ -136,19 +136,19 @@ body.enigma-surface .enigma-window-modes button { font-size: 12px; min-height: 2
 body.enigma-surface .titlebar .tb-right-group { margin-left: auto; flex-shrink: 0; }
 body.enigma-surface .titlebar .tb-center-title { position:absolute; left:50%; transform:translateX(-50%); max-width:max(0px,min(52vw,calc(100% - 620px))); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 body.enigma-surface .sidebar { margin: 0; border: 0; border-right: 1px solid var(--eg-stroke); border-radius: 0; background: var(--eg-sidebar); box-shadow: none; backdrop-filter: none; }
-body.enigma-surface .sidebar-header { padding: 16px 16px 10px; }
+body.enigma-surface .sidebar-header { padding: var(--space-16) var(--space-16) var(--space-10); }
 body.enigma-surface .sidebar-title { color: var(--text); font-size: 16px; font-weight: 600; letter-spacing: 0; text-transform: none; }
 body.enigma-surface .sidebar-action-btn { width: 28px; height: 28px; border-radius: 7px; }
-body.enigma-surface .session-list { padding-top: 8px; }
-body.enigma-surface .enigma-new-chat { display: flex; gap: 10px; align-items: center; margin: 0 12px 12px; padding: 9px 10px; border: 0; border-radius: 8px; background: none; color: var(--text); font: 14px var(--font-ui); cursor: pointer; }
+body.enigma-surface .session-list { padding-top: var(--space-8); }
+body.enigma-surface .enigma-new-chat { display: flex; gap: var(--space-10); align-items: center; margin: 0 var(--space-12) var(--space-12); padding: var(--space-9) var(--space-10); border: 0; border-radius: 8px; background: none; color: var(--text); font: 14px var(--font-ui); cursor: pointer; }
 body.enigma-surface .enigma-new-chat:hover { background: var(--eg-accent-soft); }
 body.enigma-surface .enigma-new-task-settings button { border: 1px solid var(--eg-stroke); background: var(--eg-card); font: inherit; cursor: pointer; }
 body.enigma-surface .sidebar-activity-bar { color: var(--text-muted); }
 body.enigma-surface .sidebar-activity-bar svg { opacity: .8; }
-body.enigma-surface .sidebar-bridge-card { background: none; box-shadow: none; border: 0; width: calc(100% - 16px); margin: 2px 8px 4px; padding: 6px 12px; justify-content: flex-start; }
+body.enigma-surface .sidebar-bridge-card { background: none; box-shadow: none; border: 0; width: calc(100% - 16px); margin: var(--space-2) var(--space-8) var(--space-4); padding: var(--space-6) var(--space-12); justify-content: flex-start; }
 body.enigma-surface .sidebar-bridge-card:hover { background: var(--eg-accent-soft); }
 body.enigma-surface .jian-sidebar { background: var(--eg-page); backdrop-filter: none; }
-body.enigma-surface .jian-sidebar-inner { padding: 10px 12px 12px 0; background: var(--eg-page); box-shadow: none; }
+body.enigma-surface .jian-sidebar-inner { padding: var(--space-10) var(--space-12) var(--space-12) 0; background: var(--eg-page); box-shadow: none; }
 body.enigma-surface .enigma-surface-card { background: var(--eg-card); border-color: var(--eg-stroke); box-shadow: none; }
 body.enigma-surface :is(.input-wrapper,[class*="input-wrapper"]) { background: var(--eg-card); border: 1px solid var(--eg-stroke); border-radius: 20px; box-shadow: var(--eg-shadow-soft); backdrop-filter: none; }
 body.enigma-surface :is(.input-wrapper,[class*="input-wrapper"]):focus-within { border-color: var(--eg-stroke-strong); box-shadow: var(--eg-shadow-soft); }
@@ -159,45 +159,45 @@ body.enigma-surface .main-content:has(.enigma-toolbar) { padding-top: var(--titl
    mobile shell overlays it and retains the inset above. */
 body.enigma-surface .app-shell .main-content:has(.enigma-toolbar) { padding-top: 0; }
 body.enigma-surface .main-content:has(.enigma-toolbar) > .chat-area { padding-top: 0; }
-body.enigma-surface .enigma-toolbar { gap: 4px; padding: 8px 20px; margin: 0; min-height: 52px; border: 0; border-bottom: 1px solid var(--eg-stroke); border-radius: 0; background: var(--eg-page); }
-body.enigma-surface .enigma-toolbar button { min-height: 30px; padding: 6px 10px; border-radius: 7px; }
+body.enigma-surface .enigma-toolbar { gap: var(--space-4); padding: var(--space-8) var(--space-20); margin: 0; min-height: 52px; border: 0; border-bottom: 1px solid var(--eg-stroke); border-radius: 0; background: var(--eg-page); }
+body.enigma-surface .enigma-toolbar button { min-height: 30px; padding: var(--space-6) var(--space-10); border-radius: 7px; }
 body.enigma-surface .enigma-toolbar nav button[data-active="true"] { color: var(--text); background: var(--eg-accent-soft); box-shadow: none; font-weight: 500; }
-body.enigma-surface .enigma-project-button { gap: 8px; max-width: 190px; font-weight: 500; }
+body.enigma-surface .enigma-project-button { gap: var(--space-8); max-width: 190px; font-weight: 500; }
 body.enigma-surface .enigma-mark { background: none; color: var(--text-muted); width: 18px; height: 18px; box-shadow: none; }
-body.enigma-surface .enigma-progress { padding: 8px 28px; min-height: 30px; font-size: 12px; color: var(--text-muted); }
+body.enigma-surface .enigma-progress { padding: var(--space-8) var(--space-28); min-height: 30px; font-size: 12px; color: var(--text-muted); }
 body.enigma-surface .enigma-runtime-button { color: var(--text-muted); }
 body.enigma-surface .enigma-panel { border: 1px solid var(--eg-stroke); border-radius: 16px; background: var(--eg-card); box-shadow: var(--eg-shadow-soft); }
-body.enigma-surface .enigma-panel-head { padding: 20px 20px 12px; }
+body.enigma-surface .enigma-panel-head { padding: var(--space-20) var(--space-20) var(--space-12); }
 body.enigma-surface .enigma-panel-head h2 { font-size: 17px; font-weight: 600; }
 body.enigma-surface .enigma-panel-head small { font-size: 12px; letter-spacing: 0; }
-body.enigma-surface .enigma-tabs-row { padding: 0 8px; }
-body.enigma-surface .enigma-tabbar { padding: 8px 0; gap: 4px; }
+body.enigma-surface .enigma-tabs-row { padding: 0 var(--space-8); }
+body.enigma-surface .enigma-tabbar { padding: var(--space-8) 0; gap: var(--space-4); }
 body.enigma-surface .enigma-tab { border-radius: 7px; }
 body.enigma-surface .enigma-tab[data-active="true"] { background: var(--eg-accent-soft); box-shadow: none; }
-body.enigma-surface .enigma-content { padding: 8px 20px 24px; font-size: 14px; line-height: 1.6; }
-body.enigma-surface .enigma-panel-controls { padding: 0 20px 12px; }
+body.enigma-surface .enigma-content { padding: var(--space-8) var(--space-20) var(--space-24); font-size: 14px; line-height: 1.6; }
+body.enigma-surface .enigma-panel-controls { padding: 0 var(--space-20) var(--space-12); }
 body.enigma-surface :is(.enigma-panel,.enigma-sidebar-tools,.enigma-modal) { font-family: var(--font-ui); }
-body.enigma-surface .enigma-sidebar-tools { margin: 4px 12px 8px; padding: 4px 0 12px; border-bottom: 1px solid var(--eg-stroke); }
-body.enigma-surface .enigma-sidebar-tools button { padding: 7px 9px; min-height: 32px; font-size: 13px; }
-body.enigma-surface .enigma-sidebar-tools > div { gap: 4px; }
-body.enigma-surface :is(.enigma-primary,.enigma-panel button.enigma-primary,.enigma-modal button.enigma-primary) { background: var(--eg-accent); color: var(--eg-on-accent); border: 1px solid transparent; box-shadow: none; font-weight: 500; padding: 8px 12px; }
+body.enigma-surface .enigma-sidebar-tools { margin: var(--space-4) var(--space-12) var(--space-8); padding: var(--space-4) 0 var(--space-12); border-bottom: 1px solid var(--eg-stroke); }
+body.enigma-surface .enigma-sidebar-tools button { padding: var(--space-7) var(--space-9); min-height: 32px; font-size: 13px; }
+body.enigma-surface .enigma-sidebar-tools > div { gap: var(--space-4); }
+body.enigma-surface :is(.enigma-primary,.enigma-panel button.enigma-primary,.enigma-modal button.enigma-primary) { background: var(--eg-accent); color: var(--eg-on-accent); border: 1px solid transparent; box-shadow: none; font-weight: 500; padding: var(--space-8) var(--space-12); }
 body.enigma-surface :is(.enigma-primary,.enigma-panel button.enigma-primary,.enigma-modal button.enigma-primary):hover { background: var(--eg-accent); filter: brightness(.9); }
 body.enigma-surface :is(.enigma-toolbar,.enigma-panel,.enigma-modal) button:active { transform: none; }
-body.enigma-surface .enigma-view-tabs { background: var(--eg-secondary); padding: 3px; }
-body.enigma-surface .enigma-view-tabs button[aria-selected="true"] { background: var(--eg-card); box-shadow: 0 1px 3px rgb(0 0 0 / 8%); }
+body.enigma-surface .enigma-view-tabs { background: var(--eg-secondary); padding: var(--space-3); }
+body.enigma-surface .enigma-view-tabs button[aria-selected="true"] { background: var(--eg-card); box-shadow: 0 1px 3px var(--shade-black-8); }
 body.enigma-surface .enigma-feature-icon { background: var(--eg-secondary); color: var(--text-muted); box-shadow: none; }
 body.enigma-surface .enigma-stat-grid > div { background: none; border-right: 1px solid var(--eg-stroke); border-radius: 0; }
 body.enigma-surface .enigma-stat-grid > div:last-child { border-right: 0; }
-body.enigma-surface .enigma-repo { padding: 14px 0; border-radius: 0; border-bottom: 1px solid var(--eg-stroke); }
+body.enigma-surface .enigma-repo { padding: var(--space-14) 0; border-radius: 0; border-bottom: 1px solid var(--eg-stroke); }
 body.enigma-surface .enigma-repo-mark { background: var(--eg-secondary); color: var(--text-muted); width: 30px; height: 30px; }
 body.enigma-surface .enigma-repo > div > small { display: block; max-width: 100%; overflow-wrap: anywhere; white-space: normal; opacity: 1; color: var(--text-muted); font-size: 12px; }
-body.enigma-surface .enigma-chips span { padding: 3px 7px; background: var(--eg-secondary); border: 0; border-radius: 5px; color: var(--text-muted); }
+body.enigma-surface .enigma-chips span { padding: var(--space-3) var(--space-7); background: var(--eg-secondary); border: 0; border-radius: 5px; color: var(--text-muted); }
 body.enigma-surface :is(.enigma-step p,.enigma-checkpoint small) { opacity: 1; color: var(--text-muted); }
-body.enigma-surface .enigma-welcome-card { padding: 18px; background: var(--eg-secondary); box-shadow: none; border: 1px solid var(--eg-stroke); }
-body.enigma-surface .enigma-empty-feature { padding: 24px 0; max-width: 45ch; }
+body.enigma-surface .enigma-welcome-card { padding: var(--space-18); background: var(--eg-secondary); box-shadow: none; border: 1px solid var(--eg-stroke); }
+body.enigma-surface .enigma-empty-feature { padding: var(--space-24) 0; max-width: 45ch; }
 body.enigma-surface .enigma-empty-feature-icon { width: 34px; height: 34px; border: 0; border-radius: 8px; color: var(--text-muted); background: var(--eg-secondary); }
 body.enigma-surface .enigma-empty-feature h3 { font-size: 18px; line-height: 1.5; font-weight: 600; }
-body.enigma-surface .enigma-surface-menu { background: var(--eg-card); border: 1px solid var(--eg-stroke); box-shadow: var(--eg-shadow); border-radius: 12px; padding: 6px; backdrop-filter: none; }
+body.enigma-surface .enigma-surface-menu { background: var(--eg-card); border: 1px solid var(--eg-stroke); box-shadow: var(--eg-shadow); border-radius: 12px; padding: var(--space-6); backdrop-filter: none; }
 body.enigma-surface .enigma-surface-menu button { border-radius: 6px; }
 body.enigma-surface .enigma-modal-backdrop { background: var(--eg-scrim); backdrop-filter: none; }
 body.enigma-surface .enigma-modal { border: 1px solid var(--eg-stroke); background: var(--eg-card); box-shadow: var(--eg-shadow); border-radius: 16px; }
@@ -215,4 +215,4 @@ body.enigma-surface .hana-toggle.on::after { background: var(--eg-on-accent); }
 body.enigma-surface.paper-texture, body.enigma-surface.paper-texture .settings-panel { background-image: none; }
 body.enigma-surface.enigma-motion-off *, body.enigma-surface.enigma-motion-off *::before, body.enigma-surface.enigma-motion-off *::after { animation: none !important; transition: none !important; }
 @media (prefers-reduced-motion: reduce) { body.enigma-surface *, body.enigma-surface *::before, body.enigma-surface *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
-@media (max-width: 700px) { body.enigma-surface .enigma-toolbar { padding: 8px 12px; } body.enigma-surface .enigma-progress { padding-inline: 20px; } }
+@media (max-width: 700px) { body.enigma-surface .enigma-toolbar { padding: var(--space-8) var(--space-12); } body.enigma-surface .enigma-progress { padding-inline: var(--space-20); } }

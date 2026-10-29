@@ -24,6 +24,7 @@ const THEMES = Object.freeze(Object.fromEntries(
 // Spec-required startup assertion: every theme entry must have all 4 fields.
 // Fails at module-load time so misconfigurations surface clearly in every process.
 for (const [id, entry] of Object.entries(THEMES)) {
+  if (!['light','dark'].includes(entry.colorScheme)) throw new Error(`theme-registry: theme ${id} needs a colorScheme`);
   if (!entry.cssPath || !entry.backgroundColor || !entry.i18nName || !entry.i18nMode) {
     throw new Error(`theme-registry: theme "${id}" is missing required fields (cssPath / backgroundColor / i18nName / i18nMode)`);
   }
@@ -63,6 +64,8 @@ function getAllUIOptions() {
   return [...themeOpts, { ...AUTO_OPTION }];
 }
 
+function isDarkTheme(themeId) {return typeof themeId==='string'&&THEMES[themeId]?.colorScheme==='dark';}
+
 function isPaperTextureBlockedTheme(themeId) {
   return PAPER_TEXTURE_BLOCKED_THEME_IDS.includes(themeId);
 }
@@ -81,4 +84,5 @@ module.exports = {
   getThemeIds,
   getAllUIOptions,
   isPaperTextureBlockedTheme,
+  isDarkTheme,
 };

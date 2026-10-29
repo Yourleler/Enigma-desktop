@@ -1,17 +1,17 @@
 .enigma-pdf-reader {display:flex;flex-direction:column;height:100%;min-height:0;min-width:0;}
-.enigma-pdf-heading {display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--border);font-size:12px;color:var(--text-muted);}
+.enigma-pdf-heading {display:flex;align-items:center;gap:var(--space-8);padding:var(--space-8) var(--space-10);border-bottom:1px solid var(--border);font-size:12px;color:var(--text-muted);}
 .enigma-pdf-heading b {flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text);font-weight:550;font-size:13px;}
-.enigma-pdf-reader button,.enigma-pdf-system button {min-height:30px;border:0;border-radius:7px;background:transparent;color:var(--text);font:inherit;font-size:12px;padding:4px 7px;cursor:pointer;}
+.enigma-pdf-reader button,.enigma-pdf-system button {min-height:30px;border:0;border-radius:7px;background:transparent;color:var(--text);font:inherit;font-size:12px;padding:var(--space-4) var(--space-7);cursor:pointer;}
 .enigma-pdf-reader button:hover,.enigma-pdf-system button:hover {background:var(--overlay-light);}
 .enigma-pdf-reader button:focus-visible {outline:2px solid var(--accent);}
 .enigma-pdf-body {position:relative;flex:1;min-height:0;}
 .enigma-pdf-full-viewer {width:100%;height:100%;border:0;display:block;}
-.enigma-pdf-notice {position:absolute;inset:0;padding:24px;display:flex;flex-wrap:wrap;align-content:center;justify-content:center;gap:8px;background:var(--bg-card);color:var(--text-muted);font-size:13px;text-align:center;}
+.enigma-pdf-notice {position:absolute;inset:0;padding:var(--space-24);display:flex;flex-wrap:wrap;align-content:center;justify-content:center;gap:var(--space-8);background:var(--bg-card);color:var(--text-muted);font-size:13px;text-align:center;}
 .enigma-pdf-notice p {flex-basis:100%;}
-.enigma-pdf-hint {font-size:11px;line-height:1.6;color:var(--text-muted);padding:5px 10px;border-top:1px solid var(--border);}
+.enigma-pdf-hint {font-size:11px;line-height:1.6;color:var(--text-muted);padding:var(--space-5) var(--space-10);border-top:1px solid var(--border);}
 .enigma-pdf-system {display:flex;flex-direction:column;height:100%;min-height:0;}
-.enigma-pdf-system-header {display:flex;gap:8px;align-items:center;justify-content:space-between;padding:6px 10px;flex-wrap:wrap;}
+.enigma-pdf-system-header {display:flex;gap:var(--space-8);align-items:center;justify-content:space-between;padding:var(--space-6) var(--space-10);flex-wrap:wrap;}
 .enigma-pdf-system-header small {color:var(--text-muted);font-size:12px;}
 .enigma-pdf-system iframe {flex:1;min-height:0;}
-.enigma-pdf-system-header > div {display:flex;align-items:center;gap:6px;flex-shrink:0;}
-.enigma-pdf-system-header a {color:var(--accent);font-size:12px;padding:5px;text-decoration:none;}
+.enigma-pdf-system-header > div {display:flex;align-items:center;gap:var(--space-6);flex-shrink:0;}
+.enigma-pdf-system-header a {color:var(--accent);font-size:12px;padding:var(--space-5);text-decoration:none;}

@@ -90,9 +90,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 5px;
-    margin: 2px var(--space-8) var(--space-4);
-    padding: 5px 0;
+    gap: var(--space-5);
+    margin: var(--space-2) var(--space-8) var(--space-4);
+    padding: var(--space-5) 0;
     background: none;
     border: 1px solid var(--overlay-light);
     border-radius: var(--radius-sm);
@@ -126,9 +126,9 @@
     font-family: inherit;
     display: grid;
     grid-template-columns: repeat(var(--jian-columns, 1), minmax(0, 1fr));
-    gap: 1px;
+    gap: var(--space-1);
     align-content: start;
-    padding-bottom: 72px;
+    padding-bottom: var(--space-72);
 }
 
 .list:empty {
@@ -233,8 +233,8 @@
     column-gap: 0;
     min-width: 0;
     height: 28px;
-    padding: 0 8px 0 2px;
-    margin: 0 2px;
+    padding: 0 var(--space-8) 0 var(--space-2);
+    margin: 0 var(--space-2);
     border-radius: 4px;
     color: var(--text);
     font-size: var(--fs-caption);
@@ -284,14 +284,14 @@
 .item {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 5px var(--space-8);
+    gap: var(--space-6);
+    padding: var(--space-5) var(--space-8);
     cursor: default;
     font-size: var(--fs-hint);
     line-height: 1.5;
     transition: background var(--duration-instant);
     border-radius: 3px;
-    margin: 0 4px;
+    margin: 0 var(--space-4);
     min-width: 0;
     user-select: none;
 }
@@ -343,7 +343,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin: 3px var(--space-8) 2px;
+    margin: var(--space-3) var(--space-8) var(--space-2);
     flex-shrink: 0;
     min-height: 20px;
 }
@@ -351,16 +351,16 @@
 .toolbarActions {
     display: flex;
     align-items: center;
-    gap: 2px;
+    gap: var(--space-2);
     margin-left: auto;
 }
 
 .sortBtn {
     display: inline-flex;
     align-items: center;
-    gap: 3px;
+    gap: var(--space-3);
     min-height: 20px;
-    padding: 2px 7px;
+    padding: var(--space-2) var(--space-7);
     background: none;
     border: none;
     border-radius: var(--radius-sm);
@@ -412,21 +412,21 @@
 }
 
 .iconBtn {
-    padding: 2px 5px;
+    padding: var(--space-2) var(--space-5);
 }
 
 /* 工作区搜索 */
 .searchWrap {
     position: relative;
     flex: 0 0 auto;
-    margin: 2px var(--space-8) 0;
+    margin: var(--space-2) var(--space-8) 0;
 }
 
 .searchInput {
     box-sizing: border-box;
     width: 100%;
     height: 24px;
-    padding: 2px 8px;
+    padding: var(--space-2) var(--space-8);
     border: 1px solid var(--overlay-light);
     border-radius: var(--radius-sm);
     background: var(--bg-card);
@@ -454,7 +454,7 @@
     z-index: 30;
     max-height: 220px;
     overflow-y: auto;
-    padding: 4px 0;
+    padding: var(--space-4) 0;
     border: 1px solid var(--overlay-light);
     border-radius: var(--radius-sm);
     background: var(--bg-card);
@@ -467,8 +467,8 @@
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: 1px;
-    padding: 5px 8px;
+    gap: var(--space-1);
+    padding: var(--space-5) var(--space-8);
     border: none;
     background: transparent;
     color: var(--text);
@@ -502,15 +502,15 @@
 }
 
 .searchEmpty {
-    padding: 6px 8px;
+    padding: var(--space-6) var(--space-8);
 }
 
 /* 项目技能按钮（卡片式） */
 .cwdBtn {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    padding: 3px 10px;
+    gap: var(--space-4);
+    padding: var(--space-3) var(--space-10);
     background: none;
     border: 1px solid var(--overlay-light);
     border-radius: var(--radius-sm);
@@ -578,8 +578,8 @@
 .cwdDescLine {
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
+    gap: var(--space-8);
+    margin-bottom: var(--space-8);
 }
 
 .cwdDescDeco {
@@ -593,7 +593,7 @@
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     box-shadow: 0 4px 12px var(--shadow);
-    padding: 4px 0;
+    padding: var(--space-4) 0;
     min-width: 140px;
 }
 
@@ -696,8 +696,8 @@
 .backBtn {
     display: flex;
     align-items: center;
-    gap: 4px;
-    padding: 3px 8px;
+    gap: var(--space-4);
+    padding: var(--space-3) var(--space-8);
     background: var(--overlay-subtle);
     border: none;
     border-radius: var(--radius-sm);
@@ -756,14 +756,14 @@
     border: 1px solid var(--accent);
     border-radius: 2px;
     outline: none;
-    padding: 0 2px;
+    padding: 0 var(--space-2);
 }
 
 /* ── 笺编辑器 ── */
 .editor {
     position: relative;
     flex-shrink: 0;
-    margin: 0 6px 6px;
+    margin: 0 var(--space-6) var(--space-6);
     border-radius: var(--radius-md);
     border: 1px solid var(--jian-note-border, rgba(200, 160, 110, 0.2));
     background: var(--jian-note-bg, #FAF0E2);
@@ -836,5 +836,5 @@
 }
 
 /* Inline workspace details participate in layout instead of covering files. */
-.cwdPanelInline { flex: 0 0 auto; z-index: auto; margin-bottom: 8px; }
+.cwdPanelInline { flex: 0 0 auto; z-index: auto; margin-bottom: var(--space-8); }
 .cwdPanelInline .cwdPanel { position: relative; min-height: 0; max-height: min(200px, 28vh); box-shadow: none; }

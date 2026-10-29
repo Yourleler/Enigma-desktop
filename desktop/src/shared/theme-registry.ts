@@ -1,6 +1,7 @@
 import data from './theme-registry-data.json';
 
 export interface ThemeEntry {
+  colorScheme: 'light' | 'dark';
   cssPath: string;
   backgroundColor: string;
   i18nName: string;
@@ -34,6 +35,7 @@ export const THEMES = Object.freeze(Object.fromEntries(
 )) as Readonly<Record<ThemeId, ThemeEntry>>;
 
 for (const [id, entry] of Object.entries(THEMES)) {
+  if (!['light','dark'].includes(entry.colorScheme)) throw new Error(`theme-registry: theme ${id} needs a colorScheme`);
   if (!entry.cssPath || !entry.backgroundColor || !entry.i18nName || !entry.i18nMode) {
     throw new Error(`theme-registry: theme "${id}" is missing required fields (cssPath / backgroundColor / i18nName / i18nMode)`);
   }
@@ -70,6 +72,8 @@ export function getAllUIOptions(): ThemeUIOption[] {
   return [...themeOpts, { ...AUTO_OPTION }];
 }
 
+export function isDarkTheme(themeId:unknown):boolean {return typeof themeId==='string'&&THEMES[themeId as ThemeId]?.colorScheme==='dark';}
+
 export function isPaperTextureBlockedTheme(themeId: unknown): boolean {
   return PAPER_TEXTURE_BLOCKED_THEME_IDS.includes(themeId as ThemeId);
 }
@@ -88,6 +92,7 @@ const registry = {
   getThemeIds,
   getAllUIOptions,
   isPaperTextureBlockedTheme,
+  isDarkTheme,
 };
 
 export default registry;

@@ -13,6 +13,7 @@ describe('theme-registry', () => {
     expect(esm.AUTO_OPTION).toEqual(reg.AUTO_OPTION);
     expect(esm.LEGACY_THEME_ALIASES).toEqual(reg.LEGACY_THEME_ALIASES);
     expect(esm.THEMES).toEqual(reg.THEMES);
+    for(const themeId of reg.getThemeIds()){expect(esm.isDarkTheme(themeId)).toBe(reg.isDarkTheme(themeId));expect(reg.isDarkTheme(themeId)).toBe(reg.THEMES[themeId].colorScheme==='dark');}
     expect(esm.getThemeIds()).toEqual(reg.getThemeIds());
     expect(esm.getAllUIOptions()).toEqual(reg.getAllUIOptions());
     expect(esm.migrateSavedTheme('claude-design')).toBe(reg.migrateSavedTheme('claude-design'));

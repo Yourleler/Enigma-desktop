@@ -211,7 +211,7 @@ describe('RightWorkspacePanel', () => {
 
     expect(css).toMatch(/\.fileActions\s*\{[\s\S]*position:\s*absolute/);
     expect(css).toMatch(/\.fileActions\s*\{[\s\S]*opacity:\s*0/);
-    expect(css).toMatch(/\.fileRow:hover \.fileMain,\s*\.fileRow:focus-within \.fileMain\s*\{[\s\S]*padding-right:\s*122px/);
+    expect(css).toMatch(/\.fileRow:hover \.fileMain,\s*\.fileRow:focus-within \.fileMain\s*\{[\s\S]*padding-right:\s*var\(--space-122\)/);
     expect(css).toMatch(/\.fileRow:hover \.fileActions,\s*\.fileRow:focus-within \.fileActions\s*\{[\s\S]*opacity:\s*1/);
     expect(css).not.toMatch(/\.fileRowSelected \.fileActions\s*\{[\s\S]*opacity:\s*1/);
   });

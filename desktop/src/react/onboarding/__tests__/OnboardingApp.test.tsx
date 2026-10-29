@@ -56,6 +56,12 @@ function resolveLocaleKey(locale: string): string {
   return 'zh';
 }
 
+beforeEach(()=>{
+  vi.stubGlobal('matchMedia',vi.fn((media:string)=>({matches:media.includes('prefers-reduced-motion'),media,addEventListener:vi.fn(),removeEventListener:vi.fn()})));
+  vi.stubGlobal('ResizeObserver',class{observe(){}disconnect(){}});
+});
+afterEach(()=>{cleanup();vi.unstubAllGlobals();});
+
 describe('OnboardingApp locale switching', () => {
   let enLoad: Deferred<void>;
 

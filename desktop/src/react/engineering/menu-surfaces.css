@@ -5,10 +5,10 @@ body.enigma-surface [data-menu-surface] {
   color: var(--eg-text);
   border: 1px solid var(--eg-stroke-strong);
   border-radius: 16px;
-  box-shadow: 0 12px 32px rgb(14 18 35 / 15%),0 2px 7px rgb(14 18 35 / 7%),inset 0 1px 0 var(--glass-edge);
+  box-shadow: 0 12px 32px var(--shade-indigo-15),0 2px 7px var(--shade-indigo-7),inset 0 1px 0 var(--glass-edge);
   font: 13px/1.45 var(--font-ui);
   background: color-mix(in srgb,var(--eg-card) var(--glass-menu-mix,54%),transparent);
-  animation: enigma-menu-enter 140ms cubic-bezier(.2,.8,.2,1);
+  animation: enigma-menu-enter var(--duration-140ms) cubic-bezier(.2,.8,.2,1);
   -webkit-app-region: no-drag;
 }
 body.enigma-surface [data-menu-surface][data-menu-position="absolute"] { position:absolute; }
@@ -17,7 +17,7 @@ body.enigma-surface:not(.enigma-glass-off) [data-menu-surface][data-liquid-surfa
 body.enigma-surface [data-menu-surface][data-menu-scroll] { max-width:calc(100vw - 24px); overscroll-behavior:contain; scrollbar-width:thin; }
 body.enigma-surface [data-menu-row] {
   border:0; border-radius:10px; color:var(--eg-text); cursor:pointer;
-  transition:background-color 130ms ease,color 130ms ease;
+  transition:background-color var(--duration-130ms) ease,color var(--duration-130ms) ease;
 }
 body.enigma-surface [data-menu-row]:is(:hover,:focus-visible,[aria-selected="true"],[data-current="true"]) {
   background:color-mix(in srgb,var(--eg-accent) 10%,transparent);
@@ -28,13 +28,13 @@ body.enigma-surface [data-menu-row]:disabled,body.enigma-surface [data-menu-row]
 body.enigma-surface [data-menu-row].danger { color:var(--coral,#ba5555); }
 body.enigma-surface .enigma-icon {display:inline-flex;flex:none;align-items:center;justify-content:center;vertical-align:middle;color:inherit;line-height:0;}
 body.enigma-surface .enigma-icon svg {width:100%;height:100%;display:block;overflow:visible;}
-body.enigma-surface .enigma-icon-tile {width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;flex:none;border-radius:10px;background:color-mix(in srgb,var(--eg-accent) 9%,transparent);color:var(--eg-accent);box-shadow:inset 0 1px 0 rgb(255 255 255 / 15%);}
+body.enigma-surface .enigma-icon-tile {width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;flex:none;border-radius:10px;background:color-mix(in srgb,var(--eg-accent) 9%,transparent);color:var(--eg-accent);box-shadow:inset 0 1px 0 var(--shine-white-15);}
 body.enigma-surface .enigma-icon-tile svg {width:18px;height:18px;display:block;}
 body.enigma-surface :is(.sidebar-action-btn,.enigma-new-chat,.sidebar-activity-bar):hover .enigma-icon {color:var(--eg-accent);}
-body.enigma-surface .context-menu {padding:6px;min-width:190px;}
-body.enigma-surface .context-menu-item {min-height:34px;gap:10px;padding:7px 10px;}
-body.enigma-surface .context-menu-submenu {padding:6px;min-width:190px;}
-body.enigma-surface .context-menu-divider {margin:5px 8px;background:var(--eg-stroke);}
+body.enigma-surface .context-menu {padding:var(--space-6);min-width:190px;}
+body.enigma-surface .context-menu-item {min-height:34px;gap:var(--space-10);padding:var(--space-7) var(--space-10);}
+body.enigma-surface .context-menu-submenu {padding:var(--space-6);min-width:190px;}
+body.enigma-surface .context-menu-divider {margin:var(--space-5) var(--space-8);background:var(--eg-stroke);}
 body.enigma-surface .context-menu-shortcut {color:var(--eg-muted);font:11px var(--font-ui);}
 @keyframes enigma-menu-enter {from{opacity:0;translate:0 4px;}to{opacity:1;translate:0 0;}}
 @media (prefers-reduced-motion:reduce) {body.enigma-surface [data-menu-surface]{animation:none;}}
@@ -45,6 +45,6 @@ body.enigma-surface [data-menu-surface] .context-menu-check {width:16px;color:va
 body.enigma-surface [data-menu-surface] {max-width:calc(100vw - 24px);}
 body.enigma-surface .context-menu-label {white-space:normal;overflow-wrap:anywhere;}
 body.enigma-surface .enigma-sidebar-tools .enigma-icon {margin:0;color:inherit;}
-body.enigma-surface .enigma-sidebar-tools button {gap:8px;}
+body.enigma-surface .enigma-sidebar-tools button {gap:var(--space-8);}
 body.enigma-surface .enigma-submenu-chevron {margin-left:auto;color:var(--eg-muted);}
 body.enigma-surface .context-menu-item.has-submenu::after {display:none;}

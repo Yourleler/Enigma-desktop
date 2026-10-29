@@ -1,3 +1,4 @@
+import {PRELOAD_API_VERSION,SERVER_PROTOCOL_VERSION} from '../shared/contract-versions';
 import { createHash } from "crypto";
 import fs from "fs";
 import os from "os";
@@ -231,7 +232,7 @@ describe("publish-train: assembleTrainManifest (reuses buildSeedManifest, no par
     expect(manifest.schema).toBe(1);
     expect(manifest.train).toBe(1);
     expect(manifest.channel).toBe("stable");
-    expect(manifest.contract).toEqual({ preload: 1, serverProtocol: 1 }); // sourced from buildSeedManifest, not invented here
+    expect(manifest.contract).toEqual({ preload: PRELOAD_API_VERSION, serverProtocol: SERVER_PROTOCOL_VERSION }); // sourced from buildSeedManifest, not invented here
     expect(manifest.rollout).toEqual({ percent: 100, salt: "test-salt" });
     expect(manifest.mirrors).toEqual(["https://github.com/liliMozi/openhanako/releases/download/train-1"]);
     expect(Object.keys(manifest.artifacts.server).sort()).toEqual(["darwin-arm64", "linux-x64"]);

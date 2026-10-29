@@ -691,7 +691,7 @@
     ],
     "version": 3
   },
-  "payloadFingerprint": "sha256:f9fcf9856d026e206d70cd76ac8dbc9cfab79423438f6a85b6451067deea49a2",
+  "payloadFingerprint": "sha256:0b9b1fcd32e852d55b9e273851f3696144eb06a2797382caf2f5fa778ba03f48",
   "registry": [
     {
       "affectedByEpochMigration": true,
@@ -2675,7 +2675,7 @@
     {
       "affectedByEpochMigration": true,
       "bootstrapSafety": null,
-      "checkpointPolicy": "Included in a future epoch checkpoint unless the coordinator explicitly classifies it otherwise.",
+      "checkpointPolicy": "Preserve the entire input-drafts.v1.json document including revision tombstones; client recovery journals remain in their browser profile and are never copied into another user profile.",
       "epochPolicy": "epoch-managed",
       "exemption": null,
       "firstPossibleOpenPhase": "engine_construct",
@@ -2697,10 +2697,12 @@
         "user/session-projects.json"
       ],
       "preCoordinatorReadProjection": null,
-      "protocolModules": [],
-      "restorePolicy": "Restore only through the owning module after reader compatibility is established.",
+      "protocolModules": [
+        "shared/input-drafts.ts"
+      ],
+      "restorePolicy": "Restore the full file atomically before opening clients. Restart clients to obtain the restored revision baseline; never replay stale conditional mutations as unconditional writes.",
       "schemaContract": {
-        "compatibility": "The named runtime reader is canonical; this inventory does not imply stricter validation than runtime currently performs.",
+        "compatibility": "Draft file version 1 is retained. Optional sequence and per-key revisions support conditional writes; absent fields normalize to zero/empty. Meaningful rich-text atoms may accompany empty text. Legacy readers keep text/doc fields but cannot preserve concurrency metadata, so downgrade requires a fresh client/server baseline; no claim of conditional-write protection across an old writer.",
         "kind": "runtime-source",
         "source": "core/input-drafts-store.ts"
       },
@@ -3196,11 +3198,12 @@
         "reason": "Desktop startup reads only these named optional fields before the epoch transition; removal or semantic reinterpretation requires moving the read behind the coordinator."
       },
       "protocolModules": [
-        "shared/workspace-ui-state.ts"
+        "shared/workspace-ui-state.ts",
+        "shared/preview-reading-position.ts"
       ],
       "restorePolicy": "Restore only through the owning module after reader compatibility is established.",
       "schemaContract": {
-        "compatibility": "PreferencesManager is intentionally permissive; _dataVersion is the legacy migration cursor, not a strict schema validator. Unreadable source bytes are preserved before any replacement document is written.",
+        "compatibility": "PreferencesManager is intentionally permissive; _dataVersion is the legacy migration cursor, not a strict schema validator. Optional workspace preview mode and reading snapshots are additive; legacy readers may omit the new mode while retaining the file references. Unreadable source bytes are preserved before any replacement document is written.",
         "kind": "runtime-source",
         "source": "core/preferences-manager.ts"
       },
@@ -3367,8 +3370,8 @@
   ],
   "review": {
     "classification": "compatible",
-    "compatibilityReason": "Desktop browser download presentation and settings shortcut handlers change only runtime source. Existing window bounds, version bookmarks, download index records and cache paths retain their schemas; a standalone browser uses the same hashed download directory convention. DATA_EPOCH remains 1 and no migration is required.",
-    "payloadFingerprint": "sha256:f9fcf9856d026e206d70cd76ac8dbc9cfab79423438f6a85b6451067deea49a2"
+    "compatibilityReason": "Additive draft sequence/revision metadata and explicit preview reading mode preserve existing text/doc and workspace references; absent fields normalize safely. Browser find/zoom and viewport handlers in desktop/main.cjs change runtime behavior without changing saved window bounds or release bookmarks. No SQLite or DATA_EPOCH layout changes occur. Store-local contracts document downgrade limits and atomic restore followed by client rehydration; complete file backups preserve revision tombstones.",
+    "payloadFingerprint": "sha256:0b9b1fcd32e852d55b9e273851f3696144eb06a2797382caf2f5fa778ba03f48"
   },
   "schemas": [
     {
@@ -3572,7 +3575,7 @@
       "contract": "desktop window bounds, release announcement bookmark, and update cache version marker readers",
       "kind": "directory-contract",
       "module": "desktop/main.cjs",
-      "sourceHash": "sha256:05e726744cc15ea206d029815183439caa330e281c0b660af1c54f2907c45811",
+      "sourceHash": "sha256:a5ba02bf8aa8ec121ce8ed4c2e8e1af09dd73a0eacace94af2d37c4d8a7d37c9",
       "storeId": "desktop-window-version-state"
     },
     {
@@ -3816,7 +3819,13 @@
       "contract": "InputDraftsStore and SessionProjectCatalogStore normalizers",
       "kind": "runtime-contract",
       "module": "core/input-drafts-store.ts",
-      "sourceHash": "sha256:d8b80b579bd4e2d6ab1f686fe96eee5dba2235bbb13c92329928c5dcf4f4cdfa",
+      "protocolModules": [
+        {
+          "module": "shared/input-drafts.ts",
+          "sourceHash": "sha256:c1367e14d80b5834813a533d3c9ef3a76cfc6d7380f95a55cbc27e89334afd84"
+        }
+      ],
+      "sourceHash": "sha256:7d1a4ddaa468717f57b408404d79cea0673538e393b1996964cb163d2535985f",
       "storeId": "session-drafts-and-projects"
     },
     {
@@ -3986,6 +3995,10 @@
       "kind": "runtime-contract",
       "module": "core/preferences-manager.ts",
       "protocolModules": [
+        {
+          "module": "shared/preview-reading-position.ts",
+          "sourceHash": "sha256:23058ad3d9b369891b13f13a0c4eec19eaa655171a2acf0a84423cf11e1127cb"
+        },
         {
           "module": "shared/workspace-ui-state.ts",
           "sourceHash": "sha256:316fb703612bf2d5cd2d808c4f08d13eb72bee6e157a9618bcc6654ce3c326cf"

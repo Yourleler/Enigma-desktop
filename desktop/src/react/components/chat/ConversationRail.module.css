@@ -1,30 +1,30 @@
-.rail { position: absolute; top: 12px; bottom: calc(var(--input-card-h, 80px) / 2 + 22px); right: 7px; width: 34px; display: flex; flex-direction: column; align-items: center; gap: 10px; z-index: 5; color: var(--text-muted, var(--text-light)); }
+.rail { position: absolute; top: 12px; bottom: calc(var(--input-card-h, 80px) / 2 + 22px); right: 7px; width: 34px; display: flex; flex-direction: column; align-items: center; gap: var(--space-10); z-index: 5; color: var(--text-muted, var(--text-light)); }
 .directoryTrigger { flex: 0 0 30px; display: grid; place-items: center; width: 30px; border: 1px solid var(--border); border-radius: 9px; color: var(--text-light); background: color-mix(in srgb,var(--bg-card,var(--bg)) 18%,transparent); cursor: pointer; }
 .directoryTrigger:hover, .directoryTrigger[aria-expanded="true"] { color: var(--accent); border-color: var(--accent); }
-.markers { flex: 1; min-height: 0; width: 100%; display: flex; flex-direction: column; justify-content: space-between; padding-block: 5px; border-radius: 12px; background: color-mix(in srgb, var(--text) 3%, transparent); }
+.markers { flex: 1; min-height: 0; width: 100%; display: flex; flex-direction: column; justify-content: space-between; padding-block: var(--space-5); border-radius: 12px; background: color-mix(in srgb, var(--text) 3%, transparent); }
 .marker { min-height: 0; flex: 1 1 0; max-height: 32px; display: grid; place-items: center; width: 100%; padding: 0; border: 0; background: none; color: var(--text-light); cursor: pointer; opacity: .55; }
-.marker span { height: 2px; max-width: 22px; background: currentColor; border-radius: 2px; transition: transform 140ms ease, background 140ms ease; }
+.marker span { height: 2px; max-width: 22px; background: currentColor; border-radius: 2px; transition: transform var(--duration-140ms) ease, background var(--duration-140ms) ease; }
 .marker:hover, .marker:focus-visible, .selected { opacity: 1; color: var(--accent); }
 .marker:hover span, .selected span { transform: scaleX(1.2); height: 3px; box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 30%, transparent); }
 .rail button:focus-visible, .popup button:focus-visible, .popup input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .counter { font: 10px/1.25 var(--font-ui); text-align: center; color: var(--accent); }
 .counter span { display: block; color: var(--text-light); }
-.popup { position: fixed; z-index: 2147482999; box-sizing: border-box; width: min(350px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); padding: 16px; border: 1px solid var(--border); border-radius: 16px; color: var(--text); background: var(--bg-card, var(--bg)); box-shadow: 0 16px 56px rgb(0 0 0 / .2); font: 13px/1.6 var(--font-ui); overflow: auto; animation: rail-appear 140ms ease-out; -webkit-app-region: no-drag; }
-.popup header { display: flex; gap: 12px; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.popup { position: fixed; z-index: 2147482999; box-sizing: border-box; width: min(350px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); padding: var(--space-16); border: 1px solid var(--border); border-radius: 16px; color: var(--text); background: var(--bg-card, var(--bg)); box-shadow: 0 16px 56px var(--shade-black-20); font: 13px/1.6 var(--font-ui); overflow: auto; animation: rail-appear var(--duration-140ms) ease-out; -webkit-app-region: no-drag; }
+.popup header { display: flex; gap: var(--space-12); justify-content: space-between; align-items: center; margin-bottom: var(--space-10); }
 .popup header strong { font-size: 13px; }
 .popup small { font-size: 11px; color: var(--text-light); }
 .popup header div small { display: block; }
-.popup p { white-space: pre-wrap; overflow-wrap: anywhere; margin: 8px 0 12px; }
+.popup p { white-space: pre-wrap; overflow-wrap: anywhere; margin: var(--space-8) 0 var(--space-12); }
 .directory { display: flex; flex-direction: column; max-height: min(580px, calc(100dvh - 24px)); }
-.directory input { width: 100%; min-height: 36px; flex-shrink: 0; box-sizing: border-box; border: 1px solid var(--border); border-radius: 9px; padding: 8px 10px; background: var(--bg); color: var(--text); font: inherit; }
+.directory input { width: 100%; min-height: 36px; flex-shrink: 0; box-sizing: border-box; border: 1px solid var(--border); border-radius: 9px; padding: var(--space-8) var(--space-10); background: var(--bg); color: var(--text); font: inherit; }
 .directory button { background: none; border: 0; color: inherit; font: inherit; cursor: pointer; border-radius: 8px; }
 .directory header button { width: 28px; height: 28px; font-size: 20px; }
-.directoryList { overflow: auto; overscroll-behavior: contain; min-height: 0; margin: 10px -6px; padding: 2px 6px; }
-.directoryList button { text-align: left; width: 100%; display: block; padding: 10px; margin: 2px 0; }
+.directoryList { overflow: auto; overscroll-behavior: contain; min-height: 0; margin: var(--space-10) calc(var(--space-6) * -1); padding: var(--space-2) var(--space-6); }
+.directoryList button { text-align: left; width: 100%; display: block; padding: var(--space-10); margin: var(--space-2) 0; }
 .directoryList button:hover, .directoryList button[aria-current] { background: color-mix(in srgb, var(--accent) 10%, transparent); }
 .directoryList span { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
-.directory footer { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 10px; border-top: 1px solid var(--border); }
-.directory footer button { padding: 6px 8px; background: color-mix(in srgb, var(--accent) 8%, transparent); color: var(--accent); }
+.directory footer { display: flex; flex-wrap: wrap; gap: var(--space-8); padding-top: var(--space-10); border-top: 1px solid var(--border); }
+.directory footer button { padding: var(--space-6) var(--space-8); background: color-mix(in srgb, var(--accent) 8%, transparent); color: var(--accent); }
 .directory footer button:disabled { opacity: .5; cursor: wait; }
 .directory kbd { font-size: 10px; opacity: .65; }
 @keyframes rail-appear { from { opacity: 0; transform: translateX(4px); } to { opacity: 1; transform: none; } }

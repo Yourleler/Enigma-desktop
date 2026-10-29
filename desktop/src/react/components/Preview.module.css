@@ -244,7 +244,7 @@
     position: fixed;
     z-index: 1000;
     min-width: 176px;
-    padding: 4px;
+    padding: var(--space-4);
     border-radius: var(--radius-sm);
     border: 1px solid var(--overlay-light);
     background: var(--bg-card);
@@ -254,7 +254,7 @@
 .previewPanelBody :global(.markdown-cover-menu button) {
     display: block;
     width: 100%;
-    padding: 7px 9px;
+    padding: var(--space-7) var(--space-9);
     border: 0;
     border-radius: var(--radius-sm);
     background: transparent;
@@ -269,7 +269,7 @@
 }
 
 .previewPanelBody :global(.markdown-cover-menu button.markdown-cover-menu-danger) {
-    margin-top: 4px;
+    margin-top: var(--space-4);
     border-top: 1px solid var(--overlay-light);
     border-radius: 0 0 var(--radius-sm) var(--radius-sm);
     color: var(--danger, #b45a5a);
@@ -413,7 +413,7 @@
 .previewPanelBody :global(.preview-docx) th,
 .previewPanelBody :global(.preview-docx) td {
     border: 1px solid var(--overlay-light);
-    padding: 6px 10px;
+    padding: var(--space-6) var(--space-10);
 }
 
 /* 图片预览 */
@@ -429,7 +429,7 @@
 .previewPanelBody :global(.preview-pdf) {
     width: calc(100% + 8px);
     height: calc(100% + 8px);
-    margin: -4px;
+    margin: calc(var(--space-4) * -1);
     border: none;
     border-radius: inherit;
     overflow: hidden;
@@ -451,7 +451,7 @@
 
 .previewPanelBody :global(.preview-csv) th,
 .previewPanelBody :global(.preview-csv) td {
-    padding: 6px 10px;
+    padding: var(--space-6) var(--space-10);
     border: 1px solid var(--overlay-light);
     text-align: left;
     white-space: nowrap;
@@ -808,7 +808,7 @@
     bottom: var(--space-12);
     z-index: 5;
     pointer-events: none;
-    padding: 5px 9px;
+    padding: var(--space-5) var(--space-9);
     border-radius: var(--radius-sm);
     border: 1px solid var(--overlay-light);
     background: var(--bg-glass, rgba(255, 253, 247, 0.72));
@@ -1132,6 +1132,6 @@
 :global(body.resizing) .previewPanelInner {
     transition: none !important;
 }
-.previewAnchorMessage { display:flex;align-items:center;gap:10px;flex-shrink:0;margin:4px 8px 8px;padding:8px 12px;color:var(--text-muted);font-size:12px;line-height:1.5;background:color-mix(in srgb,var(--bg-card) 65%,transparent);border:1px solid var(--border);border-radius:10px; }
-.previewAnchorMessage button { margin-left:auto;border:0;background:transparent;color:inherit;cursor:pointer;padding:4px 8px; }
+.previewAnchorMessage { display:flex;align-items:center;gap:var(--space-10);flex-shrink:0;margin:var(--space-4) var(--space-8) var(--space-8);padding:var(--space-8) var(--space-12);color:var(--text-muted);font-size:12px;line-height:1.5;background:color-mix(in srgb,var(--bg-card) 65%,transparent);border:1px solid var(--border);border-radius:10px; }
+.previewAnchorMessage button { margin-left:auto;border:0;background:transparent;color:inherit;cursor:pointer;padding:var(--space-4) var(--space-8); }
 :global([data-preview-anchor-target]) { background:color-mix(in srgb,var(--accent) 10%,transparent);box-shadow:0 0 0 5px color-mix(in srgb,var(--accent) 10%,transparent);border-radius:3px; }

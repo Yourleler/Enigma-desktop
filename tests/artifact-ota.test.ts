@@ -9,6 +9,7 @@ import { createRequire } from "module";
 import { afterEach, describe, expect, it } from "vitest";
 
 const require = createRequire(import.meta.url);
+const {PRELOAD_API_VERSION}=require("../shared/contract-versions.cjs");
 
 const ota = require("../desktop/src/shared/artifact-ota.cjs");
 const artifactBoot = require("../desktop/src/shared/artifact-boot.cjs");
@@ -876,7 +877,7 @@ describe("artifact-ota: checkOnce (gates, never downloads)", () => {
   it("blocks via the same minshell-blocked path when the manifest requires a newer preload contract than this shell supports", async () => {
     const root = makeTempDir("hana-ota-e2e-");
     const keys = makeKeys();
-    const { manifestPath } = await makeOtaFixture(root, keys, { train: 1, contractPreload: 2 });
+    const { manifestPath } = await makeOtaFixture(root, keys, { train: 1, contractPreload: PRELOAD_API_VERSION + 1 });
     const homeDir = path.join(root, "home");
 
     const result = await runWithDevOverride(manifestPath, () =>
@@ -1254,7 +1255,7 @@ describe("artifact-ota: downloadAndApplyArtifacts", () => {
   it("rejects with zero activation when the manifest requires a newer preload contract than this shell supports", async () => {
     const root = makeTempDir("hana-ota-e2e-");
     const keys = makeKeys();
-    const { manifestPath } = await makeOtaFixture(root, keys, { train: 1, contractPreload: 2 });
+    const { manifestPath } = await makeOtaFixture(root, keys, { train: 1, contractPreload: PRELOAD_API_VERSION + 1 });
     const homeDir = path.join(root, "home");
 
     const result = await runWithDevOverride(manifestPath, () =>
@@ -1265,8 +1266,8 @@ describe("artifact-ota: downloadAndApplyArtifacts", () => {
     // Message must be attributable: both the manifest's required version and
     // this shell's supported version, so a support screenshot is self-explanatory.
     expect(result.error).toMatch(/preload/i);
-    expect(result.error).toContain("2");
-    expect(result.error).toContain("1");
+    expect(result.error).toContain(String(PRELOAD_API_VERSION+1));
+    expect(result.error).toContain(String(PRELOAD_API_VERSION));
     expect(await pointerStore.readPointer(homeDir, SEED_CHANNEL, "next")).toBeNull();
     expect(fs.existsSync(stagingDirFor(homeDir))).toBe(false);
   });

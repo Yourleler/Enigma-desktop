@@ -22,7 +22,7 @@
 }
 
 .interactionHint {
-    padding: 9px 12px;
+    padding: var(--space-9) var(--space-12);
     max-width: min(320px, calc(100vw - 16px));
     max-height: min(240px, calc(100vh - 16px));
     overflow: auto;

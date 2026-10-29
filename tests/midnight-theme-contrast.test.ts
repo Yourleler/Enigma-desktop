@@ -64,9 +64,9 @@ describe('midnight theme contrast', () => {
   it('keeps dark theme cards aligned with their theme surfaces', () => {
     const styles = fs.readFileSync(path.join(ROOT, 'desktop/src/react/settings/Settings.module.css'), 'utf8');
 
-    expect(styles).toContain('.theme-card[data-theme="midnight"]');
-    expect(styles).toContain('background: #3B4A54;');
-    expect(styles).toContain('.theme-card[data-theme="midnight-contrast"]');
-    expect(styles).toContain('background: #26343D;');
+    expect(styles).toContain('.theme-card[data-design-theme="dark"] .design-theme-preview');
+    expect(styles).toContain('background: #1f2023;');
+    expect(styles).toContain('.theme-card[data-design-theme="auto"] .design-theme-preview');
+    expect(styles).toContain('color: var(--text);');
   });
 });

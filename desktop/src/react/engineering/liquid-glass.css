@@ -68,23 +68,23 @@ body.enigma-surface[data-enigma-tone="dark"] {
 body.enigma-surface::before {
   content: ''; position: fixed; inset: -15%; z-index: -1; pointer-events: none;
   background: radial-gradient(ellipse 66% 39% at 48% 40%,transparent 63.65%,var(--aurora-filament) 64%,transparent 64.45%),radial-gradient(ellipse 70% 42% at 48% 37%,transparent 42%,var(--aurora-ribbon) 58%,transparent 76%),radial-gradient(ellipse 66% 39% at 48% 40%,transparent 61%,var(--aurora-c) 64%,transparent 68%),radial-gradient(ellipse 52% 42% at 28% 8%,var(--aurora-a),transparent 76%),radial-gradient(ellipse 32% 60% at 82% 65%,var(--aurora-b),transparent 78%),radial-gradient(ellipse 55% 36% at 44% 87%,var(--aurora-c),transparent 75%);
-  transform: translate3d(0,0,0); animation: enigma-aurora-drift 24s ease-in-out infinite alternate;
+  transform: translate3d(0,0,0); animation: enigma-aurora-drift var(--duration-24000ms) ease-in-out infinite alternate;
 }
 /* Keep the original halo available; these are the aurora's GPU fallbacks. */
 body.enigma-surface[data-enigma-tone="dark"]:not([data-dark-background="halo"])::before {
   inset:-12%;
-  background:radial-gradient(ellipse 48% 35% at 18% 18%,rgb(31 166 125 / 22%),transparent 76%),radial-gradient(ellipse 44% 54% at 87% 78%,rgb(65 106 198 / 18%),transparent 78%);
-  animation:enigma-aurora-atmosphere 29s ease-in-out infinite alternate;
+  background:radial-gradient(ellipse 48% 35% at 18% 18%,var(--aurora-green-glow),transparent 76%),radial-gradient(ellipse 44% 54% at 87% 78%,var(--aurora-blue-glow),transparent 78%);
+  animation:enigma-aurora-atmosphere var(--duration-29000ms) ease-in-out infinite alternate;
 }
 body.enigma-surface[data-enigma-tone="dark"]:not([data-dark-background="halo"])::after {
   content:'';position:fixed;inset:-12%;z-index:-1;pointer-events:none;
   background:url('../../assets/enigma/aurora-curtain.svg') center/100% 100% no-repeat;
-  animation:enigma-aurora-dance 24s ease-in-out infinite alternate;
+  animation:enigma-aurora-dance var(--duration-24000ms) ease-in-out infinite alternate;
 }
 @keyframes enigma-aurora-atmosphere {from{transform:translate3d(-2%,1%,0) scale(1)}to{transform:translate3d(4%,-3%,0) scale(1.06)}}
 @keyframes enigma-aurora-dance {0%{transform:translate3d(-3%,-2%,0) scale(1.04) skewY(-3deg)}50%{transform:translate3d(1%,2%,0) scale(1.08,1.02) skewY(2deg)}100%{transform:translate3d(4%,-1%,0) scale(1.02,1.09) skewY(-1deg)}}
 body.enigma-surface[data-enigma-tone="light"][data-light-background="marble"]::before {
-  background:#faf9fd url('../../assets/enigma/marble-bands.svg') center/cover no-repeat;
+  background:var(--marble-paper) url('../../assets/enigma/marble-bands.svg') center/cover no-repeat;
 }
 .enigma-animated-background { position:fixed;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none;display:none; }
 body.enigma-surface[data-enigma-tone="dark"][data-dark-background="aurora"] .enigma-animated-background[data-background-scene="aurora"],
@@ -96,18 +96,18 @@ body.enigma-surface[data-enigma-tone="light"][data-light-background="marble"][da
 /* Persistent scene layers own the complete backdrop. Palette changes cannot
    expose the old CSS fallback while the next WebGL frame is preparing. */
 .enigma-animated-background.enigma-background-stage { display:block;overflow:hidden; }
-.enigma-background-layer { position:absolute;inset:0;opacity:0;transition:opacity 360ms ease-in-out;overflow:hidden; }
+.enigma-background-layer { position:absolute;inset:0;opacity:0;transition:opacity var(--duration-360ms) ease-in-out;overflow:hidden; }
 .enigma-background-layer canvas { width:100%;height:100%;display:block; }
-.enigma-background-layer[data-scene="aurora"] { background:#09121c url('../../assets/enigma/aurora-curtain.svg') center/cover; }
-.enigma-background-layer[data-scene="marble"] { background:#faf9fd url('../../assets/enigma/marble-bands.svg') center/cover; }
-.enigma-background-layer[data-scene="solid-dark"] { background:#101217; }
-.enigma-background-layer[data-scene="solid-light"] { background:#f7f7f9; }
-.enigma-background-layer[data-scene="halo"] { background:#090d13; }
-.enigma-background-layer[data-scene="ribbon"] { background:#f8f6fd; }
+.enigma-background-layer[data-scene="aurora"] { background:var(--aurora-night) url('../../assets/enigma/aurora-curtain.svg') center/cover; }
+.enigma-background-layer[data-scene="marble"] { background:var(--marble-paper) url('../../assets/enigma/marble-bands.svg') center/cover; }
+.enigma-background-layer[data-scene="solid-dark"] { background:var(--solid-night); }
+.enigma-background-layer[data-scene="solid-light"] { background:var(--solid-day); }
+.enigma-background-layer[data-scene="halo"] { background:var(--glass-deep-bg); }
+.enigma-background-layer[data-scene="ribbon"] { background:var(--glass-violet-bg); }
 .enigma-background-layer[data-scene="halo"]::before,.enigma-background-layer[data-scene="ribbon"]::before {
   content:'';position:absolute;inset:-15%;pointer-events:none;
   background:radial-gradient(ellipse 66% 39% at 48% 40%,transparent 63.65%,var(--scene-filament) 64%,transparent 64.45%),radial-gradient(ellipse 70% 42% at 48% 37%,transparent 42%,var(--scene-ribbon) 58%,transparent 76%),radial-gradient(ellipse 66% 39% at 48% 40%,transparent 61%,var(--scene-c) 64%,transparent 68%),radial-gradient(ellipse 52% 42% at 28% 8%,var(--scene-a),transparent 76%),radial-gradient(ellipse 32% 60% at 82% 65%,var(--scene-b),transparent 78%),radial-gradient(ellipse 55% 36% at 44% 87%,var(--scene-c),transparent 75%);
-  animation:enigma-aurora-drift 24s ease-in-out infinite alternate;
+  animation:enigma-aurora-drift var(--duration-24000ms) ease-in-out infinite alternate;
 }
 .enigma-background-layer[data-scene="halo"] { --scene-a:rgb(45 201 157 / 29%);--scene-b:rgb(69 138 192 / 23%);--scene-c:rgb(147 104 227 / 26%);--scene-ribbon:rgb(65 204 170 / 20%);--scene-filament:rgb(182 234 228 / 24%); }
 .enigma-background-layer[data-scene="ribbon"] { --scene-a:rgb(157 114 225 / 36%);--scene-b:rgb(196 162 239 / 29%);--scene-c:rgb(144 160 239 / 20%);--scene-ribbon:rgb(174 132 234 / 20%);--scene-filament:rgb(255 255 255 / 64%); }
@@ -119,7 +119,7 @@ body.enigma-surface :is(.main-content,.chat-area,.app-container,.chat-area.has-p
 body.enigma-surface .titlebar { background: var(--glass-fill); backdrop-filter: blur(18px) saturate(1.2); }
 body.enigma-surface [data-liquid-surface] {
   position: relative; isolation: isolate; background: transparent; border-color: transparent;
-  box-shadow: 0 12px 24px -16px var(--glass-shadow), 0 1px 3px rgb(0 0 0 / 8%);
+  box-shadow: 0 12px 24px -16px var(--glass-shadow), 0 1px 3px var(--shade-black-8);
 }
 /* Capture the world behind the complete control before its own border and
    children paint. A nested negative-z backdrop can pick up its host's rim. */
@@ -136,31 +136,31 @@ body.enigma-surface [data-liquid-surface]::after {
   border: 1px solid transparent;
   background: radial-gradient(ellipse 140px 55px at var(--glass-pointer-x,22%) var(--glass-pointer-y,0%),var(--glass-sheen),transparent 80%),conic-gradient(from 135deg,var(--glass-edge),transparent 12%,var(--glass-prism-cool) 27%,transparent 42%,var(--glass-edge) 49%,transparent 57%,var(--glass-prism-warm) 76%,transparent 89%,var(--glass-edge)) border-box;
   box-shadow: inset 0 1px 0 var(--glass-edge),inset 0 -1px 0 var(--glass-edge-low);
-  mask: linear-gradient(#fff 0 0) padding-box,linear-gradient(#fff 0 0); mask-composite: exclude;
+  mask: linear-gradient(var(--shine-white) 0 0) padding-box,linear-gradient(var(--shine-white) 0 0); mask-composite: exclude;
 }
-body.enigma-surface .enigma-toolbar { margin: 8px 12px 0; border: 1px solid var(--eg-stroke); border-radius: 16px; padding: 8px 12px; }
+body.enigma-surface .enigma-toolbar { margin: var(--space-8) var(--space-12) 0; border: 1px solid var(--eg-stroke); border-radius: 16px; padding: var(--space-8) var(--space-12); }
 body.enigma-surface .enigma-panel { border-radius: 18px; background: color-mix(in srgb,var(--eg-card) 94%,transparent); }
 body.enigma-surface .sidebar { border-radius: 0; background: transparent; box-shadow: none; }
 body.enigma-surface [data-liquid="sidebar"] { --glass-fill: color-mix(in srgb,var(--eg-sidebar) 38%,transparent); --glass-blur: 4px; }
 /* Reflow once, then animate the stable inner surface on the compositor.
    Avoid generating a new refraction texture for each intermediate width. */
 body.enigma-surface :is(.sidebar,.jian-sidebar) { transition:none; }
-body.enigma-surface .sidebar-inner { transform:translateX(0);transition:transform 150ms ease-out,opacity 150ms ease-out; }
+body.enigma-surface .sidebar-inner { transform:translateX(0);transition:transform var(--duration-fast) ease-out,opacity var(--duration-fast) ease-out; }
 body.enigma-surface .sidebar.collapsed .sidebar-inner { transform:translateX(-12px);opacity:0; }
-body.enigma-surface .jian-sidebar-inner { transform:translateX(0);transition:transform 150ms ease-out,opacity 150ms ease-out; }
+body.enigma-surface .jian-sidebar-inner { transform:translateX(0);transition:transform var(--duration-fast) ease-out,opacity var(--duration-fast) ease-out; }
 body.enigma-surface .jian-sidebar.collapsed .jian-sidebar-inner { transform:translateX(12px);opacity:0;pointer-events:none; }
 body.enigma-surface .enigma-surface-menu { position: fixed; background: transparent; }
 body.enigma-surface :is(.enigma-surface-menu,.enigma-token-popover) { --glass-fill: color-mix(in srgb,var(--eg-card) 64%,transparent); --glass-blur: 10px; }
-body.enigma-surface [data-liquid-active] { box-shadow: 0 16px 28px -18px var(--glass-shadow),0 1px 3px rgb(0 0 0 / 8%); }
+body.enigma-surface [data-liquid-active] { box-shadow: 0 16px 28px -18px var(--glass-shadow),0 1px 3px var(--shade-black-8); }
 body.enigma-surface .enigma-modal { background: color-mix(in srgb,var(--eg-card) 94%,transparent); }
 body.enigma-surface .enigma-catalog-list { max-height: min(62vh,560px); overflow: auto; overscroll-behavior: contain; }
 body.enigma-surface .enigma-operation-catalog { width: min(620px,calc(100vw - 32px)); }
-body.enigma-surface .enigma-catalog-list section { padding-block: 12px; border-bottom: 1px solid var(--border); }
+body.enigma-surface .enigma-catalog-list section { padding-block: var(--space-12); border-bottom: 1px solid var(--border); }
 body.enigma-surface .enigma-catalog-list h3 { color: var(--text-muted); font-size: 12px; }
-body.enigma-surface .enigma-catalog-list button { width: 100%; display: block; text-align: left; padding: 10px; }
-body.enigma-surface .enigma-catalog-list small { display: block; color: var(--text-muted); font-size: 12px; margin-top: 3px; }
-body.enigma-surface :is(button,[role="tab"]) { transition: background-color 160ms ease,color 160ms ease,box-shadow 160ms ease; }
-body.enigma-surface .enigma-panel { animation: enigma-glass-arrive 200ms cubic-bezier(.2,.7,.2,1); }
+body.enigma-surface .enigma-catalog-list button { width: 100%; display: block; text-align: left; padding: var(--space-10); }
+body.enigma-surface .enigma-catalog-list small { display: block; color: var(--text-muted); font-size: 12px; margin-top: var(--space-3); }
+body.enigma-surface :is(button,[role="tab"]) { transition: background-color var(--duration-160ms) ease,color var(--duration-160ms) ease,box-shadow var(--duration-160ms) ease; }
+body.enigma-surface .enigma-panel { animation: enigma-glass-arrive var(--duration-200ms) cubic-bezier(.2,.7,.2,1); }
 .enigma-liquid-definitions { position: fixed; pointer-events: none; overflow: hidden; }
 @keyframes enigma-aurora-drift { to { transform: translate3d(2%,-2%,0) scale(1.04); } }
 @keyframes enigma-glass-arrive { from { opacity: 0; transform: translate3d(8px,0,0); } to { opacity: 1; transform: none; } }
@@ -214,16 +214,16 @@ body.enigma-surface :is(.enigma-surface-menu,.enigma-token-popover) {
   --glass-blur: 10px;
 }
 body.enigma-surface .enigma-workspace-shell {
-  margin: 8px 8px 8px 0; height: calc(100% - 16px); padding: 4px 0;
+  margin: var(--space-8) var(--space-8) var(--space-8) 0; height: calc(100% - 16px); padding: var(--space-4) 0;
   gap: 0; border: 1px solid var(--eg-stroke); border-radius: 18px;
 }
 body.enigma-surface .enigma-workspace-shell > .universal-card {
   background: transparent; border: 0; border-radius: 0; box-shadow: none;
 }
 body.enigma-surface .enigma-workspace-shell > .universal-card + .universal-card { border-top: 1px solid var(--eg-stroke); }
-body.enigma-surface .enigma-workspace-shell [data-right-workspace-card] { padding-bottom: 4px; }
+body.enigma-surface .enigma-workspace-shell [data-right-workspace-card] { padding-bottom: var(--space-4); }
 body.enigma-surface .enigma-workspace-shell [role="tabpanel"] {
-  margin: 8px; border: 1px solid var(--eg-stroke); border-radius: 12px;
+  margin: var(--space-8); border: 1px solid var(--eg-stroke); border-radius: 12px;
   background: color-mix(in srgb,var(--eg-page) 52%,transparent);
 }
 body.enigma-surface .enigma-workspace-shell [aria-label="文件夹说明"] { background: color-mix(in srgb,var(--eg-card) 60%,transparent); }
@@ -232,24 +232,24 @@ body.enigma-surface [data-glass-selection] {
   background: linear-gradient(155deg,color-mix(in srgb,var(--glass-edge) 13%,transparent),transparent 65%),color-mix(in srgb,var(--eg-accent) 7%,transparent);
   box-shadow: inset 0 1px 0 var(--glass-edge),inset 0 -1px 0 var(--glass-edge-low),0 2px 7px color-mix(in srgb,var(--eg-accent) 14%,transparent);
   backdrop-filter: blur(3px) saturate(1.3); -webkit-backdrop-filter: blur(3px) saturate(1.3);
-  transition: transform 340ms cubic-bezier(.22,.8,.18,1.08),width 340ms cubic-bezier(.22,.8,.18,1.08);
+  transition: transform var(--duration-340ms) cubic-bezier(.22,.8,.18,1.08),width var(--duration-340ms) cubic-bezier(.22,.8,.18,1.08);
   transform-origin: center;
 }
 body.enigma-surface .hana-toggle { border-radius: 999px; height: 22px; width: 38px; cursor: pointer; border: 1px solid var(--eg-stroke); }
 body.enigma-surface .hana-toggle::after {
   border-radius: 999px; width: 16px; height: 16px; top: 2px; left: 2px;
-  background: linear-gradient(145deg,#fff 10%,rgb(255 255 255 / 65%));
-  border: 1px solid rgb(255 255 255 / 80%); box-shadow: 0 1px 4px rgb(0 0 0 / 22%),inset 0 1px 0 #fff;
-  transition: transform 280ms cubic-bezier(.22,.8,.18,1.1),box-shadow 180ms;
+  background: linear-gradient(145deg,var(--shine-white) 10%,var(--shine-white-65));
+  border: 1px solid var(--shine-white-80); box-shadow: 0 1px 4px var(--shade-black-22),inset 0 1px 0 var(--shine-white);
+  transition: transform var(--duration-280ms) cubic-bezier(.22,.8,.18,1.1),box-shadow var(--duration-180ms);
 }
 body.enigma-surface .hana-toggle:active::after { width: 19px; }
 body.enigma-surface .enigma-switch-track i {
-  background: linear-gradient(145deg,#fff,rgb(230 245 242 / 86%)); border: 1px solid rgb(255 255 255 / 75%);
-  box-shadow: inset 0 1px 0 #fff,0 1px 4px rgb(0 0 0 / 22%);
-  transition: transform 280ms cubic-bezier(.22,.8,.18,1.1);
+  background: linear-gradient(145deg,var(--shine-white),var(--glass-tint-mint)); border: 1px solid var(--shine-white-75);
+  box-shadow: inset 0 1px 0 var(--shine-white),0 1px 4px var(--shade-black-22);
+  transition: transform var(--duration-280ms) cubic-bezier(.22,.8,.18,1.1);
 }
-.enigma-glass-clarity { display: grid; gap: 8px; padding: 12px 4px 4px; border-top: 1px solid var(--border); font-size: 12px; }
-.enigma-glass-clarity label,.enigma-glass-clarity > div { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.enigma-glass-clarity { display: grid; gap: var(--space-8); padding: var(--space-12) var(--space-4) var(--space-4); border-top: 1px solid var(--border); font-size: 12px; }
+.enigma-glass-clarity label,.enigma-glass-clarity > div { display:flex; align-items:center; justify-content:space-between; gap:var(--space-12); }
 .enigma-glass-clarity > div,.enigma-glass-clarity output { color:var(--text-muted); font-size:11px; }
 .enigma-glass-clarity input { width:100%; margin:0; accent-color:var(--accent); cursor:pointer; }
 body.enigma-surface.enigma-glass-off [data-glass-selection] { background:var(--eg-accent-soft); backdrop-filter:none; box-shadow:none; }
@@ -276,11 +276,11 @@ body.enigma-surface .settings-panel input:not([type="range"]):not([type="checkbo
 body.enigma-surface [data-settings-navigation] { background:color-mix(in srgb,var(--eg-sidebar) 28%,transparent); }
 body.enigma-surface [data-settings-navigation] > button[aria-current="page"] { background:transparent; box-shadow:none; }
 body.enigma-surface [data-glass-frame="hint"] { color:var(--eg-text); border-radius:11px; background:color-mix(in srgb,var(--eg-card) 92%,transparent); }
-body.enigma-surface [data-glass-frame="sheet"] { animation:enigma-sheet-arrive 260ms cubic-bezier(.18,.78,.22,1); }
-body.enigma-surface [data-glass-selection] { overflow:hidden; transition:transform 420ms cubic-bezier(.2,.8,.18,1.04),width 420ms cubic-bezier(.2,.8,.18,1.04),height 420ms cubic-bezier(.2,.8,.18,1.04); }
+body.enigma-surface [data-glass-frame="sheet"] { animation:enigma-sheet-arrive var(--duration-260ms) cubic-bezier(.18,.78,.22,1); }
+body.enigma-surface [data-glass-selection] { overflow:hidden; transition:transform var(--duration-420ms) cubic-bezier(.2,.8,.18,1.04),width var(--duration-420ms) cubic-bezier(.2,.8,.18,1.04),height var(--duration-420ms) cubic-bezier(.2,.8,.18,1.04); }
 body.enigma-surface [data-glass-selection]::after { content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;background:linear-gradient(110deg,transparent 12%,color-mix(in srgb,var(--glass-edge) 44%,transparent) 48%,transparent 80%); }
-body.enigma-surface [data-glass-selection][data-glass-motion="running"]::after { animation:enigma-lens-sheen 420ms ease-out; }
-body.enigma-surface :is([data-glass-interactive],[data-glass-controls] button) { transition:scale 260ms cubic-bezier(.2,.8,.2,1.15),background-color 150ms,box-shadow 150ms,color 150ms; }
+body.enigma-surface [data-glass-selection][data-glass-motion="running"]::after { animation:enigma-lens-sheen var(--duration-420ms) ease-out; }
+body.enigma-surface :is([data-glass-interactive],[data-glass-controls] button) { transition:scale var(--duration-260ms) cubic-bezier(.2,.8,.2,1.15),background-color var(--duration-fast),box-shadow var(--duration-fast),color var(--duration-fast); }
 body.enigma-surface:not(.enigma-glass-off) :is([data-glass-interactive],[data-glass-controls] button):is(:hover,:focus-visible,[data-liquid-pressed]):not(:disabled) {
   background-image:radial-gradient(ellipse 75% 100% at var(--glass-pointer-x,50%) var(--glass-pointer-y,25%),color-mix(in srgb,var(--glass-edge) var(--glass-control-highlight,26%),transparent),transparent 82%);
   box-shadow:inset 0 1px 0 color-mix(in srgb,var(--glass-edge) 70%,transparent),0 3px 10px color-mix(in srgb,var(--glass-shadow) 24%,transparent);

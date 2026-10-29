@@ -1,6 +1,6 @@
-.enigma-draft-save { display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;font-size:11px;line-height:1.5;color:var(--text-muted);padding:4px 10px;min-width:0; }
+.enigma-draft-save { display:flex;align-items:center;flex-wrap:wrap;gap:var(--space-4) var(--space-8);font-size:11px;line-height:1.5;color:var(--text-muted);padding:var(--space-4) var(--space-10);min-width:0; }
 .enigma-draft-save.is-saved {opacity:.7}.enigma-draft-save.is-conflict,.enigma-draft-save.is-local-error,.enigma-draft-save.is-rejected {color:var(--text);}
-.enigma-draft-save button {font:inherit;color:var(--accent);border:0;background:transparent;cursor:pointer;padding:4px;border-radius:5px;}
+.enigma-draft-save button {font:inherit;color:var(--accent);border:0;background:transparent;cursor:pointer;padding:var(--space-4);border-radius:5px;}
 .enigma-draft-save button:hover {background:var(--overlay-light)}.enigma-draft-save button:focus-visible{outline:2px solid var(--accent)}
-.enigma-draft-compare {flex-basis:100%;max-height:180px;overflow:auto;border:1px solid var(--border);border-radius:8px;padding:8px;}
-.enigma-draft-compare pre{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;max-height:100px;overflow:auto;margin:4px 0;}
+.enigma-draft-compare {flex-basis:100%;max-height:180px;overflow:auto;border:1px solid var(--border);border-radius:8px;padding:var(--space-8);}
+.enigma-draft-compare pre{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;max-height:100px;overflow:auto;margin:var(--space-4) 0;}

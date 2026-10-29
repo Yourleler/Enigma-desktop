@@ -369,6 +369,7 @@
     "lib/pi-sdk/compaction-request-shape.ts",
     "lib/pi-sdk/index.ts",
     "lib/pi-sdk/model-auth-adapter.ts",
+    "lib/pi-sdk/model-runtime-refresh.ts",
     "lib/pi-sdk/search-tools.ts",
     "lib/pi-sdk/session-options.ts",
     "lib/pi-sdk/stream-guard.ts",

@@ -1,3 +1,4 @@
+import {isDarkTheme} from '../../../shared/theme-registry';
 import {useEffect,useMemo,useRef,useState} from 'react';
 import type {PreviewItem} from '../../types';
 import {loadOfficePreviewBinary,loadOfficePreviewText,officePreviewErrorMessage} from '../../utils/office-preview-binary';
@@ -35,7 +36,7 @@ export default function DocxPreview({previewItem}:{previewItem:PreviewItem}) {
     if(mode==='text')return;
     const saved=positions.get(key)||{top:0,zoom:'fit'};
     const abort=new AbortController();let alive=true,frameReady=false,sent=false;setStatus('loading');setMessage('');setPageCount(0);setQuery('');setMatches({count:0,index:0,truncated:false});bytes.current=null;
-    const dark=()=>document.documentElement.dataset.theme?.startsWith('midnight')||false;
+    const dark=()=>isDarkTheme(document.documentElement.dataset.theme);
     const send=()=>{if(!alive||!frameReady||!bytes.current||sent)return;sent=true;post('theme',{dark:dark()});post('render',{bytes:bytes.current});};
     const receive=(event:MessageEvent)=>{
       if(event.source!==frame.current?.contentWindow||event.data?.channel!==channel)return;

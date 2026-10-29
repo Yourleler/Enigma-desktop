@@ -32,6 +32,9 @@ const mockUpdateLayout = vi.fn();
 const mockInitErrorBusBridge = vi.fn();
 const mockRefreshPluginUI = vi.fn();
 const mockInitSessionProjectCatalog = vi.fn(async () => {});
+const mockInitDraftPersistence=vi.fn();
+const mockHydrateDrafts=vi.fn(async()=>{});
+vi.mock('../stores/input-draft-persistence',()=>({initInputDraftPersistence:mockInitDraftPersistence,hydrateInputDrafts:mockHydrateDrafts}));
 
 vi.mock('../stores', () => ({
   useStore: {
@@ -162,6 +165,7 @@ describe('initApp bridge indicator', () => {
   beforeEach(() => {
     Object.keys(mockState).forEach(k => delete mockState[k]);
     mockHanaFetch.mockReset();
+    mockInitDraftPersistence.mockClear();mockHydrateDrafts.mockClear();
     mockApplyAgentIdentity.mockReset();
     mockLoadAgents.mockReset();
     mockLoadAvatars.mockReset();
@@ -235,6 +239,8 @@ describe('initApp bridge indicator', () => {
 
     const { initApp } = await import('../app-init');
     await initApp();
+    expect(mockInitDraftPersistence).toHaveBeenCalledTimes(1);
+    expect(mockHydrateDrafts).toHaveBeenCalledTimes(1);
 
     expect(mockState.activeServerConnection).toEqual({
       connectionId: 'local',
@@ -325,6 +331,8 @@ describe('initApp bridge indicator', () => {
 
     const { initApp } = await import('../app-init');
     await initApp();
+    expect(mockInitDraftPersistence).toHaveBeenCalledTimes(1);
+    expect(mockHydrateDrafts).toHaveBeenCalledTimes(1);
 
     expect(mockHanaFetch).toHaveBeenNthCalledWith(1, '/api/web-auth/login', expect.objectContaining({
       method: 'POST',
@@ -368,6 +376,8 @@ describe('initApp bridge indicator', () => {
 
     const { initApp } = await import('../app-init');
     await initApp();
+    expect(mockInitDraftPersistence).toHaveBeenCalledTimes(1);
+    expect(mockHydrateDrafts).not.toHaveBeenCalled();
 
     expect(mockHanaFetch).toHaveBeenCalledWith('/api/server/identity');
     expect(mockSetStatus).toHaveBeenCalledWith('status.serverNotReady', false);
@@ -417,6 +427,8 @@ describe('initApp bridge indicator', () => {
 
     const { initApp } = await import('../app-init');
     await initApp();
+    expect(mockInitDraftPersistence).toHaveBeenCalledTimes(1);
+    expect(mockHydrateDrafts).toHaveBeenCalledTimes(1);
 
     // Desk root, workspace history and the memory switch belong to one agent,
     // so startup must ask that agent for them by name rather than read them off
@@ -467,6 +479,8 @@ describe('initApp bridge indicator', () => {
 
     const { initApp } = await import('../app-init');
     await initApp();
+    expect(mockInitDraftPersistence).toHaveBeenCalledTimes(1);
+    expect(mockHydrateDrafts).toHaveBeenCalledTimes(1);
 
     expect(mockState.pendingNewSession).toBe(true);
     expect(mockLoadPendingNewSessionPermissionDefault).toHaveBeenCalledTimes(1);
@@ -516,6 +530,8 @@ describe('initApp bridge indicator', () => {
 
     const { initApp } = await import('../app-init');
     await initApp();
+    expect(mockInitDraftPersistence).toHaveBeenCalledTimes(1);
+    expect(mockHydrateDrafts).toHaveBeenCalledTimes(1);
 
     expect(restartHandler).toBeTypeOf('function');
     mockConnectWebSocket.mockClear();
@@ -575,6 +591,8 @@ describe('initApp bridge indicator', () => {
 
     const { initApp } = await import('../app-init');
     await initApp();
+    expect(mockInitDraftPersistence).toHaveBeenCalledTimes(1);
+    expect(mockHydrateDrafts).toHaveBeenCalledTimes(1);
 
     const local = mockState.activeServerConnection as Record<string, unknown>;
     const remote = {
@@ -647,6 +665,8 @@ describe('initApp bridge indicator', () => {
 
     const { initApp } = await import('../app-init');
     await initApp();
+    expect(mockInitDraftPersistence).toHaveBeenCalledTimes(1);
+    expect(mockHydrateDrafts).toHaveBeenCalledTimes(1);
 
     Object.assign(mockState, {
       currentAgentId: 'agent-a',
@@ -709,6 +729,8 @@ describe('initApp bridge indicator', () => {
 
     const { initApp } = await import('../app-init');
     await initApp();
+    expect(mockInitDraftPersistence).toHaveBeenCalledTimes(1);
+    expect(mockHydrateDrafts).toHaveBeenCalledTimes(1);
 
     Object.assign(mockState, {
       currentAgentId: 'agent-a',
@@ -771,6 +793,8 @@ describe('initApp bridge indicator', () => {
 
     const { initApp } = await import('../app-init');
     await initApp();
+    expect(mockInitDraftPersistence).toHaveBeenCalledTimes(1);
+    expect(mockHydrateDrafts).toHaveBeenCalledTimes(1);
 
     Object.assign(mockState, {
       currentAgentId: 'agent-a',
@@ -837,6 +861,8 @@ describe('initApp bridge indicator', () => {
 
     const { initApp } = await import('../app-init');
     await initApp();
+    expect(mockInitDraftPersistence).toHaveBeenCalledTimes(1);
+    expect(mockHydrateDrafts).toHaveBeenCalledTimes(1);
 
     Object.assign(mockState, {
       currentSessionPath: '/session/a.jsonl',
@@ -908,6 +934,8 @@ describe('initApp bridge indicator', () => {
 
     const { initApp } = await import('../app-init');
     await initApp();
+    expect(mockInitDraftPersistence).toHaveBeenCalledTimes(1);
+    expect(mockHydrateDrafts).toHaveBeenCalledTimes(1);
 
     expect(openSettingsHandler).toBeTypeOf('function');
     (openSettingsHandler as unknown as (tab?: string) => void)('bridge');

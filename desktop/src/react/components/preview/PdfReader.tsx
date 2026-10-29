@@ -1,3 +1,4 @@
+import {isDarkTheme} from '../../../shared/theme-registry';
 import {useEffect,useRef,useState} from 'react';
 import {useStore} from '../../stores';
 import {openInternalLink} from '../../utils/link-open';
@@ -33,7 +34,7 @@ export default function PdfReader({url,name,base64,restoreKey=url,onSystemReader
     let stopped=false,configured:ViewerWindow|null=null;
     const abort=new AbortController();
     const downloads=new Map<string,ReturnType<typeof setTimeout>>();
-    const dark=()=>getComputedStyle(document.documentElement).colorScheme.includes('dark')||document.documentElement.dataset.theme?.startsWith('midnight');
+    const dark=()=>isDarkTheme(document.documentElement.dataset.theme);
     setReady(false);setError('');
     const configure=(event:Event)=>{
       const target=(event as CustomEvent).detail?.source as ViewerWindow|undefined;

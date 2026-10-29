@@ -2044,19 +2044,21 @@
       "schemaContract": {
         "kind": "runtime-source",
         "source": "core/input-drafts-store.ts",
-        "compatibility": "The named runtime reader is canonical; this inventory does not imply stricter validation than runtime currently performs."
+        "compatibility": "Draft file version 1 is retained. Optional sequence and per-key revisions support conditional writes; absent fields normalize to zero/empty. Meaningful rich-text atoms may accompany empty text. Legacy readers keep text/doc fields but cannot preserve concurrency metadata, so downgrade requires a fresh client/server baseline; no claim of conditional-write protection across an old writer."
       },
       "openEntry": [
         "new InputDraftsStore",
         "new SessionProjectCatalogStore"
       ],
       "migrationEntry": [],
-      "protocolModules": [],
+      "protocolModules": [
+        "shared/input-drafts.ts"
+      ],
       "firstPossibleOpenPhase": "engine_construct",
       "firstPossibleWritePhase": "engine_construct",
       "epochPolicy": "epoch-managed",
-      "checkpointPolicy": "Included in a future epoch checkpoint unless the coordinator explicitly classifies it otherwise.",
-      "restorePolicy": "Restore only through the owning module after reader compatibility is established.",
+      "checkpointPolicy": "Preserve the entire input-drafts.v1.json document including revision tombstones; client recovery journals remain in their browser profile and are never copied into another user profile.",
+      "restorePolicy": "Restore the full file atomically before opening clients. Restart clients to obtain the restored revision baseline; never replay stale conditional mutations as unconditional writes.",
       "affectedByEpochMigration": true,
       "bootstrapSafety": null,
       "preCoordinatorReadProjection": null,
@@ -2526,7 +2528,7 @@
       "schemaContract": {
         "kind": "runtime-source",
         "source": "core/preferences-manager.ts",
-        "compatibility": "PreferencesManager is intentionally permissive; _dataVersion is the legacy migration cursor, not a strict schema validator. Unreadable source bytes are preserved before any replacement document is written."
+        "compatibility": "PreferencesManager is intentionally permissive; _dataVersion is the legacy migration cursor, not a strict schema validator. Optional workspace preview mode and reading snapshots are additive; legacy readers may omit the new mode while retaining the file references. Unreadable source bytes are preserved before any replacement document is written."
       },
       "openEntry": [
         "new PreferencesManager"
@@ -2536,7 +2538,8 @@
         "core/migrations.ts runMigrations"
       ],
       "protocolModules": [
-        "shared/workspace-ui-state.ts"
+        "shared/workspace-ui-state.ts",
+        "shared/preview-reading-position.ts"
       ],
       "firstPossibleOpenPhase": "desktop_bootstrap",
       "firstPossibleWritePhase": "first_run_seed",
@@ -3568,7 +3571,7 @@
     {
       "sourceFile": "core/input-drafts-store.ts",
       "kind": "atomic-write",
-      "excerpt": "atomicWriteSync(this._path, JSON.stringify(this._cache))",
+      "excerpt": "atomicWriteSync(this._path, JSON.stringify(next))",
       "reason": "Owns session drafts or project associations.",
       "storeId": "session-drafts-and-projects",
       "exemptionId": null,
