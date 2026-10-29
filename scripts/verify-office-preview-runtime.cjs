@@ -12,6 +12,14 @@ app.whenReady().then(async()=>{
     for(let i=0;i<100;i++) {if(await win.webContents.executeJavaScript(expression).catch(()=>false))return;await new Promise(resolve=>setTimeout(resolve,100));}
     throw new Error('Office preview did not reach expected visible state');
   };
+  const waitDocx=async()=>{
+    for(let i=0;i<100;i++){
+      const child=win.webContents.mainFrame.framesInSubtree.find(frame=>frame.url.includes('/assets/docx-viewer-'));
+      if(child&&await child.executeJavaScript("document.getElementById('document')?.textContent.includes('新建 Word 预览正文')").catch(()=>false))return;
+      await new Promise(resolve=>setTimeout(resolve,100));
+    }
+    throw new Error('Isolated Word layout did not render the actual document');
+  };
   const clickFile=async name=>{
     await wait(`!![...document.querySelectorAll('[role="treeitem"]')].find(el=>el.textContent.trim()===${JSON.stringify(name)})`);
     await win.webContents.executeJavaScript(`[...document.querySelectorAll('[role="treeitem"]')].find(el=>el.textContent.trim()===${JSON.stringify(name)}).click()`);
@@ -27,10 +35,10 @@ app.whenReady().then(async()=>{
     const workbook=await win.webContents.executeJavaScript("document.querySelector('.preview-csv').innerText");
     assert(workbook.includes('新建测试项目'));assert(workbook.includes('复核结果'));assert(workbook.includes('通过'));
     fs.writeFileSync(path.join(root,'xlsx.png'),(await win.webContents.capturePage()).toPNG());
-    await clickFile('new.docx');await wait("document.querySelector('.preview-docx')?.textContent.includes('新建 Word 预览正文')");
+    await clickFile('new.docx');await waitDocx();
     await new Promise(resolve=>setTimeout(resolve,600));
     await new Promise(resolve=>{win.webContents.once('did-finish-load',resolve);win.reload();});
-    await wait("document.querySelector('.preview-docx')?.textContent.includes('新建 Word 预览正文')");
+    await waitDocx();
     fs.writeFileSync(path.join(root,'docx-restored.png'),(await win.webContents.capturePage()).toPNG());
     await clickFile('new.pdf');await wait("document.querySelector('.enigma-pdf-full-viewer')?.contentDocument?.querySelector('.textLayer')?.textContent.includes('Enigma')");
     await win.webContents.executeJavaScript("[...document.querySelectorAll('.enigma-pdf-heading button')].find(el=>el.textContent==='系统阅读器').click()");

@@ -167,6 +167,7 @@ function MobileDesktopShell({
   mobileUpdateAvailable: boolean;
   onApplyMobileUpdate: () => void;
 }) {
+  const settingsAvailable=!!principal&&principalHasRequiredScopes(principal,['settings.read']);
   const sidebarOpen = useStore(s => s.sidebarOpen);
   const jianOpen = useStore(s => s.jianOpen);
   const previewOpen = useStore(s => s.previewOpen);
@@ -202,6 +203,12 @@ function MobileDesktopShell({
     });
     return typeof unsubscribe === 'function' ? unsubscribe : undefined;
   }, []);
+
+  useEffect(()=>{
+    if(!settingsAvailable)return;
+    const onKey=(event:KeyboardEvent)=>{if((event.metaKey||event.ctrlKey)&&event.key===','){event.preventDefault();openSettingsModal();}};
+    document.addEventListener('keydown',onKey);return()=>document.removeEventListener('keydown',onKey);
+  },[settingsAvailable]);
 
   const refreshMobileSessions = useCallback(() => {
     void loadMobileSessions()
@@ -354,7 +361,8 @@ function MobileDesktopShell({
         <ChatSidebar
           open={sidebarOpen && currentTab === 'chat'}
           includeChannels={false}
-          showSettingsButton={false}
+          showSettingsButton={settingsAvailable}
+          onOpenSettings={()=>openSettingsModal()}
           showActivityBars={false}
           onNewSession={() => void createNewSession()}
           onCollapse={() => toggleSidebar(false)}

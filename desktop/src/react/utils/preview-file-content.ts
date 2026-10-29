@@ -31,8 +31,11 @@ export async function readFileForPreviewType(filePath: string, previewType: stri
   }
   if (previewType === 'file-info') return { content: '' };
   if (previewType === 'docx') {
-    const content = await p.readDocxHtml?.(filePath);
-    return content == null ? null : { content };
+    // The layout renderer reads OOXML directly. Only fetch metadata here;
+    // semantic HTML conversion is deferred until the user selects Text.
+    if(!p.statFile)return {content:''};
+    const stat=await p.statFile(filePath);
+    return stat?{content:'',fileVersion:stat}:null;
   }
   if (previewType === 'xlsx') {
     const content = await p.readXlsxHtml?.(filePath);

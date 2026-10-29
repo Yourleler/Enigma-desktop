@@ -4,6 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
 import { injectCsp } from './vite.csp-profiles';
+import {docxFrameHtml} from './desktop/src/react/components/preview/docx-frame';
 
 interface DevWebClientConfig {
   serverPort: string;
@@ -323,6 +324,22 @@ function pdfReaderAssets(): Plugin {
   }};
 }
 
+function docxReaderAssets(): Plugin {
+  const version=JSON.parse(fs.readFileSync(path.resolve(__dirname,'package.json'),'utf8')).version;
+  const prefix=`/assets/docx-viewer-${version}`;
+  const target=path.resolve(__dirname,'desktop/dist-renderer'+prefix);
+  const build=()=>{
+    fs.mkdirSync(target,{recursive:true});
+    fs.writeFileSync(path.join(target,'index.html'),docxFrameHtml({nonce:crypto.randomBytes(18).toString('base64'),zipScript:fs.readFileSync(path.resolve(__dirname,'node_modules/jszip/dist/jszip.min.js'),'utf8'),docxScript:fs.readFileSync(path.resolve(__dirname,'node_modules/docx-preview/dist/docx-preview.min.js'),'utf8')}));
+    fs.copyFileSync(path.resolve(__dirname,'node_modules/docx-preview/LICENSE'),path.join(target,'LICENSE-docx-preview'));
+    fs.copyFileSync(path.resolve(__dirname,'node_modules/jszip/LICENSE.markdown'),path.join(target,'LICENSE-jszip.md'));
+    fs.writeFileSync(path.join(target,'NOTICE.md'),'DOCX rendering: docx-preview 0.4.1, Copyright Volodymyr Baydalka, Apache-2.0. ZIP support: JSZip, used under its MIT license option. Original library headers and license texts are retained. Enigma adds the isolated document bridge and preview controls.');
+  };
+  return {name:'enigma-docx-reader-assets',closeBundle:build,configureServer(server){build();server.middlewares.use(prefix,(req,res,next)=>{
+    if((req.url||'').split('?')[0]!=='/index.html')return next();res.setHeader('Content-Type','text/html;charset=utf-8');fs.createReadStream(path.join(target,'index.html')).pipe(res);
+  });}};
+}
+
 export default defineConfig({
   root: 'desktop/src',
   base: './',
@@ -337,6 +354,7 @@ export default defineConfig({
     restoreLegacyCss(),
     copyLegacyFiles(),
     pdfReaderAssets(),
+    docxReaderAssets(),
   ],
   resolve: {
     alias: {

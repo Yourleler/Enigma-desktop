@@ -318,6 +318,25 @@ describe('MobileApp', () => {
     expect(document.documentElement.style.getPropertyValue('--editor-markdown-line-height')).toBe('1.75');
   });
 
+  it('shows settings and its shortcut for a settings-authorized Web session',async()=>{
+    installMobilePlatform();
+    fetchMock.mockImplementation((input:RequestInfo|URL,options?:RequestInit)=>{
+      const url=String(input);return Promise.resolve(jsonResponse(url.includes('/api/web-auth/session')?{authenticated:true,principal:principal(['chat','resources.read','files.read','files.write','settings.read'])}:jsonResponseForMobile(url,options)));
+    });
+    render(<MobileApp/>);await waitForMobileChatReady();
+    fireEvent.click(screen.getByTitle('settings.title'));expect(await screen.findByTestId('mobile-settings-modal')).toBeInTheDocument();
+    act(()=>useStore.setState({settingsModal:{open:false,activeTab:'agent'}} as never));
+    fireEvent.keyDown(document,{key:',',ctrlKey:true});expect(await screen.findByTestId('mobile-settings-modal')).toBeInTheDocument();
+  });
+
+  it('does not offer a settings entry or shortcut to a Web session without that scope',async()=>{
+    fetchMock.mockImplementation((input:RequestInfo|URL,options?:RequestInit)=>{
+      const url=String(input);return Promise.resolve(jsonResponse(url.includes('/api/web-auth/session')?{authenticated:true,principal:principal(['chat','resources.read','files.read','files.write'])}:jsonResponseForMobile(url,options)));
+    });
+    render(<MobileApp/>);await waitForMobileChatReady();
+    expect(screen.queryByTitle('settings.title')).toBeNull();fireEvent.keyDown(document,{key:',',ctrlKey:true});expect(screen.queryByTestId('mobile-settings-modal')).toBeNull();
+  });
+
   it('opens the settings modal from the mobile platform settings event', async () => {
     installMobilePlatform();
     const onOpenSettingsModal = vi.fn(window.platform?.onOpenSettingsModal?.bind(window.platform));

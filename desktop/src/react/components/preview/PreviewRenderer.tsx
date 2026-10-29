@@ -679,6 +679,7 @@ function CsvPreview({ content }: { content: string }) {
   );
 }
 
+const DocxPreview = lazy(() => import('./DocxPreview'));
 const PdfReader = lazy(() => import('./PdfReader'));
 
 // ── PdfPreview ──
@@ -816,6 +817,7 @@ export function PreviewRenderer({ previewItem }: PreviewRendererProps) {
       return <PdfPreview previewItem={previewItem} />;
 
     case 'docx':
+      return <Suspense fallback={<div role="status">正在加载 Word 阅读器…</div>}><DocxPreview key={previewItem.id} previewItem={previewItem}/></Suspense>;
     case 'xlsx':
       return <OfficePreview previewItem={previewItem}/>;
 

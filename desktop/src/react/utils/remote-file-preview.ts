@@ -176,7 +176,7 @@ async function readRemotePreviewContentWithRetry(
   const retryDelaysMs = options.retryDelaysMs ?? REMOTE_REFRESH_RETRY_DELAYS_MS;
   let lastRead: PreviewContentSnapshot = { content: '' };
   for (let attempt = 0; ; attempt += 1) {
-    if(item.type==='media') {
+    if(item.type==='media'||item.type==='docx') {
       const response=await hanaFetch(contentPath,{method:'HEAD'});
       return {content:'',fileVersion:fileVersionFromContentHeaders(response.headers)};
     }
@@ -274,6 +274,12 @@ export async function readRemotePreviewItem(item: PreviewItem): Promise<PreviewI
 }
 
 async function readOfficePreviewItem(item: PreviewItem): Promise<PreviewItem> {
+  if(item.type==='docx'){
+    const ref=item.remoteContentRef;const contentPath=isRemoteWorkbenchContentRef(ref)?encodeWorkbenchContentPath(ref):item.contentResourceId?`/api/resources/${encodeURIComponent(item.contentResourceId)}/content`:null;
+    if(!contentPath)throw new Error('文档缺少读取入口，请从工作台重新打开');
+    const response=await hanaFetch(contentPath,{method:'HEAD'});
+    return {...item,content:'',fileVersion:fileVersionFromContentHeaders(response.headers),status:'available'};
+  }
   const response=await hanaFetch('/api/preview/office',{throwOnHttpError:false,method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({format:item.type,remoteContentRef:item.remoteContentRef,resourceId:item.contentResourceId})});
   const data=await response.json();
   if(!response.ok||typeof data.html!=='string')throw new Error(data.error||'文档预览失败，请重试');

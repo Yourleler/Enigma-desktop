@@ -137,6 +137,16 @@ describe('remote file preview workbench refs', () => {
     expect(item.remoteContentRef?.version).toEqual({ mtimeMs: 1781989413542, size: 8 });
   });
 
+  it('refreshes DOCX version metadata without running the semantic converter',async()=>{
+    const {refreshPreviewItemsFromRemoteWorkbenchTarget}=await import('../../utils/remote-file-preview');
+    const target:RemoteWorkbenchContentRef={kind:'workbench-file',mountId:'docs',subdir:'',name:'new.docx',contentPath:'/api/workbench/content?mountId=docs&name=new.docx'};
+    useStore.setState({previewItems:[{id:'word',type:'docx',title:'new.docx',content:'<p>old</p>',remoteContentRef:target}]});
+    mockHanaFetch.mockResolvedValue(new Response(null,{headers:{'Content-Length':'1234','Last-Modified':'Thu, 29 Oct 2026 00:00:00 GMT'}}));
+    await refreshPreviewItemsFromRemoteWorkbenchTarget(target);
+    expect(mockHanaFetch).toHaveBeenCalledWith(target.contentPath,{method:'HEAD'});
+    expect(useStore.getState().previewItems[0]).toMatchObject({id:'word',content:''});
+  });
+
   it('refreshes office previews through the converter instead of replacing HTML with ZIP bytes', async () => {
     const {refreshPreviewItemsFromRemoteWorkbenchTarget}=await import('../../utils/remote-file-preview');
     const target: RemoteWorkbenchContentRef={kind:'workbench-file',mountId:'docs',subdir:'',name:'new.xlsx',contentPath:'/api/workbench/content?mountId=docs&name=new.xlsx'};

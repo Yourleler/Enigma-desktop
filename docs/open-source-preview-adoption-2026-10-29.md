@@ -14,7 +14,7 @@ OpenAI 官方文档说明内置浏览器与连接已有 Chrome 等浏览器标�
 | --- | --- | --- | --- |
 | 网页浏览器 | [Min](https://github.com/minbrowser/min)，Apache-2.0 | 参考/复用可独立提取的地址栏、快捷键和标签工作区实现；保留 Chromium 宿主与对话权限。先统一侧栏/独立窗口，再补完整地址导航、页面搜索、缩放、下载和恢复。Min 是整套应用，不能当单个 React 组件直接插入。 | 选型，未复制 Min 代码 |
 | PDF | [Mozilla PDF.js](https://github.com/mozilla/pdf.js/releases/tag/v5.6.205)，Apache-2.0 | 直接复用官方完整 generic viewer，替换自写工具栏。上游负责缩略图、大纲、附件、图层、查找、打印、属性和阅读布局；本项目只适配文件、主题、下载与权限。 | 0.452.93 源码已接入；Web 实测，原生待验收 |
-| DOCX | [docx-preview](https://github.com/VolodymyrBaydalka/docxjs)，Apache-2.0 | 从当前 Mammoth 语义转换改为保留版式的渲染；检查页眉页脚、图片、表格、显式分页，保留纯文本回退。库对分页/域等有明确限制，不承诺与 Word 像素一致。 | 下一项接入候选 |
+| DOCX | [docx-preview](https://github.com/VolodymyrBaydalka/docxjs)，Apache-2.0 | 从当前 Mammoth 语义转换改为保留版式的渲染；检查页眉页脚、图片、表格、显式分页，保留纯文本回退。库对分页/域等有明确限制，不承诺与 Word 像素一致。 | 0.452.99 源码已接入；Web 实测通过，原生待验收 |
 | XLSX / CSV | [Univer](https://github.com/dream-num/univer)，Apache-2.0 OSS 核心 | 验证真实表格交互，替换截断 HTML 表格。其官方文件导入导出、打印等列在 Pro 范围；必须先验证不依赖商业服务的本地导入路径及样式保真，不能把 OSS 内核误说成免费完整 Office。 | 待导入与许可范围验证 |
 | 图片 | [PhotoSwipe](https://github.com/dimsemenov/PhotoSwipe)，MIT | 用成熟缩放、拖动、触控和画廊交互替换重复的自写控制层，接入现有文件身份、下载与主题。 | 候选 |
 | 音视频 | [Video.js](https://github.com/videojs/video.js)、[Media Chrome](https://github.com/muxinc/media-chrome) | 以当前稳定发布的完整播放器/React 集成为首选。Media Chrome README 已说明相关团队合流到新版 Video.js；不盲搬旧控件。接入前核对所用包许可证、离线资源、字幕、键盘、全屏和恢复。 | 候选，尚未替换现有播放器 |
@@ -36,3 +36,6 @@ OpenAI 官方文档说明内置浏览器与连接已有 Chrome 等浏览器标�
 当前正式界面仍为 0.452.91。16 项相关回归、三套类型检查和边界检查通过。新 viewer 已生成候选，但原生点击与正式安装因 Mac 锁屏未完成；不把 Web 验证等同桌面交付。后续沿同一 Goal 继续原生验收和逐类替换，并继续未精确归因的草稿持久性专项。
 
 每个替换必须验证真实文件、失败恢复、窄窗口、深浅主题、键盘和重新打开；有可复用实现时先接上游能力，只保留本项目必要适配。上游许可证、版权与修改说明进入源码和发行产物。
+
+
+DOCX 后续已按上述选择落地，详见 [Word 预览实现与验收](docx-preview-adoption-2026-10-29.md)。浏览器外层统一、表格/图片/媒体替换及草稿专项继续执行，未缩小 Goal。

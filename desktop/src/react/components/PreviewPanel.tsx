@@ -353,7 +353,7 @@ export function PreviewPanel() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (!previewOpen || ['browser','pdf'].includes(previewItem?.type || '') || !(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== 'f') return;
+      if (!previewOpen || ['browser','pdf','docx'].includes(previewItem?.type || '') || !(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== 'f') return;
       event.preventDefault();
       event.stopPropagation();
       setFindOpen(true);
@@ -431,7 +431,7 @@ export function PreviewPanel() {
             />
           )}
           <ClassicFindBox
-            open={findOpen && previewItem?.type !== 'browser'}
+            open={findOpen && !['browser','pdf','docx'].includes(previewItem?.type||'')}
             query={findQuery}
             resultIndex={Math.min(findIndex, Math.max(0, findCount - 1))}
             resultCount={findCount}
@@ -441,7 +441,7 @@ export function PreviewPanel() {
             onClose={() => setFindOpen(false)}
           />
           {previewOpen && anchorMessage && <div role="status" className={previewStyles.previewAnchorMessage}>{anchorMessage}<button type="button" aria-label="关闭章节提示" onClick={()=>setAnchorMessage('')}>×</button></div>}
-          {previewOpen && previewItem && !['browser', 'media', 'pdf', 'file-info'].includes(previewItem.type) && !['missing','unavailable'].includes(previewItem.status||'') && (
+          {previewOpen && previewItem && !['browser', 'media', 'pdf', 'docx', 'file-info'].includes(previewItem.type) && !['missing','unavailable'].includes(previewItem.status||'') && (
             <FloatingActions
               content={previewItem.content}
               filePath={previewItem.filePath}

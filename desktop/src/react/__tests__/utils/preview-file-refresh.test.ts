@@ -28,6 +28,7 @@ describe('refreshPreviewItemsFromFile', () => {
         version: { mtimeMs: 10, size: 20, sha256: 'text-hash' },
       })),
       readFile: vi.fn(async (filePath: string) => `legacy:${filePath}`),
+      statFile:vi.fn(async()=>({size:321,mtimeMs:20})),
       readDocxHtml: vi.fn(async (filePath: string) => `<p>docx:${filePath}</p>`),
       readXlsxHtml: vi.fn(async (filePath: string) => `<table><tr><td>${filePath}</td></tr></table>`),
       readFileBase64: vi.fn(async (filePath: string) => `pdf:${filePath}`),
@@ -59,13 +60,14 @@ describe('refreshPreviewItemsFromFile', () => {
     __resetPreviewFileRefreshStateForTests();
     await refreshPreviewItemsFromFile('/tmp/report.docx');
 
-    expect(window.platform?.readDocxHtml).toHaveBeenCalledWith('/tmp/report.docx');
+    expect(window.platform?.readDocxHtml).not.toHaveBeenCalled();
+    expect(window.platform?.statFile).toHaveBeenCalledWith('/tmp/report.docx');
     expect(window.platform?.readFileSnapshot).not.toHaveBeenCalled();
     expect(mockUpsertPreviewItem).toHaveBeenCalledTimes(1);
     expect(mockUpsertPreviewItem).toHaveBeenCalledWith({
       ...mockState.previewItems[0],
-      content: '<p>docx:/tmp/report.docx</p>',
-      fileVersion: undefined,
+      content: '',
+      fileVersion: {size:321,mtimeMs:20},
       status: 'available',
       missingAt: null,
     });
