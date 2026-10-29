@@ -4,6 +4,9 @@ import path from "node:path";
 import os from "node:os";
 import YAML from "js-yaml";
 import { createHash } from 'node:crypto';
+import {ProviderCatalogStore} from '../core/provider-catalog.ts';
+import {validateProviderModels} from '../shared/provider-model-validation.ts';
+import {writeSecretFileSync} from '../shared/secret-fs.ts';
 
 const retiredDefaultAvatars = new Set([
   '5f30c4e073c2233d56fbe139de49e42c1d296bad98b7b84ceb0dc41aa2557a35',
@@ -106,59 +109,60 @@ export async function prepareEnigmaProfile({
     );
   }
   if (modelsFile) {
-    const source = JSON.parse(
-      await fs.readFile(path.resolve(modelsFile), "utf8"),
-    );
-    if (!source.providers || typeof source.providers !== "object")
+    const source = JSON.parse(await fs.readFile(path.resolve(modelsFile), "utf8"));
+    if (!source?.providers || typeof source.providers !== "object" || Array.isArray(source.providers))
       throw new Error("Select a Pi models.json file with configured providers");
-    const providers = Object.create(null);
-    for (const [id, provider] of Object.entries(source.providers)) {
-      if (
-        typeof provider.baseUrl !== "string" ||
-        !Array.isArray(provider.models)
-      )
-        continue;
-      providers[id] = {
-        base_url: provider.baseUrl,
-        api: provider.api,
-        api_key: provider.apiKey,
-        headers: provider.headers,
-        models: provider.models.map((model) => ({
-          id: model.id,
-          name: model.name,
-          context: model.contextWindow,
-          maxOutput: model.maxTokens,
-          reasoning: model.reasoning,
-          compat: model.compat,
-        })),
-      };
+    const catalog = new ProviderCatalogStore(nativeDataRoot);
+    const previous = catalog.load();
+    const providers = normalizeImportedProviderIds(previous.providers);
+    const imported = normalizeImportedProviderIds(source.providers);
+    const importedModels = [];
+    for (const [id, provider] of Object.entries(imported)) {
+      if (!id.trim() || ["__proto__", "constructor", "prototype"].includes(id) || !provider || typeof provider !== "object" || Array.isArray(provider))
+        throw new Error("Invalid provider entry in model import");
+      if (!Array.isArray(provider.models) || provider.models.length === 0)
+        throw new Error(`模型配置中 ${id} 没有可导入的模型列表`);
+      const existing = providers[id] || {};
+      const next = {...existing};
+      for (const [from,to] of [["baseUrl","base_url"],["api","api"],["apiKey","api_key"],["headers","headers"]]) {
+        if (provider[from] !== undefined) next[to] = provider[from];
+      }
+      let url;
+      try { url = new URL(next.base_url); } catch { throw new Error(`模型配置中 ${id} 缺少有效接口地址`); }
+      if (!["http:","https:"].includes(url.protocol)) throw new Error(`模型配置中 ${id} 的接口必须使用 HTTP 或 HTTPS`);
+      if (next.api_key !== undefined && typeof next.api_key !== "string") throw new Error(`模型配置中 ${id} 的凭证格式无效`);
+      const entries = new Map((existing.models || []).map(model => [typeof model === "string" ? model : model.id, model]));
+      for (const model of provider.models) {
+        if (!model || typeof model !== "object" || typeof model.id !== "string" || !model.id.trim()) throw new Error(`模型配置中 ${id} 存在无效模型条目`);
+        const old = entries.get(model.id), converted = {...(old && typeof old === "object" ? old : {}), ...model};
+        if (model.contextWindow !== undefined) converted.context = model.contextWindow;
+        if (model.maxTokens !== undefined) converted.maxOutput = model.maxTokens;
+        if (Array.isArray(model.input)) converted.image = model.input.includes("image");
+        delete converted.contextWindow;delete converted.maxTokens;delete converted.input;
+        entries.set(model.id,converted);importedModels.push({provider:id,id:model.id});
+      }
+      next.models = [...entries.values()];
+      validateProviderModels(id,next.models,{baseUrl:next.base_url});
+      providers[id] = next;
     }
-    const destination = path.join(nativeDataRoot, "added-models.yaml");
-    let previous = {};
-    try {
-      previous = YAML.load(await fs.readFile(destination, "utf8")) || {};
-    } catch (error) {
-      if (error.code !== "ENOENT") throw error;
+    if (!importedModels.length) throw new Error("No models were found to import");
+    // Preserve recovery input outside the repository, beside the user's profile.
+    const backup = path.join(nativeDataRoot,'migration-backups',`model-import-${Date.now()}-${process.pid}`);
+    await fs.mkdir(backup,{recursive:true,mode:0o700});
+    for (const file of [catalog.catalogPath,configPath]) {
+      await fs.copyFile(file,path.join(backup,path.basename(file)));
+      await fs.chmod(path.join(backup,path.basename(file)),0o600);
     }
-    await fs.writeFile(
-      destination,
-      YAML.dump({
-        ...previous,
-        providers: { ...normalizeImportedProviderIds(previous.providers), ...normalizeImportedProviderIds(providers) },
-      }),
-      { mode: 0o600 },
-    );
-    if (!config.models?.chat?.id) {
-      const selectedProvider = Object.entries(source.providers).find(([, provider]) => Array.isArray(provider.models) && provider.models.length);
-      const selected = selectedProvider?.[1].models[0];
-      if (selected && selectedProvider) {
-        const provider = selectedProvider[0] === 'openai-codex' ? 'openai-codex-oauth' : selectedProvider[0];
-        config.models.chat = { provider, id: selected.id };
-        config.models.utility = { provider, id: selected.id };
-        config.models.utility_large = { provider, id: selected.id };
-        await fs.writeFile(configPath, YAML.dump(config), { mode: 0o600 });
+    catalog.saveProviders(providers,{deletedProviders:(previous.meta?.deletedProviders || []).filter(id=>!Object.hasOwn(imported,id))});
+    config.models ||= {};
+    let changed = false;
+    for (const role of ['chat','utility','utility_large']) {
+      const value=config.models[role];
+      if (!value || typeof value === 'string' && !value.trim() || typeof value === 'object' && !value.id) {
+        config.models[role] = {...importedModels[0]};changed=true;
       }
     }
+    if(changed)writeSecretFileSync(configPath,YAML.dump(config));
   }
   return { dataRoot: nativeDataRoot, agentId: "enigma" };
 }
