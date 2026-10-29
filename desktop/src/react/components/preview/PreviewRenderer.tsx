@@ -29,7 +29,7 @@ import {
   applyMarkdownCoverImageDrop,
   hasMarkdownCoverDropImage,
 } from '../../utils/markdown-cover-drop';
-import { parseCSV, injectCopyButtons } from '../../utils/format';
+import { injectCopyButtons } from '../../utils/format';
 import { observeMarkdownRhythmSnap } from '../../utils/markdown-rhythm';
 import { fileIconSvg } from '../../utils/icons';
 import { openFilePreview } from '../../utils/file-preview';
@@ -47,7 +47,6 @@ import previewStyles from '../Preview.module.css';
 import { SidebarBrowser } from './SidebarBrowser';
 import { MediaPreview } from './MediaPreview';
 import './PdfReader.css';
-import { sanitizeMarkdownPreviewHtml } from '../../utils/markdown-html-sanitizer';
 import { workbenchMarkdownOptions } from '../../utils/workbench-markdown';
 import { resolveServerConnection } from '../../services/server-connection';
 
@@ -127,16 +126,6 @@ function UnavailablePreviewTarget({previewItem}: {previewItem: PreviewItem}) {
     } finally {setLoading(false);}
   };
   return <div className={previewStyles.previewUnavailable} role="alert"><p>{previewItem.loadError || '暂时无法加载预览'}</p><span>{previewItem.title}</span><button disabled={loading} onClick={() => void retry()}>{loading ? '正在重试…' : '重新加载'}</button></div>;
-}
-
-function OfficePreview({previewItem}: {previewItem: PreviewItem}) {
-  const markup=useMemo(()=>({__html:sanitizeMarkdownPreviewHtml(previewItem.content)}),[previewItem.content]);
-  return <div className={previewItem.type==='docx'?'preview-docx md-content':'preview-csv'} onClick={event=>{
-    const link=(event.target as HTMLElement).closest('a[href]');
-    if(!link)return;
-    const href=link.getAttribute('href');if(!href)return;
-    event.preventDefault();void openInternalLink(href,{origin:'desk',baseFilePath:previewItem.filePath});
-  }} dangerouslySetInnerHTML={markup}/>;
 }
 
 // ── HtmlPreview ──
@@ -646,39 +635,7 @@ function MarkdownPreview({ previewItem }: { previewItem: PreviewItem }) {
 
 // ── CsvPreview ──
 
-function CsvPreview({ content }: { content: string }) {
-  const rows = parseCSV(content);
-  if (rows.length === 0) {
-    return <div className="preview-csv"><table /></div>;
-  }
-
-  const headerRow = rows[0];
-  const bodyRows = rows.slice(1);
-
-  return (
-    <div className="preview-csv">
-      <table>
-        <thead>
-          <tr>
-            {headerRow.map((cell, i) => (
-              <th key={`csv-h-${i}`}>{cell}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {bodyRows.map((row, ri) => (
-            <tr key={`csv-r-${ri}`}>
-              {row.map((cell, ci) => (
-                <td key={`csv-c-${ri}-${ci}`}>{cell}</td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
+const SpreadsheetPreview = lazy(() => import('./SpreadsheetPreview'));
 const DocxPreview = lazy(() => import('./DocxPreview'));
 const PdfReader = lazy(() => import('./PdfReader'));
 
@@ -805,7 +762,7 @@ export function PreviewRenderer({ previewItem }: PreviewRendererProps) {
       );
 
     case 'csv':
-      return <CsvPreview content={previewItem.content} />;
+      return <Suspense fallback={<div role="status">正在加载表格…</div>}><SpreadsheetPreview key={previewItem.id} previewItem={previewItem}/></Suspense>;
 
     // image / svg：旧类型 previewItem 的 fallback。新路径不再产生此类 previewItem，
     // 持久化或旧 session 恢复时可能命中。点击后按 owner 路由到统一的 MediaViewer。
@@ -819,7 +776,7 @@ export function PreviewRenderer({ previewItem }: PreviewRendererProps) {
     case 'docx':
       return <Suspense fallback={<div role="status">正在加载 Word 阅读器…</div>}><DocxPreview key={previewItem.id} previewItem={previewItem}/></Suspense>;
     case 'xlsx':
-      return <OfficePreview previewItem={previewItem}/>;
+      return <Suspense fallback={<div role="status">正在加载表格…</div>}><SpreadsheetPreview key={previewItem.id} previewItem={previewItem}/></Suspense>;
 
     case 'file-info':
       return <FileInfoPreview previewItem={previewItem} />;

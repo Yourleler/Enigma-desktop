@@ -142,9 +142,11 @@ export function PreviewPanel() {
   const activeHeadingRef = useRef<string | null>(null);
   const previewFindMarksRef = useRef<HTMLElement[]>([]);
 
+  const [csvSource,setCsvSource]=useState(false);
+  useEffect(()=>setCsvSource(false),[activeTabId]);
   const previewItem = previewItems.find(a => a.id === activeTabId) ?? null;
   const markdownPreviewActive = !!previewItem && markdownPreviewIds.includes(previewItem.id);
-  const editable = isEditable(previewItem) && !markdownPreviewActive;
+  const editable = isEditable(previewItem) && !markdownPreviewActive && (previewItem?.type!=='csv'||csvSource);
   const markdownFile = isMarkdownFile(previewItem);
   const showMarkdownEditorStatus = editable && previewItem?.type === 'markdown';
   const contentHash = useMemo(() => previewItem?.type === 'markdown' ? hashMarkdownContent(previewItem.content) : '', [previewItem?.content, previewItem?.type]);
@@ -353,14 +355,14 @@ export function PreviewPanel() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (!previewOpen || ['browser','pdf','docx'].includes(previewItem?.type || '') || !(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== 'f') return;
+      if (!previewOpen || ['browser','pdf','docx','xlsx'].includes(previewItem?.type || '') || (previewItem?.type==='csv'&&!csvSource) || !(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== 'f') return;
       event.preventDefault();
       event.stopPropagation();
       setFindOpen(true);
     };
     window.addEventListener('keydown', onKeyDown, true);
     return () => window.removeEventListener('keydown', onKeyDown, true);
-  }, [previewOpen, previewItem?.type]);
+  }, [previewOpen, previewItem?.type,csvSource]);
 
   useEffect(() => {
     setFindIndex(0);
@@ -416,6 +418,7 @@ export function PreviewPanel() {
       <div className="resize-handle resize-handle-left" id="previewResizeHandle"></div>
       <div className={previewStyles.previewPanelInner} data-preview-panel-inner="">
         <TabBar />
+        {previewItem?.type==='csv'&&isEditable(previewItem)&&<div className="enigma-csv-mode" role="group" aria-label="CSV 显示方式"><button aria-pressed={!csvSource} onClick={()=>setCsvSource(false)}>表格预览</button><button aria-pressed={csvSource} onClick={()=>setCsvSource(true)}>编辑 CSV</button></div>}
         <div
           className={previewStyles.previewBodyShell}
           data-preview-body-shell=""
@@ -431,7 +434,7 @@ export function PreviewPanel() {
             />
           )}
           <ClassicFindBox
-            open={findOpen && !['browser','pdf','docx'].includes(previewItem?.type||'')}
+            open={findOpen && !['browser','pdf','docx','xlsx'].includes(previewItem?.type||'') && (previewItem?.type!=='csv'||csvSource)}
             query={findQuery}
             resultIndex={Math.min(findIndex, Math.max(0, findCount - 1))}
             resultCount={findCount}
@@ -441,7 +444,7 @@ export function PreviewPanel() {
             onClose={() => setFindOpen(false)}
           />
           {previewOpen && anchorMessage && <div role="status" className={previewStyles.previewAnchorMessage}>{anchorMessage}<button type="button" aria-label="关闭章节提示" onClick={()=>setAnchorMessage('')}>×</button></div>}
-          {previewOpen && previewItem && !['browser', 'media', 'pdf', 'docx', 'file-info'].includes(previewItem.type) && !['missing','unavailable'].includes(previewItem.status||'') && (
+          {previewOpen && previewItem && !['browser', 'media', 'pdf', 'docx', 'xlsx', 'csv', 'file-info'].includes(previewItem.type) && !['missing','unavailable'].includes(previewItem.status||'') && (
             <FloatingActions
               content={previewItem.content}
               filePath={previewItem.filePath}

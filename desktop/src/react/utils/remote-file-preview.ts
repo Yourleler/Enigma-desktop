@@ -111,6 +111,7 @@ interface PreviewContentSnapshot {
 }
 
 function fileVersionFromContentHeaders(headers: Headers): FileVersion | undefined {
+  if(!headers.has('X-Hana-File-MtimeMs')||!headers.has('X-Hana-File-Size'))return undefined;
   const mtimeMs = Number(headers.get('X-Hana-File-MtimeMs'));
   const size = Number(headers.get('X-Hana-File-Size'));
   if (!Number.isFinite(mtimeMs) || !Number.isFinite(size)) return undefined;
@@ -176,7 +177,7 @@ async function readRemotePreviewContentWithRetry(
   const retryDelaysMs = options.retryDelaysMs ?? REMOTE_REFRESH_RETRY_DELAYS_MS;
   let lastRead: PreviewContentSnapshot = { content: '' };
   for (let attempt = 0; ; attempt += 1) {
-    if(item.type==='media'||item.type==='docx') {
+    if(item.type==='media'||item.type==='docx'||item.type==='xlsx') {
       const response=await hanaFetch(contentPath,{method:'HEAD'});
       return {content:'',fileVersion:fileVersionFromContentHeaders(response.headers)};
     }
@@ -274,7 +275,7 @@ export async function readRemotePreviewItem(item: PreviewItem): Promise<PreviewI
 }
 
 async function readOfficePreviewItem(item: PreviewItem): Promise<PreviewItem> {
-  if(item.type==='docx'){
+  if(item.type==='docx'||item.type==='xlsx'){
     const ref=item.remoteContentRef;const contentPath=isRemoteWorkbenchContentRef(ref)?encodeWorkbenchContentPath(ref):item.contentResourceId?`/api/resources/${encodeURIComponent(item.contentResourceId)}/content`:null;
     if(!contentPath)throw new Error('文档缺少读取入口，请从工作台重新打开');
     const response=await hanaFetch(contentPath,{method:'HEAD'});

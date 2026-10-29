@@ -368,7 +368,7 @@ function localResourceKey(filePath: string): string {
 
 function versionFromStat(stat: fs.Stats): ResourceVersion {
   return {
-    mtimeMs: stat.mtime.getTime(),
+    mtimeMs: stat.mtimeMs,
     size: stat.isDirectory() ? null : stat.size,
   };
 }

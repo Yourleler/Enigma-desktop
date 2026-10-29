@@ -1,13 +1,5 @@
 import { EditorView, WidgetType } from '@codemirror/view';
-import { parseCSV } from '../../utils/format';
-
-/** 将字段值转义回 CSV 格式（含逗号或引号时加双引号包裹） */
-function encodeField(s: string): string {
-  if (s.includes(',') || s.includes('"') || s.includes('\n')) {
-    return '"' + s.replace(/"/g, '""') + '"';
-  }
-  return s;
-}
+import {parseCsvDocument,updateCsvCells} from '../../utils/csv-document';
 
 export class CsvTableWidget extends WidgetType {
   constructor(
@@ -20,7 +12,7 @@ export class CsvTableWidget extends WidgetType {
     const wrapper = document.createElement('div');
     wrapper.className = 'cm-csv-table-widget';
 
-    const rows = parseCSV(this.source);
+    let rows:string[][];try{rows=parseCsvDocument(this.source).rows;}catch{wrapper.textContent='CSV 引号不完整；请选择源码文本修复。';return wrapper;}
     if (rows.length === 0) {
       wrapper.textContent = this.source;
       return wrapper;
@@ -28,14 +20,14 @@ export class CsvTableWidget extends WidgetType {
 
     const headers = rows[0];
     const bodyData = rows.slice(1);
-    const colCount = headers.length;
+    const colCount = Math.max(...rows.map(row=>row.length));
 
     const table = document.createElement('table');
 
     // -- thead --
     const thead = document.createElement('thead');
     const headTr = document.createElement('tr');
-    headers.forEach((h, ci) => {
+    Array.from({length:colCount},(_,index)=>headers[index]||'').forEach((h, ci) => {
       const th = document.createElement('th');
       th.textContent = h;
       th.dataset.raw = h;
@@ -129,17 +121,8 @@ export class CsvTableWidget extends WidgetType {
 
   /** 从 DOM 读取所有单元格，重建 CSV，写回文档 */
   private syncToDocument(wrapper: HTMLElement, view: EditorView) {
-    const headerCells = Array.from(wrapper.querySelectorAll<HTMLElement>('thead th'));
-    const headers = headerCells.map(c => c.dataset.raw || '');
-
-    const csvRows: string[][] = [headers];
-    const trs = wrapper.querySelectorAll<HTMLElement>('tbody tr');
-    trs.forEach(tr => {
-      const tds = Array.from(tr.querySelectorAll<HTMLElement>('td'));
-      csvRows.push(tds.map(c => c.dataset.raw || ''));
-    });
-
-    const newCsv = csvRows.map(row => row.map(encodeField).join(',')).join('\n');
+    const edits=Array.from(wrapper.querySelectorAll<HTMLElement>('th,td')).map(cell=>({row:Number(cell.dataset.row)+1,column:Number(cell.dataset.col),value:cell.dataset.raw||''}));
+    const newCsv=updateCsvCells(this.source,edits);
 
     if (newCsv === this.source) return;
 

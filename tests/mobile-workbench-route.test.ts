@@ -308,7 +308,7 @@ describe("mobile workbench route", () => {
         action: "writeText",
         name: "note.md",
         content: "should not write",
-        expectedVersion: { mtimeMs: before.mtime.getTime() - 1, size: before.size },
+        expectedVersion: { mtimeMs: before.mtimeMs - 1, size: before.size },
       }),
     });
 
@@ -316,7 +316,7 @@ describe("mobile workbench route", () => {
     expect(await stale.json()).toMatchObject({
       ok: false,
       conflict: true,
-      version: { mtimeMs: before.mtime.getTime(), size: before.size },
+      version: { mtimeMs: before.mtimeMs, size: before.size },
     });
     expect(fs.readFileSync(target, "utf-8")).toBe("old");
 
@@ -327,7 +327,7 @@ describe("mobile workbench route", () => {
         action: "writeText",
         name: "note.md",
         content: "new body",
-        expectedVersion: { mtimeMs: before.mtime.getTime(), size: before.size },
+        expectedVersion: { mtimeMs: before.mtimeMs, size: before.size },
       }),
     });
 

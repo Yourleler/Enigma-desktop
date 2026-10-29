@@ -42,13 +42,6 @@ function putWorkspaceImageOnDrag(dataTransfer: DataTransfer) {
 }
 
 describe('PreviewRenderer HTML isolation', () => {
-  it('sanitizes converted office documents before placing them in the application DOM', () => {
-    const {container}=render(<PreviewRenderer previewItem={{id:'sheet',type:'xlsx',title:'new.xlsx',content:'<p>正文</p><a href="javascript:alert(1)">链接</a><img src="x" onerror="alert(1)"><script>alert(1)</script>'}}/>);
-    expect(container.textContent).toContain('正文');
-    expect(container.querySelector('script')).toBeNull();
-    expect(container.querySelector('a')?.getAttribute('href')).toBeNull();
-    expect(container.querySelector('[onerror]')).toBeNull();
-  });
   const htmlContent = '<script src="https://cdn.tailwindcss.com"></script><div class="text-red-500">Hello</div>';
   const previewItem: PreviewItem = {
     id: 'html-demo',

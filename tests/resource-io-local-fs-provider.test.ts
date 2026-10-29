@@ -203,6 +203,14 @@ describe("LocalFsProvider", () => {
     });
   });
 
+  it("accepts precise file-content header versions and still rejects subsequent external changes",async()=>{
+    const {cwd,provider}=makeProvider();const file=path.join(cwd,'precise.csv');fs.writeFileSync(file,'a,b');fs.utimesSync(file,1790000000.123456,1790000000.123456);
+    const stat=fs.statSync(file);const expected={mtimeMs:stat.mtimeMs,size:stat.size};
+    expect((await provider.stat({kind:'local-file',path:'precise.csv'})).version?.mtimeMs).toBe(expected.mtimeMs);
+    const result=await provider.writeExpectedVersion({kind:'local-file',path:'precise.csv'},'c,d',expected);expect(result).not.toMatchObject({conflict:true});expect(fs.readFileSync(file,'utf8')).toBe('c,d');
+    fs.writeFileSync(file,'external changed');const rejected=await provider.writeExpectedVersion({kind:'local-file',path:'precise.csv'},'stale',expected);expect(rejected).toMatchObject({conflict:true});expect(fs.readFileSync(file,'utf8')).toBe('external changed');
+  });
+
   it("supports expected-version writes, rename, move, and trash as ResourceIO authority operations", async () => {
     const { cwd, realCwd, trashRoot, provider } = makeProvider();
     const source = path.join(cwd, "draft.md");
@@ -224,7 +232,7 @@ describe("LocalFsProvider", () => {
     const saved = await provider.writeExpectedVersion(
       { kind: "local-file", path: "draft.md" },
       "new",
-      { mtimeMs: before.mtime.getTime(), size: before.size },
+      { mtimeMs: before.mtimeMs, size: before.size },
     );
     expect(saved).toMatchObject({ changeType: "modified", version: { size: 3 } });
 

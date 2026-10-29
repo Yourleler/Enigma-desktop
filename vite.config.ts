@@ -340,6 +340,17 @@ function docxReaderAssets(): Plugin {
   });}};
 }
 
+function spreadsheetViewerAssets(): Plugin {
+  const version=JSON.parse(fs.readFileSync(path.resolve(__dirname,'package.json'),'utf8')).version;
+  return {name:'enigma-spreadsheet-viewer-entry',closeBundle(){
+    const out=path.resolve(__dirname,'desktop/dist-renderer'),target=path.join(out,'assets',`spreadsheet-viewer-${version}`);fs.mkdirSync(target,{recursive:true});
+    const html=fs.readFileSync(path.join(out,'spreadsheet-viewer.html'),'utf8').replaceAll('"./assets/','"../');fs.writeFileSync(path.join(target,'index.html'),html);
+    for(const [name,dir] of [['Univer','@univerjs/core'],['ExcelJS','exceljs'],['PapaParse','papaparse']]){const root=path.resolve(__dirname,'node_modules',dir);const license=['LICENSE','LICENSE.txt','LICENSE.md'].find(file=>fs.existsSync(path.join(root,file)));if(!license)throw new Error('Missing license '+name);fs.copyFileSync(path.join(root,license),path.join(target,'LICENSE-'+name));}
+    fs.copyFileSync(path.resolve(__dirname,'desktop/src/assets/licenses/saxes-LICENSE'),path.join(target,'LICENSE-Saxes'));
+    fs.writeFileSync(path.join(target,'NOTICE.md'),'Univer 1.2.0: Copyright DreamNum Co., Ltd., Apache-2.0. ExcelJS: MIT. PapaParse: MIT. Saxes: ISC, Copyright Louis-Dominique Dubeau; license from https://github.com/lddubeau/saxes/blob/master/LICENSE. Enigma implements the local file-to-workbook adapter. No commercial import service is included.');
+  }};
+}
+
 export default defineConfig({
   root: 'desktop/src',
   base: './',
@@ -355,6 +366,7 @@ export default defineConfig({
     copyLegacyFiles(),
     pdfReaderAssets(),
     docxReaderAssets(),
+    spreadsheetViewerAssets(),
   ],
   resolve: {
     alias: {
@@ -394,6 +406,7 @@ export default defineConfig({
         // 不依赖这份 rollupOptions.input 列表。
         'browser-viewer': path.resolve(__dirname, 'desktop/src/browser-viewer.html'),
         'viewer-window': path.resolve(__dirname, 'desktop/src/viewer-window.html'),
+        'spreadsheet-viewer':path.resolve(__dirname,'desktop/src/spreadsheet-viewer.html'),
       },
     },
   },
