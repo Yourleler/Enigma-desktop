@@ -1,4 +1,6 @@
 import {useEffect,useMemo,useRef,useState} from 'react';
+import {createRoot,type Root} from 'react-dom/client';
+import {MediaPlayer} from '../../preview/MediaPlayer';
 import type PhotoSwipe from 'photoswipe';
 import type {SlideData} from 'photoswipe';
 import type {FileRef} from '../../../types/file-ref';
@@ -22,10 +24,11 @@ export function PhotoSwipeSurface({files,currentId,embedded=false,onCurrent,onCl
   useEffect(()=>{
     const target=host.current;if(!target||!list.length)return;
     let disposed=false,pswp:PhotoSwipe|undefined;
-    const abort=new AbortController(),pending=new Map<number,Promise<void>>(),media=new Map<object,HTMLVideoElement>();
+    const abort=new AbortController(),pending=new Map<number,Promise<void>>(),media=new Map<object,{host:HTMLElement;root:Root;render:(active:boolean)=>void}>();
     const data:Item[]=list.map(file=>({file,ready:false,type:file.kind==='video'?'html':'image',src:'about:blank',width:800,height:600,alt:file.name}));
     const cleanupDownloads=new Map<string,ReturnType<typeof setTimeout>>();
-    const releaseVideos=()=>{media.forEach(video=>{video.pause();video.removeAttribute('src');video.load();});media.clear();};
+    const releaseVideo=(entry:{host:HTMLElement;root:Root})=>{entry.host.querySelector('video')?.pause();if(disposed)queueMicrotask(()=>entry.root.unmount());else entry.root.unmount();};
+    const releaseVideos=()=>{media.forEach(releaseVideo);media.clear();};
     setLoading(true);setFailure('');
     const currentFile=()=>list[pswp?.currIndex||0];
     const canLocal=()=>{const connection=resolveServerConnection(useStore.getState());return !isWebRuntime()&&(!connection||isLocalOwnerConnection(connection));};
@@ -50,7 +53,7 @@ export function PhotoSwipeSurface({files,currentId,embedded=false,onCurrent,onCl
     const update=()=>{
       if(!pswp?.element)return;const item=data[pswp.currIndex],slide=pswp.currSlide;if(!item)return;
       const title=pswp.element.querySelector<HTMLElement>('.enigma-photo-title');if(title){title.textContent=item.file.name;title.title=item.file.name;}
-      const info=pswp.element.querySelector<HTMLElement>('.enigma-photo-info');if(info){info.textContent=item.error||(!item.ready?'正在读取文件…':item.file.kind==='video'?'视频 · 系统播放控件':`${item.width} × ${item.height} 像素 · ${Math.round((slide?.currZoomLevel||1)*100)}% · 滚轮缩放，放大后拖动`);}
+      const info=pswp.element.querySelector<HTMLElement>('.enigma-photo-info');if(info){info.textContent=item.error||(!item.ready?'正在读取文件…':item.file.kind==='video'?'视频 · 支持字幕、倍速、全屏与画中画':`${item.width} × ${item.height} 像素 · ${Math.round((slide?.currZoomLevel||1)*100)}% · 滚轮缩放，放大后拖动`);}
       for(const action of ['fit','original','zoom-in','zoom-out']){const button=pswp.element.querySelector<HTMLButtonElement>('.pswp__button--'+action);if(button)button.disabled=!item.ready||!!item.error||item.file.kind==='video';}
       for(const action of ['open-system','reveal']){const button=pswp.element.querySelector<HTMLButtonElement>('.pswp__button--'+action);if(button)button.hidden=!canLocal()||!item.file.path;}
       const button=pswp.element.querySelector<HTMLButtonElement>('.pswp__button--download');if(button)button.disabled=!item.ready||!!item.error;
@@ -64,7 +67,7 @@ export function PhotoSwipeSurface({files,currentId,embedded=false,onCurrent,onCl
       const offset=()=>{const rect=target.getBoundingClientRect();pswp!.offset.x=rect.left+window.scrollX;pswp!.offset.y=rect.top+window.scrollY;};
       pswp.on('updateScrollOffset',offset);pswp.on('afterInit',offset);
       pswp.on('wheel',event=>{if(!embedded)return;event.preventDefault();const wheel=event.originalEvent,slide=pswp!.currSlide;if(!slide?.isZoomable())return;const rect=target.getBoundingClientRect();const factor=2**(-wheel.deltaY*(wheel.deltaMode===1?.05:wheel.deltaMode?1:.002));slide.zoomTo(slide.currZoomLevel*factor,{x:wheel.clientX-rect.left,y:wheel.clientY-rect.top});});
-      pswp.addFilter('preventPointerEvent',(prevent,event)=>event.target instanceof Element&&event.target.closest('video,button,input,select')?false:prevent);
+      pswp.addFilter('preventPointerEvent',(prevent,event)=>event.target instanceof Element&&event.target.closest('.enigma-media-player,video,button,input,select')?false:prevent);
       pswp.on('uiRegister',()=>{
         const button=(name:string,label:string,order:number,action:()=>void)=>pswp!.ui!.registerElement({name,title:label,ariaLabel:label,order,isButton:true,html:label,onClick:action});
         pswp!.ui!.registerElement({name:'file-title',className:'enigma-photo-title',order:1,appendTo:'bar',onInit:element=>{element.setAttribute('aria-live','polite');}});
@@ -84,13 +87,16 @@ export function PhotoSwipeSurface({files,currentId,embedded=false,onCurrent,onCl
         if(!item.ready){event.preventDefault();void prepare(content.index);return;}
         if(item.error){event.preventDefault();const node=document.createElement('div');node.className='enigma-photo-error';const message=document.createElement('p');message.textContent=item.error;const retry=document.createElement('button');retry.textContent='重新加载';retry.onclick=()=>void prepare(content.index,true);node.append(message,retry);content.element=node;content.onLoaded();return;}
         if(item.file.kind==='video'){
-          event.preventDefault();const node=document.createElement('div');node.className='enigma-photo-video';const video=document.createElement('video');video.src=item.src!;video.controls=true;video.preload='metadata';video.playsInline=true;video.setAttribute('aria-label',item.file.name);node.append(video);content.element=node;media.set(content,video);video.onloadeddata=()=>content.onLoaded();video.onerror=()=>content.onError();content.onLoaded();
+          event.preventDefault();const node=document.createElement('div');node.className='enigma-photo-video';content.element=node;
+          const root=createRoot(node),render=(active:boolean)=>root.render(<MediaPlayer src={item.src!} kind="video" name={item.file.name} restoreKey={`${item.file.id}:${fileRefVersionToken(item.file)}`} active={active} onReady={()=>{if(!disposed)content.onLoaded();}} onError={()=>{if(!disposed)content.onError();}}/>);
+          media.set(content,{host:node,root,render});render(pswp!.currIndex===content.index);content.onLoaded();
         }
       });
-      pswp.on('contentDeactivate',event=>media.get(event.content)?.pause());
-      pswp.on('contentDestroy',event=>{const video=media.get(event.content);if(video){video.pause();video.removeAttribute('src');video.load();media.delete(event.content);}});
+      pswp.on('contentDeactivate',event=>{const entry=media.get(event.content);entry?.host.querySelector('video')?.pause();entry?.render(false);});
+      pswp.on('contentActivate',event=>media.get(event.content)?.render(true));
+      pswp.on('contentDestroy',event=>{const entry=media.get(event.content);if(entry){releaseVideo(entry);media.delete(event.content);}});
       pswp.on('keydown',event=>{const keyEvent=event.originalEvent;const element=keyEvent.target as Element|null;
-        if(embedded&&(!target.contains(document.activeElement)||!!document.querySelector('.enigma-photoswipe-gallery'))||element?.closest('input,textarea,select,video,[contenteditable=true]')&&(keyEvent.key!=='Escape'||!!document.fullscreenElement)){event.preventDefault();return;}
+        if(embedded&&(!target.contains(document.activeElement)||!!document.querySelector('.enigma-photoswipe-gallery'))||element?.closest('.enigma-media-player,input,textarea,select,video,[contenteditable=true]')&&(keyEvent.key!=='Escape'||!!document.fullscreenElement)){event.preventDefault();return;}
         if(['+','=','-','0'].includes(keyEvent.key)){event.preventDefault();keyEvent.preventDefault();const slide=pswp!.currSlide;if(slide){const zoom=keyEvent.key==='0'?slide.zoomLevels.fit:slide.currZoomLevel*(keyEvent.key==='-'?1/1.5:1.5);pswp!.zoomTo(zoom);}}
       });
       pswp.addFilter('contentErrorElement',(element,content)=>{const button=document.createElement('button');button.textContent='重新加载';button.onclick=()=>void prepare(content.index,true);element.append(button);return element;});
@@ -98,12 +104,12 @@ export function PhotoSwipeSurface({files,currentId,embedded=false,onCurrent,onCl
       pswp.init();
       const itemsId='enigma-photo-'+crypto.randomUUID();if(pswp.container)pswp.container.id=itemsId;pswp.element?.querySelectorAll('[aria-controls="pswp__items"]').forEach(element=>element.setAttribute('aria-controls',itemsId));
       pswp.element?.addEventListener('dblclick',event=>{if((event.target as Element)?.closest('img.pswp__img')){event.preventDefault();pswp!.toggleZoom();}});
-      pswp.element?.addEventListener('pointerdown',event=>{offset();if(embedded&&!(event.target as Element).closest('button,input,video,select'))target.focus({preventScroll:true});},{capture:true});
+      pswp.element?.addEventListener('pointerdown',event=>{offset();if(embedded&&!(event.target as Element).closest('.enigma-media-player,button,input,video,select'))target.focus({preventScroll:true});},{capture:true});
       if(!embedded){pswp.element?.setAttribute('aria-label','媒体画廊');pswp.element?.setAttribute('aria-modal','true');}
       if(embedded){pswp.element?.setAttribute('role','group');pswp.element?.removeAttribute('aria-modal');pswp.element?.setAttribute('aria-label','图片缩放与拖动');}setLoading(false);update();
     })().catch(()=>{if(!disposed){setLoading(false);setFailure('图片查看器未能启动，请重试');}});
     const resize=new ResizeObserver(()=>pswp?.updateSize(true));resize.observe(target);
-    const hidden=()=>{if(document.hidden)media.forEach(video=>video.pause());};document.addEventListener('visibilitychange',hidden);
+    const hidden=()=>{if(document.hidden)media.forEach(entry=>entry.host.querySelector('video')?.pause());};document.addEventListener('visibilitychange',hidden);
     return()=>{disposed=true;abort.abort();resize.disconnect();document.removeEventListener('visibilitychange',hidden);releaseVideos();pswp?.destroy();instance.current=null;data.forEach(item=>item.cleanup?.());cleanupDownloads.forEach((timer,url)=>{clearTimeout(timer);URL.revokeObjectURL(url);});};
   },[signature,connectionKey,embedded,attempt]);
   useEffect(()=>{const index=list.findIndex(file=>file.id===currentId);if(index>=0&&instance.current&&instance.current.currIndex!==index)instance.current.goTo(index);},[currentId,list]);

@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import {fileURLToPath} from 'node:url';
 /** Original local fixtures for pan, original-size, small-image and failure checks. */
 export async function createImagePreviewFixtures(root){
  for(const [name,width,height,color] of [['image-first.svg',1600,1000,'#7d55b5'],['image-wide.svg',2800,700,'#24766b'],['image-small.svg',160,120,'#ae5470']]){
@@ -9,4 +10,4 @@ export async function createImagePreviewFixtures(root){
  }
  await fs.writeFile(path.join(root,'broken-image.svg'),'not an SVG',{flag:'wx'});
 }
-if(process.argv[2])await createImagePreviewFixtures(path.resolve(process.argv[2]));
+if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)&&process.argv[2])await createImagePreviewFixtures(path.resolve(process.argv[2]));

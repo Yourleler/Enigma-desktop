@@ -1,51 +1,76 @@
 // @vitest-environment jsdom
-import {cleanup,fireEvent,render,screen,waitFor} from '@testing-library/react';
+import {act,cleanup,fireEvent,render,screen,waitFor} from '@testing-library/react';
 import {afterEach,beforeEach,expect,it,vi} from 'vitest';
 import {MediaPlayer,formatMediaTime} from '../../components/preview/MediaPlayer';
 import {StrictMode} from 'react';
 beforeEach(()=>{
+  vi.spyOn(HTMLMediaElement.prototype,'audioTracks','get').mockReturnValue(Object.assign(new EventTarget(),{length:0,*[Symbol.iterator](){}}) as never);
+  vi.spyOn(HTMLMediaElement.prototype,'videoTracks','get').mockReturnValue(Object.assign(new EventTarget(),{length:0,*[Symbol.iterator](){}}) as never);
+  vi.spyOn(document,'hidden','get').mockReturnValue(false);
   vi.spyOn(HTMLMediaElement.prototype,'pause').mockImplementation(function(this:HTMLMediaElement){Object.defineProperty(this,'paused',{configurable:true,value:true});this.dispatchEvent(new Event('pause'))});
   vi.spyOn(HTMLMediaElement.prototype,'load').mockImplementation(()=>{});
   vi.spyOn(HTMLMediaElement.prototype,'play').mockImplementation(async function(this:HTMLMediaElement){Object.defineProperty(this,'paused',{configurable:true,value:false});this.dispatchEvent(new Event('play'))});
+  vi.stubGlobal('ResizeObserver',class{observe(){}disconnect(){}});
+  vi.stubGlobal('IntersectionObserver',class{observe(){}disconnect(){}});
 });
-afterEach(()=>{cleanup();vi.restoreAllMocks()});
-function setup(){const view=render(<MediaPlayer src="file:///new/video.webm" name="new.webm" kind="video" onReady={vi.fn()} onError={vi.fn()}/>);const video=view.container.querySelector('video')!;Object.defineProperty(video,'duration',{configurable:true,value:125});fireEvent.loadedMetadata(video);return {video,...view};}
-it('tracks actual playback, seeks only on commit, and preserves mute/rate controls',async()=>{
-  const {video}=setup();fireEvent.click(screen.getByRole('button',{name:'播放'}));await screen.findByRole('button',{name:'暂停'});
-  const seek=screen.getByRole('slider',{name:'播放进度'});fireEvent.change(seek,{target:{value:'30'}});expect(video.currentTime).toBe(0);
-  fireEvent.pointerUp(seek);expect(video.currentTime).toBe(30);
+afterEach(()=>{cleanup();vi.unstubAllGlobals();vi.restoreAllMocks()});
+const props={src:'file:///new/video.webm',name:'new.webm',kind:'video' as const,onReady:vi.fn(),onError:vi.fn()};
+function metadata(video:HTMLMediaElement){Object.defineProperty(video,'duration',{configurable:true,value:125});Object.defineProperty(video,'readyState',{configurable:true,value:4});fireEvent.loadedMetadata(video);fireEvent.canPlay(video);}
+function setup(){const view=render(<MediaPlayer {...props}/>);const video=view.container.querySelector('video')!;metadata(video);return {video,...view};}
+it('uses upstream translated playback and mute controls driven by the media element',async()=>{
+  const {video}=setup();fireEvent.click(screen.getAllByRole('button',{name:'播放'})[0]);
+  await waitFor(()=>expect(video.paused).toBe(false));await screen.findAllByRole('button',{name:'暂停'});
   fireEvent.click(screen.getByRole('button',{name:'静音'}));expect(video.muted).toBe(true);
-  fireEvent.change(screen.getByRole('slider',{name:'音量'}),{target:{value:'.5'}});expect(video.volume).toBe(.5);expect(video.muted).toBe(false);
-  fireEvent.change(screen.getByRole('combobox',{name:'播放速度'}),{target:{value:'1.5'}});expect(video.playbackRate).toBe(1.5);
-  fireEvent.click(screen.getByRole('button',{name:'暂停'}));expect(video.paused).toBe(true);
+  fireEvent.click(screen.getAllByRole('button',{name:'暂停'})[0]);expect(video.paused).toBe(true);
 });
 it('reports a rejected play request and retries on the same file',async()=>{
-  const {video}=setup();vi.mocked(video.play).mockRejectedValueOnce(new DOMException('blocked','NotAllowedError'));
-  fireEvent.click(screen.getByRole('button',{name:'播放'}));expect((await screen.findByRole('alert')).textContent).toContain('再次点击播放');
-  fireEvent.click(screen.getByRole('button',{name:'播放'}));await waitFor(()=>expect(screen.queryByRole('alert')).toBeNull());expect(video.paused).toBe(false);
+  vi.mocked(HTMLMediaElement.prototype.play).mockRejectedValueOnce(new DOMException('blocked','NotAllowedError'));
+  const {video}=setup();fireEvent.click(screen.getAllByRole('button',{name:'播放'})[0]);
+  expect((await screen.findByRole('alert')).textContent).toContain('再次点击播放');
+  fireEvent.click(screen.getAllByRole('button',{name:'播放'})[0]);await waitFor(()=>expect(screen.queryByRole('alert')).toBeNull());expect(video.paused).toBe(false);
 });
-it('keeps keyboard range navigation separate from the player shortcuts and pauses hidden media',async()=>{
-  const {video,container}=setup();const group=screen.getByRole('group',{name:'new.webm播放控制'});
-  fireEvent.keyDown(group,{key:'ArrowRight'});expect(video.currentTime).toBe(5);
-  fireEvent.keyDown(screen.getByRole('slider',{name:'音量'}),{key:'ArrowRight'});expect(video.currentTime).toBe(5);
-  fireEvent.keyDown(group,{key:' '});await waitFor(()=>expect(video.paused).toBe(false));
-  vi.spyOn(document,'hidden','get').mockReturnValue(true);fireEvent(document,new Event('visibilitychange'));expect(video.paused).toBe(true);
-  expect(container.querySelector('[data-playback-state="paused"]')).toBeTruthy();
+it('keeps upstream keyboard controls scoped to the player and pauses hidden media',async()=>{
+  const {video,container}=setup();const skin=container.querySelector('.enigma-video-skin')!;
+  fireEvent.keyDown(document.body,{key:'ArrowRight'});expect(video.currentTime).toBe(0);
+  fireEvent.keyDown(skin,{key:'ArrowRight'});await waitFor(()=>expect(video.currentTime).toBe(10));
+  await act(()=>video.play());vi.spyOn(document,'hidden','get').mockReturnValue(true);fireEvent(document,new Event('visibilitychange'));expect(video.paused).toBe(true);
 });
 it('releases the media source on unmount and does not autoplay',()=>{
   const {video,unmount}=setup();expect(video.autoplay).toBe(false);unmount();expect(video.getAttribute('src')).toBeNull();expect(video.pause).toHaveBeenCalled();
 });
-it('restores its source after effect replay instead of leaving the player empty',()=>{
-  const {container}=render(<StrictMode><MediaPlayer src="file:///new/replayed.webm" kind="video" name="replayed.webm" onReady={vi.fn()} onError={vi.fn()}/></StrictMode>);
-  expect(container.querySelector('video')?.getAttribute('src')).toBe('file:///new/replayed.webm');
+it('restores its source after StrictMode effect replay',()=>{
+  const {container}=render(<StrictMode><MediaPlayer {...props}/></StrictMode>);expect(container.querySelector('video')?.getAttribute('src')).toBe(props.src);
 });
-it('retains the reading position across panel remounts without resuming playback',()=>{
-  const props={src:'file:///new/retained.webm',restoreKey:'retained',kind:'video' as const,name:'retained.webm',onReady:vi.fn(),onError:vi.fn()};
-  const first=render(<MediaPlayer {...props}/>);const video=first.container.querySelector('video')!;
-  Object.defineProperty(video,'readyState',{configurable:true,value:4});Object.defineProperty(video,'duration',{configurable:true,value:120});fireEvent.loadedMetadata(video);video.currentTime=42;video.playbackRate=1.5;first.unmount();
-  const second=render(<MediaPlayer {...props}/>);const restoredVideo=second.container.querySelector('video')!;Object.defineProperty(restoredVideo,'duration',{configurable:true,value:120});fireEvent.loadedMetadata(restoredVideo);
-  expect(restoredVideo.currentTime).toBe(42);expect(restoredVideo.playbackRate).toBe(1.5);expect(restoredVideo.paused).toBe(true);
+it('retains the position, rate and volume through fallback and back without autoplay',()=>{
+  const {video,container}=setup();video.currentTime=42;video.playbackRate=1.5;video.volume=.4;
+  fireEvent.click(screen.getByRole('button',{name:'系统控件'}));const native=container.querySelector('video')!;metadata(native);expect(native.controls).toBe(true);expect(native.currentTime).toBe(42);expect(native.playbackRate).toBe(1.5);expect(native.volume).toBe(.4);expect(native.paused).toBe(true);
+  fireEvent.click(screen.getByRole('button',{name:'返回增强控件'}));const enhanced=container.querySelector('video')!;metadata(enhanced);expect(enhanced.currentTime).toBe(42);expect(enhanced.paused).toBe(true);
 });
-it('shows finite times without NaN for unknown duration',()=>{
-  expect(formatMediaTime(3661)).toBe('1:01:01');expect(formatMediaTime(NaN)).toBe('0:00');expect(formatMediaTime(-1)).toBe('0:00');
+it('stops an inactive gallery video including late play completion',async()=>{
+  let resolve!:()=>void;vi.mocked(HTMLMediaElement.prototype.play).mockImplementationOnce(()=>new Promise<void>(r=>resolve=r));
+  const view=setup();let playing!:Promise<void>;act(()=>{playing=view.video.play()});view.rerender(<MediaPlayer {...props} active={false}/>);
+  await act(async()=>{resolve();await playing;});expect(view.video.paused).toBe(true);
+});
+it('validates local subtitles and releases their object URL',async()=>{
+  vi.stubGlobal('URL',class extends URL{static createObjectURL=vi.fn(()=> 'blob:subtitle');static revokeObjectURL=vi.fn()});
+  const {container,unmount}=setup();const input=screen.getByLabelText('选择 WebVTT 字幕');
+  fireEvent.change(input,{target:{files:[{name:'bad.vtt',size:8,text:async()=>'<html>'}]}});expect((await screen.findByRole('alert')).textContent).toContain('WEBVTT');
+  fireEvent.change(input,{target:{files:[{name:'new.vtt',size:60,text:async()=> 'WEBVTT\n\n00:00.000 --> 00:02.000\n新建字幕\n'}]}});
+  await waitFor(()=>expect(container.querySelector('track')?.src).toBe('blob:subtitle'));expect(screen.queryByRole('alert')).toBeNull();unmount();expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:subtitle');
+});
+it('uses the audio skin and relays source failure',()=>{
+  const onError=vi.fn(),view=render(<MediaPlayer {...props} kind="audio" onError={onError}/>);const audio=view.container.querySelector('audio')!;expect(audio.autoplay).toBe(false);expect(screen.queryByText('加载字幕')).toBeNull();fireEvent.error(audio);expect(onError).toHaveBeenCalled();
+});
+it('formats finite and unknown times',()=>{expect(formatMediaTime(3661)).toBe('1:01:01');expect(formatMediaTime(NaN)).toBe('0:00');});
+it('shows a recovery message when the host rejects fullscreen or picture in picture',async()=>{
+  const requestFullscreen=vi.fn(async()=>{throw new DOMException('host rejected','NotAllowedError')});
+  const requestPictureInPicture=vi.fn(async()=>{throw new DOMException('host rejected','NotAllowedError')});
+  const fullscreenBefore=HTMLElement.prototype.requestFullscreen,pipBefore=HTMLVideoElement.prototype.requestPictureInPicture;
+  HTMLElement.prototype.requestFullscreen=requestFullscreen;HTMLVideoElement.prototype.requestPictureInPicture=requestPictureInPicture;
+  try{
+    const view=setup();const skin=view.container.querySelector<HTMLElement>('.enigma-video-skin')!;
+    await act(async()=>{await skin.requestFullscreen().catch(()=>{});});expect(screen.getByRole('alert').textContent).toContain('无法进入全屏');
+    await act(async()=>{await view.video.requestPictureInPicture().catch(()=>{});});expect(screen.getByRole('alert').textContent).toContain('无法开启画中画');
+    view.unmount();expect(skin.requestFullscreen).toBe(requestFullscreen);expect(view.video.requestPictureInPicture).toBe(requestPictureInPicture);
+  }finally{HTMLElement.prototype.requestFullscreen=fullscreenBefore;HTMLVideoElement.prototype.requestPictureInPicture=pipBefore;}
 });

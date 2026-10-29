@@ -19,8 +19,8 @@ it('loads audio with explicit controls and reports an unsupported codec', async 
   await waitFor(() => expect(container.querySelector('audio')).toBeTruthy());
   const audio = container.querySelector('audio')!;
   expect(screen.getByRole('button',{name:'播放'})).toBeTruthy();expect(audio.autoplay).toBe(false);
-  fireEvent.click(screen.getByRole('button',{name:'系统控件'}));expect(audio.controls).toBe(true);
-  fireEvent.error(audio);
+  fireEvent.click(screen.getByRole('button',{name:'系统控件'}));const native=container.querySelector('audio')!;expect(native.controls).toBe(true);
+  fireEvent.error(native);
   expect(screen.getByRole('alert').textContent).toContain('格式');
   unmount(); expect(container.querySelector('audio')).toBeNull();
 });

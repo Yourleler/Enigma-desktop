@@ -3,9 +3,9 @@
 .enigma-media-toolbar > span { flex:1;min-width:0; }
 .enigma-media-toolbar b { display:block;font-weight:550;font-size:13px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
 .enigma-media-toolbar small { display:block;color:var(--text-muted);font-size:11px;margin-top:2px; }
-.enigma-media-preview button { display:inline-flex;align-items:center;justify-content:center;background:transparent;border:0;border-radius:7px;color:var(--text);padding:5px 8px;cursor:pointer;font-size:12px; }
-.enigma-media-preview button:hover { background:var(--overlay-light); }
-.enigma-media-preview button:focus-visible { outline:2px solid var(--accent); }
+.enigma-media-preview :is(.enigma-media-toolbar,.enigma-media-error) button { display:inline-flex;align-items:center;justify-content:center;background:transparent;border:0;border-radius:7px;color:var(--text);padding:5px 8px;cursor:pointer;font-size:12px; }
+.enigma-media-preview :is(.enigma-media-toolbar,.enigma-media-error) button:hover { background:var(--overlay-light); }
+.enigma-media-preview :is(.enigma-media-toolbar,.enigma-media-error) button:focus-visible { outline:2px solid var(--accent); }
 .enigma-media-stage { flex:1;position:relative;overflow:hidden;min-height:100px;display:flex;justify-content:center;align-items:center; }
 .enigma-media-stage > .enigma-media-player { align-self:stretch; }
 .enigma-media-loading { position:absolute;color:var(--text-muted);font-size:12px; }
