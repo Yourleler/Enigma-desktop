@@ -8,14 +8,12 @@ import { useStore } from '../../stores';
 import {BrowserDialog} from './BrowserDialog';
 import {openFilePreview} from '../../utils/file-preview';
 import {extOfName} from '../../utils/file-kind';
-import {resolveBrowserAddress} from '../../utils/browser-address';
+import {BrowserChrome} from '../../browser/BrowserChrome';
 
 export function SidebarBrowser({sessionPath}: {sessionPath?: string | null}) {
   const isCurrentSession = useStore(store => store.currentSessionPath === sessionPath);
   const [state, setState] = useState<SidebarBrowserState | null>(null);
   const current = useRef<SidebarBrowserState | null>(null);
-  const [address, setAddress] = useState('');
-  const addressEditing=useRef(false),addressTab=useRef<string|null|undefined>(undefined),tabStrip=useRef<HTMLDivElement>(null);
   const [error, setError] = useState('');
   const [connection, setConnection] = useState(0);
   const viewport = useRef<HTMLDivElement>(null);
@@ -51,7 +49,7 @@ export function SidebarBrowser({sessionPath}: {sessionPath?: string | null}) {
       if (url) void command('newTab', {url});
     };
     const onNavigation = (event: Event) => {
-      if ((event as CustomEvent).detail === browserPreviewKey(sessionPath)) navigatePending();
+      if ((event as CustomEvent).detail === browserPreviewKey(sessionPath)) {if(current.current?.detached)setConnection(value=>value+1);else navigatePending();}
     };
     window.addEventListener('enigma-browser-navigation', onNavigation);
     void platform.sidebarBrowserBind({surfaceId, sessionPath}).then(update => {
@@ -67,56 +65,15 @@ export function SidebarBrowser({sessionPath}: {sessionPath?: string | null}) {
     };
   }, [accept, command, connection, sessionPath]);
 
-  useEffect(() => {
-    const switched=addressTab.current!==state?.activeTabId;
-    if(switched||!addressEditing.current)setAddress(state?.url === 'about:blank' ? '' : state?.url || '');
-    if(switched)addressEditing.current=false;
-    addressTab.current=state?.activeTabId;
-  }, [state?.url,state?.activeTabId]);
-  useEffect(()=>{tabStrip.current?.querySelector('[aria-selected="true"]')?.scrollIntoView?.({block:'nearest',inline:'nearest'});},[state?.activeTabId]);
-
-  const navigate = () => {
-    try {const url=resolveBrowserAddress(address);addressEditing.current=false;setAddress(url);void command('navigate',{url});}
-    catch(failure){setError((failure as Error).message);}
-  };
-
   if (!window.platform?.sidebarBrowserBind) return <div className="enigma-browser-empty" role="status">内置浏览器需要桌面应用。请在桌面打开，或使用系统浏览器。</div>;
   const ready = !!state && !state.detached;
   const tabs = state?.tabs || [];
-  const downloads=state?.downloads||[];
-  const downloading=downloads.filter(download=>download.state==='progress').length;
   return <section className="enigma-sidebar-browser" aria-label="网页浏览器">
-    <div className="enigma-browser-tabbar"><span className="enigma-browser-label" title="此处管理网页；上方标签用于切换文件与浏览器">网页</span><div ref={tabStrip} className="enigma-browser-tabs" role="tablist" aria-label="网页标签">
-      {tabs.map(tab => <div className="enigma-browser-tab" key={tab.tabId} data-active={tab.tabId === state?.activeTabId}>
-        <button role="tab" tabIndex={tab.tabId === state?.activeTabId?0:-1} onKeyDown={event=>{
-          if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
-          event.preventDefault();const index=tabs.findIndex(item=>item.tabId===tab.tabId);
-          const next=event.key==='Home'?0:event.key==='End'?tabs.length-1:(index+(event.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;
-          (tabStrip.current?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next])?.focus();void command('switchTab',{tabId:tabs[next].tabId});
-        }} aria-selected={tab.tabId === state?.activeTabId} title={tab.title || tab.url || '空白页'} disabled={!ready} onClick={() => void command('switchTab', {tabId: tab.tabId})}>{tab.title === 'New Tab' ? '空白页' : tab.title || '空白页'}</button>
-        <button aria-label={`关闭网页：${tab.title || '空白页'}`} title="关闭此网页" disabled={!ready} onClick={() => void command('closeTab', {tabId: tab.tabId})}>×</button>
-      </div>)}
-    </div><button aria-label="新建网页标签" title="新建网页标签" disabled={!ready} onClick={() => void command('newTab')}><AppIcon name="add" size={15}/></button>
-    </div>
-    <form className="enigma-browser-toolbar" onSubmit={event => {event.preventDefault(); navigate();}}>
-      <button type="button" aria-label="后退" title="后退" disabled={!ready || !state?.canGoBack} onClick={() => void command('back')}><AppIcon name="chevronLeft" size={16}/></button>
-      <button type="button" aria-label="前进" title="前进" disabled={!ready || !state?.canGoForward} onClick={() => void command('forward')}><AppIcon name="chevronRight" size={16}/></button>
-      <button type="button" aria-label={state?.loading ? '停止加载' : '刷新网页'} title={state?.loading ? '停止加载，不停止 Agent' : '刷新网页'} disabled={!ready || !state?.activeTabId} onClick={() => void command(state?.loading ? 'stop' : 'reload')}><AppIcon name={state?.loading ? 'compact' : 'loop'} size={16}/></button>
-      <input aria-label="网页地址" placeholder="输入网址并按回车" value={address} disabled={!ready} onChange={event => {addressEditing.current=true;setAddress(event.target.value);}} onFocus={event => {addressEditing.current=true;event.currentTarget.select();}} onBlur={()=>{addressEditing.current=false;}} onKeyDown={event=>{if(event.key==='Escape'){addressEditing.current=false;setAddress(state?.url==='about:blank'?'':state?.url||'');event.currentTarget.blur();}}}/>
-      <button type="submit" aria-label="访问网址" title="访问网址" disabled={!ready || !address.trim()}><AppIcon name="arrowEnter" size={15}/></button>
-    </form>
-    <div className="enigma-browser-status"><span role="status" title={sessionPath?state?.sessionTitle || undefined:'此浏览器未绑定对话，可以手动浏览网页。'}>{!ready ? state?.detached ? '已移至独立窗口' : error ? '连接失败' : '正在连接浏览器…' : state?.loading ? '正在加载…' : state?.error ? '加载失败' : sessionPath ? isCurrentSession ? '本对话的浏览器' : state?.sessionTitle || '另一对话的浏览器' : '手动浏览'}</span>
-      {ready && <><button title="在独立窗口继续查看同一页面" onClick={() => void command('detach')}>独立窗口</button>{sessionPath&&<button title="停止所属对话的浏览器操作并撤回 Agent 授权，直到下次发送消息" onClick={() => void command('emergencyStop')}>停止控制</button>}</>}
-    </div>
-    {(error || state?.error) && <div className="enigma-browser-error" role="alert">{error || state?.error}<button onClick={() => ready ? void command('reload') : setConnection(value => value + 1)}>重试</button></div>}
-    {!!downloads.length && <details className="enigma-browser-downloads">
-      <summary>下载（{downloads.length}）<span>{downloading?`${downloading} 项进行中`:downloads[0]?.state==='completed'?'已完成':'查看记录'}</span></summary>
-      {downloads.map(download=><div key={download.id} className="enigma-browser-download-row">
-        <span title={download.filename}>{download.filename}<small>{download.state==='completed'?'已完成':download.state==='progress'?`${Math.round(download.receivedBytes/1024)} KB · 下载中`:download.state==='cancelled'?'已取消':download.state==='missing'?'文件已移除':'下载中断，请重新下载'}</small></span>
-        {download.state==='completed'&&download.filePath&&<><button onClick={()=>void openFilePreview(download.filePath!,download.filename,extOfName(download.filename)||'',{origin:'desk'})}>预览</button><button title="在文件管理器中显示" onClick={()=>void command('revealDownload',{downloadId:download.id})}>位置</button></>}
-        {download.state==='progress'&&<button onClick={()=>void command('cancelDownload',{downloadId:download.id})}>取消</button>}
-      </div>)}
-    </details>}
+    <BrowserChrome state={{...state,sessionPath:sessionPath||null}} ready={ready} surfaceId={state?.surfaceId} onCommand={command}
+      status={!ready?state?.detached?'已移至独立窗口':error?'连接失败':'正在连接浏览器…':state?.loading?'正在加载…':state?.error?'加载失败':sessionPath?isCurrentSession?'本对话的浏览器':state?.sessionTitle||'另一对话的浏览器':'手动浏览'}
+      actions={ready&&<button title="在独立窗口继续查看同一页面" onClick={()=>void command('detach')}>独立窗口</button>}
+      onPreview={download=>{if(download.filePath)void openFilePreview(download.filePath,download.filename,extOfName(download.filename)||'',{origin:'desk'});}}/>
+    {error&&<div role="alert" className="enigma-browser-error">{error}<button onClick={()=>setConnection(value=>value+1)}>重新连接</button></div>}
     {state?.dialog&&<BrowserDialog key={state.dialog.dialogId} dialog={state.dialog} onRespond={async(confirmed,text)=>{
       const update=await window.platform.sidebarBrowserCommand!({surfaceId:state.surfaceId,action:'handleDialog',tabId:state.activeTabId,dialogId:state.dialog!.dialogId,accept:confirmed,text});accept(update);
     }}/>}

@@ -20,6 +20,9 @@ import { initViewerEvents } from './stores/preview-actions';
 import { updateLayout } from './components/SidebarLayout';
 import { initErrorBusBridge } from './errors/error-bus-bridge';
 import { refreshPluginUI } from './stores/plugin-ui-actions';
+import {openBrowserPreview} from './utils/browser-preview';
+import {openFilePreview} from './utils/file-preview';
+import {extOfName} from './utils/file-kind';
 import { openSettingsModal } from './stores/settings-modal-actions';
 import { initQuotedSelectionLifecycle } from './stores/selection-actions';
 import { hydrateInputDrafts, initInputDraftPersistence } from './stores/input-draft-persistence';
@@ -296,6 +299,9 @@ export async function initApp(): Promise<void> {
 
   // 16. 加载插件 UI（pages / widgets）
   refreshPluginUI();
+
+  platform.onBrowserDownloadPreview?.(file=>void openFilePreview(file.path,file.name,extOfName(file.name)||'',{origin:'desk'}));
+  platform.onBrowserDockRequest?.(target=>openBrowserPreview(target));
 
   // 18. 设置快捷键
   document.addEventListener('keydown', (e) => {

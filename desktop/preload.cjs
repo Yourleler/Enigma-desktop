@@ -165,6 +165,11 @@ contextBridge.exposeInMainWorld("hana", {
   sidebarBrowserRelease: (surfaceId) => ipcRenderer.invoke('sidebar-browser-release', surfaceId),
   sidebarBrowserCommand: (command) => ipcRenderer.invoke('sidebar-browser-command', command),
   browserHandleDialog: (command) => ipcRenderer.invoke('browser-handle-dialog', command),
+  browserViewerCommand: (command) => ipcRenderer.invoke('browser-viewer-command',command),
+  browserViewerLayout: (height) => ipcRenderer.send('browser-viewer-layout',height),
+  onBrowserShortcut: (cb) => {const fn=(_event,data)=>cb(data);ipcRenderer.on('browser-shortcut',fn);return()=>ipcRenderer.removeListener('browser-shortcut',fn);},
+  onBrowserDownloadPreview: (cb) => {const fn=(_event,data)=>cb(data);ipcRenderer.on('browser-download-preview',fn);return()=>ipcRenderer.removeListener('browser-download-preview',fn);},
+  onBrowserDockRequest: (cb) => {const fn=(_event,data)=>cb(data);ipcRenderer.on('browser-dock-request',fn);return()=>ipcRenderer.removeListener('browser-dock-request',fn);},
   browserViewerState: () => ipcRenderer.invoke('browser-viewer-state'),
   onSidebarBrowserUpdate: (cb) => {
     const handler = (_event, data) => cb(data);

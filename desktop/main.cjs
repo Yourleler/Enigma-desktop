@@ -3231,6 +3231,10 @@ function _tabUrlFromWebContents(view) {
   return typeof url === "string" && url.length > 0 ? url : null;
 }
 
+const {createBrowserReadingControls,validateBrowserPageTarget,browserViewerBounds}=require('./src/shared/browser-reading-controls.cjs');
+const browserReading=new WeakMap();
+let browserViewerHeaderHeight=116;
+
 function _serializeBrowserTab(tab) {
   const view = tab.view;
   const live=!!view?.webContents&&!view.webContents.isDestroyed?.();
@@ -3243,6 +3247,7 @@ function _serializeBrowserTab(tab) {
     loading: live&&!!view.webContents.isLoading?.(),
     error: view?._browserLoadError || null,
     dialog:live?browserDialog(view.webContents):null,
+    ...(live?browserReading.get(view.webContents)?.snapshot():{}),
     createdAt: tab.createdAt,
     updatedAt: Date.now(),
   };
@@ -3254,14 +3259,16 @@ function _sidebarBrowserState(sessionPath) {
   return {...serialized,surfaceId:_sidebarBrowser.binding?.surfaceId,activeTabId:serialized.activeTabId,
     sessionTitle:_browserSessionTitles.get(_browserWorkspaceKey(sessionPath))||null,
     url:active?.url||'',title:active?.title||'',canGoBack:active?.canGoBack||false,canGoForward:active?.canGoForward||false,
-    loading:active?.loading||false,error:active?.error||null,dialog:active?.dialog||null,
+    loading:active?.loading||false,error:active?.error||null,dialog:active?.dialog||null,zoomFactor:active?.zoomFactor||1,find:active?.find||null,
     downloads:browserDownloadsFor(sessionPath).list().slice(-10).reverse().map(({id,filename,state,receivedBytes,totalBytes,filePath})=>({id,filename,state,receivedBytes,totalBytes,filePath}))};
 }
 
 function _publishSidebarBrowser(sessionPath) {
-  if(!_sidebarBrowser.isFor(sessionPath))return;
-  const win=mainWindow;if(!win||win.isDestroyed())return;
-  win.webContents.send('sidebar-browser-update',_sidebarBrowserState(sessionPath));
+  const state=_sidebarBrowserState(sessionPath);
+  if(_sidebarBrowser.isFor(sessionPath)&&mainWindow&&!mainWindow.isDestroyed())mainWindow.webContents.send('sidebar-browser-update',state);
+  if(browserViewerWindow&&!browserViewerWindow.isDestroyed()&&_normalizeBrowserSessionPath(sessionPath)===_currentBrowserSession){
+    browserViewerWindow.webContents.send('browser-update',{...state,surfaceId:undefined});
+  }
   _syncWorkspaceToServer(sessionPath);
 }
 
@@ -3490,14 +3497,27 @@ function _createBrowserWebContentsView(sessionPath, tabId = null) {
   });
 
   view.webContents.setAudioMuted(true);
+  browserReading.set(view.webContents,createBrowserReadingControls(view.webContents,()=>_publishSidebarBrowser(sessionPath)));
   installBrowserDialogs(view.webContents,()=>{
     _publishSidebarBrowser(sessionPath);
     if(view===_browserWebView){_updateBrowserViewBounds();_notifyViewerUrl(view.webContents.getURL());}
   }).connect().catch(error=>console.warn('[browser] Dialog observation unavailable:',error.message));
   browserDownloadsFor(sessionPath).attach(view.webContents,tabId);
   view.webContents.on('before-input-event',(event,input)=>{
-    if(input.type==='keyDown'&&input.key===','&&(process.platform==='darwin'?input.meta:input.control)) {
-      event.preventDefault();createSettingsWindow('interface');
+    if(input.type!=='keyDown')return;
+    const modifier=process.platform==='darwin'?input.meta:input.control;
+    if(input.key===','&&modifier){event.preventDefault();createSettingsWindow('interface');return;}
+    if(!modifier)return;
+    const key=input.key.toLowerCase();
+    if(['f','l','t','w'].includes(key)){
+      const docked=_sidebarBrowser.hasView(view);
+      const owner=docked?mainWindow:browserViewerWindow;
+      if(!owner||owner.isDestroyed()||(!docked&&view!==_browserWebView))return;
+      event.preventDefault();owner.webContents.focus();
+      owner.webContents.send('browser-shortcut',{surfaceId:docked?_sidebarBrowser.binding.surfaceId:null,sessionPath,tabId,key});
+    }else if(['+','=','-','0'].includes(key)){
+      event.preventDefault();const factor=key==='0'?1:Math.min(3,Math.max(.25,view.webContents.getZoomFactor()*(key==='-'?1/1.1:1.1)));
+      browserReading.get(view.webContents).command('zoom',{zoomFactor:factor});
     }
   });
   view.webContents.on("did-navigate", (_e, url) => {
@@ -3607,40 +3627,12 @@ function _delay(ms) {
 function _updateBrowserViewBounds() {
   if(_sidebarBrowser.hasView(_browserWebView)){_sidebarBrowser.refresh();return;}
   if (!_browserWebView || !browserViewerWindow || browserViewerWindow.isDestroyed()) return;
-  const [width, height] = browserViewerWindow.getContentSize();
-  // 卡片式布局：四周留边距
-  const mx = 8, mt = 4, mb = 8;
-  const bounds = {
-    x: mx,
-    y: TITLEBAR_HEIGHT + mt,
-    width: Math.max(0, width - mx * 2),
-    height: Math.max(0, height - TITLEBAR_HEIGHT - mt - mb),
-  };
-  if (bounds.width === 0 || bounds.height === 0) {
-    console.warn("[browser] bounds 计算为零:", { contentSize: [width, height], bounds, visible: browserViewerWindow.isVisible() });
-  }
+  const bounds=browserViewerBounds(browserViewerWindow.getContentSize(),browserViewerHeaderHeight);
   _browserWebView.setBounds(bounds);
-  _browserWebView.setVisible(!browserDialog(_browserWebView.webContents));
+  _browserWebView.setVisible(bounds.height>=40&&!browserDialog(_browserWebView.webContents));
 }
 
-function _notifyViewerUrl(url) {
-  _publishSidebarBrowser(_currentBrowserSession);
-  if (browserViewerWindow && !browserViewerWindow.isDestroyed() && _browserWebView) {
-    const workspace = _getBrowserWorkspace(_currentBrowserSession);
-    const serialized = _serializeBrowserWorkspace(workspace);
-    browserViewerWindow.webContents.send("browser-update", {
-      url,
-      title: _browserWebView.webContents.getTitle(),
-      canGoBack: _browserWebView.webContents.canGoBack(),
-      canGoForward: _browserWebView.webContents.canGoForward(),
-      sessionPath: _currentBrowserSession,
-      sessionTitle: _browserSessionTitles.get(_browserWorkspaceKey(_currentBrowserSession)) || null,
-      activeTabId: _currentBrowserTabId || serialized.activeTabId,
-      tabs: serialized.tabs,
-      dialog:browserDialog(_browserWebView.webContents),
-    });
-  }
-}
+function _notifyViewerUrl(url) { _publishSidebarBrowser(_currentBrowserSession); }
 
 async function closeBrowserSessionViaServer(sessionPath, { revoke = false } = {}) {
   if (!sessionPath) throw new Error("No active browser session");
@@ -5134,16 +5126,11 @@ wrapIpcHandler('sidebar-browser-release', (event, surfaceId) => {
   _assertSidebarBrowserSender(event);
   return !!_releaseSidebarBrowser(surfaceId);
 });
-wrapIpcHandler('sidebar-browser-command', async (event, command) => {
-  _assertSidebarBrowserSender(event);
-  if (!_sidebarBrowser.owns(command?.surfaceId)) throw new Error('网页面板已切换，请重新打开');
-  const {surfaceId, action, tabId, url} = command;
-  const sp = _sidebarBrowser.binding.sessionPath;
-  const workspace = _getBrowserWorkspace(sp);
+async function browserToolbarCommand(sp,command,surfaceId=null) {
+  const {action,tabId,url}=command;
+  const workspace = _ensureBrowserWorkspace(sp);
   const active = _activeBrowserTabRecord(workspace);
-  const targeted = ['navigate', 'back', 'forward', 'reload', 'stop'];
-  if (targeted.includes(action) && (tabId || null) !== (active?.tabId || null))
-    throw new Error('当前标签页已变化，请确认页面后重试');
+  validateBrowserPageTarget(command,active?.tabId);
   if ((action === 'navigate' || action === 'newTab' && url) && !isAllowedBrowserUrl(url))
     throw new Error('请输入完整的 http 或 https 网址');
   _sendBrowserUserActivity(sp);
@@ -5181,6 +5168,7 @@ wrapIpcHandler('sidebar-browser-command', async (event, command) => {
       break;
     case 'closeTab':
       await handleBrowserCommand('closeTab', {sessionPath: sp, tabId});
+      if(!surfaceId&&!workspace.tabs.size){_currentBrowserSession=sp;_currentBrowserTabId=null;}
       break;
     case 'back':
       if (active?.view.webContents.canGoBack()) active.view.webContents.goBack();
@@ -5190,9 +5178,21 @@ wrapIpcHandler('sidebar-browser-command', async (event, command) => {
       break;
     case 'reload': active?.view.webContents.reload(); break;
     case 'stop': active?.view.webContents.stop(); break;
+    case 'find': case 'stopFind': case 'zoom':
+      if(!active)throw new Error('请先打开网页');
+      browserReading.get(active.view.webContents).command(action,command);break;
+    case 'focusPage': active?.view.webContents.focus();break;
+    case 'openExternal': {
+      const target=active?.view.webContents.getURL();if(!isAllowedBrowserUrl(target))throw new Error('当前页面没有可打开的网址');await shell.openExternal(target);break;
+    }
     case 'cancelDownload':
       if(!browserDownloadsFor(sp).list().some(record=>record.id===command.downloadId))throw new Error('下载记录不存在');
       browserDownloadsFor(sp).cancel(command.downloadId);break;
+    case 'previewDownload': {
+      const record=browserDownloadsFor(sp).list().find(record=>record.id===command.downloadId&&record.state==='completed');
+      if(!record?.filePath)throw new Error('文件尚未下载完成');
+      mainWindow?.show();mainWindow?.focus();mainWindow?.webContents.send('browser-download-preview',{path:record.filePath,name:record.filename});break;
+    }
     case 'revealDownload': {
       const record=browserDownloadsFor(sp).list().find(record=>record.id===command.downloadId&&record.state==='completed');
       if(!record?.filePath)throw new Error('文件尚未下载完成');
@@ -5208,15 +5208,24 @@ wrapIpcHandler('sidebar-browser-command', async (event, command) => {
       await handleBrowserDialog(active.view.webContents,command);
       break;
     case 'detach':
+      if(!surfaceId)throw new Error('网页不在侧栏');
       _releaseSidebarBrowser(surfaceId);
       createBrowserViewerWindow();
       if (active) _switchActiveBrowserTab(sp, active.tabId);
       return {..._serializeBrowserWorkspace(workspace), surfaceId, detached: true};
+    case 'dock':
+      mainWindow?.show();mainWindow?.focus();
+      mainWindow?.webContents.send('browser-dock-request',{sessionPath:sp});
+      browserViewerWindow?.hide();break;
     default: throw new Error('不支持的网页操作');
   }
   _publishSidebarBrowser(sp);
-  _syncWorkspaceToServer(sp);
-  return {..._sidebarBrowserState(sp), surfaceId};
+  return {..._sidebarBrowserState(sp),surfaceId};
+}
+wrapIpcHandler('sidebar-browser-command', async (event, command) => {
+  _assertSidebarBrowserSender(event);
+  if (!_sidebarBrowser.owns(command?.surfaceId)) throw new Error('网页面板已切换，请重新打开');
+  return browserToolbarCommand(_sidebarBrowser.binding.sessionPath,command,command.surfaceId);
 });
 
 // 浏览器查看器窗口
@@ -5226,9 +5235,17 @@ function assertBrowserViewerSender(event) {
 }
 wrapIpcHandler('browser-viewer-state',event=>{
   assertBrowserViewerSender(event);
-  const serialized=_serializeBrowserWorkspace(_getBrowserWorkspace(_currentBrowserSession));
-  const active=serialized.tabs.find(tab=>tab.tabId===serialized.activeTabId);
-  return {...serialized,sessionPath:_currentBrowserSession,dialog:active?.dialog||null,url:active?.url||'',title:active?.title||'',canGoBack:active?.canGoBack||false,canGoForward:active?.canGoForward||false};
+  return _sidebarBrowserState(_currentBrowserSession);
+});
+wrapIpcHandler('browser-viewer-command',async(event,command)=>{
+  assertBrowserViewerSender(event);
+  if((_browserWebView&&_sidebarBrowser.hasView(_browserWebView))||_normalizeBrowserSessionPath(command?.sessionPath)!==_currentBrowserSession)throw new Error('浏览器归属已改变，请重新打开');
+  return browserToolbarCommand(_currentBrowserSession,command);
+});
+wrapIpcOn('browser-viewer-layout',(event,height)=>{
+  assertBrowserViewerSender(event);
+  if(typeof height!=='number'||!Number.isFinite(height)||height<44||height>1000)return;
+  browserViewerHeaderHeight=height;_updateBrowserViewBounds();
 });
 wrapIpcHandler('browser-handle-dialog',async(event,params)=>{
   assertBrowserViewerSender(event);

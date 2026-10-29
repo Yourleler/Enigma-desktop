@@ -505,7 +505,10 @@ export interface PluginUiHostCapabilityGrant {
   hostCapabilities: string[];
 }
 
+export interface BrowserFindState {query:string;matches:number;active:number;pending:boolean;matchCase:boolean}
 export interface BrowserViewerTab {
+  zoomFactor?:number;
+  find?:BrowserFindState|null;
   dialog?: BrowserPageDialog | null;
   tabId: string;
   title?: string;
@@ -519,6 +522,11 @@ export interface BrowserViewerTab {
 }
 
 export interface BrowserViewerUpdate {
+  zoomFactor?:number;
+  find?:BrowserFindState|null;
+  loading?:boolean;
+  error?:string|null;
+  downloads?: Array<{id:string;filename:string;state:string;receivedBytes:number;totalBytes:number;filePath?:string}>;
   dialog?: BrowserPageDialog | null;
   title?: string;
   url?: string | null;
@@ -549,7 +557,12 @@ export interface SidebarBrowserState extends BrowserViewerUpdate {
 
 export interface SidebarBrowserCommand {
   surfaceId: string;
-  action: 'navigate' | 'back' | 'forward' | 'reload' | 'stop' | 'newTab' | 'switchTab' | 'closeTab' | 'detach' | 'emergencyStop' | 'handleDialog' | 'cancelDownload' | 'revealDownload';
+  action: 'navigate' | 'back' | 'forward' | 'reload' | 'stop' | 'newTab' | 'switchTab' | 'closeTab' | 'detach' | 'emergencyStop' | 'handleDialog' | 'cancelDownload' | 'revealDownload' | 'find' | 'stopFind' | 'zoom' | 'openExternal' | 'focusPage' | 'dock' | 'previewDownload';
+  query?:string;
+  forward?:boolean;
+  next?:boolean;
+  matchCase?:boolean;
+  zoomFactor?:number;
   downloadId?: string;
   dialogId?: string;
   accept?: boolean;
@@ -624,6 +637,11 @@ export interface PlatformApi {
 
   // ── Browser viewer ──
   browserHandleDialog?(command: {sessionPath: string | null; tabId: string; dialogId: string; accept: boolean; text?: string}): Promise<unknown>;
+  browserViewerCommand?(command: Omit<SidebarBrowserCommand,'surfaceId'> & {sessionPath?:string|null}):Promise<BrowserViewerUpdate>;
+  browserViewerLayout?(height:number):void;
+  onBrowserShortcut?(callback:(data:{surfaceId?:string|null;sessionPath?:string|null;tabId?:string|null;key:string})=>void):()=>void;
+  onBrowserDownloadPreview?(callback:(data:{path:string;name:string})=>void):()=>void;
+  onBrowserDockRequest?(callback:(data:BrowserViewerOpenTarget)=>void):()=>void;
   browserViewerState?(): Promise<BrowserViewerUpdate>;
   sidebarBrowserBind?(target: { surfaceId: string; sessionPath?: string | null }): Promise<SidebarBrowserState>;
   sidebarBrowserLayout?(layout: { surfaceId: string; sequence: number; bounds: { x: number; y: number; width: number; height: number }; visible: boolean }): void;

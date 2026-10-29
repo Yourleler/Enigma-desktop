@@ -12,7 +12,7 @@ OpenAI 官方文档说明内置浏览器与连接已有 Chrome 等浏览器标�
 
 | 部分 | 成熟实现 | 本项目处理方式 | 状态 |
 | --- | --- | --- | --- |
-| 网页浏览器 | [Min](https://github.com/minbrowser/min)，Apache-2.0 | 参考/复用可独立提取的地址栏、快捷键和标签工作区实现；保留 Chromium 宿主与对话权限。先统一侧栏/独立窗口，再补完整地址导航、页面搜索、缩放、下载和恢复。Min 是整套应用，不能当单个 React 组件直接插入。 | 选型，未复制 Min 代码 |
+| 网页浏览器 | [Min](https://github.com/minbrowser/min)，Apache-2.0 | 参考/复用可独立提取的地址栏、快捷键和标签工作区实现；保留 Chromium 宿主与对话权限。先统一侧栏/独立窗口，再补完整地址导航、页面搜索、缩放、下载和恢复。Min 是整套应用，不能当单个 React 组件直接插入。 | 0.452.101 已统一两种窗口并接入 Chromium 原生查找/缩放；未复制 Min 源码，原生 UI 待验收 |
 | PDF | [Mozilla PDF.js](https://github.com/mozilla/pdf.js/releases/tag/v5.6.205)，Apache-2.0 | 直接复用官方完整 generic viewer，替换自写工具栏。上游负责缩略图、大纲、附件、图层、查找、打印、属性和阅读布局；本项目只适配文件、主题、下载与权限。 | 0.452.93 源码已接入；Web 实测，原生待验收 |
 | DOCX | [docx-preview](https://github.com/VolodymyrBaydalka/docxjs)，Apache-2.0 | 从当前 Mammoth 语义转换改为保留版式的渲染；检查页眉页脚、图片、表格、显式分页，保留纯文本回退。库对分页/域等有明确限制，不承诺与 Word 像素一致。 | 0.452.99 源码已接入；Web 实测通过，原生待验收 |
 | XLSX / CSV | [Univer](https://github.com/dream-num/univer)，Apache-2.0 OSS 核心 | 验证真实表格交互，替换截断 HTML 表格。其官方文件导入导出、打印等列在 Pro 范围；必须先验证不依赖商业服务的本地导入路径及样式保真，不能把 OSS 内核误说成免费完整 Office。 | 待导入与许可范围验证 |

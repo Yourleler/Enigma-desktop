@@ -217,7 +217,10 @@ describe("desktop browser viewer window state", () => {
     const source = fs.readFileSync(MAIN_PATH, "utf-8");
     const body = functionBody(source, "_notifyViewerUrl");
 
-    expect(body).toContain("sessionTitle");
-    expect(body).toContain("_browserSessionTitles.get(");
+    expect(body).toContain("_publishSidebarBrowser(_currentBrowserSession)");
+    const state = functionBody(source, "_sidebarBrowserState");
+    expect(state).toContain("sessionTitle");
+    expect(state).toContain("_browserSessionTitles.get(");
+    expect(functionBody(source,"_publishSidebarBrowser")).toContain("browserViewerWindow.webContents.send('browser-update',");
   });
 });
