@@ -23,7 +23,7 @@ function systemIsDark(): boolean {
 function applyConcreteTheme(concrete: string): void {
   const entry = registry.THEMES[concrete as ThemeId];
   if (!entry) return;
-  switchThemeStylesheet(entry.cssPath, () => {
+  switchThemeStylesheet(entry.cssPath + (document.querySelector<HTMLMetaElement>('meta[name="enigma-ui-version"]')?.content ? '?v=' + encodeURIComponent(document.querySelector<HTMLMetaElement>('meta[name="enigma-ui-version"]')!.content) : ''), () => {
     document.documentElement.setAttribute('data-theme', concrete);
     loadPaperTexturePreference();
     (window as unknown as { hana?: { syncWindowTheme?: (theme: string) => void } }).hana?.syncWindowTheme?.(concrete);

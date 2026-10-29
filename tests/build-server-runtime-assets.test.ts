@@ -123,4 +123,22 @@ describe("server runtime assets", () => {
     expect(fs.existsSync(path.join(outDir, "desktop", "dist-renderer", "index.html"))).toBe(false);
     expect(fs.existsSync(path.join(outDir, "desktop", "dist-renderer", "modules", "legacy.js"))).toBe(false);
   });
+  it("includes nested preview HTML dependencies and their module/style imports",()=>{
+    const assets=path.join(rootDir,'desktop/dist-renderer/assets');
+    const write=(name,content)=>{fs.mkdirSync(path.dirname(path.join(assets,name)),{recursive:true});fs.writeFileSync(path.join(assets,name),content);};
+    write('sheet-viewer/index.html','<script type="module" src="../sheet-entry.js"></script><link rel="stylesheet" href="../sheet.css">');
+    write('sheet-entry.js','import "./sheet-engine.js"; new Worker(new URL("import-worker-12345678.js", import.meta.url));');write('import-worker-12345678.js','import "./worker-parser.js";');write('worker-parser.js','export const parse=()=>true;');write('sheet-engine.js','export const ready=true;');
+    write('sheet.css','@import "./palette.css"; .sheet{background:url("./paper.png")}');write('palette.css','.sheet{color:purple}');
+    write('pdf-viewer/web/viewer.html','<script type="module" src="viewer.mjs"></script><link rel="stylesheet" href="viewer.css">');
+    write('pdf-viewer/web/viewer.mjs','import "../build/pdf.mjs";');write('pdf-viewer/build/pdf.mjs','export const pdf=true;');write('pdf-viewer/web/viewer.css','body{color:black}');
+    copyServerRuntimeAssets({rootDir,outDir});const target=path.join(outDir,'desktop/dist-renderer/assets');
+    for(const name of ['sheet-viewer/index.html','sheet-entry.js','import-worker-12345678.js','worker-parser.js','sheet-engine.js','sheet.css','palette.css','pdf-viewer/web/viewer.html','pdf-viewer/web/viewer.mjs','pdf-viewer/build/pdf.mjs','pdf-viewer/web/viewer.css'])expect(fs.readFileSync(path.join(target,name),'utf8')).toBe(fs.readFileSync(path.join(assets,name),'utf8'));
+    expect(fs.existsSync(path.join(target,'main-desktop.js'))).toBe(false);
+  });
+
+  it("fails packaging when an embedded preview explicitly references a missing module",()=>{
+    const dir=path.join(rootDir,'desktop/dist-renderer/assets/viewer');fs.mkdirSync(dir,{recursive:true});fs.writeFileSync(path.join(dir,'index.html'),'<script type="module" src="./missing.js"></script>');
+    expect(()=>copyServerRuntimeAssets({rootDir,outDir})).toThrow(/missing.*viewer.*missing\.js/);
+  });
+
 });

@@ -1,4 +1,5 @@
 import fs from "fs";
+import {createHash} from "node:crypto";
 import path from "path";
 import { Hono } from "hono";
 import { guessMime } from "../http/file-content.ts";
@@ -123,10 +124,20 @@ function serveWebClientFile(c, distDir, requestPath, entryFile) {
   const stat = fs.statSync(safePath);
   if (!stat.isFile()) return c.body(null, 404);
   c.header("Content-Type", guessMime(safePath));
-  c.header("Cache-Control", relative === entryFile
-    ? "no-cache"
-    : "public, max-age=31536000, immutable");
-  return c.body(fs.readFileSync(safePath));
+  // Only content-hashed chunks and versioned viewer directories are immutable.
+  // Theme scripts, language packs, icons and the service worker keep stable
+  // URLs across upgrades and must revalidate instead of retaining year-old UI.
+  const publicPath = relative.split(path.sep).join("/");
+  const immutable = /^assets\/(?:[^/]+-\d+\.\d+\.\d+\/|[^/]+-[A-Za-z0-9_-]{8,}\.[a-zA-Z0-9]+$)/.test(publicPath);
+  c.header("Cache-Control", immutable ? "public, max-age=31536000, immutable" : "no-cache");
+  const bytes = fs.readFileSync(safePath);
+  if (!immutable) {
+    const etag = `"${createHash("sha256").update(bytes).digest("hex")}"`;
+    c.header("ETag", etag);
+    const requested = (c.req.header("If-None-Match") || "").split(",").map(value => value.trim().replace(/^W\//, ""));
+    if (requested.includes(etag) || requested.includes("*")) return c.body(null, 304);
+  }
+  return c.body(bytes);
 }
 
 function safeRelativePath(value) {

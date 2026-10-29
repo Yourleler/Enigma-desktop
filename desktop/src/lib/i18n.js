@@ -34,14 +34,14 @@ const i18n = {
     const key = this._resolveKey(locale);
     this.locale = key;
     try {
-      const res = await fetch(`./locales/${key}.json`);
+      const res = await fetch(`./locales/${key}.json`, { cache: "no-cache" });
       if (!res.ok) throw new Error(res.statusText);
       this._data = await res.json();
     } catch (err) {
       console.error(`[i18n] Failed to load locale "${key}":`, err);
       if (key !== "en") {
         try {
-          const fb = await fetch("./locales/en.json");
+          const fb = await fetch("./locales/en.json", { cache: "no-cache" });
           this._data = await fb.json();
         } catch { this._data = {}; }
       } else {

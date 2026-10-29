@@ -73,10 +73,25 @@ describe("mobile static route", () => {
 
     const asset = await app.request("/desktop/assets/mobile.js");
     expect(asset.status).toBe(200);
-    expect(asset.headers.get("cache-control")).toContain("immutable");
+    expect(asset.headers.get("cache-control")).toBe("no-cache");
 
     const traversal = await app.request("/desktop/assets/../mobile.html");
     expect(traversal.status).toBe(404);
+  });
+
+  it("revalidates stable UI URLs after upgrades while retaining immutable versioned assets",async()=>{
+    tmpDir=makeTmpDir();
+    for(const [name,content]of [['mobile.html','<title>new</title>'],['lib/theme.js','old()'],['locales/zh.json','{}'],['sw.js','old()'],['assets/mobile-aB123_45.js','chunk'],['assets/pdfjs-viewer-0.452.126/web/viewer.css','css']]){
+      const file=path.join(tmpDir,name);fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,content);
+    }
+    const {createMobileStaticRoute}=await import('../server/routes/mobile-static');
+    const app=new Hono().route('',createMobileStaticRoute({mode:'dist',distDir:tmpDir}));
+    for(const file of ['lib/theme.js','locales/zh.json','sw.js']){
+      const first=await app.request('/desktop/'+file),etag=first.headers.get('etag');expect(first.headers.get('cache-control')).toBe('no-cache');expect(etag).toBeTruthy();
+      expect((await app.request('/desktop/'+file,{headers:{'If-None-Match':etag!}})).status).toBe(304);
+      fs.writeFileSync(path.join(tmpDir,file),'new()');const updated=await app.request('/desktop/'+file,{headers:{'If-None-Match':etag!}});expect(updated.status).toBe(200);expect(await updated.text()).toBe('new()');expect(updated.headers.get('etag')).not.toBe(etag);
+    }
+    for(const file of ['assets/mobile-aB123_45.js','assets/pdfjs-viewer-0.452.126/web/viewer.css'])expect((await app.request('/desktop/'+file)).headers.get('cache-control')).toContain('immutable');
   });
 
   it("guide mode serves a 200 pull-the-bundle page at the base path but 404s on asset subpaths", async () => {

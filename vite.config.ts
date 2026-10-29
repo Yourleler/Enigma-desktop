@@ -1,3 +1,4 @@
+import {versionedUiReferences} from './scripts/versioned-ui-references.mjs';
 import { defineConfig, type Plugin, type ProxyOptions } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
@@ -266,6 +267,8 @@ function copyLegacyFiles(): Plugin {
     closeBundle() {
       const srcDir = path.resolve(__dirname, 'desktop/src');
       const outDir = path.resolve(__dirname, 'desktop/dist-renderer');
+      const uiVersion=JSON.parse(fs.readFileSync(path.resolve(__dirname,'package.json'),'utf8')).version;
+      for(const file of fs.readdirSync(outDir).filter(name=>name.endsWith('.html'))){const target=path.join(outDir,file);fs.writeFileSync(target,versionedUiReferences(fs.readFileSync(target,'utf8'),uiVersion));}
 
       const licenses=path.join(outDir,'assets/licenses');fs.mkdirSync(licenses,{recursive:true});fs.copyFileSync(path.resolve(__dirname,'node_modules/photoswipe/LICENSE'),path.join(licenses,'PhotoSwipe-LICENSE'));
       for(const name of ['react','core','media','native-hls-video','spf','store','utils']) {

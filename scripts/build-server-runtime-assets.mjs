@@ -119,10 +119,13 @@ function copyMobileRuntimeAssets({
   const assetNames = new Set();
   const queued = [];
 
-  function addAsset(name) {
+  function addAsset(name, required = false) {
     const normalized = normalizeAssetName(name);
     if (!normalized || assetNames.has(normalized)) return;
-    if (!fsImpl.existsSync(path.join(sourceAssetsDir, normalized))) return;
+    if (!fsImpl.existsSync(path.join(sourceAssetsDir, normalized))) {
+      if (required) throw new Error(`[build-server] missing embedded preview dependency: assets/${normalized}`);
+      return;
+    }
     assetNames.add(normalized);
     queued.push(normalized);
   }
@@ -139,17 +142,16 @@ function copyMobileRuntimeAssets({
     if (!/\.(?:js|css)$/i.test(name)) addAsset(name);
   }
 
-  collectAssetReferences(
-    fsImpl.readFileSync(mobileHtmlPath, "utf-8"),
-    addAsset,
-  );
+  collectAssetReferences(fsImpl.readFileSync(mobileHtmlPath, "utf-8"), addAsset, { entry: true, html: true });
 
   while (queued.length) {
     const name = queued.shift();
-    if (!/\.(?:js|css)$/i.test(name)) continue;
+    if (!/\.(?:[cm]?js|css|html)$/i.test(name)) continue;
     const sourcePath = path.join(sourceAssetsDir, name);
     if (!fsImpl.existsSync(sourcePath)) continue;
-    collectAssetReferences(fsImpl.readFileSync(sourcePath, "utf-8"), addAsset);
+    collectAssetReferences(fsImpl.readFileSync(sourcePath, "utf-8"), addAsset, {
+      base: path.dirname(name), html: /\.html$/i.test(name),
+    });
   }
 
   for (const name of assetNames) {
@@ -161,13 +163,32 @@ function copyMobileRuntimeAssets({
   }
 }
 
-function collectAssetReferences(content, addAsset) {
-  const assetUrlPattern = /(?:href|src)=["'](?:\.\/)?assets\/([^"'?#]+)/g;
-  const relativePattern = /["']\.\/([^"'?#]+)["']/g;
-  const cssUrlPattern =
-    /url\(\s*["']?(?!data:|https?:|\/)([^"')?#]+)["']?\s*\)/g;
-  for (const pattern of [assetUrlPattern, relativePattern, cssUrlPattern]) {
-    for (const match of content.matchAll(pattern)) addAsset(match[1]);
+function collectAssetReferences(content, addAsset, { base = ".", entry = false, html = false } = {}) {
+  const addReference = (value, required = false) => {
+    const raw = value.split(/[?#]/, 1)[0];
+    if (!raw || /^(?:[a-z][a-z\d+.-]*:|\/|#)/i.test(raw)) return;
+    if (entry) {
+      if (!/^(?:\.\/)?assets\//.test(raw)) return;
+      addAsset(raw.replace(/^(?:\.\/)?assets\//, ""), required);
+    } else {
+      // Relative links inside a viewer resolve from that document/module,
+      // not from the top-level assets folder. Normalization still rejects
+      // any path that leaves the renderer's public asset tree.
+      addAsset(path.posix.normalize(path.posix.join(base.replace(/\\/g, "/"), raw)), required);
+    }
+  };
+  if (html) {
+    for (const tag of content.matchAll(/<(?:script|link)\b[^>]*>/gi)) {
+      for (const attribute of tag[0].matchAll(/\b(?:href|src)=["']([^"']+)["']/g)) addReference(attribute[1], true);
+    }
+  }
+  const moduleUrlPattern = /new\s+URL\(\s*["']([^"']+)["']\s*,\s*import\.meta\.url/g;
+  for (const match of content.matchAll(moduleUrlPattern)) addReference(match[1], true);
+  const relativePattern = /["'](\.\.?\/[^"'?#]+)["']/g;
+  const cssUrlPattern = /url\(\s*["']?(?!data:|https?:|\/)([^"')?#]+)["']?\s*\)/g;
+  const cssImportPattern = /@import\s+["']([^"']+)["']/g;
+  for (const pattern of [relativePattern, cssUrlPattern, cssImportPattern]) {
+    for (const match of content.matchAll(pattern)) addReference(match[1]);
   }
 }
 
