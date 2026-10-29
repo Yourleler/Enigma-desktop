@@ -14,6 +14,7 @@ const editorMocks = vi.hoisted(() => ({
   setContent: vi.fn(),
   clearContent: vi.fn(),
   setEditable:vi.fn(),
+  updates:new Set<(event?:any)=>void>(),
 }));
 
 vi.mock('@tiptap/react', () => ({
@@ -57,8 +58,8 @@ vi.mock('@tiptap/react', () => ({
       getJSON: () => editorState.doc,
       state: { tr: { setMeta: vi.fn(() => ({})) } },
       view: { dispatch: vi.fn() },
-      on: vi.fn(),
-      off: vi.fn(),
+      on: vi.fn((event:string,handler:(event?:any)=>void)=>{if(event==='update')editorMocks.updates.add(handler);}),
+      off: vi.fn((event:string,handler:(event?:any)=>void)=>{if(event==='update')editorMocks.updates.delete(handler);}),
     };
   },
   EditorContent: () => React.createElement('div', { 'data-testid': 'editor' }),
@@ -287,9 +288,9 @@ describe('InputArea draft sync', () => {
 
   it('locks the composer while switching and restores the target draft before accepting input',()=>{
     seedSessionComposer('source draft');render(React.createElement(InputArea));
-    act(()=>useStore.setState({pendingSessionSwitchPath:'/target.jsonl'}));expect(editorMocks.setEditable).toHaveBeenLastCalledWith(false);expect(screen.getByTestId('input-control-bar').getAttribute('data-can-send')).toBe('false');
+    act(()=>useStore.setState({pendingSessionSwitchPath:'/target.jsonl'}));expect(editorMocks.setEditable).toHaveBeenLastCalledWith(false,false);expect(screen.getByTestId('input-control-bar').getAttribute('data-can-send')).toBe('false');
     act(()=>useStore.setState({currentSessionPath:'/target.jsonl',currentSessionId:null,pendingSessionSwitchPath:null,drafts:{'/target.jsonl':'target draft'},draftDocs:{'/target.jsonl':paragraphDoc('target draft')}}));
-    expect(editorMocks.setEditable).toHaveBeenLastCalledWith(true);expect(editorState.doc).toEqual(paragraphDoc('target draft'));
+    expect(editorMocks.setEditable).toHaveBeenLastCalledWith(true,false);expect(editorState.doc).toEqual(paragraphDoc('target draft'));
   });
 
   it('clears the live editor when clearDraft is called externally', async () => {
@@ -503,4 +504,16 @@ describe('InputArea draft sync', () => {
     });
     expect(wipedWithEmptyContent).toBe(false);
   });
+});
+
+afterEach(cleanup);
+
+it('does not let non-content editor updates erase a hydrated draft',async()=>{
+ useStore.setState({currentSessionPath:null,currentSessionId:null,pendingNewSession:true,pendingDraftId:'draft-protect',pendingSessionSwitchPath:null,drafts:{__home__:'keep me'},draftDocs:{__home__:paragraphDoc('keep me')},draftsHydratedAt:Date.now()} as never);
+ render(React.createElement(InputArea));
+ await waitFor(()=>expect(setContentCallsWithText('keep me')).toBe(true));
+ expect(editorMocks.setEditable).toHaveBeenCalledWith(true,false);
+ editorState.doc=paragraphDoc('');
+ act(()=>editorMocks.updates.forEach(handler=>handler({transaction:{docChanged:false}})));
+ expect(useStore.getState().drafts.__home__).toBe('keep me');
 });

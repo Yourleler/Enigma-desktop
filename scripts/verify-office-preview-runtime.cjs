@@ -32,7 +32,9 @@ app.whenReady().then(async()=>{
     await new Promise(resolve=>{win.webContents.once('did-finish-load',resolve);win.reload();});
     await wait("document.querySelector('.preview-docx')?.textContent.includes('新建 Word 预览正文')");
     fs.writeFileSync(path.join(root,'docx-restored.png'),(await win.webContents.capturePage()).toPNG());
-    await clickFile('new.pdf');await wait("!!document.querySelector('iframe.preview-pdf') && document.body.innerText.includes('2 页')");
+    await clickFile('new.pdf');await wait("document.querySelector('.enigma-pdf-pages .textLayer')?.textContent.includes('Enigma')");
+    await win.webContents.executeJavaScript("[...document.querySelectorAll('.enigma-pdf-heading button')].find(el=>el.textContent==='系统阅读器').click()");
+    await wait("!!document.querySelector('iframe.preview-pdf') && document.body.innerText.includes('2 页')");
     await new Promise(resolve=>setTimeout(resolve,800));
     fs.writeFileSync(path.join(root,'pdf.png'),(await win.webContents.capturePage()).toPNG());
     await clickFile('broken.pdf');await wait("[...document.querySelectorAll('[role=alert]')].some(el=>el.textContent.includes('损坏'))");

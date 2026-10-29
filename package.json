@@ -1,6 +1,6 @@
 {
   "name": "hanako",
-  "version": "0.452.85",
+  "version": "0.452.91",
   "type": "module",
   "description": "HanaAgent - a personal AI agent with memory and soul",
   "license": "Apache-2.0",
@@ -106,6 +106,7 @@
     "codemirror": "^6.0.2",
     "diff": "8.0.4",
     "electron-updater": "^6.8.3",
+    "enigma-next": "0.4.2",
     "exceljs": "^4.4.0",
     "extract-zip": "^2.0.1",
     "hono": "^4.12.9",
@@ -127,8 +128,7 @@
     "undici": "7.24.7",
     "unpdf": "1.6.2",
     "ws": "^8.18.0",
-    "zustand": "^5.0.11",
-    "enigma-next": "0.4.2"
+    "zustand": "^5.0.11"
   },
   "overrides": {
     "form-data": "^4.0.0",
@@ -149,6 +149,7 @@
     "esbuild": "^0.27.4",
     "eslint": "^9.39.4",
     "eslint-plugin-react-hooks": "^5.2.0",
+    "pdfjs-dist": "5.6.205",
     "pngjs": "^5.0.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.57.2",

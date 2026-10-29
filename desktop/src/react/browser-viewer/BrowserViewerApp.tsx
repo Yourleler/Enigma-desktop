@@ -34,7 +34,7 @@ function isThemePayload(value: unknown): value is { theme: string } {
 
 function tabTitle(tab: BrowserViewerTab) {
   const title = tab.title?.trim();
-  if (title) return title;
+  if (title && title !== 'New Tab') return title;
   if (tab.url) {
     try {
       return new URL(tab.url).hostname || tab.url;
@@ -42,10 +42,11 @@ function tabTitle(tab: BrowserViewerTab) {
       return tab.url;
     }
   }
-  return tr('browser.newTab', 'New Tab');
+  return tr('browser.newTab', '新建网页');
 }
 
 export function BrowserViewerApp() {
+  const [,setLocaleVersion]=useState(0);
   const [dialog,setDialog]=useState<BrowserPageDialog|null>(null);
   const [canBack, setCanBack] = useState(false);
   const [canForward, setCanForward] = useState(false);
@@ -59,7 +60,7 @@ export function BrowserViewerApp() {
     const hana = window.hana;
 
     // 监听主题切换
-    hana?.onSettingsChanged?.((type: string, data: unknown) => {
+    const unsubscribeSettings=hana?.onSettingsChanged?.((type: string, data: unknown) => {
       if (type === 'theme-changed' && isThemePayload(data)) setTheme(data.theme);
     });
 
@@ -87,8 +88,8 @@ export function BrowserViewerApp() {
     void hana?.browserViewerState?.().then(state=>{if(alive)apply(state);}).catch(()=>{});
 
     // i18n
-    window.i18n?.load?.(navigator.language || 'zh');
-    return()=>{alive=false;if(typeof unsubscribe==='function')unsubscribe();};
+    void (async()=>{const info=await hana?.getSplashInfo?.().catch(()=>null);await window.i18n?.load?.(info?.locale || 'zh');if(alive){document.title=tr('browser.title','网页浏览器');setLocaleVersion(value=>value+1);}})();
+    return()=>{alive=false;if(typeof unsubscribe==='function')unsubscribe();if(typeof unsubscribeSettings==='function')unsubscribeSettings();};
   }, []);
 
   const hana = window.hana;
@@ -102,6 +103,16 @@ export function BrowserViewerApp() {
     if (typeof activeTab.canGoBack === 'boolean') setCanBack(activeTab.canGoBack);
     if (typeof activeTab.canGoForward === 'boolean') setCanForward(activeTab.canGoForward);
   }, [activeTab]);
+
+  useEffect(()=>{tabListRef.current?.querySelector('[aria-selected="true"]')?.scrollIntoView?.({block:'nearest',inline:'nearest'});},[activeTabId]);
+
+  const closeTab=async(tabId:string)=>{
+    await hana?.browserCloseTab?.(tabId,sessionPath);
+    // Older shells omit a viewer push when an inactive tab is closed. Read
+    // authoritative workspace state so the removed tab cannot linger in UI.
+    const current=await hana?.browserViewerState?.();
+    if(current&&Array.isArray(current.tabs)){setTabs(current.tabs);setActiveTabId(current.activeTabId||null);}
+  };
 
   const handleTabWheel = (event: WheelEvent<HTMLDivElement>) => {
     const el = tabListRef.current;
@@ -125,7 +136,7 @@ export function BrowserViewerApp() {
           {/* Close */}
           <button
             className="tb-btn close-btn"
-            title={tr('browser.closeBtn', 'Close')}
+            title="关闭独立窗口"
             onClick={() => hana?.closeBrowserViewer?.()}
           >
             <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round">
@@ -133,23 +144,23 @@ export function BrowserViewerApp() {
             </svg>
           </button>
 
-          {/* Emergency stop */}
-          <button
+          {/* Only a conversation owns Agent control; manual browsing has no revocation. */}
+          {sessionPath && <button
             className="stop-btn"
-            title={tr('browser.emergencyStop', 'Stop')}
+            title="停止控制：撤回所属对话的浏览器操作授权"
             onClick={() => hana?.browserEmergencyStop?.(sessionPath)}
           >
             <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
               <rect x="3" y="3" width="8" height="8" rx="1" fill="currentColor" stroke="none" />
             </svg>
-          </button>
+          </button>}
 
           <div className="nav-sep" />
 
           {/* Back */}
           <button
             className={`tb-btn${canBack ? '' : ' disabled'}`}
-            title={tr('browser.back', 'Back')}
+            title={tr('browser.back', '后退')} disabled={!canBack}
             onClick={() => hana?.browserGoBack?.(sessionPath)}
           >
             <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
@@ -160,7 +171,7 @@ export function BrowserViewerApp() {
           {/* Forward */}
           <button
             className={`tb-btn${canForward ? '' : ' disabled'}`}
-            title={tr('browser.forward', 'Forward')}
+            title={tr('browser.forward', '前进')} disabled={!canForward}
             onClick={() => hana?.browserGoForward?.(sessionPath)}
           >
             <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
@@ -171,7 +182,7 @@ export function BrowserViewerApp() {
           {/* Reload */}
           <button
             className="tb-btn"
-            title={tr('browser.reload', 'Reload')}
+            title={tr('browser.reload', '刷新网页')} disabled={!activeTab}
             onClick={() => hana?.browserReload?.(sessionPath)}
           >
             <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
@@ -190,41 +201,42 @@ export function BrowserViewerApp() {
 
           <div
             ref={tabListRef}
-            className="browser-tab-list"
+            className="browser-tab-list" role="tablist" aria-label="网页标签"
             onWheel={handleTabWheel}
           >
             {tabs.map((tab) => {
               const isActive = tab.tabId === (activeTab?.tabId || activeTabId);
               return (
-                <button
-                  key={tab.tabId}
-                  className={`browser-tab${isActive ? ' active' : ''}`}
-                  title={tabTitle(tab)}
-                  onClick={() => hana?.browserSwitchTab?.(tab.tabId, sessionPath)}
-                  onDoubleClick={() => hana?.browserCloseTab?.(tab.tabId, sessionPath)}
-                >
-                  <span className="browser-tab-title">{tabTitle(tab)}</span>
-                  <span
+                <div key={tab.tabId} className={`browser-tab${isActive ? ' active' : ''}`}>
+                  <button className="browser-tab-title" role="tab" aria-selected={isActive} tabIndex={isActive?0:-1} title={tabTitle(tab)}
+                    onClick={()=>hana?.browserSwitchTab?.(tab.tabId,sessionPath)}
+                    onKeyDown={event=>{
+                      if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
+                      event.preventDefault();const index=tabs.findIndex(item=>item.tabId===tab.tabId);
+                      const next=event.key==='Home'?0:event.key==='End'?tabs.length-1:(index+(event.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;
+                      tabListRef.current?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next]?.focus();
+                      hana?.browserSwitchTab?.(tabs[next].tabId,sessionPath);
+                    }}>{tabTitle(tab)}</button>
+                  <button
                     className="browser-tab-close"
-                    title={tr('browser.closeTab', 'Close tab')}
+                    title={tr('browser.closeTab', '关闭网页')} aria-label={`关闭网页：${tabTitle(tab)}`}
                     onClick={(event) => {
                       event.stopPropagation();
-                      hana?.browserCloseTab?.(tab.tabId, sessionPath);
+                      void closeTab(tab.tabId);
                     }}
-                    onDoubleClick={(event) => event.stopPropagation()}
                   >
                     <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
                       <path d="M4.5 4.5l5 5M9.5 4.5l-5 5" />
                     </svg>
-                  </span>
-                </button>
+                  </button>
+                </div>
               );
             })}
           </div>
 
           <button
             className="tb-btn new-tab-btn"
-            title={tr('browser.newTab', 'New Tab')}
+            title={tr('browser.newTab', '新建网页')}
             onClick={() => hana?.browserNewTab?.(sessionPath)}
           >
             <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
@@ -240,12 +252,12 @@ export function BrowserViewerApp() {
       <div className="card-frame">
         {tabs.length === 0 && (
           <div className="browser-empty-state">
-            <p className="browser-empty-text">{tr('browser.emptyWorkspace', 'No open tabs')}</p>
+            <p className="browser-empty-text">{tr('browser.emptyWorkspace', '没有打开的网页')}</p>
             <button
               className="browser-empty-action"
               onClick={() => hana?.browserNewTab?.(sessionPath)}
             >
-              {tr('browser.newTab', 'New Tab')}
+              {tr('browser.newTab', '新建网页')}
             </button>
           </div>
         )}

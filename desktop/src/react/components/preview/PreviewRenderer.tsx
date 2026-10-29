@@ -5,7 +5,7 @@
  * 每种 previewItem 类型对应一个 JSX 分支或子组件。
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent, type MouseEvent, type ReactNode } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type DragEvent, type MouseEvent, type ReactNode } from 'react';
 import { renderMarkdownPreview } from '../../utils/markdown';
 import {
   parseMarkdownCover,
@@ -46,6 +46,7 @@ import type { PreviewItem } from '../../types';
 import previewStyles from '../Preview.module.css';
 import { SidebarBrowser } from './SidebarBrowser';
 import { MediaPreview } from './MediaPreview';
+import './PdfReader.css';
 import { sanitizeMarkdownPreviewHtml } from '../../utils/markdown-html-sanitizer';
 import { workbenchMarkdownOptions } from '../../utils/workbench-markdown';
 import { resolveServerConnection } from '../../services/server-connection';
@@ -678,6 +679,8 @@ function CsvPreview({ content }: { content: string }) {
   );
 }
 
+const PdfReader = lazy(() => import('./PdfReader'));
+
 // ── PdfPreview ──
 // sourceUrl 是新路径；content/base64 只保留给旧 previewItem 兼容。
 
@@ -692,9 +695,12 @@ function appendPdfViewerHash(url: string): string {
 }
 
 function PdfPreview({ previewItem }: { previewItem: PreviewItem }) {
+  const [systemReader,setSystemReader]=useState(false);
+  useEffect(()=>setSystemReader(false),[previewItem.id]);
   const [inspection,setInspection]=useState<{pages?:number;error?:string}|null>(null);
   const [attempt,setAttempt]=useState(0);
   const sourceKey=JSON.stringify({sourceFilePath:previewItem.filePath,remoteContentRef:previewItem.remoteContentRef,resourceId:previewItem.contentResourceId});
+  const versionKey=JSON.stringify(previewItem.fileVersion||null);
   const inspectable=!!(previewItem.filePath||previewItem.remoteContentRef||previewItem.contentResourceId);
   useEffect(()=>{
     if(!inspectable)return;
@@ -706,8 +712,10 @@ function PdfPreview({ previewItem }: { previewItem: PreviewItem }) {
       if(!cancelled)setInspection({pages:data.pages});
     }).catch(error=>{if(!cancelled)setInspection({error:error.name==='AbortError'?'PDF 检查超时，请重试或使用系统应用打开':error.message});}).finally(()=>clearTimeout(timer));
     return()=>{cancelled=true;clearTimeout(timer);controller.abort();};
-  },[sourceKey,inspectable,attempt]);
-  const source = useMemo(() => {
+  },[sourceKey,versionKey,inspectable,attempt]);
+  const [source,setSource]=useState<{url:string;revoke:boolean;error?:string}>({url:'about:blank',revoke:false});
+  useEffect(() => {
+    const next = (() => {
     if (previewItem.sourceUrl) {
       return { url: previewItem.sourceUrl, revoke: false };
     }
@@ -723,20 +731,19 @@ function PdfPreview({ previewItem }: { previewItem: PreviewItem }) {
       return { url: `data:application/pdf;base64,${previewItem.content}`, revoke: false };
     }
     return { url: URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' })), revoke: true };
-  }, [previewItem.content, previewItem.sourceUrl]);
-
-  useEffect(() => {
-    return () => {
-      if (source.revoke) URL.revokeObjectURL(source.url);
-    };
-  }, [source]);
+    })();
+    setSource(next);
+    return () => {if(next.revoke)URL.revokeObjectURL(next.url);};
+  }, [previewItem.content,previewItem.sourceUrl]);
 
   const error=inspection?.error||source.error;
-  if(error)return <div className={previewStyles.previewUnavailable} role="alert"><p>{error}</p><button onClick={()=>setAttempt(value=>value+1)}>重新加载</button>{previewItem.filePath&&<button onClick={()=>window.platform.openFile(previewItem.filePath!)}>系统打开</button>}</div>;
-  if(inspectable&&!inspection)return <div className={previewStyles.previewUnavailable} role="status">正在检查 PDF…</div>;
-  return <div style={{display:'flex',flexDirection:'column',height:'100%',minHeight:0}}>
-    <small style={{padding:'6px 10px',color:'var(--text-muted)'}}>PDF{inspection?.pages?` · ${inspection.pages} 页`:''} · 使用下方工具栏翻页、缩放和搜索</small>
-    <iframe key={attempt} className="preview-pdf" style={{flex:1,minHeight:0}} title={previewItem.title || 'PDF 预览'} src={appendPdfViewerHash(source.url)} />
+  if(error&&!systemReader)return <div className={previewStyles.previewUnavailable} role="alert"><p>{error}</p><button onClick={()=>setAttempt(value=>value+1)}>重新加载</button>{!source.error&&source.url!=='about:blank'&&<button onClick={()=>setSystemReader(true)}>系统阅读器</button>}{previewItem.filePath&&<button onClick={()=>window.platform.openFile(previewItem.filePath!)}>系统打开</button>}</div>;
+  if(inspectable&&!inspection||source.url==='about:blank')return <div className={previewStyles.previewUnavailable} role="status">正在检查 PDF…</div>;
+  if(!systemReader)return <Suspense fallback={<div role="status">正在加载 PDF 阅读器…</div>}><PdfReader key={`${previewItem.id}:${versionKey}:${attempt}`} restoreKey={`${previewItem.id}:${versionKey}`} url={source.url} base64={previewItem.sourceUrl?undefined:previewItem.content} name={previewItem.title || 'PDF 预览'} onSystemReader={()=>setSystemReader(true)}/></Suspense>;
+  return <div className="enigma-pdf-system">
+    <div className="enigma-pdf-system-header"><small>系统阅读器{inspection?.pages?` · ${inspection.pages} 页`:''} · 打印、下载与表单</small><div><a href={source.url} download={previewItem.title||'document.pdf'}>下载 PDF</a><button onClick={()=>setSystemReader(false)}>返回阅读</button></div></div>
+    <small className="enigma-pdf-hint">若无法显示，可下载后用系统应用打开。</small>
+    <iframe key={attempt} className="preview-pdf" title={previewItem.title || 'PDF 预览'} src={appendPdfViewerHash(source.url)} />
   </div>;
 }
 

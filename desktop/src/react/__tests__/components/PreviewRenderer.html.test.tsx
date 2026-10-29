@@ -17,6 +17,8 @@ vi.mock('../../hooks/use-hana-fetch', () => ({
   hanaFetch: mocks.hanaFetch,
 }));
 
+vi.mock('../../components/preview/PdfReader', () => ({default: ({onSystemReader}: {onSystemReader: () => void}) => <button onClick={onSystemReader}>系统阅读器</button>}));
+
 function dataTransferStub() {
   const data = new Map<string, string>();
   return {
@@ -201,6 +203,7 @@ describe('PreviewRenderer HTML isolation', () => {
     } as PreviewItem & { sourceUrl: string };
 
     const { container } = render(<PreviewRenderer previewItem={pdfItem} />);
+    fireEvent.click(await screen.findByRole('button',{name:'系统阅读器'}));
     await waitFor(()=>expect(container.querySelector('.preview-pdf')).toBeTruthy());
     const iframe = container.querySelector<HTMLIFrameElement>('.preview-pdf');
 
@@ -378,4 +381,18 @@ describe('PreviewRenderer HTML isolation', () => {
       );
     });
   });
+});
+
+it('releases inline PDF blob URLs when content changes and the panel closes',async()=>{
+ const create=vi.fn().mockReturnValueOnce('blob:first').mockReturnValueOnce('blob:second'),revoke=vi.fn();
+ const oldCreate=URL.createObjectURL,oldRevoke=URL.revokeObjectURL;URL.createObjectURL=create;URL.revokeObjectURL=revoke;
+ try{
+  const item={id:'inline',type:'pdf',title:'inline.pdf',content:btoa('%PDF-1.4\nfirst')} as PreviewItem;
+  const view=render(<PreviewRenderer previewItem={item}/>);
+  fireEvent.click(await screen.findByRole('button',{name:'系统阅读器'}));
+  await waitFor(()=>expect(view.container.querySelector('iframe')).toHaveAttribute('src','blob:first#toolbar=1&navpanes=0'));
+  view.rerender(<PreviewRenderer previewItem={{...item,content:btoa('%PDF-1.4\nsecond')}}/>);
+  await waitFor(()=>expect(view.container.querySelector('iframe')).toHaveAttribute('src','blob:second#toolbar=1&navpanes=0'));
+  expect(revoke).toHaveBeenCalledWith('blob:first');view.unmount();expect(revoke).toHaveBeenCalledWith('blob:second');
+ }finally{cleanup();URL.createObjectURL=oldCreate;URL.revokeObjectURL=oldRevoke;}
 });

@@ -1,0 +1,30 @@
+.enigma-pdf-reader { display:flex;flex-direction:column;height:100%;min-height:0;min-width:0; }
+.enigma-pdf-toolbar { padding:8px 10px;display:flex;flex-direction:column;gap:7px;background:color-mix(in srgb,var(--bg-card) 70%,transparent);border-bottom:1px solid var(--border);flex-shrink:0; }
+.enigma-pdf-heading,.enigma-pdf-navigation,.enigma-pdf-search { display:flex;align-items:center;gap:5px;min-width:0; }
+.enigma-pdf-heading b { flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:550;font-size:13px; }
+.enigma-pdf-reader button,.enigma-pdf-reader select,.enigma-pdf-system button { min-height:30px;border:1px solid transparent;border-radius:7px;background:transparent;color:var(--text);font:inherit;font-size:12px;padding:4px 7px;cursor:pointer; }
+.enigma-pdf-reader button:hover,.enigma-pdf-system button:hover { background:var(--overlay-light); }
+.enigma-pdf-reader button:disabled,.enigma-pdf-reader input:disabled,.enigma-pdf-reader select:disabled { opacity:.45;cursor:default; }
+.enigma-pdf-reader :is(button,input,select):focus-visible { outline:2px solid var(--accent);outline-offset:1px; }
+.enigma-pdf-reader input,.enigma-pdf-reader select { background:color-mix(in srgb,var(--bg-card) 55%,transparent);border:1px solid var(--border);border-radius:6px;min-height:30px;color:var(--text);font-size:12px; }
+.enigma-pdf-navigation { flex-wrap:wrap; }
+.enigma-pdf-navigation label { display:flex;align-items:center;white-space:nowrap;gap:5px;color:var(--text-muted);font-size:12px; }
+.enigma-pdf-navigation input { width:40px;text-align:center;padding:3px; }
+.enigma-pdf-search input { flex:1;min-width:65px;padding:5px 8px; }
+.enigma-pdf-search > span { color:var(--text-muted);font-size:11px;white-space:nowrap;min-width:35px;text-align:center; }
+.enigma-pdf-body { position:relative;flex:1;min-height:0; }
+.enigma-pdf-pages { position:absolute;inset:0;overflow:auto;overscroll-behavior:contain;--page-margin:8px auto;--page-border:0; }
+.enigma-pdf-pages .pdfViewer .page { background:white;box-shadow:0 1px 8px #0002; }
+.enigma-pdf-notice { position:absolute;inset:0;padding:24px;display:flex;flex-wrap:wrap;align-content:center;justify-content:center;gap:8px;background:var(--bg-card);color:var(--text-muted);font-size:13px;text-align:center; }
+.enigma-pdf-notice p { flex-basis:100%; }
+.enigma-pdf-hint { font-size:11px;line-height:1.6;color:var(--text-muted);padding:5px 10px;border-top:1px solid var(--border); }
+.enigma-pdf-system { display:flex;flex-direction:column;height:100%;min-height:0; }
+.enigma-pdf-system-header { display:flex;gap:8px;align-items:center;justify-content:space-between;padding:6px 10px; }
+.enigma-pdf-system-header small { color:var(--text-muted);font-size:12px; }
+.enigma-pdf-system iframe { flex:1;min-height:0; }
+
+.enigma-pdf-pages .textLayer, .enigma-pdf-pages .textLayer :is(span,br) { -webkit-user-select:text;user-select:text;cursor:text; }
+
+.enigma-pdf-system-header > div { display:flex;align-items:center;gap:6px;flex-shrink:0; }
+.enigma-pdf-system-header a { color:var(--accent);font-size:12px;padding:5px;text-decoration:none; }
+.enigma-pdf-system-header { flex-wrap:wrap; }

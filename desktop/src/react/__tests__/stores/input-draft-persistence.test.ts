@@ -79,3 +79,17 @@ describe('input draft persistence', () => {
     expect(clearBody).toMatchObject({ sessionId: 'sess-1', text: '' });
   });
 });
+
+it('serializes writes so a slow clear cannot overwrite a newer draft',async()=>{
+ vi.useFakeTimers();mockFetch.mockReset();initInputDraftPersistence();
+ let release!:(value:Response)=>void;
+ mockFetch.mockImplementationOnce(()=>new Promise(resolve=>release=resolve)).mockResolvedValue(jsonResponse({ok:true}));
+ const {notifyDraftSet}=await import('../../stores/input-draft-sync');
+ notifyDraftSet('__home__','',null);await vi.advanceTimersByTimeAsync(600);
+ notifyDraftSet('__home__','restored draft',null);await vi.advanceTimersByTimeAsync(600);
+ expect(mockFetch).toHaveBeenCalledTimes(1);
+ release(jsonResponse({ok:true}));await vi.advanceTimersByTimeAsync(1);
+ expect(mockFetch).toHaveBeenCalledTimes(2);
+ expect(JSON.parse(mockFetch.mock.calls[1][1]!.body as string).text).toBe('restored draft');
+ registerDraftSyncListener(null);vi.useRealTimers();
+});

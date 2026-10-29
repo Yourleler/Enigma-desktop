@@ -293,6 +293,32 @@ function copyLegacyFiles(): Plugin {
   };
 }
 
+/** Package the pinned PDF viewer's local fonts/CMaps and their reuse notices. */
+function pdfReaderAssets(): Plugin {
+  const source=path.resolve(__dirname,'node_modules/pdfjs-dist');
+  const allowed=['cmaps','standard_fonts','web/images'];
+  return {
+    name:'enigma-pdf-reader-assets',
+    configureServer(server) {
+      server.middlewares.use('/pdfjs', (req,res,next)=>{
+        const requested=decodeURIComponent((req.url||'').split('?')[0]).replace(/^\//,'');
+        const relative=requested.startsWith('images/')?'web/'+requested:requested;
+        if(!allowed.some(dir=>relative.startsWith(dir+'/'))||relative.split('/').includes('..'))return next();
+        const file=path.resolve(source,relative);
+        if(!file.startsWith(source+path.sep)||!fs.existsSync(file)||!fs.statSync(file).isFile())return next();
+        res.setHeader('Content-Type',file.endsWith('.svg')?'image/svg+xml':'application/octet-stream');
+        fs.createReadStream(file).pipe(res);
+      });
+    },
+    closeBundle() {
+      const target=path.resolve(__dirname,'desktop/dist-renderer/pdfjs');
+      for(const dir of allowed)fs.cpSync(path.join(source,dir),path.join(target,dir.replace('web/','')),{recursive:true});
+      fs.copyFileSync(path.join(source,'LICENSE'),path.join(target,'LICENSE'));
+      fs.copyFileSync(path.resolve(__dirname,'docs/pdf-reader-notice.md'),path.join(target,'NOTICE.md'));
+    },
+  };
+}
+
 export default defineConfig({
   root: 'desktop/src',
   base: './',
@@ -306,6 +332,7 @@ export default defineConfig({
     useSourceThemeInDev(),
     restoreLegacyCss(),
     copyLegacyFiles(),
+    pdfReaderAssets(),
   ],
   resolve: {
     alias: {

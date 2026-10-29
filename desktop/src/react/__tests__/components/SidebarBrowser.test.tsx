@@ -86,3 +86,15 @@ it('does not offer conversation control revocation in a manual browser and keeps
   expect(screen.queryByRole('button',{name:'停止控制'})).toBeNull();
   expect(document.querySelector('details')?.open).toBe(false);
 });
+
+it('keeps an address being typed through redirects and switches tabs with arrow keys',async()=>{
+ state={...state,tabs:[{tabId:'a',title:'First'},{tabId:'b',title:'Second'}]};
+ render(<SidebarBrowser sessionPath="alpha"/>);const address=await screen.findByDisplayValue('https://example.com/form');
+ fireEvent.focus(address);fireEvent.change(address,{target:{value:'localhost:3000/new'}});
+ act(()=>update({...state,url:'https://example.com/redirected'}));
+ expect((address as HTMLInputElement).value).toBe('localhost:3000/new');
+ fireEvent.submit(address.closest('form')!);await waitFor(()=>expect(command).toHaveBeenCalledWith(expect.objectContaining({url:'http://localhost:3000/new'})));
+ fireEvent.keyDown(screen.getByRole('tab',{name:'First'}),{key:'ArrowRight'});
+ await waitFor(()=>expect(command).toHaveBeenCalledWith(expect.objectContaining({action:'switchTab',tabId:'b'})));
+ expect(document.activeElement).toBe(screen.getByRole('tab',{name:'Second'}));
+});

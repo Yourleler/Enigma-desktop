@@ -663,7 +663,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
   });
 
   useLayoutEffect(() => {
-    editor?.setEditable?.(!inputLocked);
+    editor?.setEditable?.(!inputLocked, false);
     if (inputLocked) {
       setSlashMenuOpen(false);
       setFileMenuOpen(false);
@@ -1367,7 +1367,10 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
   // Sync editor → React mirror (drives hasInput / canSend) + slash menu + draft save
   useEffect(() => {
     if (!editor) return;
-    const handler = () => {
+    const handler = (event?: {transaction?: {docChanged?:boolean}}) => {
+      // Tiptap also emits update for editable-state changes. These are not user
+      // edits and must never persist an empty pre-hydration editor as deletion.
+      if(event?.transaction?.docChanged === false)return;
       const editorJson = editor.getJSON();
       const { text } = serializeEditor(editorJson);
       setInputText(text);
