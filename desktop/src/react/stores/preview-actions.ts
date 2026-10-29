@@ -65,6 +65,15 @@ export function initViewerEvents(): void {
 }
 
 let _legacyArtifactCounter = 0;
+let previewOpenEpoch = 0;
+export function beginPreviewOpen(): () => boolean {
+  const epoch=++previewOpenEpoch;
+  const scope=useStore.getState();
+  return()=>{
+    const current=useStore.getState();
+    return epoch===previewOpenEpoch&&current.deskBasePath===scope.deskBasePath&&current.currentSessionPath===scope.currentSessionPath&&current.activeServerConnectionId===scope.activeServerConnectionId;
+  };
+}
 
 // ── Internal write primitive ──
 
@@ -99,6 +108,7 @@ export function upsertPreviewItem(previewItem: PreviewItem): void {
 
 /** 打开 tab 并激活（已存在的 id 只切换激活） */
 export function openTab(id: string): void {
+  previewOpenEpoch++;
   updatePreview(prev => {
     const tabs = prev.openTabs.includes(id) ? prev.openTabs : [...prev.openTabs, id];
     return { openTabs: tabs, activeTabId: id };
@@ -108,6 +118,7 @@ export function openTab(id: string): void {
 
 /** 关闭 tab；若关闭的是 active，激活前一个 */
 export function closeTab(id: string): void {
+  previewOpenEpoch++;
   updatePreview(prev => {
     const idx = prev.openTabs.indexOf(id);
     if (idx < 0) return {};
@@ -125,23 +136,27 @@ export function closeTab(id: string): void {
       ),
     };
   });
+  useStore.setState(s => ({previewAnchorRequests:Object.fromEntries(Object.entries(s.previewAnchorRequests).filter(([key])=>key!==id))}));
   schedulePersistCurrentWorkspaceUiState();
 }
 
 /** 切换激活 tab */
 export function setActiveTab(id: string): void {
+  previewOpenEpoch++;
   updatePreview(() => ({ activeTabId: id }));
   schedulePersistCurrentWorkspaceUiState();
 }
 
 /** 清空整个预览池 */
 export function clearPreview(): void {
+  previewOpenEpoch++;
   useStore.setState({
     previewItems: [],
     openTabs: [],
     activeTabId: null,
     markdownPreviewIds: [],
     previewReadingPositions: {},
+    previewAnchorRequests: {},
   });
 }
 
@@ -195,12 +210,21 @@ export function updatePreviewReadingPosition(
 // ── High-level actions ──
 
 /** 注册 previewItem 并打开为 tab，展开面板 */
-export function openPreview(previewItem: PreviewItem): void {
+export function openPreview(previewItem: PreviewItem, options?: {anchor?:string}): void {
   upsertPreviewItem(previewItem);
   openTab(previewItem.id);
   useStore.getState().setPreviewOpen(true);
+  if (options?.anchor && previewItem.type === 'markdown') {
+    useStore.getState().setMarkdownPreviewActive(previewItem.id,true);
+    useStore.setState(s=>({previewAnchorRequests:{...s.previewAnchorRequests,[previewItem.id]:{token:crypto.randomUUID(),anchor:options.anchor!}}}));
+  }
   updateLayout();
   schedulePersistCurrentWorkspaceUiState();
+}
+
+export function consumePreviewAnchor(id:string, token:string): void {
+  useStore.setState(s=>s.previewAnchorRequests[id]?.token===token
+    ? {previewAnchorRequests:Object.fromEntries(Object.entries(s.previewAnchorRequests).filter(([key])=>key!==id))} : {});
 }
 
 /** 只展开/收起面板，不改变已有 tabs 与 previewItems */
@@ -209,6 +233,7 @@ export function togglePreviewPanel(forceOpen?: boolean): void {
   const open = forceOpen ?? !s.previewOpen;
   if (open === s.previewOpen) return;
   if (!open && s.quoteCandidate?.sourceKind === 'preview') s.clearQuoteCandidate();
+  if (!open) previewOpenEpoch++;
   s.setPreviewOpen(open);
   updateLayout();
   schedulePersistCurrentWorkspaceUiState();

@@ -5,7 +5,7 @@
  */
 
 import type { PreviewItem } from '../types';
-import { openPreview } from '../stores/preview-actions';
+import { beginPreviewOpen, openPreview } from '../stores/preview-actions';
 import { inferKindByExt, isMediaKind } from './file-kind';
 import { openMediaViewerFromContext } from './open-media-viewer';
 import {
@@ -64,8 +64,10 @@ export async function openFilePreview(
     fileId?: string;
     blockIdx?: number;
     sourceRootPath?: string;
+    anchor?: string;
   },
 ): Promise<void> {
+  const isCurrent=beginPreviewOpen();
   const fileName = label || filePath.split('/').pop() || filePath;
   const normalizedExt = ext.replace(/^\./, '').toLowerCase();
 
@@ -74,6 +76,7 @@ export async function openFilePreview(
       // .skill 文件可能是纯文本也可能是 zip，先尝试读取内容在预览面板展示
       const name = fileName.replace(/\.skill$/, '');
       const content = await window.platform?.readFile?.(filePath);
+      if(!isCurrent())return;
       if (content != null) {
         const body = content.replace(/^---\s*\n[\s\S]*?\n---\s*\n?/, '');
         const previewItem: PreviewItem = {
@@ -82,7 +85,7 @@ export async function openFilePreview(
           title: name,
           content: body,
         };
-        openPreview(previewItem);
+        if(context?.anchor)openPreview(previewItem,{anchor:context.anchor});else openPreview(previewItem);
         return;
       }
       // 读取失败（可能是 zip 格式），尝试 skill viewer
@@ -118,6 +121,7 @@ export async function openFilePreview(
     const canPreview = normalizedExt in PREVIEWABLE_EXTS;
     if (canPreview) {
       const readResult = await readFileForPreviewWithVersion(filePath, normalizedExt);
+      if(!isCurrent())return;
       if (readResult != null) {
         const previewType = PREVIEWABLE_EXTS[normalizedExt];
         const previewItem: PreviewItem = {
@@ -132,9 +136,10 @@ export async function openFilePreview(
           fileVersion: readResult.fileVersion,
           language: previewType === 'code' ? normalizedExt : undefined,
         };
-        openPreview(previewItem);
+        if(context?.anchor)openPreview(previewItem,{anchor:context.anchor});else openPreview(previewItem);
         return;
       }
+      throw new Error(`无法读取文件“${fileName}”，请确认文件仍存在且有访问权限。`);
     }
 
     // 无法预览的文件类型
@@ -148,6 +153,7 @@ export async function openFilePreview(
     };
     openPreview(previewItem);
   } catch (err) {
+    if(!isCurrent())return;
     console.error('[file-preview] open preview failed:', err);
     showError(getErrorMessage(err));
   }

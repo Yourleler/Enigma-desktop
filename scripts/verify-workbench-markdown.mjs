@@ -8,9 +8,9 @@ const root=fs.mkdtempSync(path.join(path.resolve(process.argv[2]),'workbench-mar
 const profile=path.join(root,'new-profile'),files=path.join(root,'new-files');
 await prepareEnigmaProfile({dataRoot:profile,workspace:files});
 fs.mkdirSync(path.join(files,'images'));fs.mkdirSync(path.join(files,'docs'));
-fs.writeFileSync(path.join(files,'start.md'),'# 远端 Markdown 测试\n\n![新建远端图片](./images/picture.svg)\n\n[下一份文档](./docs/next.md)\n');
+fs.writeFileSync(path.join(files,'start.md'),'# 远端 Markdown 测试\n\n![新建远端图片](./images/picture.svg)\n\n[下一份文档](./docs/next.md#%E7%9B%AE%E6%A0%87%E7%AB%A0%E8%8A%82)\n\n[缺失章节](./docs/next.md#missing-section)\n');
 fs.writeFileSync(path.join(files,'images/picture.svg'),'<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><rect width="120" height="80" fill="purple"/></svg>');
-fs.writeFileSync(path.join(files,'docs/next.md'),'# 远端链接打开成功\n\n这份内容只存在于新建的测试文件。\n');
+fs.writeFileSync(path.join(files,'docs/next.md'),'# 远端链接打开成功\n\n'+Array.from({length:30},(_,i)=>`第 ${i+1} 段，只用于新建文档章节定位验收。`).join('\n\n')+'\n\n## 目标章节\n\n章节定位成功。\n\n[返回起点](../start.md)\n\n'+Array.from({length:8},(_,i)=>`后续段落 ${i+1}。`).join('\n\n'));
 const fd=fs.openSync(path.join(root,'server.log'),'w');
 const server=spawn(process.execPath,['server/main-full.ts'],{env:{...process.env,HANA_HOME:profile,ENIGMA_DESKTOP_DATA:profile,ENIGMA_DESKTOP_PRODUCT:'1',HANA_PORT:'0'},stdio:['ignore',fd,fd]});
 try {

@@ -24,6 +24,7 @@ export interface SettingsSearchResult {
 type Translate = (key: string) => string;
 
 const BUILT_IN_SETTINGS_SEARCH_ENTRIES: SettingsSearchEntry[] = [
+  {id:'computer-control',tabId:'plugins',titleKey:'settings.computerUse.title',pathKeys:['settings.tabs.plugins'],aliases:['computer use','screen recording','accessibility','电脑控制','电脑操作','屏幕录制','辅助功能','应用授权']},
   {id:'usage-history',tabId:'usage',titleKey:'settings.tabs.usage',aliases:['token','tokens','用量','消耗','历史统计','模型统计','请求记录','保留条数','保留上限','retention']},
   {
     id: 'agent-profile',
@@ -193,7 +194,7 @@ const BUILT_IN_SETTINGS_SEARCH_ENTRIES: SettingsSearchEntry[] = [
     tabId: 'experiments',
     titleKey: 'settings.tabs.experiments',
     pathKeys: ['settings.tabs.experiments'],
-    aliases: ['experiment', 'beta', 'preview', 'computer use', '实验', '预览', '测试', '电脑使用'],
+    aliases: ['experiment', 'beta', 'preview', '实验', '预览', '测试'],
   },
   {
     id: 'security-sandbox',

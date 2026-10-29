@@ -7,7 +7,7 @@ import type {
 import type { DeskFile } from '../types';
 import type { FileRef } from '../types/file-ref';
 import { hanaFetch } from '../hooks/use-hana-fetch';
-import { openPreview, upsertPreviewItem } from '../stores/preview-actions';
+import { beginPreviewOpen, openPreview, upsertPreviewItem } from '../stores/preview-actions';
 import { useStore } from '../stores';
 import { resolveServerConnection } from '../services/server-connection';
 import {
@@ -26,6 +26,7 @@ import { openMediaPreview } from './media-preview';
 export { isWebRuntime };
 
 export interface WorkbenchPreviewInput {
+  anchor?: string;
   file: DeskFile;
   mountId?: string | null;
   rootId?: string | null;
@@ -201,6 +202,8 @@ async function openRemoteContentPreview({
   mediaContext,
   remoteContentRef,
   resourceId,
+  anchor,
+  isCurrent = beginPreviewOpen(),
 }: {
   contentPath: string;
   id: string;
@@ -210,6 +213,8 @@ async function openRemoteContentPreview({
   mediaContext: { origin: 'desk' | 'session'; sessionPath?: string };
   remoteContentRef?: RemoteWorkbenchContentRef;
   resourceId?: string;
+  anchor?: string;
+  isCurrent?: () => boolean;
 }): Promise<void> {
   const mediaKind = inferKindByExt(ext);
   if ((isMediaKind(mediaKind) || mediaKind === 'audio') && mediaRef) {
@@ -221,11 +226,13 @@ async function openRemoteContentPreview({
   const previewType = PREVIEWABLE_EXTS[ext];
   if(previewType==='docx'||previewType==='xlsx') {
     const item: PreviewItem={id,type:previewType,title,ext,content:'',remoteContentRef,contentResourceId:resourceId,storageKind:'remote-content'};
-    openPreview(await readOfficePreviewItem(item));
+    const ready=await readOfficePreviewItem(item);
+    if(isCurrent())openPreview(ready);
     return;
   }
   if (previewType && previewType !== 'docx' && previewType !== 'xlsx') {
     const read = await readContentForPreview(contentPath, previewType);
+    if(!isCurrent())return;
     const fileVersion = read.fileVersion;
     const previewItem: PreviewItem = {
       id,
@@ -239,7 +246,7 @@ async function openRemoteContentPreview({
       remoteContentRef: remoteContentRefWithVersion(remoteContentRef, fileVersion),
       contentResourceId: resourceId,
     };
-    openPreview(previewItem);
+    if(anchor)openPreview(previewItem,{anchor});else openPreview(previewItem);
     return;
   }
 
@@ -348,6 +355,7 @@ export async function refreshPreviewItemsFromRemoteWorkbenchTarget(
 
 export async function openWorkbenchFilePreview(input: WorkbenchPreviewInput): Promise<void> {
   if (input.file.isDir) return;
+  const isCurrent=beginPreviewOpen();
   const name = input.file.name;
   const connection = resolveServerConnection(useStore.getState());
   const access = resolveWorkbenchFilePreviewAccess(input, { connection }, {
@@ -358,6 +366,7 @@ export async function openWorkbenchFilePreview(input: WorkbenchPreviewInput): Pr
     await openFilePreview(access.path, name, access.ext, {
       origin: 'desk',
       sourceRootPath: access.sourceRootPath,
+      anchor:input.anchor,
     });
     return;
   }
@@ -389,8 +398,11 @@ export async function openWorkbenchFilePreview(input: WorkbenchPreviewInput): Pr
       mediaRef,
       mediaContext: { origin: 'desk' },
       remoteContentRef: access.remoteContentRef,
+      anchor: input.anchor,
+      isCurrent,
     });
   } catch (err) {
+    if(!isCurrent())return;
     console.error('[remote-preview] workbench preview failed:', err);
     showError(getErrorMessage(err));
   }

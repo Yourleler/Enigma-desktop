@@ -1129,3 +1129,6 @@
 :global(body.resizing) .previewPanelInner {
     transition: none !important;
 }
+.previewAnchorMessage { display:flex;align-items:center;gap:10px;flex-shrink:0;margin:4px 8px 8px;padding:8px 12px;color:var(--text-muted);font-size:12px;line-height:1.5;background:color-mix(in srgb,var(--bg-card) 65%,transparent);border:1px solid var(--border);border-radius:10px; }
+.previewAnchorMessage button { margin-left:auto;border:0;background:transparent;color:inherit;cursor:pointer;padding:4px 8px; }
+:global([data-preview-anchor-target]) { background:color-mix(in srgb,var(--accent) 10%,transparent);box-shadow:0 0 0 5px color-mix(in srgb,var(--accent) 10%,transparent);border-radius:3px; }

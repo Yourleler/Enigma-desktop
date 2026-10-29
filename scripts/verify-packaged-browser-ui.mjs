@@ -53,6 +53,7 @@ try {
   assert.equal(await page.evaluate("document.querySelector('#name').value"),'保留页面输入');steps.push('form survives close/reopen');
   await page.evaluate("[...document.querySelectorAll('a')].find(link=>link.textContent.includes('下载新建测试文本')).click()");
   await until(()=>main.evaluate("document.querySelector('.enigma-browser-downloads')?.textContent.includes('已完成')"),'Standalone browser download did not complete');
+  await main.evaluate("document.querySelector('.enigma-browser-downloads summary').click()");
   await main.evaluate("[...document.querySelectorAll('.enigma-browser-download-row button')].find(button=>button.textContent==='预览').click()");
   await until(()=>main.evaluate("document.body.innerText.includes('Enigma 新建测试文本')"),'Downloaded file did not open in preview');
   steps.push('standalone browser download and file preview');

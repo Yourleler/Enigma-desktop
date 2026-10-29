@@ -10,11 +10,12 @@
  * - 独立窗口由下阶段的 viewer spawn 机制负责（单向只读副本），本面板不做 detach/dock
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from 'react';
 import { useStore } from '../stores';
 import { selectPreviewItems, selectActiveTabId, selectMarkdownPreviewIds, selectPreviewReadingPositions } from '../stores/preview-slice';
-import { setMarkdownPreviewActive, upsertPreviewItem, updatePreviewReadingPosition } from '../stores/preview-actions';
+import { consumePreviewAnchor, setMarkdownPreviewActive, upsertPreviewItem, updatePreviewReadingPosition } from '../stores/preview-actions';
+import {alignPreviewAnchor,findPreviewAnchor} from '../utils/preview-anchor';
 import { PreviewEditor, type PreviewEditorHandle, type PreviewEditorStats } from './PreviewEditor';
 import { PreviewRenderer } from './preview/PreviewRenderer';
 import { TabBar } from './preview/TabBar';
@@ -124,6 +125,9 @@ export function PreviewPanel() {
   const previewItems = useStore(selectPreviewItems);
   const markdownPreviewIds = useStore(selectMarkdownPreviewIds);
   const previewReadingPositions = useStore(selectPreviewReadingPositions);
+  const anchorRequest = useStore(s=>activeTabId?s.previewAnchorRequests[activeTabId]:undefined);
+  const [anchorMessage,setAnchorMessage]=useState('');
+  const [anchorHighlight,setAnchorHighlight]=useState<{itemId:string;id:string;token:string}|null>(null);
   const [editorStats, setEditorStats] = useState<PreviewEditorStats>({ selectedChars: 0, totalChars: 0 });
   const [activeHeadingId, setActiveHeadingId] = useState<string | null>(null);
   const [findOpen, setFindOpen] = useState(false);
@@ -229,14 +233,16 @@ export function PreviewPanel() {
   }, [contentHash, markdownFile, markdownHeadings, previewItem]);
 
   const restorePreviewScroll = useCallback(() => {
-    if (!previewItem || editable || !markdownFile || !readingPosition?.preview) return;
+    if (!previewItem || editable || !markdownFile || anchorRequest || !readingPosition?.preview) return;
     const body = previewBodyRef.current;
     if (!body) return;
     const snapshot = readingPosition.preview;
     const key = `${previewItem.id}:preview:${contentHash}:${snapshot.updatedAt || ''}:${snapshot.scrollTop}:${snapshot.anchorId || ''}`;
     if (restoredPreviewKeyRef.current === key) return;
     restoredPreviewKeyRef.current = key;
+    let cancelled=false;
     const restore = () => {
+      if(cancelled||useStore.getState().activeTabId!==previewItem.id||useStore.getState().previewAnchorRequests[previewItem.id])return;
       if (snapshot.contentHash === contentHash && Number.isFinite(snapshot.scrollTop)) {
         body.scrollTop = Math.max(0, snapshot.scrollTop);
         body.scrollLeft = Math.max(0, snapshot.scrollLeft || 0);
@@ -255,8 +261,9 @@ export function PreviewPanel() {
     };
     restore();
     queueMicrotask(restore);
-    window.requestAnimationFrame?.(restore);
-  }, [contentHash, editable, markdownFile, previewItem, readingPosition?.preview]);
+    const frame=window.requestAnimationFrame?.(restore);
+    return()=>{cancelled=true;if(frame)window.cancelAnimationFrame(frame);};
+  }, [anchorRequest, contentHash, editable, markdownFile, previewItem, readingPosition?.preview]);
 
   const handleJumpHeading = useCallback((heading: MarkdownHeading) => {
     if (editable) {
@@ -271,6 +278,35 @@ export function PreviewPanel() {
     activeHeadingRef.current = heading.id;
     setActiveHeadingId(heading.id);
   }, [editable]);
+
+  useLayoutEffect(()=>{
+    if(!previewOpen||!previewItem||!markdownFile||editable||!anchorRequest)return;
+    const body=previewBodyRef.current;if(!body)return;
+    const target=findPreviewAnchor(body,anchorRequest.anchor);
+    setAnchorMessage(target?'':`未找到章节“${anchorRequest.anchor}”，已打开文档，可通过目录选择位置。`);
+    setAnchorHighlight(target?{itemId:previewItem.id,id:target.id,token:anchorRequest.token}:null);
+    if(target){
+      alignPreviewAnchor(body,target);
+      activeHeadingRef.current=target.id;setActiveHeadingId(target.id);
+      updatePreviewReadingPosition(previewItem.id,'preview',{
+        scrollTop:body.scrollTop,scrollLeft:body.scrollLeft,ratio:scrollRatio(body.scrollTop,body.scrollHeight,body.clientHeight),
+        contentHash,updatedAt:Date.now(),anchorId:target.id,anchorText:target.textContent||'',
+      },{id:target.id,text:target.textContent||''});
+    }
+    consumePreviewAnchor(previewItem.id,anchorRequest.token);
+  },[previewOpen,previewItem,markdownFile,editable,anchorRequest,contentHash]);
+
+  useLayoutEffect(()=>{
+    const body=previewBodyRef.current;
+    if(!body||!anchorHighlight||previewItem?.id!==anchorHighlight.itemId)return;
+    const mark=()=>{const target=findPreviewAnchor(body,anchorHighlight.id);if(target)target.dataset.previewAnchorTarget='';};
+    mark();
+    // A Markdown subtree may refresh after its reference metadata arrives.
+    // Reapply the short-lived cue to the current node, not a detached one.
+    const observer=new MutationObserver(mark);observer.observe(body,{childList:true,subtree:true});
+    const timer=setTimeout(()=>setAnchorHighlight(current=>current?.token===anchorHighlight.token?null:current),1600);
+    return()=>{clearTimeout(timer);observer.disconnect();body.querySelectorAll<HTMLElement>('[data-preview-anchor-target]').forEach(target=>delete target.dataset.previewAnchorTarget);};
+  },[anchorHighlight,previewItem?.id]);
 
   const handleBodyShellPointerMove = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
     const rect = event.currentTarget.getBoundingClientRect();
@@ -295,8 +331,7 @@ export function PreviewPanel() {
       selectedChars: 0,
       totalChars: previewItem?.type === 'markdown' ? countPreviewChars(previewItem.content) : 0,
     });
-    activeHeadingRef.current = readingPosition?.currentHeadingId || null;
-    setActiveHeadingId(readingPosition?.currentHeadingId || null);
+    if(!anchorRequest){activeHeadingRef.current = readingPosition?.currentHeadingId || null;setActiveHeadingId(readingPosition?.currentHeadingId || null);setAnchorMessage('');}
   }, [activeTabId]); // eslint-disable-line react-hooks/exhaustive-deps -- tab 切换时用当前 active previewItem 初始化状态栏，后续由 PreviewEditor 回调接管
 
   useEffect(() => {
@@ -305,8 +340,9 @@ export function PreviewPanel() {
     if (!body) return undefined;
     const onScroll = () => schedulePreviewScrollSnapshot();
     body.addEventListener('scroll', onScroll, { passive: true });
-    restorePreviewScroll();
+    const cancelRestore=restorePreviewScroll();
     return () => {
+      cancelRestore?.();
       body.removeEventListener('scroll', onScroll);
       if (previewScrollTimerRef.current) {
         clearTimeout(previewScrollTimerRef.current);
@@ -404,6 +440,7 @@ export function PreviewPanel() {
             onNext={() => goFind(1)}
             onClose={() => setFindOpen(false)}
           />
+          {previewOpen && anchorMessage && <div role="status" className={previewStyles.previewAnchorMessage}>{anchorMessage}<button type="button" aria-label="关闭章节提示" onClick={()=>setAnchorMessage('')}>×</button></div>}
           {previewOpen && previewItem && !['browser', 'media', 'pdf', 'file-info'].includes(previewItem.type) && !['missing','unavailable'].includes(previewItem.status||'') && (
             <FloatingActions
               content={previewItem.content}

@@ -7,7 +7,6 @@ import { renderMarkdown } from '../../utils/markdown';
 import { SelectWidget, type SelectOption } from '@/ui';
 import { SettingsRow } from '../components/SettingsRow';
 import { SettingsSection } from '../components/SettingsSection';
-import { ComputerUseSection } from './ComputerUseSection';
 import {
   COMPACTION_MODE_EXPERIMENT_ID,
   COMPACTION_MODES,
@@ -418,7 +417,7 @@ export function ExperimentsTab() {
 
   return (
     <>
-      {showComputerUse && <ComputerUseSection />}
+      {showComputerUse && <SettingsSection title={t('settings.computerUse.title')} description={t('settings.computerUse.movedHint')}><button type="button" className={styles['settings-save-btn-sm']} onClick={()=>useSettingsStore.getState().set({activeTab:'plugins'})}>{t('settings.computerUse.openSetup')}</button></SettingsSection>}
       {!loading && sessionExperiments.length > 0 && (
         <SettingsSection
           title={t('settings.experiments.compactionTitle')}

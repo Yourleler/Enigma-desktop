@@ -7,6 +7,7 @@ import styles from '../Settings.module.css';
 import { SettingsSection } from '../components/SettingsSection';
 import { SettingsRow } from '../components/SettingsRow';
 import { SelectWidget, Toggle, type SelectOption } from '@/ui';
+import {ComputerUseSection} from './ComputerUseSection';
 
 const platform = window.platform;
 
@@ -153,6 +154,7 @@ function count(value: unknown[] | undefined): number {
 /* ── Main tab ── */
 
 export function PluginsTab() {
+  const platformName=useSettingsStore(s=>s.platformName);
   const { pluginAllowFullAccess, pluginDevToolsEnabled, pluginUserDir } = useSettingsStore(
     useShallow(s => ({
       pluginAllowFullAccess: s.pluginAllowFullAccess,
@@ -551,6 +553,7 @@ export function PluginsTab() {
                   </div>
 
                   <div className={styles['skills-list-actions']}>
+                    {plugin.id==='computer-control'&&<button type="button" className={styles['settings-save-btn-sm']} onClick={()=>{const section=document.getElementById('computer-control-setup');section?.scrollIntoView({block:'start'});section?.focus({preventScroll:true});}}>{t('settings.computerUse.openSetup')}</button>}
                     {configurable && (
                       <button
                         className={styles['skill-card-delete']}
@@ -603,6 +606,8 @@ export function PluginsTab() {
           </p>
         )}
       </SettingsSection>
+
+      {platformName!=='linux'&&plugins.some(p=>p.id==='computer-control')&&<ComputerUseSection pluginEnabled={plugins.some(p=>p.id==='computer-control'&&p.status==='loaded')}/>}
 
       {diagnostics && (
         <SettingsSection

@@ -572,13 +572,6 @@ function MarkdownPreview({ previewItem }: { previewItem: PreviewItem }) {
     event.preventDefault();
     event.stopPropagation();
     void (async () => {
-      if (target.kind === 'file' && /\.(md|markdown|mdx|txt|csv|json|ya?ml)$/i.test(target.filePath) && window.platform?.readFileSnapshot) {
-        const snapshot = await window.platform.readFileSnapshot(target.filePath).catch(() => null);
-        if (!snapshot) {
-          showError(`Link target not found: ${target.filePath}`);
-          return;
-        }
-      }
       await openInternalLink(href, context);
     })();
   }, [findAnchor, linkContext]);

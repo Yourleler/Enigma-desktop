@@ -10,6 +10,10 @@ afterEach(() => {
 });
 
 describe('resolveLinkTarget', () => {
+  it('retains decoded cross-file section ids in local and Windows Markdown links',()=>{
+    expect(resolveLinkTarget('../target.md#%E5%AE%89%E8%A3%85',{baseFilePath:'/vault/docs/start.md'})).toMatchObject({kind:'file',filePath:'/vault/target.md',anchor:'安装'});
+    expect(resolveLinkTarget('file:///C:/notes/target.md#second-heading')).toMatchObject({kind:'file',filePath:'C:/notes/target.md',anchor:'second-heading'});
+  });
   it('routes http links to the internal browser preview target', () => {
     expect(resolveLinkTarget('https://example.com/a?b=1#top')).toEqual({
       kind: 'web',

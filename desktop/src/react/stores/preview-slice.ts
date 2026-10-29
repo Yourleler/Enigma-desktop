@@ -31,6 +31,8 @@ export interface PreviewSlice {
   markdownPreviewIds: string[];
   /** Markdown 阅读位置，按 preview item id keyed；关闭 tab 时删除，跨重启由 workspace UI state 恢复。 */
   previewReadingPositions: Record<string, PreviewReadingPosition>;
+  /** Transient link intent, consumed only by its target preview. Not persisted. */
+  previewAnchorRequests: Record<string, {token:string;anchor:string}>;
   addPinnedViewer: (viewer: PinnedViewer) => void;
   removePinnedViewer: (windowId: number) => void;
   clearPinnedViewers: () => void;
@@ -46,6 +48,7 @@ export const createPreviewSlice = (
   pinnedViewers: [],
   markdownPreviewIds: [],
   previewReadingPositions: {},
+  previewAnchorRequests: {},
   addPinnedViewer: (viewer) =>
     set((s) => {
       // 防重：同 windowId 存在则跳过（理论上 Electron 不会复用 id）

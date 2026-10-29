@@ -80,6 +80,8 @@ export function SidebarBrowser({sessionPath}: {sessionPath?: string | null}) {
   if (!window.platform?.sidebarBrowserBind) return <div className="enigma-browser-empty" role="status">内置浏览器需要桌面应用。请在桌面打开，或使用系统浏览器。</div>;
   const ready = !!state && !state.detached;
   const tabs = state?.tabs || [];
+  const downloads=state?.downloads||[];
+  const downloading=downloads.filter(download=>download.state==='progress').length;
   return <section className="enigma-sidebar-browser" aria-label="网页浏览器">
     <div className="enigma-browser-tabs" role="tablist" aria-label="网页标签">
       {tabs.map(tab => <div className="enigma-browser-tab" key={tab.tabId} data-active={tab.tabId === state?.activeTabId}>
@@ -95,13 +97,13 @@ export function SidebarBrowser({sessionPath}: {sessionPath?: string | null}) {
       <input aria-label="网页地址" placeholder="输入网址并按回车" value={address} disabled={!ready} onChange={event => setAddress(event.target.value)} onFocus={event => event.currentTarget.select()}/>
       <button type="submit" aria-label="访问网址" title="访问网址" disabled={!ready || !address.trim()}><AppIcon name="arrowEnter" size={15}/></button>
     </form>
-    <div className="enigma-browser-status"><span role="status" title={state?.sessionTitle || undefined}>{!ready ? state?.detached ? '已移至独立窗口' : error ? '连接失败' : '正在连接浏览器…' : state?.loading ? '正在加载…' : state?.error ? '加载失败' : sessionPath ? isCurrentSession ? '本对话的浏览器' : state?.sessionTitle || '另一对话的浏览器' : '独立浏览器'}</span>
-      {ready && <><button title="在独立窗口继续查看同一页面" onClick={() => void command('detach')}>独立窗口</button><button title="停止本对话的浏览器操作并撤回 Agent 授权，直到下次发送消息" onClick={() => void command('emergencyStop')}>急停</button></>}
+    <div className="enigma-browser-status"><span role="status" title={sessionPath?state?.sessionTitle || undefined:'此浏览器未绑定对话，可以手动浏览网页。'}>{!ready ? state?.detached ? '已移至独立窗口' : error ? '连接失败' : '正在连接浏览器…' : state?.loading ? '正在加载…' : state?.error ? '加载失败' : sessionPath ? isCurrentSession ? '本对话的浏览器' : state?.sessionTitle || '另一对话的浏览器' : '手动浏览'}</span>
+      {ready && <><button title="在独立窗口继续查看同一页面" onClick={() => void command('detach')}>独立窗口</button>{sessionPath&&<button title="停止所属对话的浏览器操作并撤回 Agent 授权，直到下次发送消息" onClick={() => void command('emergencyStop')}>停止控制</button>}</>}
     </div>
     {(error || state?.error) && <div className="enigma-browser-error" role="alert">{error || state?.error}<button onClick={() => ready ? void command('reload') : setConnection(value => value + 1)}>重试</button></div>}
-    {!!state?.downloads?.length && <details className="enigma-browser-downloads" open>
-      <summary>下载（{state.downloads.length}）</summary>
-      {state.downloads.map(download=><div key={download.id} className="enigma-browser-download-row">
+    {!!downloads.length && <details className="enigma-browser-downloads">
+      <summary>下载（{downloads.length}）<span>{downloading?`${downloading} 项进行中`:downloads[0]?.state==='completed'?'已完成':'查看记录'}</span></summary>
+      {downloads.map(download=><div key={download.id} className="enigma-browser-download-row">
         <span title={download.filename}>{download.filename}<small>{download.state==='completed'?'已完成':download.state==='progress'?`${Math.round(download.receivedBytes/1024)} KB · 下载中`:download.state==='cancelled'?'已取消':download.state==='missing'?'文件已移除':'下载中断，请重新下载'}</small></span>
         {download.state==='completed'&&download.filePath&&<><button onClick={()=>void openFilePreview(download.filePath!,download.filename,extOfName(download.filename)||'',{origin:'desk'})}>预览</button><button title="在文件管理器中显示" onClick={()=>void command('revealDownload',{downloadId:download.id})}>位置</button></>}
         {download.state==='progress'&&<button onClick={()=>void command('cancelDownload',{downloadId:download.id})}>取消</button>}
@@ -113,7 +115,7 @@ export function SidebarBrowser({sessionPath}: {sessionPath?: string | null}) {
     {state?.detached && <div className="enigma-browser-empty"><p>网页已移至独立窗口，页面内容和输入仍保留。</p><button onClick={() => setConnection(value => value + 1)}>放回侧栏</button></div>}
     <div className="enigma-browser-viewport" ref={viewport} hidden={!!state?.detached}>
       {state?.previewImage && !visible && <img src={state.previewImage} alt="暂时隐藏的网页画面" className="enigma-browser-placeholder"/>}
-      {ready && !tabs.length && <div className="enigma-browser-empty"><AppIcon name="link" size={24}/><p>在上方输入网址，或新建网页标签。</p><small>收起面板会保留网页；急停会结束浏览器操作。</small></div>}
+      {ready && !tabs.length && <div className="enigma-browser-empty"><AppIcon name="link" size={24}/><p>在上方输入网址，或新建网页标签。</p><small>收起面板会保留网页。{sessionPath?'“停止控制”会结束该对话的浏览器操作。':''}</small></div>}
     </div>
   </section>;
 }

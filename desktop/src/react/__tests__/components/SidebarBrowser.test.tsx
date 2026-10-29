@@ -53,7 +53,7 @@ it('ignores another panel update and exposes stopping a load separately from eme
   act(() => update({...state, loading: true}));
   fireEvent.click(screen.getByRole('button', {name: '停止加载'}));
   await waitFor(() => expect(command).toHaveBeenCalledWith(expect.objectContaining({action: 'stop'})));
-  fireEvent.click(screen.getByRole('button', {name: '急停'}));
+  fireEvent.click(screen.getByRole('button', {name: '停止控制'}));
   await waitFor(() => expect(command).toHaveBeenCalledWith(expect.objectContaining({action: 'emergencyStop'})));
 });
 
@@ -72,9 +72,17 @@ it('shows download status and scopes cancel/reveal to the current browser panel'
   state={...state,downloads:[{id:'pending',filename:'large.pdf',state:'progress',receivedBytes:1024,totalBytes:8192},{id:'done',filename:'new.txt',state:'completed',receivedBytes:57,totalBytes:57,filePath:'/new-test/new.txt'}]};
   render(<SidebarBrowser/>);
   await screen.findByText('large.pdf');
+  fireEvent.click(document.querySelector('.enigma-browser-downloads summary')!);
   expect(screen.getByText('已完成')).toBeTruthy();
   fireEvent.click(screen.getByRole('button',{name:'取消'}));
   await waitFor(()=>expect(command).toHaveBeenCalledWith(expect.objectContaining({surfaceId:state.surfaceId,action:'cancelDownload',downloadId:'pending'})));
   fireEvent.click(screen.getByRole('button',{name:'位置'}));
   await waitFor(()=>expect(command).toHaveBeenCalledWith(expect.objectContaining({surfaceId:state.surfaceId,action:'revealDownload',downloadId:'done'})));
+});
+
+it('does not offer conversation control revocation in a manual browser and keeps downloads collapsed',async()=>{
+  state={...state,sessionPath:null,downloads:[{id:'done',filename:'new.txt',state:'completed',receivedBytes:57,totalBytes:57,filePath:'/new-test/new.txt'}]};
+  render(<SidebarBrowser/>);await screen.findByText('手动浏览');
+  expect(screen.queryByRole('button',{name:'停止控制'})).toBeNull();
+  expect(document.querySelector('details')?.open).toBe(false);
 });

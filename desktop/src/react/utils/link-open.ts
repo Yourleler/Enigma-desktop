@@ -5,8 +5,8 @@ import type { RemoteWorkbenchContentRef } from '../types';
 
 export type LinkTarget =
   | { kind: 'web'; url: string }
-  | { kind: 'file'; filePath: string; ext: string; label: string }
-  | { kind: 'workbench'; ref: RemoteWorkbenchContentRef; label: string }
+  | { kind: 'file'; filePath: string; ext: string; label: string; anchor?:string }
+  | { kind: 'workbench'; ref: RemoteWorkbenchContentRef; label: string; anchor?:string }
   | { kind: 'anchor'; href: string }
   | { kind: 'external'; href: string };
 
@@ -91,13 +91,22 @@ function basenamePortable(value: string): string {
   return slash >= 0 ? normalized.slice(slash + 1) : normalized;
 }
 
-function fileTarget(filePath: string, label?: string | null): LinkTarget {
+function fragmentAnchor(href:string): string | undefined {
+  const hash=href.indexOf('#');if(hash<0)return undefined;
+  const raw=href.slice(hash+1);if(!raw||raw.length>2048)return undefined;
+  try {const decoded=decodeURIComponent(raw);return decoded.includes('\0')?undefined:decoded;}catch{return raw;}
+}
+
+function fileTarget(filePath: string, label?: string | null, href = ''): LinkTarget {
   const fallbackLabel = basenamePortable(filePath) || filePath;
+  const ext=extOfName(fallbackLabel) || extOfName(filePath) || '';
+  const anchor=['md','markdown'].includes(ext)?fragmentAnchor(href):undefined;
   return {
     kind: 'file',
     filePath,
-    ext: extOfName(fallbackLabel) || extOfName(filePath) || '',
+    ext,
     label: label?.trim() || fallbackLabel,
+    ...(anchor?{anchor}:{}),
   };
 }
 
@@ -133,25 +142,28 @@ export function resolveLinkTarget(href: string, context: LinkOpenContext = {}): 
   if (!raw) return { kind: 'external', href: raw };
   if (raw.startsWith('#')) return { kind: 'anchor', href: raw };
   const workbench = resolveWorkbenchMarkdownLink(raw, context.workbenchScope);
-  if (workbench) return {kind:'workbench',ref:workbench,label:context.label || workbench.name};
+  if (workbench) {
+    const anchor=['md','markdown'].includes(extOfName(workbench.name)||'')?fragmentAnchor(raw):undefined;
+    return {kind:'workbench',ref:workbench,label:context.label || workbench.name,...(anchor?{anchor}:{})};
+  }
 
   const webUrl = normalizeWebUrl(raw);
   if (webUrl) return { kind: 'web', url: webUrl };
 
   if (raw.toLowerCase().startsWith('file:')) {
     const filePath = fileUrlToPath(raw);
-    if (filePath) return fileTarget(filePath, context.label);
+    if (filePath) return fileTarget(filePath, context.label, raw);
   }
 
   const { pathname } = splitSuffix(raw);
   const decodedPath = decodeLinkPath(pathname.trim());
   if (decodedPath && isAbsoluteLocalPath(decodedPath)) {
-    return fileTarget(normalizeJoinedPath(decodedPath), context.label);
+    return fileTarget(normalizeJoinedPath(decodedPath), context.label, raw);
   }
 
   if (decodedPath && context.baseFilePath && !EXPLICIT_PROTOCOL_RE.test(decodedPath) && !decodedPath.startsWith('//')) {
     const baseDir = dirnamePortable(context.baseFilePath);
-    if (baseDir) return fileTarget(normalizeJoinedPath(`${baseDir}/${decodedPath}`), context.label);
+    if (baseDir) return fileTarget(normalizeJoinedPath(`${baseDir}/${decodedPath}`), context.label, raw);
   }
 
   return { kind: 'external', href: raw };
@@ -163,7 +175,7 @@ export async function openInternalLink(href: string, context: LinkOpenContext = 
 
   if (target.kind === 'workbench') {
     const {openWorkbenchFilePreview} = await import('./remote-file-preview');
-    await openWorkbenchFilePreview({file:{name:target.ref.name,isDir:false},mountId:target.ref.mountId,rootId:target.ref.rootId,subdir:target.ref.subdir,preferNativePath:false});
+    await openWorkbenchFilePreview({file:{name:target.ref.name,isDir:false},mountId:target.ref.mountId,rootId:target.ref.rootId,subdir:target.ref.subdir,preferNativePath:false,anchor:target.anchor});
     return true;
   }
 
@@ -182,12 +194,13 @@ export async function openInternalLink(href: string, context: LinkOpenContext = 
   }
 
   if (target.kind === 'file') {
-    await openFilePreview(target.filePath, target.label, target.ext, {
+    await openFilePreview(target.filePath, basenamePortable(target.filePath), target.ext, {
       origin: context.origin || 'desk',
       sessionPath: context.sessionPath,
       messageId: context.messageId,
       fileId: context.fileId,
       blockIdx: context.blockIdx,
+      anchor: target.anchor,
     });
     return true;
   }

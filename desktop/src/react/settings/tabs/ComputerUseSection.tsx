@@ -7,6 +7,7 @@ import { Toggle } from '@/ui';
 import { useSettingsStore } from '../store';
 import { updateSettingsSnapshot } from '../actions';
 import styles from '../Settings.module.css';
+import './ComputerUseSection.css';
 
 interface ComputerProviderStatus {
   providerId: string;
@@ -40,10 +41,11 @@ function StatusText({ ok, text }: { ok: boolean; text: string }) {
     <span style={{
       color: ok ? 'var(--accent)' : 'var(--text-muted)',
       fontSize: '0.78rem',
-      whiteSpace: 'nowrap',
+      whiteSpace: 'normal',
       maxWidth: 280,
-      overflow: 'hidden',
-      textOverflow: 'ellipsis',
+      overflowWrap: 'anywhere',
+      textAlign: 'right',
+      lineHeight: 1.5,
     }}>
       {text}
     </span>
@@ -60,7 +62,7 @@ function rememberComputerUseSnapshot(data: ComputerUseStatusResponse) {
   }));
 }
 
-export function ComputerUseSection() {
+export function ComputerUseSection({pluginEnabled=true}: {pluginEnabled?:boolean}) {
   const snapshotComputerUse = useSettingsStore(
     (state) => state.settingsSnapshot?.data?.preferences?.computerUse as ComputerUseStatusResponse | undefined,
   );
@@ -68,10 +70,12 @@ export function ComputerUseSection() {
   const [loading, setLoading] = useState(() => !snapshotComputerUse);
   const [saving, setSaving] = useState(false);
   const [requesting, setRequesting] = useState(false);
+  const [loadError,setLoadError]=useState(false);
+  const [revoking,setRevoking]=useState<string|null>(null);
   const showToast = useSettingsStore((state) => state.showToast);
 
   const load = useCallback(async () => {
-    setLoading(true);
+    setLoading(true);setLoadError(false);
     try {
       const res = await hanaFetch('/api/preferences/computer-use');
       const body = await res.json();
@@ -79,6 +83,7 @@ export function ComputerUseSection() {
       rememberComputerUseSnapshot(body);
     } catch (err) {
       console.warn('[computer-use] load status failed:', err);
+      setLoadError(true);
       const latestSnapshot = useSettingsStore.getState().settingsSnapshot?.data?.preferences?.computerUse as ComputerUseStatusResponse | undefined;
       setData(latestSnapshot || null);
     } finally {
@@ -107,16 +112,24 @@ export function ComputerUseSection() {
   const availabilityIssue = selectedProvider?.status?.reason || selectedProvider?.status?.error || '';
   const permissions = selectedProvider?.status?.permissions || [];
   const permissionText = permissions.length > 0
-    ? permissions.map((p) => `${p.name || 'permission'}:${p.granted ? 'ok' : 'missing'}`).join(' · ')
+    ? permissions.map((p) => `${/accessibility/i.test(p.name||'')?t('settings.computerUse.accessibilityName'):/screen.?record/i.test(p.name||'')?t('settings.computerUse.screenName'):p.name||'permission'} · ${t(p.granted?'settings.computerUse.permissionGranted':'settings.computerUse.permissionMissing')}`).join(' / ')
     : t('settings.computerUse.permissionsEmpty');
   const approvals = data?.settings?.app_approvals || [];
   const approvalsText = approvals.length > 0
-    ? approvals.map((item) => item.appName || item.appId).join(' · ')
+    ? t('settings.computerUse.approvalsCount',{count:approvals.length})
     : t('settings.computerUse.approvalsEmpty');
   const activeLease = data?.status?.activeLease;
   const activeLeaseText = activeLease
     ? activeLease.appId || activeLease.agentId || activeLease.leaseId || t('settings.computerUse.active')
     : t('settings.computerUse.idle');
+  const summaryKey=loadError?'loadFailed':!pluginEnabled?'pluginDisabled':!enabled?'controlDisabled':permissions.some(p=>!p.granted)?'permissionNeeded':!permissions.length?'permissionUnchecked':'readyHint';
+  const runtimeText=availabilityIssue==='daemon-unavailable'?t('settings.computerUse.startOnDemand'):available?t('settings.computerUse.available'):!enabled?t('settings.computerUse.startOnDemand'):t('settings.computerUse.unavailable');
+  const revoke=async(approval:{providerId:string;appId:string})=>{
+    setRevoking(approval.appId);
+    try{await hanaFetch('/api/preferences/computer-use/approvals',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify(approval)});await load();}
+    catch(err){showToast(t('settings.saveFailed')+': '+(err instanceof Error?err.message:String(err)),'error');}
+    finally{setRevoking(null);}
+  };
 
   const saveEnabled = async (next: boolean) => {
     if (!data) return;
@@ -185,27 +198,21 @@ export function ComputerUseSection() {
   );
 
   return (
-    <SettingsSection
+    <div id="computer-control-setup" className="enigma-computer-setup" tabIndex={-1}><SettingsSection
       title={t('settings.computerUse.title')}
       description={t('settings.computerUse.description')}
       context={refreshButton}
     >
-      <SettingsSection.Warning data-testid="computer-use-experimental-warning">
-        {t('settings.computerUse.experimentalWarning')}
-      </SettingsSection.Warning>
+      <div className="enigma-computer-readiness" role="status" data-ready={summaryKey==='readyHint'}>{t('settings.computerUse.'+summaryKey)}</div>
       <SettingsRow
         label={t('settings.computerUse.enabled')}
         hint={t('settings.computerUse.enabledHint')}
-        control={<Toggle on={enabled} onChange={(next) => saveEnabled(next)} disabled={saving} />}
-      />
-      <SettingsRow
-        label={t('settings.computerUse.provider')}
-        control={<StatusText ok={!!data?.selectedProviderId} text={data?.selectedProviderId || '-'} />}
+        control={<Toggle ariaLabel={t('settings.computerUse.enabled')} on={enabled} onChange={(next) => saveEnabled(next)} disabled={saving||!pluginEnabled} />}
       />
       <SettingsRow
         label={t('settings.computerUse.availability')}
-        hint={availabilityIssue || undefined}
-        control={<StatusText ok={available} text={available ? t('settings.computerUse.available') : t('settings.computerUse.unavailable')} />}
+        hint={available||availabilityIssue==='daemon-unavailable'?undefined:availabilityIssue || undefined}
+        control={<StatusText ok={available} text={runtimeText} />}
       />
       <SettingsRow
         label={t('settings.computerUse.permissions')}
@@ -214,16 +221,19 @@ export function ComputerUseSection() {
       />
       <SettingsRow
         label={t('settings.computerUse.permissionsStatus')}
-        control={<StatusText ok={permissions.every((p) => p.granted !== false)} text={permissionText} />}
+        control={<StatusText ok={permissions.length>0&&permissions.every((p) => p.granted === true)} text={permissionText} />}
       />
       <SettingsRow
         label={t('settings.computerUse.approvals')}
+        hint={t('settings.computerUse.approvalsHint')}
         control={<StatusText ok={approvals.length > 0} text={approvalsText} />}
       />
+      {!!approvals.length&&<div className="enigma-computer-approvals">{approvals.map(approval=><div key={approval.providerId+approval.appId}><span title={approval.appId}>{approval.appName||approval.appId}</span><button type="button" disabled={revoking===approval.appId} onClick={()=>void revoke(approval)}>{t('settings.computerUse.revoke')}</button></div>)}</div>}
       <SettingsRow
         label={t('settings.computerUse.activeSession')}
         control={<StatusText ok={!activeLease} text={activeLeaseText} />}
       />
-    </SettingsSection>
+      <p className="enigma-computer-hint">{t('settings.computerUse.workflowHint')}</p>
+    </SettingsSection></div>
   );
 }

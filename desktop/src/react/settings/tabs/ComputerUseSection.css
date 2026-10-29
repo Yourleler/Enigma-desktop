@@ -1,0 +1,8 @@
+.enigma-computer-setup { scroll-margin-top:20px;outline:none; }
+.enigma-computer-readiness { padding:12px 14px;margin-bottom:8px;border:1px solid var(--border);border-radius:12px;background:var(--overlay-subtle);font-size:13px;line-height:1.6;color:var(--text-muted); }
+.enigma-computer-readiness[data-ready="true"] { color:var(--accent);border-color:color-mix(in srgb,var(--accent) 30%,transparent); }
+.enigma-computer-hint { font-size:12px;line-height:1.65;color:var(--text-muted);margin:10px 0 0;padding:0 14px 12px;white-space:normal;overflow-wrap:anywhere; }
+.enigma-computer-approvals { display:grid;gap:6px;margin:0 0 10px; }
+.enigma-computer-approvals > div { display:flex;gap:12px;align-items:center;font-size:12px; }
+.enigma-computer-approvals span { min-width:0;flex:1;overflow-wrap:anywhere; }
+.enigma-computer-approvals button { border:1px solid var(--border);border-radius:8px;padding:5px 10px;background:transparent;color:var(--text-muted);cursor:pointer; }

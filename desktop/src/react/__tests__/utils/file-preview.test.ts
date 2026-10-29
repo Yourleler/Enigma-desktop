@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('../../stores/preview-actions', () => ({
   openPreview: mocks.openPreview,
+  beginPreviewOpen:()=>()=>true,
 }));
 
 vi.mock('../../utils/ui-helpers', () => ({

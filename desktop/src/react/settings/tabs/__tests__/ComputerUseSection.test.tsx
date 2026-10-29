@@ -98,7 +98,7 @@ describe('ComputerUseSection', () => {
     await waitFor(() => expect(hanaFetchMock).toHaveBeenCalledWith('/api/preferences/computer-use'));
   });
 
-  it('renders the experimental risk warning near the top of the Computer Use page', async () => {
+  it('distinguishes a loaded plugin from allowing control and does not claim unchecked permissions are granted', async () => {
     hanaFetchMock.mockResolvedValue(jsonResponse({
       selectedProviderId: 'macos:cua',
       settings: { enabled: false, app_approvals: [] },
@@ -111,10 +111,20 @@ describe('ComputerUseSection', () => {
     render(<ComputerUseSection />);
 
     await waitFor(() => expect(hanaFetchMock).toHaveBeenCalledWith('/api/preferences/computer-use'));
-    const warning = screen.getByTestId('computer-use-experimental-warning');
-
-    expect(warning.textContent || '').toContain('Computer use 功能属于测试阶段');
-    expect(warning.textContent || '').toContain('建议只是尝鲜');
+    expect(screen.getByRole('status').textContent).toBe('settings.computerUse.controlDisabled');
+    expect(screen.getByText('settings.computerUse.permissionsEmpty')).toBeTruthy();
+    expect(screen.queryByTestId('computer-use-experimental-warning')).toBeNull();
+  });
+  it('makes plugin disablement explicit even if the independent global preference is enabled',async()=>{
+    hanaFetchMock.mockResolvedValue(jsonResponse({settings:{enabled:true,app_approvals:[]},status:{providers:[]}}));
+    render(<ComputerUseSection pluginEnabled={false}/>);
+    await waitFor(()=>expect(screen.getByRole('status').textContent).toBe('settings.computerUse.pluginDisabled'));
+  });
+  it('revokes only the selected application approval',async()=>{
+    hanaFetchMock.mockResolvedValue(jsonResponse({settings:{enabled:true,app_approvals:[{providerId:'macos:cua',appId:'new.fixture',appName:'New fixture'}]},status:{providers:[]}}));
+    render(<ComputerUseSection/>);
+    fireEvent.click(await screen.findByText('settings.computerUse.revoke'));
+    await waitFor(()=>expect(hanaFetchMock).toHaveBeenCalledWith('/api/preferences/computer-use/approvals',expect.objectContaining({method:'DELETE',body:JSON.stringify({providerId:'macos:cua',appId:'new.fixture',appName:'New fixture'})})));
   });
 
   it('shows a toast when requesting permissions fails', async () => {

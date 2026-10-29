@@ -21,6 +21,9 @@ app.whenReady().then(async()=>{
     assert.equal(new URL(href).searchParams.has('token'),false);
     await evaluate("document.querySelector('.preview-markdown a').click()");
     await until("document.body.innerText.includes('远端链接打开成功')");
+    const anchor=await until("(()=>{const target=document.getElementById('目标章节'),body=document.getElementById('previewBody');if(!target||!body||body.scrollTop<200)return false;return {top:target.getBoundingClientRect().top-body.getBoundingClientRect().top,scrollTop:body.scrollTop,highlighted:target.hasAttribute('data-preview-anchor-target')}})()");
+    assert(anchor.top>=0&&anchor.top<80,JSON.stringify(anchor));
+    assert(anchor.highlighted,'The target heading should be highlighted after navigation');
     assert(win.webContents.getURL().includes('/desktop/'));
     await new Promise(resolve=>{win.webContents.once('did-finish-load',resolve);win.reload()});
     await until("document.body.innerText.includes('远端链接打开成功')");
@@ -32,8 +35,13 @@ app.whenReady().then(async()=>{
     await until("document.body.innerText.includes('在工作区打开')");
     await evaluate("[...document.querySelectorAll('.context-menu-item')].find(item=>item.textContent.trim()==='在工作区打开').click()");
     await until("document.body.innerText.includes('远端链接打开成功')");
+    await until("(()=>{const target=document.getElementById('目标章节'),body=document.getElementById('previewBody');return target&&body&&body.scrollTop>200})()");
     const capture=await win.webContents.capturePage();fs.writeFileSync(path.join(root,'after.png'),capture.toPNG());
-    fs.writeFileSync(path.join(root,'result.json'),JSON.stringify({passed:true,relativeImageLoaded:image.loaded,imageWidth:image.width,linkHasCredential:false,linkedDocumentOpened:true,reloadRestored:true,contextMenuOpenedInWorkbench:true,scope:'Actual web renderer and authenticated workbench file endpoint, isolated server/profile; not native Mac mouse acceptance'},null,2));
+    await evaluate("[...document.querySelectorAll('[role=tab]')].find(tab=>tab.textContent.includes('start.md')).click()");
+    await until("!!document.querySelector('.preview-markdown')");
+    await evaluate("[...document.querySelectorAll('.preview-markdown a')].find(a=>a.textContent==='缺失章节').click()");
+    await until("document.body.innerText.includes('未找到章节')");
+    fs.writeFileSync(path.join(root,'result.json'),JSON.stringify({passed:true,relativeImageLoaded:image.loaded,imageWidth:image.width,linkHasCredential:false,linkedDocumentOpened:true,crossFileAnchor:anchor,missingAnchorFeedback:true,reloadRestored:true,contextMenuOpenedInWorkbench:true,scope:'Actual web renderer and authenticated workbench file endpoint, isolated server/profile; not native Mac mouse acceptance'},null,2));
   }catch(error){fs.writeFileSync(path.join(root,'failure.json'),JSON.stringify({error:error.message,body:await evaluate('document.body.innerText').catch(()=>null)},null,2));console.error(error.message);process.exitCode=1;}
   finally{win.destroy();app.exit(process.exitCode||0)}
 });
