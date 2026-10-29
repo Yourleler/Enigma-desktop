@@ -55,3 +55,7 @@
     color: var(--text);
     background: var(--overlay-subtle);
 }
+
+.findBoxInline{position:relative;inset:auto;width:auto;flex-shrink:0;margin:0 0 6px;height:auto;min-height:34px;}
+.findBox button:disabled{opacity:.4;cursor:default;}
+.findBox button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;}

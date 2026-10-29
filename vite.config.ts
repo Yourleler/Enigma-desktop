@@ -274,6 +274,7 @@ function copyLegacyFiles(): Plugin {
       for(const name of ['video.js','signal-polyfill'])fs.copyFileSync(path.resolve(__dirname,`node_modules/${name}/LICENSE`),path.join(licenses,`${name}-LICENSE`));
       fs.copyFileSync(path.resolve(__dirname,'node_modules/react/LICENSE'),path.join(licenses,'react-compiler-runtime-LICENSE'));
       fs.writeFileSync(path.join(licenses,'VideoJS-NOTICE.md'),'Video.js 10.2.0, Copyright 2025-present Video.js contributors, Apache-2.0. https://github.com/videojs/video.js. Packaged React audio/video skins and controls are bundled unchanged. Enigma adds local file lifetime, playback restoration, subtitles and theme integration. React Compiler Runtime 1.0.0: MIT, Copyright Meta Platforms, Inc. and affiliates; license from the public facebook/react repository root.');
+      fs.copyFileSync(path.resolve(__dirname,'node_modules/@codemirror/search/LICENSE'),path.join(licenses,'CodeMirror-search-LICENSE'));
       const dirs = ['lib', 'modules', 'themes', 'assets', 'locales'];
       const files = ['styles.css', 'animations.css', 'mobile-manifest.webmanifest', 'mobile-sw.js', 'icon.png'];
 

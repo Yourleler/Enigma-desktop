@@ -27,6 +27,8 @@ export function ClassicFindBox({
   onClose,
   placeholder,
   ariaLabel = 'Find',
+  inline = false,
+  labels = {previous:'Previous match',next:'Next match',close:'Close find'},
 }: {
   open: boolean;
   query: string;
@@ -38,15 +40,20 @@ export function ClassicFindBox({
   onClose: () => void;
   placeholder?: string;
   ariaLabel?: string;
+  inline?: boolean;
+  labels?: {previous:string;next:string;close:string};
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
-    if (open) window.setTimeout(() => inputRef.current?.focus(), 0);
+    if (!open)return;
+    const previous=document.activeElement as HTMLElement|null;
+    const timer=window.setTimeout(()=>inputRef.current?.focus(),0);
+    return()=>{window.clearTimeout(timer);if(document.activeElement===inputRef.current)previous?.focus();};
   }, [open]);
   if (!open) return null;
   const countLabel = query ? `${resultCount ? resultIndex + 1 : 0}/${resultCount}` : '0/0';
   return (
-    <div className={styles.findBox} role="search">
+    <div className={`${styles.findBox} ${inline?styles.findBoxInline:''}`} role="search">
       <Icon kind="search" />
       <input
         ref={inputRef}
@@ -68,9 +75,9 @@ export function ClassicFindBox({
         data-classic-find-input=""
       />
       <span className={styles.findCount}>{countLabel}</span>
-      <button type="button" onClick={onPrevious} aria-label="Previous match"><Icon kind="up" /></button>
-      <button type="button" onClick={onNext} aria-label="Next match"><Icon kind="down" /></button>
-      <button type="button" onClick={onClose} aria-label="Close find"><Icon kind="close" /></button>
+      <button type="button" onClick={onPrevious} aria-label={labels.previous} disabled={inline&&!resultCount} title="Shift+Enter"><Icon kind="up" /></button>
+      <button type="button" onClick={onNext} aria-label={labels.next} disabled={inline&&!resultCount} title="Enter"><Icon kind="down" /></button>
+      <button type="button" onClick={onClose} aria-label={labels.close} title="Esc"><Icon kind="close" /></button>
     </div>
   );
 }

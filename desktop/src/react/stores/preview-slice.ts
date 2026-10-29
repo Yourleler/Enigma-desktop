@@ -63,7 +63,7 @@ export const createPreviewSlice = (
       const current = new Set(s.markdownPreviewIds);
       if (active) current.add(id);
       else current.delete(id);
-      return { markdownPreviewIds: [...current] };
+      return { markdownPreviewIds: [...current],previewReadingPositions:{...s.previewReadingPositions,[id]:{...s.previewReadingPositions[id],mode:active?'preview':'edit',updatedAt:Date.now()}} };
     }),
 });
 

@@ -141,8 +141,8 @@ export function MarkdownPropertiesBlock({ content }: { content: string }) {
   return (
     <details className={styles.propertiesBlock}>
       <summary>
-        <span>Properties</span>
-        <span>{frontMatter.error ? 'YAML error' : `${entries.length}`}</span>
+        <span>文档属性</span>
+        <span>{frontMatter.error ? 'YAML 格式错误' : `${entries.length}`}</span>
       </summary>
       {frontMatter.error ? (
         <div className={styles.propertiesError}>{frontMatter.error}</div>
@@ -175,20 +175,20 @@ export function LinkDiagnosticsBadge({
     const next: string[] = [];
     for (const link of extractMarkdownLinks(previewItem.content)) {
       if (link.href.startsWith('#')) {
-        const id = decodeURIComponent(link.href.slice(1));
-        if (id && !headingIds.has(id)) next.push(`Line ${link.line + 1}: heading #${id} not found`);
+        let id;try{id=decodeURIComponent(link.href.slice(1));}catch{next.push(`第 ${link.line+1} 行：章节链接编码无效`);continue;}
+        if (id && !headingIds.has(id)) next.push(`第 ${link.line + 1} 行：未找到章节 #${id}`);
         continue;
       }
       const target = resolveLinkTarget(link.href, { baseFilePath: previewItem.filePath, label: link.label });
       if (target.kind === 'file' && deskBasePath) {
         const status = knownTreeFileStatus(deskBasePath, tree, target.filePath);
-        if (status === 'missing') next.push(`Line ${link.line + 1}: ${basenamePortable(target.filePath)} not found`);
+        if (status === 'missing') next.push(`第 ${link.line + 1} 行：未找到 ${basenamePortable(target.filePath)}`);
       }
       if (target.kind === 'external' && /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(link.href)) {
         try {
           new URL(link.href);
         } catch {
-          next.push(`Line ${link.line + 1}: invalid URL`);
+          next.push(`第 ${link.line + 1} 行：网址无效`);
         }
       }
     }
@@ -198,7 +198,7 @@ export function LinkDiagnosticsBadge({
   if (issues.length === 0) return null;
   return (
     <div className={styles.diagnosticsBadge} title={issues.join('\n')}>
-      {issues.length} link issue{issues.length > 1 ? 's' : ''}
+      {issues.length} 个链接问题
     </div>
   );
 }

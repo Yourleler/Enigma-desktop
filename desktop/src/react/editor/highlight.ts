@@ -22,12 +22,12 @@ export const markdownHighlight = HighlightStyle.define([
 ]);
 
 export const codeHighlight = HighlightStyle.define([
-  { tag: tags.keyword, color: '#8959a8' },
-  { tag: tags.string, color: '#718c00' },
+  { tag: tags.keyword, color: 'var(--enigma-code-keyword, #8959a8)' },
+  { tag: tags.string, color: 'var(--enigma-code-string, #718c00)' },
   { tag: tags.comment, color: 'var(--text-muted)', fontStyle: 'italic' },
-  { tag: tags.number, color: '#f5871f' },
-  { tag: tags.operator, color: '#3e999f' },
-  { tag: tags.definition(tags.variableName), color: '#4271ae' },
-  { tag: tags.function(tags.variableName), color: '#4271ae' },
-  { tag: tags.typeName, color: '#c82829' },
+  { tag: tags.number, color: 'var(--enigma-code-number, #f5871f)' },
+  { tag: tags.operator, color: 'var(--enigma-code-operator, #3e999f)' },
+  { tag: tags.definition(tags.variableName), color: 'var(--enigma-code-function, #4271ae)' },
+  { tag: tags.function(tags.variableName), color: 'var(--enigma-code-function, #4271ae)' },
+  { tag: tags.typeName, color: 'var(--enigma-code-type, #c82829)' },
 ]);

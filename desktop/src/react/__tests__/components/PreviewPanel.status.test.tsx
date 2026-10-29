@@ -2,7 +2,7 @@
  * @vitest-environment jsdom
  */
 import '@testing-library/jest-dom/vitest';
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -329,4 +329,10 @@ describe('PreviewPanel markdown editor status', () => {
     expect(releaseNote).not.toHaveBeenCalled();
     expect(releaseExtra).not.toHaveBeenCalled();
   });
+  it('limits reading-mode find shortcuts to the preview so chat inputs keep their keys',()=>{
+    useStore.setState({markdownPreviewIds:['note']});render(<><input aria-label="chat composer"/><PreviewPanel/></>);
+    const outside=new KeyboardEvent('keydown',{key:'f',ctrlKey:true,bubbles:true,cancelable:true});screen.getByLabelText('chat composer').dispatchEvent(outside);expect(outside.defaultPrevented).toBe(false);expect(screen.queryByRole('search')).toBeNull();
+    fireEvent.keyDown(document.getElementById('previewBody')!,{key:'f',ctrlKey:true});expect(screen.getByRole('textbox',{name:'查找文档正文'})).toBeInTheDocument();
+  });
+
 });

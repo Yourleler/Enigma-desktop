@@ -2,6 +2,8 @@
  * @vitest-environment jsdom
  */
 import { act, cleanup, fireEvent, render } from '@testing-library/react';
+import {undo} from '@codemirror/commands';
+import {searchPanelOpen} from '@codemirror/search';
 import { Transaction } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 import { createRef } from 'react';
@@ -989,4 +991,32 @@ describe('PreviewEditor file sync', () => {
       'Start\n![drop](<文本附件/drop-20260522-010203.png>)',
     );
   });
+  it('uses the upstream search/replace panel and saves replacements through the versioned path',async()=>{
+    const ref=createRef<PreviewEditorHandle>();const rendered=render(<PreviewEditor ref={ref} content="alpha beta alpha" mode="code" filePath="/tmp/new-search.ts" fileVersion={{mtimeMs:1,size:16,sha256:"before"}}/>);
+    await act(async()=>{await vi.advanceTimersByTimeAsync(10);});
+    act(()=>ref.current!.openSearch());const find=rendered.container.querySelector<HTMLInputElement>('input[name=search]')!;
+    fireEvent.input(find,{target:{value:'alpha'}});
+    const replacement=rendered.container.querySelector<HTMLInputElement>('input[name=replace]')!;fireEvent.input(replacement,{target:{value:'gamma'}});
+    fireEvent.click(rendered.container.querySelector('button[name=replaceAll]')!);
+    expect(ref.current!.getView()!.state.doc.toString()).toBe('gamma beta gamma');
+    await act(async()=>{await vi.advanceTimersByTimeAsync(650);});expect(platform.writeFileIfUnchanged).toHaveBeenCalledWith('/tmp/new-search.ts','gamma beta gamma',{mtimeMs:1,size:16,sha256:'before'});
+  });
+
+  it('changes wrapping without remounting the editor or changing file contents',async()=>{
+    const ref=createRef<PreviewEditorHandle>();const props={ref,content:'one very long line',filePath:'/tmp/wrapping.ts',mode:'code' as const};const rendered=render(<PreviewEditor {...props} wrapLines/>);
+    await act(async()=>{await vi.advanceTimersByTimeAsync(10);});const view=ref.current!.getView()!;expect(view.lineWrapping).toBe(true);
+    rendered.rerender(<PreviewEditor {...props} wrapLines={false}/>);expect(ref.current!.getView()).toBe(view);expect(view.contentDOM.classList.contains('cm-lineWrapping')).toBe(false);expect(view.state.doc.toString()).toBe(props.content);expect(platform.writeFileIfUnchanged).not.toHaveBeenCalled();
+  });
+
+  it('keeps undo history and search open when a remote save changes only version metadata',async()=>{
+    const ref=createRef<PreviewEditorHandle>();const remote={kind:'mobile-workbench' as const,rootId:'default',name:'note.md',subdir:'',contentPath:'/api/workbench/content?name=note.md',version:{mtimeMs:1,size:8}};
+    const saveDocument=vi.fn(async()=>({ok:true,conflict:false,version:{mtimeMs:2,size:11}}));
+    const rendered=render(<PreviewEditor ref={ref} content="original" mode="markdown" remoteContentRef={remote} saveDocument={saveDocument}/>);
+    await act(async()=>{await vi.advanceTimersByTimeAsync(10);});const view=ref.current!.getView()!;
+    act(()=>{view.dispatch({changes:{from:0,to:8,insert:'replacement'}});ref.current!.openSearch();});
+    await act(async()=>{await vi.advanceTimersByTimeAsync(650);});
+    rendered.rerender(<PreviewEditor ref={ref} content="replacement" mode="markdown" remoteContentRef={{...remote,version:{mtimeMs:2,size:11}}} saveDocument={saveDocument}/>);
+    expect(ref.current!.getView()).toBe(view);expect(searchPanelOpen(view.state)).toBe(true);act(()=>{undo(view);});expect(view.state.doc.toString()).toBe('original');
+  });
+
 });

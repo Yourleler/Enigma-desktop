@@ -162,11 +162,12 @@ export function clearPreview(): void {
 
 export function setMarkdownPreviewActive(id: string, active: boolean): void {
   useStore.getState().setMarkdownPreviewActive(id, active);
+  schedulePersistCurrentWorkspaceUiState();
 }
 
 export function toggleMarkdownPreview(id: string): void {
   const s = useStore.getState();
-  s.setMarkdownPreviewActive(id, !s.markdownPreviewIds.includes(id));
+  setMarkdownPreviewActive(id, !s.markdownPreviewIds.includes(id));
 }
 
 export function setPreviewReadingPosition(id: string, position: PreviewReadingPosition | null): void {

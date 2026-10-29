@@ -20,9 +20,10 @@ import {
   lineNumbers,
 } from '@codemirror/view';
 import { EditorState, Compartment, Transaction, EditorSelection } from '@codemirror/state';
+import {search,searchKeymap,openSearchPanel,gotoLine} from '@codemirror/search';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 import {
-  syntaxHighlighting, bracketMatching,
+  syntaxHighlighting, bracketMatching, foldGutter, foldKeymap, foldAll, unfoldAll, LanguageDescription, ensureSyntaxTree,
 } from '@codemirror/language';
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { languages } from '@codemirror/language-data';
@@ -67,6 +68,10 @@ import type { PreviewScrollSnapshot } from '../../../../shared/preview-reading-p
 export interface PreviewEditorHandle {
   getView(): EditorView | null;
   focus(): void;
+  openSearch(): void;
+  gotoLine(): void;
+  foldAll(): void;
+  unfoldAll(): void;
   getScrollSnapshot(contentHash?: string): PreviewScrollSnapshot | null;
   restoreScrollSnapshot(snapshot: PreviewScrollSnapshot | null | undefined): void;
   scrollToLine(line: number): void;
@@ -114,6 +119,7 @@ export interface PreviewEditorProps {
    * 调用方（如派生 viewer 窗口）自己把新 content 作为 prop 传入即可。
    */
   readOnly?: boolean;
+  wrapLines?: boolean;
 }
 
 const SAVE_DELAY = 600;
@@ -207,8 +213,7 @@ function restoreEditorScrollSnapshot(view: EditorView, snapshot: PreviewScrollSn
 }
 
 function topVisibleLine(view: EditorView): number {
-  const rect = view.scrollDOM.getBoundingClientRect();
-  const pos = view.posAtCoords({ x: rect.left + 8, y: rect.top + 8 }) ?? view.viewport.from;
+  const pos = view.lineBlockAtHeight(Math.max(0,view.scrollDOM.scrollTop-view.documentPadding.top)).from;
   return Math.max(0, view.state.doc.lineAt(pos).number - 1);
 }
 
@@ -389,10 +394,12 @@ function isEditorCoverRailDrop(view: EditorView, event: DragEvent): boolean {
 /* ── Editor Component ── */
 
 export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>(
-  function PreviewEditor({ content, filePath, remoteContentRef, fileVersion, saveDocument, mode, language, onSelectionChange, onSelectionCommit, onQuoteRange, onStatsChange, onContentChange, initialScrollSnapshot, contentHash, onScrollSnapshotChange, readOnly = false }, ref) {
+  function PreviewEditor({ content, filePath, remoteContentRef, fileVersion, saveDocument, mode, language, onSelectionChange, onSelectionCommit, onQuoteRange, onStatsChange, onContentChange, initialScrollSnapshot, contentHash, onScrollSnapshotChange, readOnly = false, wrapLines = true }, ref) {
     const incomingFileVersionKey = fileVersionIdentity(fileVersion ?? null);
+    const remoteIdentityKey=JSON.stringify(remoteContentRef?[remoteContentRef.kind,remoteContentRef.mountId,remoteContentRef.rootId,remoteContentRef.subdir,remoteContentRef.name,remoteContentRef.contentPath]:null);
     const containerRef = useRef<HTMLDivElement>(null);
     const viewRef = useRef<EditorView | null>(null);
+    const languageLoadRef=useRef<Promise<void>>(Promise.resolve());
     const [blockMenuRequest, setBlockMenuRequest] = useState<MarkdownBlockMenuRequest | null>(null);
     const toggleBlockMenu = useCallback((request: MarkdownBlockMenuRequest) => {
       setBlockMenuRequest(current => (
@@ -452,6 +459,7 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
       gutter: new Compartment(),
       conceal: new Compartment(),
       theme: new Compartment(),
+      wrap: new Compartment(),
     });
 
     useLayoutEffect(() => {
@@ -530,6 +538,10 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
     useImperativeHandle(ref, () => ({
       getView: () => viewRef.current,
       focus: () => viewRef.current?.focus(),
+      openSearch: () => {if(viewRef.current)openSearchPanel(viewRef.current);},
+      gotoLine: () => {if(viewRef.current)gotoLine(viewRef.current);},
+      foldAll: () => {const view=viewRef.current;if(view)void languageLoadRef.current.then(()=>{if(viewRef.current===view){ensureSyntaxTree(view.state,view.state.doc.length,100);foldAll(view);}});},
+      unfoldAll: () => {if(viewRef.current)unfoldAll(viewRef.current);},
       getScrollSnapshot: (hash?: string) => viewRef.current ? getScrollSnapshot(viewRef.current, hash ?? contentHashRef.current) : null,
       restoreScrollSnapshot: (snapshot) => {
         if (viewRef.current) restoreEditorScrollSnapshot(viewRef.current, snapshot);
@@ -765,9 +777,11 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
         ...(isMd ? [] : [drawSelection()]),
         history(),
         bracketMatching(),
-        keymap.of([...defaultKeymap, ...historyKeymap]),
+        keymap.of([...searchKeymap, ...foldKeymap, ...defaultKeymap, ...historyKeymap]),
+        search({top:true}),
+        EditorState.phrases.of({"Find":"查找","Replace":"替换为","next":"下一个","previous":"上一个","all":"选中全部","match case":"区分大小写","regexp":"正则表达式","by word":"整词","replace":"替换","replace all":"全部替换","close":"关闭查找","Go to line":"跳转到行","go":"跳转","Fold line":"折叠行","Unfold line":"展开行","current match":"当前匹配","on line":"所在行"}),
         EditorView.contentAttributes.of({ spellcheck: 'false' }),
-        EditorView.lineWrapping,
+        c.wrap.of(wrapLines?EditorView.lineWrapping:[]),
         ...(isMd && !readOnly ? [
           EditorView.domEventHandlers({
             dragover(event) {
@@ -830,7 +844,7 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
           }
         }),
         // Dynamic compartments
-        c.gutter.of(isMd || isCsv ? [] : lineNumbers()),
+        c.gutter.of(isMd || isCsv ? [] : [lineNumbers(),foldGutter()]),
         c.lang.of(
           isMd ? markdown({ base: markdownLanguage, codeLanguages: languages }) : [],
         ),
@@ -946,6 +960,10 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
       view.dom.addEventListener('dragleave', onCoverDragLeave, true);
       view.dom.addEventListener('drop', onCoverDrop, true);
       viewRef.current = view;
+      if(!isMd&&!isCsv){
+        const description=(language?LanguageDescription.matchLanguageName(languages,language):null)||LanguageDescription.matchFilename(languages,filePath||remoteContentRef?.name||'');
+        languageLoadRef.current=description?description.load().then(support=>{if(viewRef.current===view)view.dispatch({effects:c.lang.reconfigure(support)});}).catch(()=>{}):Promise.resolve();
+      }
       lastStatsRef.current = null;
       emitStatsIfChanged(view);
       restoreEditorScrollSnapshot(view, initialScrollSnapshotRef.current);
@@ -973,7 +991,7 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
         view.destroy();
         viewRef.current = null;
       };
-    }, [editorHostReadySignal, mode, language, readOnly, filePath, remoteContentRef, emitStatsIfChanged, insertMarkdownAttachments]); // eslint-disable-line react-hooks/exhaustive-deps -- 仅在 host 可测量以及 mode/language/readOnly/filePath/remoteContentRef 变化时重建 CodeMirror，content/refs 故意省略以避免销毁重建
+    }, [editorHostReadySignal, mode, language, readOnly, filePath, remoteIdentityKey, emitStatsIfChanged, insertMarkdownAttachments]); // eslint-disable-line react-hooks/exhaustive-deps -- 仅在 host 可测量以及 mode/language/readOnly/filePath/remoteContentRef 变化时重建 CodeMirror，content/refs 故意省略以避免销毁重建
 
     useEffect(() => {
       const view = viewRef.current;
@@ -991,6 +1009,8 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
       restoreEditorScrollSnapshot(view, snapshot);
     }, [contentHash, filePath, initialScrollSnapshot, mode, remoteContentRef?.contentPath]);
 
+    useEffect(()=>{const view=viewRef.current;if(!view)return;const line=view.state.doc.line(Math.min(view.state.doc.lines,topVisibleLine(view)+1));view.dispatch({effects:[cRef.current.wrap.reconfigure(wrapLines?EditorView.lineWrapping:[]),EditorView.scrollIntoView(line.from,{y:'start'})]});},[wrapLines]);
+
     // content prop change → update editor (skip if already in sync)
     useEffect(() => {
       const versionChanged = incomingFileVersionKey !== lastPropFileVersionKeyRef.current;
@@ -1003,7 +1023,12 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
 
     return (
       <Fragment>
-        <div className={`preview-editor mode-${mode}`} ref={containerRef} />
+        <div className={`preview-editor mode-${mode}`} ref={containerRef} onInputCapture={event=>{
+          // Upstream commits on keyup/change. Also commit input events from
+          // paste, accessibility and programmatic fill before a replace click.
+          const target=event.target;
+          if(target instanceof HTMLInputElement&&target.closest('.cm-search'))target.dispatchEvent(new Event('change',{bubbles:true}));
+        }} />
         <EditorContextMenu
           getView={getViewForMenu}
           containerRef={containerRef}

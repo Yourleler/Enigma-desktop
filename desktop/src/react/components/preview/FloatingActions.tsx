@@ -27,6 +27,7 @@ import type {
 } from '../../utils/markdown-cover-generation';
 
 interface Props {
+  inline?: boolean;
   content: string;
   filePath?: string;
   contentType?: string;
@@ -176,6 +177,7 @@ export function FloatingActions({
   contentType,
   language,
   remoteContentRef,
+  inline = false,
   showMarkdownPreviewToggle = false,
   markdownPreviewActive = false,
   onToggleMarkdownPreview,
@@ -424,6 +426,7 @@ export function FloatingActions({
 
   const floatingActionsClassName = [
     styles.floatingActions,
+    inline ? styles.inlineActions : '',
     (coverMenuOpen || coverGalleryOpen || coverBusy || copyLabel) ? styles.floatingActionsPinned : '',
   ].filter(Boolean).join(' ');
 

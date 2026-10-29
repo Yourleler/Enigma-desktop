@@ -243,3 +243,7 @@
     0%, 100% { opacity: 0.45; transform: translateY(0); }
     50% { opacity: 1; transform: translateY(-1px); }
 }
+
+.inlineActions{position:relative;top:auto;right:auto;padding:0;margin-inline-start:auto;z-index:15;}
+.inlineActions .floatingActionsSurface{opacity:1;pointer-events:auto;transform:none;box-shadow:none;background:transparent;flex-wrap:wrap;}
+.inlineActions .actionBtn{min-height:30px;padding:4px 7px;cursor:pointer;}

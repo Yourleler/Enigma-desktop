@@ -19,6 +19,7 @@ import {alignPreviewAnchor,findPreviewAnchor} from '../utils/preview-anchor';
 import { PreviewEditor, type PreviewEditorHandle, type PreviewEditorStats } from './PreviewEditor';
 import { PreviewRenderer } from './preview/PreviewRenderer';
 import { TabBar } from './preview/TabBar';
+import {DocumentNavigation} from './preview/DocumentNavigation';
 import { FloatingActions } from './preview/FloatingActions';
 import { ChapterRail, ClassicFindBox, LinkDiagnosticsBadge } from './preview/MarkdownChrome';
 import {
@@ -30,6 +31,7 @@ import {
 } from '../stores/selection-actions';
 import type { PreviewItem } from '../types';
 import { isRemoteWorkbenchContentRef, saveRemoteWorkbenchContent } from '../utils/remote-file-preview';
+import {findTextRanges,createDocumentHighlights} from '../utils/text-search-ranges';
 import { applyFindMarks, clearFindMarks } from '../utils/find-marks';
 import { OpenPreviewDocumentWatchBridge } from './app/OpenPreviewDocumentWatchBridge';
 import {
@@ -106,18 +108,6 @@ function escapeCssId(id: string): string {
   return id.replace(/["\\#.:,[\]=]/g, '\\$&');
 }
 
-function sourceFindMatches(content: string, query: string): Array<{ from: number; to: number }> {
-  if (!query) return [];
-  const matches: Array<{ from: number; to: number }> = [];
-  const lower = content.toLowerCase();
-  const needle = query.toLowerCase();
-  let index = lower.indexOf(needle);
-  while (index >= 0) {
-    matches.push({ from: index, to: index + query.length });
-    index = lower.indexOf(needle, index + Math.max(1, query.length));
-  }
-  return matches;
-}
 
 export function PreviewPanel() {
   const previewOpen = useStore(s => s.previewOpen);
@@ -131,6 +121,7 @@ export function PreviewPanel() {
   const [editorStats, setEditorStats] = useState<PreviewEditorStats>({ selectedChars: 0, totalChars: 0 });
   const [activeHeadingId, setActiveHeadingId] = useState<string | null>(null);
   const [findOpen, setFindOpen] = useState(false);
+  const [wrapLines,setWrapLines]=useState(()=>{try{return localStorage.getItem('enigma-preview-wrap')!=='false';}catch{return true;}});
   const [findQuery, setFindQuery] = useState('');
   const [findIndex, setFindIndex] = useState(0);
   const [findCount, setFindCount] = useState(0);
@@ -141,6 +132,7 @@ export function PreviewPanel() {
   const restoredPreviewKeyRef = useRef('');
   const activeHeadingRef = useRef<string | null>(null);
   const previewFindMarksRef = useRef<HTMLElement[]>([]);
+  const nativeFindRef=useRef<{ranges:Range[];highlight:NonNullable<ReturnType<typeof createDocumentHighlights>>}|null>(null);
 
   const [csvSource,setCsvSource]=useState(false);
   useEffect(()=>setCsvSource(false),[activeTabId]);
@@ -149,9 +141,9 @@ export function PreviewPanel() {
   const editable = isEditable(previewItem) && !markdownPreviewActive && (previewItem?.type!=='csv'||csvSource);
   const markdownFile = isMarkdownFile(previewItem);
   const showMarkdownEditorStatus = editable && previewItem?.type === 'markdown';
-  const contentHash = useMemo(() => previewItem?.type === 'markdown' ? hashMarkdownContent(previewItem.content) : '', [previewItem?.content, previewItem?.type]);
+  const contentHash = useMemo(() => previewItem&&['markdown','code','csv','text'].includes(previewItem.type) ? hashMarkdownContent(previewItem.content) : '', [previewItem?.content, previewItem?.type]);
   const markdownHeadings = useMemo(
-    () => previewItem?.type === 'markdown' ? extractMarkdownHeadings(previewItem.content, 3) : [],
+    () => previewItem?.type === 'markdown' ? extractMarkdownHeadings(previewItem.content, 6) : [],
     [previewItem?.content, previewItem?.type],
   );
   const readingPosition = previewItem ? previewReadingPositions[previewItem.id] || null : null;
@@ -221,7 +213,7 @@ export function PreviewPanel() {
   }, [publishPreviewScrollSnapshot]);
 
   const handleEditorScrollSnapshot = useCallback((snapshot: PreviewScrollSnapshot, topVisibleLine: number) => {
-    if (!previewItem || !markdownFile) return;
+    if (!previewItem) return;
     const heading = findCurrentHeading(markdownHeadings, topVisibleLine);
     if (heading?.id !== activeHeadingRef.current) {
       activeHeadingRef.current = heading?.id ?? null;
@@ -355,18 +347,21 @@ export function PreviewPanel() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (!previewOpen || ['browser','pdf','docx','xlsx'].includes(previewItem?.type || '') || (previewItem?.type==='csv'&&!csvSource) || !(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== 'f') return;
+      if (!previewOpen || !['markdown','code','text','html'].includes(previewItem?.type || '') || !(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== 'f') return;
+      const panel=previewBodyRef.current?.closest('#previewPanel');
+      if(!panel?.contains(event.target as Node)||editable)return;
       event.preventDefault();
       event.stopPropagation();
       setFindOpen(true);
     };
     window.addEventListener('keydown', onKeyDown, true);
     return () => window.removeEventListener('keydown', onKeyDown, true);
-  }, [previewOpen, previewItem?.type,csvSource]);
+  }, [previewOpen, previewItem?.type,csvSource,editable]);
 
   useEffect(() => {
     setFindIndex(0);
   }, [findQuery, activeTabId, editable]);
+  useEffect(()=>setFindOpen(false),[activeTabId,editable]);
 
   useEffect(() => {
     clearFindMarks(previewBodyRef.current, 'preview-find-mark');
@@ -375,12 +370,14 @@ export function PreviewPanel() {
       setFindCount(0);
       return undefined;
     }
-    if (editable) {
-      const matches = sourceFindMatches(previewItem.content, findQuery);
-      setFindCount(matches.length);
-      const match = matches[Math.min(findIndex, Math.max(0, matches.length - 1))];
-      if (match) editorRef.current?.scrollToOffset(match.from, match.to, { focus: false });
-      return undefined;
+    if (editable) return;
+    const root=previewBodyRef.current?.querySelector<HTMLElement>('.preview-markdown')||previewBodyRef.current;
+    const highlight=root?createDocumentHighlights(root):null;
+    if(root&&highlight){
+      const refresh=()=>{const ranges=findTextRanges(root,findQuery);nativeFindRef.current={ranges,highlight};setFindCount(ranges.length);highlight.set(ranges,Math.min(findIndex,Math.max(0,ranges.length-1)));};
+      refresh();highlight.scroll(nativeFindRef.current?.ranges[findIndex]);
+      const observer=new MutationObserver(refresh);observer.observe(root,{childList:true,subtree:true,characterData:true});
+      return()=>{observer.disconnect();highlight.clear();nativeFindRef.current=null;};
     }
     const marks = applyFindMarks(previewBodyRef.current, [findQuery], 'preview-find-mark');
     previewFindMarksRef.current = marks;
@@ -392,6 +389,7 @@ export function PreviewPanel() {
   }, [activeTabId, editable, findIndex, findOpen, findQuery, previewItem]);
 
   useEffect(() => {
+    const native=nativeFindRef.current;if(native){native.highlight.set(native.ranges,findIndex);native.highlight.scroll(native.ranges[findIndex]);return;}
     const marks = previewFindMarksRef.current;
     for (const mark of marks) mark.classList.remove('preview-find-mark-active');
     const active = marks[Math.min(findIndex, Math.max(0, marks.length - 1))];
@@ -419,6 +417,24 @@ export function PreviewPanel() {
       <div className={previewStyles.previewPanelInner} data-preview-panel-inner="">
         <TabBar />
         {previewItem?.type==='csv'&&isEditable(previewItem)&&<div className="enigma-csv-mode" role="group" aria-label="CSV 显示方式"><button aria-pressed={!csvSource} onClick={()=>setCsvSource(false)}>表格预览</button><button aria-pressed={csvSource} onClick={()=>setCsvSource(true)}>编辑 CSV</button></div>}
+        {previewOpen&&previewItem&&['markdown','code','text','html'].includes(previewItem.type)&&!['missing','unavailable'].includes(previewItem.status||'')&&<DocumentNavigation
+          documentId={previewItem.id} headings={markdownHeadings} activeHeadingId={activeHeadingId} editable={editable} wrapLines={wrapLines}
+          onJump={handleJumpHeading} onFind={()=>{if(editable)editorRef.current?.openSearch();else setFindOpen(true);}}
+          onGotoLine={()=>editorRef.current?.gotoLine()} onToggleWrap={()=>setWrapLines(value=>{try{localStorage.setItem('enigma-preview-wrap',String(!value));}catch{}return !value;})}
+          onFold={editable?()=>editorRef.current?.foldAll():undefined} onUnfold={editable?()=>editorRef.current?.unfoldAll():undefined}>
+          {previewOpen && previewItem && !['browser', 'media', 'pdf', 'docx', 'xlsx', 'csv', 'file-info'].includes(previewItem.type) && !['missing','unavailable'].includes(previewItem.status||'') && (
+            <FloatingActions inline
+              content={previewItem.content}
+              filePath={previewItem.filePath}
+              remoteContentRef={previewItem.remoteContentRef}
+              contentType={previewItem.type}
+              language={previewItem.language}
+              showMarkdownPreviewToggle={isMarkdownFile(previewItem)}
+              markdownPreviewActive={markdownPreviewActive}
+              onToggleMarkdownPreview={handleToggleMarkdownPreview}
+            />
+          )}
+        </DocumentNavigation>}
         <div
           className={previewStyles.previewBodyShell}
           data-preview-body-shell=""
@@ -434,7 +450,9 @@ export function PreviewPanel() {
             />
           )}
           <ClassicFindBox
-            open={findOpen && !['browser','pdf','docx','xlsx'].includes(previewItem?.type||'') && (previewItem?.type!=='csv'||csvSource)}
+            inline
+            ariaLabel="查找文档正文" placeholder="查找正文…" labels={{previous:'上一个匹配',next:'下一个匹配',close:'关闭查找'}}
+            open={findOpen && !editable && !['browser','pdf','docx','xlsx'].includes(previewItem?.type||'') && (previewItem?.type!=='csv'||csvSource)}
             query={findQuery}
             resultIndex={Math.min(findIndex, Math.max(0, findCount - 1))}
             resultCount={findCount}
@@ -444,24 +462,12 @@ export function PreviewPanel() {
             onClose={() => setFindOpen(false)}
           />
           {previewOpen && anchorMessage && <div role="status" className={previewStyles.previewAnchorMessage}>{anchorMessage}<button type="button" aria-label="关闭章节提示" onClick={()=>setAnchorMessage('')}>×</button></div>}
-          {previewOpen && previewItem && !['browser', 'media', 'pdf', 'docx', 'xlsx', 'csv', 'file-info'].includes(previewItem.type) && !['missing','unavailable'].includes(previewItem.status||'') && (
-            <FloatingActions
-              content={previewItem.content}
-              filePath={previewItem.filePath}
-              remoteContentRef={previewItem.remoteContentRef}
-              contentType={previewItem.type}
-              language={previewItem.language}
-              showMarkdownPreviewToggle={isMarkdownFile(previewItem)}
-              markdownPreviewActive={markdownPreviewActive}
-              onToggleMarkdownPreview={handleToggleMarkdownPreview}
-            />
-          )}
           <div ref={previewBodyRef} className={`universal-card ${previewStyles.previewPanelBody}`} id="previewBody" data-preview-panel-body="" onMouseUp={handleMouseUp}>
             {previewOpen && previewItem && !editable && (
               <PreviewRenderer previewItem={previewItem} />
             )}
             {previewOpen && previewItem && editable && (
-              <PreviewEditor
+              <PreviewEditor key={previewItem.id}
                 ref={editorRef}
                 content={previewItem.content}
                 filePath={previewItem.filePath}
@@ -469,6 +475,7 @@ export function PreviewPanel() {
                 fileVersion={previewItem.fileVersion ?? previewItem.remoteContentRef?.version ?? null}
                 saveDocument={saveDocument}
                 mode={getEditorMode(previewItem)}
+                wrapLines={wrapLines}
                 language={previewItem.language}
                 onSelectionCommit={(view) => {
                   if (previewItem) scheduleCaptureSelection(previewItem, view);

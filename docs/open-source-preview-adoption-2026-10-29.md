@@ -18,7 +18,7 @@ OpenAI 官方文档说明内置浏览器与连接已有 Chrome 等浏览器标�
 | XLSX / CSV | [Univer](https://github.com/dream-num/univer)，Apache-2.0 OSS 核心 | 验证真实表格交互，替换截断 HTML 表格。其官方文件导入导出、打印等列在 Pro 范围；必须先验证不依赖商业服务的本地导入路径及样式保真，不能把 OSS 内核误说成免费完整 Office。 | 0.452.110 已接入 OSS 表格与本地 ExcelJS/PapaParse 导入，Web 实测通过，原生待验收 |
 | 图片 | [PhotoSwipe](https://github.com/dimsemenov/PhotoSwipe)，MIT | 用成熟缩放、拖动、触控和画廊交互替换重复的自写控制层，接入现有文件身份、下载与主题。 | 0.452.118 已接入 PhotoSwipe 共用侧栏/画廊，Web 实测通过，原生待验收 |
 | 音视频 | [Video.js](https://github.com/videojs/video.js)、[Media Chrome](https://github.com/muxinc/media-chrome) | 以当前稳定发布的完整播放器/React 集成为首选。Media Chrome README 已说明相关团队合流到新版 Video.js；不盲搬旧控件。接入前核对所用包许可证、离线资源、字幕、键盘、全屏和恢复。 | 0.452.120 已使用 Video.js 10.2.0 共用侧栏/画廊，Web 实测通过；原生全屏/画中画待验收 |
-| Markdown / 代码 | 已有 CodeMirror、Markdown 渲染与 Mermaid | 保留成熟依赖；补完整目录、搜索、行定位、折叠、主题与导出。避免另起解析器或把页面源码直接当产品浏览器。 | 已有基础，继续统一 |
+| Markdown / 代码 | 已有 CodeMirror、Markdown 渲染与 Mermaid | 保留成熟依赖；补完整目录、搜索、行定位、折叠、主题与导出。避免另起解析器或把页面源码直接当产品浏览器。 | 0.452.122 已接入 CodeMirror 完整搜索/替换、跳行、语言折叠与常驻目录；Web 通过，原生待验收 |
 
 补充候选 [EmbedPDF](https://github.com/embedpdf/embed-pdf-viewer) 的 SDK 属于 Apache-2.0，而同仓 CloudPDF server 属于不同许可；当前采用 PDF.js，避免同时引入两套 PDF 引擎。[许可范围](https://github.com/embedpdf/embed-pdf-viewer/blob/main/LICENSING.md)
 
@@ -47,3 +47,5 @@ DOCX 后续已按上述选择落地，详见 [Word 预览实现与验收](docx-p
 图片缩放/拖动与画廊已迁移到 PhotoSwipe，见 [图片预览验收](photoswipe-preview-adoption-2026-10-29.md)。
 
 音视频已迁移完整 Video.js 控件，边界与实测见 [音视频预览验收](videojs-preview-adoption-2026-10-29.md)。
+
+Markdown 与代码的入口、原生高亮、语法加载及保存/撤销修复见 [阅读工具记录](document-reading-tools-2026-10-29.md)。

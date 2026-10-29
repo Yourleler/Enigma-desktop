@@ -423,6 +423,7 @@ export async function activateWorkspaceDesk(root: string | null | undefined, opt
       openTabs: [],
       activeTabId: null,
       previewReadingPositions: {},
+      markdownPreviewIds: [],
     });
     updateDeskContextBtn();
     return;
@@ -455,6 +456,7 @@ export async function activateWorkspaceDesk(root: string | null | undefined, opt
     openTabs: savedOpenTabs,
     activeTabId: activePreviewTabId(savedOpenTabs, saved?.activeTabId),
     previewReadingPositions: saved?.previewReadingPositions || {},
+    markdownPreviewIds:Object.entries(saved?.previewReadingPositions||{}).filter(([,position])=>position.mode==='preview').map(([id])=>id),
   });
   updateDeskContextBtn();
 
@@ -480,6 +482,7 @@ export async function activateWorkspaceDesk(root: string | null | undefined, opt
         openTabs: restoredOpenTabs,
         activeTabId: restoredActiveTabId,
         previewReadingPositions: restoredReadingPositions,
+        markdownPreviewIds:Object.entries(restoredReadingPositions).filter(([,position])=>position.mode==='preview').map(([id])=>id),
         ...(restoredPreviewItems.length > 0
           ? {
               previewItems: [

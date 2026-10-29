@@ -13,6 +13,7 @@ export interface PreviewScrollSnapshot {
 }
 
 export interface PreviewReadingPosition {
+  mode?: PreviewReadingMode;
   preview?: PreviewScrollSnapshot;
   edit?: PreviewScrollSnapshot;
   currentHeadingId?: string;
@@ -69,8 +70,10 @@ export function normalizePreviewReadingPosition(raw: unknown): PreviewReadingPos
   const currentHeadingText = cleanString(source.currentHeadingText, 256);
   const contentHash = cleanString(source.contentHash, 128);
   const updatedAt = cleanNumber(source.updatedAt, 0, Number.MAX_SAFE_INTEGER);
-  if (!preview && !edit && !currentHeadingId && !currentHeadingText && !contentHash) return null;
+  const mode = source.mode === "preview" || source.mode === "edit" ? source.mode : undefined;
+  if (!mode && !preview && !edit && !currentHeadingId && !currentHeadingText && !contentHash) return null;
   return {
+    ...(mode ? { mode } : {}),
     ...(preview ? { preview } : {}),
     ...(edit ? { edit } : {}),
     ...(currentHeadingId ? { currentHeadingId } : {}),
