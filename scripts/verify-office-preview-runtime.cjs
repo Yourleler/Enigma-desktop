@@ -42,7 +42,10 @@ app.whenReady().then(async()=>{
       await wait(`document.querySelector('${tag}')?.readyState>=1`);
       await new Promise(resolve=>setTimeout(resolve,600));
       const before=await win.webContents.executeJavaScript(`({controls:document.querySelector('${tag}').controls,paused:document.querySelector('${tag}').paused,duration:document.querySelector('${tag}').duration})`);
-      assert(before.controls&&before.paused,'Media must show controls without autoplay');
+      assert(!before.controls&&before.paused,'Custom media controls must not autoplay');
+      assert(await win.webContents.executeJavaScript("!!document.querySelector('.enigma-player-controls button[aria-label=\"播放\"]')"),'Custom playback control should be visible');
+      await win.webContents.executeJavaScript("[...document.querySelectorAll('.enigma-player-footer button')].find(el=>el.textContent==='系统控件').click()");
+      await wait(`document.querySelector('${tag}')?.controls===true`);
       await win.webContents.executeJavaScript(`document.querySelector('${tag}').play()`,true);
       await new Promise(resolve=>setTimeout(resolve,350));
       const progress=await win.webContents.executeJavaScript(`({time:document.querySelector('${tag}').currentTime,paused:document.querySelector('${tag}').paused,ready:document.querySelector('${tag}').readyState,src:document.querySelector('${tag}').currentSrc})`);
