@@ -293,30 +293,34 @@ function copyLegacyFiles(): Plugin {
   };
 }
 
-/** Package the pinned PDF viewer's local fonts/CMaps and their reuse notices. */
+/** Reuse the verified Mozilla generic viewer, with a thin local integration. */
 function pdfReaderAssets(): Plugin {
   const source=path.resolve(__dirname,'node_modules/pdfjs-dist');
-  const allowed=['cmaps','standard_fonts','web/images'];
-  return {
-    name:'enigma-pdf-reader-assets',
-    configureServer(server) {
-      server.middlewares.use('/pdfjs', (req,res,next)=>{
-        const requested=decodeURIComponent((req.url||'').split('?')[0]).replace(/^\//,'');
-        const relative=requested.startsWith('images/')?'web/'+requested:requested;
-        if(!allowed.some(dir=>relative.startsWith(dir+'/'))||relative.split('/').includes('..'))return next();
-        const file=path.resolve(source,relative);
-        if(!file.startsWith(source+path.sep)||!fs.existsSync(file)||!fs.statSync(file).isFile())return next();
-        res.setHeader('Content-Type',file.endsWith('.svg')?'image/svg+xml':'application/octet-stream');
-        fs.createReadStream(file).pipe(res);
-      });
-    },
-    closeBundle() {
-      const target=path.resolve(__dirname,'desktop/dist-renderer/pdfjs');
-      for(const dir of allowed)fs.cpSync(path.join(source,dir),path.join(target,dir.replace('web/','')),{recursive:true});
-      fs.copyFileSync(path.join(source,'LICENSE'),path.join(target,'LICENSE'));
-      fs.copyFileSync(path.resolve(__dirname,'docs/pdf-reader-notice.md'),path.join(target,'NOTICE.md'));
-    },
+  const vendor=path.resolve(__dirname,'vendor/pdfjs-viewer');
+  const version=JSON.parse(fs.readFileSync(path.resolve(__dirname,'package.json'),'utf8')).version;
+  const target=path.resolve(__dirname,`desktop/dist-renderer/assets/pdfjs-viewer-${version}`);
+  const copy=()=>{
+    const manifest=JSON.parse(fs.readFileSync(path.join(vendor,'upstream.json'),'utf8'));
+    if(JSON.parse(fs.readFileSync(path.join(source,'package.json'),'utf8')).version!==manifest.version)throw new Error('PDF viewer/core version mismatch');
+    for(const [file,hash] of Object.entries(manifest.files))if(crypto.createHash('sha256').update(fs.readFileSync(path.join(vendor,file))).digest('hex')!==hash)throw new Error('PDF viewer upstream verification failed: '+file);
+    fs.cpSync(vendor,target,{recursive:true});
+    fs.mkdirSync(path.join(target,'build'),{recursive:true});
+    for(const file of ['pdf.mjs','pdf.worker.mjs'])fs.copyFileSync(path.join(source,'build',file),path.join(target,'build',file));
+    for(const dir of ['cmaps','standard_fonts','iccs','wasm'])fs.cpSync(path.join(source,dir),path.join(target,'web',dir),{recursive:true});
+    fs.appendFileSync(path.join(target,'web/locale/zh-CN/viewer.ftl'),'\n'+fs.readFileSync(path.resolve(__dirname,'desktop/src/pdfjs-viewer-zh-patch.ftl'),'utf8'));
+    const original=fs.readFileSync(path.join(vendor,'web/viewer.html'),'utf8');
+    const csp="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data: blob:; connect-src 'self' blob:; worker-src 'self'; object-src 'none'; base-uri 'none'";
+    fs.writeFileSync(path.join(target,'web/enigma-viewer.html'),original.replace('<meta charset="utf-8" />','<meta charset="utf-8" /><meta http-equiv="Content-Security-Policy" content="'+csp+'"/>').replace('</head>','<link rel="stylesheet" href="enigma-viewer.css"/></head>'));
+    fs.copyFileSync(path.resolve(__dirname,'desktop/src/pdfjs-viewer-theme.css'),path.join(target,'web/enigma-viewer.css'));
   };
+  return {name:'enigma-pdf-reader-assets',closeBundle:copy,configureServer(server){
+    copy();server.middlewares.use('/assets/pdfjs-viewer-'+version,(req,res,next)=>{
+      let relative;try{relative=decodeURIComponent((req.url||'').split('?')[0]).replace(/^\//,'');}catch{return next();}
+      const file=path.resolve(target,relative);if(!file.startsWith(target+path.sep)||!fs.existsSync(file)||!fs.statSync(file).isFile())return next();
+      const mime:Record<string,string>={'.mjs':'text/javascript','.html':'text/html','.css':'text/css','.json':'application/json','.svg':'image/svg+xml','.wasm':'application/wasm','.ftl':'text/plain'};
+      res.setHeader('Content-Type',mime[path.extname(file)]||'application/octet-stream');fs.createReadStream(file).pipe(res);
+    });
+  }};
 }
 
 export default defineConfig({

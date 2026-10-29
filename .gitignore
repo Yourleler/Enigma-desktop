@@ -46,7 +46,8 @@ desktop/preload.bundle.cjs
 .cache/
 desktop/dist-renderer/
 desktop/native/**/.build/
-vendor/
+vendor/*
+!vendor/pdfjs-viewer/
 inbox/
 
 # 运行时 / 依赖

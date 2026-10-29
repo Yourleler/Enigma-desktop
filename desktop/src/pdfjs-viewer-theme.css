@@ -1,0 +1,8 @@
+/* Enigma integration; upstream PDF.js styles stay untouched. */
+:root[data-enigma-theme="light"] {color-scheme:light;--main-color:#30283f;--toolbar-bg-color:#f5f2fbd9;--toolbar-border-color:#d9d0e4;--body-bg-color:#eeebf5;--field-bg-color:#fff;--field-color:#30283f;--field-border-color:#d6cee0;--toggled-btn-bg-color:#dfd4f3;--button-hover-color:#e8e0f4;--doorhanger-bg-color:#faf7ff;}
+:root[data-enigma-theme="dark"] {color-scheme:dark;--main-color:#e4e9ee;--toolbar-bg-color:#16212adf;--toolbar-border-color:#34434a;--body-bg-color:#0c141a;--field-bg-color:#1a262e;--field-color:#e4e9ee;--field-border-color:#3b4b55;--toggled-btn-bg-color:#2d4846;--button-hover-color:#293b45;--doorhanger-bg-color:#16232b;}
+#toolbarContainer {backdrop-filter:blur(14px);}
+.toolbarButton {border-radius:6px;}
+.toolbarField {border-radius:5px;}
+/* Opening another document belongs to the outer file workbench. */
+#secondaryOpenFile,#openFile {display:none!important;}
