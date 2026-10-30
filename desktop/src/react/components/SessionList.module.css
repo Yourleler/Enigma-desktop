@@ -644,9 +644,9 @@
     border-radius: var(--radius-sm);
     background: transparent;
     color: var(--text-muted);
-    cursor: default;
-    opacity: 0;
-    pointer-events: none;
+    cursor: pointer;
+    opacity: 0.65;
+    pointer-events: auto;
     flex-shrink: 0;
     transition: opacity var(--duration-fast), color var(--duration-fast), background var(--duration-fast);
 }
