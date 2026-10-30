@@ -1,4 +1,5 @@
 import { engineeringHost } from '../plugins/enigma/host.ts';
+import {withProjectTurnContext} from './project-turn-context.ts';
 /**
  * SessionCoordinator — Session 生命周期管理
  *
@@ -2072,9 +2073,16 @@ export class SessionCoordinator {
     const turnContextExtension = createReminderAwareTurnContextExtension({
       path: "hana-desktop-session-turn-context",
       sessionPathRef,
-      getTurnContext: (sessionPath) => sessionPath
-        ? this._getRuntimeValueForPath(this._turnContextBySession, sessionPath) || null
-        : null,
+      getTurnContext: (sessionPath) => {
+        if(!sessionPath)return null;
+        const existing=this._getRuntimeValueForPath(this._turnContextBySession, sessionPath)||null;
+        const catalog=this._d.getEngine?.()?.getSessionProjectCatalog?.();
+        if(!catalog)return existing;
+        const meta=this._readSessionMetaEntrySync(sessionPath);
+        const current=this._getSessionEntryByPath(sessionPath);
+        const cwd=current?.session?.sessionManager?.getCwd?.() || current?.cwd || null;
+        return withProjectTurnContext(catalog,meta?.projectId,cwd,existing);
+      },
     });
 
     // Wrap resourceLoader: per-session prompt snapshot + plan mode injection + vision auxiliary extension

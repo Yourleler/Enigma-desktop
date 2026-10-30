@@ -1,4 +1,5 @@
 import type { PlatformApi } from '../types';
+import {hanaFetch} from '../hooks/use-hana-fetch';
 
 const noopUnsubscribe = () => {};
 const OPEN_SETTINGS_EVENT = 'hana-mobile-open-settings';
@@ -21,6 +22,7 @@ export function installMobilePlatform(): void {
       return () => window.removeEventListener(OPEN_SETTINGS_EVENT, listener);
     },
     getFileUrl: (value: string) => browserSafeUrl(value),
+    readFileBase64: async (value:string) => {const response=await hanaFetch(`/api/fs/read-base64?path=${encodeURIComponent(value)}`);return response.ok?response.text():null;},
     openFile: (value: string) => {
       const url = browserSafeUrl(value);
       if (url) window.open(url, '_blank', 'noopener,noreferrer');

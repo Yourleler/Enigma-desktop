@@ -1479,9 +1479,16 @@
 }
 
 .toolGroupSingle .toolIndicator {
-    font-size: var(--fs-ui);
-    padding: 0.4rem 0.75rem;
+    font-size: 12px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--bg-card) 32%, transparent);
+    border: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
 }
+
+.toolIndicator > svg { flex-shrink: 0; color: var(--text-muted); }
+.toolIndicator[data-status="running"] { border-color: color-mix(in srgb,var(--accent) 25%,transparent); }
+.toolGroupSingle .toolIndicator:hover { background: color-mix(in srgb,var(--bg-card) 60%,transparent); }
 
 .toolDesc {
     flex: 0 1 auto;

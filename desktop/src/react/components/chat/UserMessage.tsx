@@ -4,6 +4,7 @@
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MarkdownContent } from './MarkdownContent';
+import {InlineUserAttachments,inlineAttachmentIndices} from './InlineUserAttachments';
 import { MessageFooterActions, formatMessageTime, type MessageFooterAction } from './MessageFooterActions';
 import { useMessageFooterActions } from './MessageActions';
 import { AttachmentChip } from '../shared/AttachmentChip';
@@ -191,6 +192,8 @@ export const UserMessage = memo(function UserMessage({
   const footerActions = editing ? editingActions : [...nodeActions, ...editActions];
   const hasSkillBadges = !!message.skills?.length;
   const hasTextBubble = editing || !!message.textHtml || hasSkillBadges;
+  const inlineIndices=inlineAttachmentIndices(message.text||'',message.attachments||[]);
+  const outsideAttachments=message.attachments?.filter((_,index)=>!inlineIndices.has(index));
 
   return (
     <div className={`${styles.messageGroup} ${styles.messageGroupUser}${isSelected ? ` ${styles.messageGroupSelected}` : ''}`}
@@ -214,9 +217,9 @@ export const UserMessage = memo(function UserMessage({
           />
         </div>
       )}
-      {message.attachments && message.attachments.length > 0 && (
+      {outsideAttachments && outsideAttachments.length > 0 && (
         <UserAttachmentsView
-          attachments={message.attachments}
+          attachments={outsideAttachments}
           deskContext={message.deskContext}
           sessionPath={sessionPath}
           messageId={message.id}
@@ -253,7 +256,7 @@ export const UserMessage = memo(function UserMessage({
               spellCheck={false}
             />
           ) : (
-            message.textHtml && <MarkdownContent html={message.textHtml} linkContext={{ origin: 'session', sessionPath, messageId: message.id }} />
+            inlineIndices.size ? <InlineUserAttachments text={message.text||''} attachments={message.attachments||[]} sessionPath={sessionPath} messageId={message.id}/> : message.textHtml && <MarkdownContent html={message.textHtml} linkContext={{ origin: 'session', sessionPath, messageId: message.id }} />
           )}
         </div>
       )}

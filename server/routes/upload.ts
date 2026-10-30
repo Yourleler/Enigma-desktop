@@ -68,18 +68,29 @@ function extFromMime(mimeType) {
   return extensionFromChatImageMime(mimeType) || extensionFromChatAudioMime(mimeType);
 }
 
+function isDocumentUploadMime(mimeType) {
+  return /^text\/[a-z0-9.+-]+$/i.test(mimeType) || [
+    'application/octet-stream','application/pdf','application/json','application/xml','application/zip',
+    'application/msword','application/vnd.ms-excel','application/vnd.ms-powerpoint',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  ].includes(mimeType);
+}
 function isAllowedUploadBlobMime(mimeType) {
-  return isAllowedChatImageMime(mimeType) || isAllowedUploadAudioMime(mimeType);
+  return isAllowedChatImageMime(mimeType) || isAllowedUploadAudioMime(mimeType) || isDocumentUploadMime(mimeType);
 }
 
 function isUploadBlobBase64WithinLimit(base64Data, mimeType) {
   if (isAllowedChatImageMime(mimeType)) return isChatImageBase64WithinLimit(base64Data);
   if (isAllowedUploadAudioMime(mimeType)) return isChatAudioBase64WithinLimit(base64Data);
+  if (isDocumentUploadMime(mimeType)) return base64Data.length <= 28_000_000;
   return false;
 }
 
 function uploadBlobMaxBase64Chars(mimeType) {
   if (isAllowedUploadAudioMime(mimeType)) return MAX_CHAT_AUDIO_BASE64_CHARS;
+  if (isDocumentUploadMime(mimeType)) return 28_000_000;
   return MAX_CHAT_IMAGE_BASE64_CHARS;
 }
 

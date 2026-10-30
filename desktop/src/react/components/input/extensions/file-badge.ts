@@ -11,6 +11,7 @@ export const FileBadge = Node.create({
   addAttributes() {
     return {
       fileId: { default: null },
+      inlineAttachment: {default:false,parseHTML:element=>element.getAttribute('data-inline-attachment')==='true',renderHTML:attrs=>({'data-inline-attachment':attrs.inlineAttachment?'true':'false'})},
       path: { default: '' },
       name: { default: '' },
       isDirectory: { default: false },

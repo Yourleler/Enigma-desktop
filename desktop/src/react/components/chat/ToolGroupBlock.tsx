@@ -4,6 +4,9 @@
 
 import { memo, useState, useCallback, useEffect } from 'react';
 import { Collapse } from '@/ui';
+import {AppIcon} from '../../ui/app-icons';
+import {toolPresentation} from '../../utils/tool-presentation';
+import {ActivityWave} from './RunActivity';
 import styles from './Chat.module.css';
 import { extractToolDetail } from '../../utils/message-parser';
 import type { ToolDetail } from '../../utils/message-parser';
@@ -61,7 +64,7 @@ export const ToolGroupBlock = memo(function ToolGroupBlock({ tools: rawTools, co
           <span className={styles.toolGroupTitle}>{summaryText}</span>
           {allDone && <span className={styles.toolGroupArrow}>{collapsed ? '›' : '‹'}</span>}
           {!allDone && (
-            <span className={styles.toolDots} />
+            <ActivityWave/>
           )}
         </div>
       )}
@@ -109,13 +112,15 @@ const ToolIndicator = memo(function ToolIndicator({ tool, agentName }: { tool: T
   // 失败的工具要说失败：此前这里只传 done/running，失败的读文件会显示"翻完了 ✗"
   const label = getToolLabel(tool.name, phaseForStatus(status), agentName, tool.args);
 
+  const presentation=toolPresentation(tool.name,label);
+
   // 如果 args 里有 tag 类型信息（如 agent 名）
   const tag = tool.args?.agentId as string | undefined;
 
   return (
     <>
-      <div className={styles.toolIndicator} data-tool={tool.name} data-done={String(tool.done)}>
-        <span className={styles.toolDesc}>{label}</span>
+      <div className={styles.toolIndicator} data-tool={tool.name} data-done={String(tool.done)} data-status={status}>
+        <AppIcon name={presentation.icon} size={15}/><span className={styles.toolDesc}>{presentation.label}</span>
         {detail.text && (
           sessionTargetPath ? (
             <span
@@ -157,10 +162,10 @@ const ToolIndicator = memo(function ToolIndicator({ tool, agentName }: { tool: T
         {tag && <span className={styles.toolTag}>{tag}</span>}
         {status !== 'running' ? (
           <span className={`${styles.toolStatus} ${status === 'succeeded' ? styles.toolStatusDone : styles.toolStatusFailed}`}>
-            {status === 'succeeded' ? '✓' : status === 'failed' ? '✗' : '?'}
+            {status === 'succeeded' ? <AppIcon name="check" size={14}/> : status === 'failed' ? '失败' : '待确认'}
           </span>
         ) : (
-          <span className={styles.toolDots} />
+          <ActivityWave/>
         )}
       </div>
       {linkMenu && (

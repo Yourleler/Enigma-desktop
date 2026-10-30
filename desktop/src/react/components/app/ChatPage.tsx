@@ -1,3 +1,4 @@
+import {ProjectContextBar} from '../chat/ProjectContextBar';
 import { SessionClock } from '../chat/SessionClock';
 import { EngineeringToolbar } from '../../engineering/Engineering';
 import { useStore } from '../../stores';
@@ -29,6 +30,7 @@ export function ChatPage({
   return (
     <>
       <EngineeringToolbar />
+      <ProjectContextBar/>
       <SessionClock />
       <div className={`chat-area${hasPanels ? ' has-panels' : ''}`}>
         <WelcomeContainer />

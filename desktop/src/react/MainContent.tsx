@@ -105,6 +105,8 @@ export async function attachFilesFromPaths(
   srcPaths: string[],
   nameMap: Record<string, string> = {},
 ): Promise<void> {
+  const scope=()=>JSON.stringify([useStore.getState().activeServerConnectionId,useStore.getState().currentSessionPath,useStore.getState().pendingDraftId]);
+  const originalScope=scope();
   if (srcPaths.length === 0) return;
   if (blockChatAttachmentDropOutsideChat()) return;
   if (useStore.getState().attachedFiles.length >= 9) return;
@@ -157,6 +159,7 @@ export async function attachFilesFromPaths(
     });
     const data = await res.json();
     const failed: string[] = [];
+    if(scope()!==originalScope)return;
     for (const item of data.uploads || []) {
       if (item.dest) {
         useStore.getState().addAttachedFile({

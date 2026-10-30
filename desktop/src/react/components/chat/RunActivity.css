@@ -1,0 +1,8 @@
+.enigma-run-activity{display:flex;align-items:center;gap:10px;max-width:100%;padding:14px 2px;color:var(--text-muted);font:13px/1.6 var(--font-ui);}
+.enigma-run-activity>div{min-width:0}.enigma-run-activity small{display:block;font-size:11px;opacity:.85}.enigma-run-activity code{margin-left:8px;font-size:11px;overflow-wrap:anywhere}.enigma-run-activity time{margin-left:auto;font-size:11px;font-variant-numeric:tabular-nums;}
+.enigma-activity-wave{display:inline-flex;align-items:center;gap:3px;width:24px;height:20px;flex-shrink:0;color:var(--accent);}
+.enigma-activity-wave i{width:4px;height:13px;border-radius:4px;background:currentColor;opacity:.65;transform:scaleY(.4);animation:enigma-work-wave 1.35s ease-in-out infinite;}
+.enigma-activity-wave i:nth-child(2){animation-delay:.14s}.enigma-activity-wave i:nth-child(3){animation-delay:.28s}
+@keyframes enigma-work-wave{0%,100%{transform:scaleY(.35);opacity:.4}45%{transform:scaleY(1);opacity:1}}
+@media(prefers-reduced-motion:reduce){.enigma-activity-wave i{animation:none;transform:scaleY(.6)}}
+body.enigma-motion-off .enigma-activity-wave i{animation:none;transform:scaleY(.6)}

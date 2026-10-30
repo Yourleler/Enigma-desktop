@@ -55,6 +55,7 @@ export const InputControlBar = memo(function InputControlBar(props: Props) {
         <button
           className={styles['attach-btn']}
           title={t('input.attachFiles')}
+          onMouseDown={event=>event.preventDefault()}
           onClick={onAttach}
         >
           <AppIcon name="add" size={18}/>

@@ -30,6 +30,8 @@ export interface TokenMeterSnapshot {
   cacheWrite: number;
   /** Server sample time, for detecting disconnected/stale telemetry. */
   sampledAt?: number;
+  /** Observed work only; periodic telemetry samples do not advance this time. */
+  activity?: { kind: 'waiting' | 'thinking' | 'writing' | 'preparing-tool' | 'tool' | 'processing'; toolName?: string; at: number };
   firstOutputAt?: number | null;
   excludedStatusNotices?: number;
   byModel?: Array<{model:string;requests:number;input:number;output:number;cacheRead:number;cacheWrite:number;inputEstimated:boolean;outputEstimated:boolean}>;

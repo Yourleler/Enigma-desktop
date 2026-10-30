@@ -17,6 +17,7 @@ export function createSessionProjectsRoute(engine) {
       const project = engine.createSessionProject({
         name: body?.name,
         folderId: body?.folderId ?? null,
+        workspacePath: body?.workspacePath,
       });
       return c.json({ ok: true, project });
     } catch (err) {

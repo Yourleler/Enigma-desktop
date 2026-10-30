@@ -29,8 +29,8 @@ describe('ToolGroupBlock', () => {
     );
 
     expect(screen.getByText('file not found')).toBeInTheDocument();
-    expect(screen.getByText('✗')).toBeInTheDocument();
-    expect(screen.getByText('?')).toBeInTheDocument();
+    expect(screen.getByText('失败')).toBeInTheDocument();
+    expect(screen.getByText('待确认')).toBeInTheDocument();
     expect(screen.queryByText('✓')).not.toBeInTheDocument();
   });
 
@@ -73,7 +73,7 @@ describe('ToolGroupBlock', () => {
       />,
     );
 
-    expect(screen.getByText('💻 Hanako 用完电脑了')).toBeInTheDocument();
+    expect(screen.getByText('运行命令')).toBeInTheDocument();
     expect(screen.getByText('npm test')).toBeInTheDocument();
   });
 
@@ -96,7 +96,7 @@ describe('ToolGroupBlock', () => {
       />,
     );
 
-    expect(screen.getByText('💻 Hanako 敲完了')).toBeInTheDocument();
+    expect(screen.getByText('读取命令进展')).toBeInTheDocument();
     expect(document.querySelector('[data-tool="write_stdin"] [title]')).toHaveAttribute('title', 'q\n');
   });
 

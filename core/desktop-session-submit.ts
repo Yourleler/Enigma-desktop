@@ -163,6 +163,7 @@ export function recordMessagePresentationEntry(
     }
     session.sessionManager.appendCustomEntry(MESSAGE_PRESENTATION_RECORD_TYPE, {
       displayText,
+      ...(Array.isArray(displayMessage.inlineAttachmentOrder) ? {inlineAttachmentOrder:displayMessage.inlineAttachmentOrder} : {}),
       sessionRefs: Array.isArray(displayMessage.sessionRefs) ? displayMessage.sessionRefs : null,
       agentMentions: Array.isArray(displayMessage.agentMentions) ? displayMessage.agentMentions : null,
       agentReviewRequest: displayMessage.agentReviewRequest || null,
@@ -330,7 +331,7 @@ export async function submitDesktopSessionMessage(engine: any, opts: {
           session,
           sessionPath,
           displayComparisonPromptText,
-          displayMessage ?? { text: text ?? "" },
+          displayMessage ? {...displayMessage,...(displayMessage.inlineAttachments&&Array.isArray(displayAttachments)?{inlineAttachmentOrder:displayAttachments.map(file=>({fileId:file.fileId,path:file.path,name:file.name}))}:{})} : { text: text ?? "" },
           { forceDisplayText: !!reminderBlock?.block },
         );
         recordMessageOriginEntry(session, sessionPath, displayMessage);

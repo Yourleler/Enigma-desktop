@@ -53,6 +53,7 @@ import {
 import { useServerSlashCommandItems, useSkillSlashItems } from '../hooks/use-slash-items';
 import { notifyPasteUploadFailure } from '../utils/paste-upload-feedback';
 import { extractPlainUrlPaste } from '../utils/plain-url-paste';
+import {captureAttachmentInsertion} from './input/extensions/attachment-insertion';
 import { createInputEditorExtensions } from './input/input-editor-extensions';
 import {
   evaluateChatImageSendPreflight,
@@ -612,6 +613,14 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
   // 草稿 key：session 内用 sessionPath（store 内解析为 sessionId）；首页 pending 态用保留键
   const draftKey = currentSessionPath ?? (pendingNewSession ? HOME_DRAFT_KEY : null);
 
+  const attachmentInsertionRef=useRef<ReturnType<typeof captureAttachmentInsertion>|null>(null);
+  const attachmentScopeRef=useRef('');
+  const captureAttachmentPosition=()=>{
+    if(!editor||editor.isDestroyed||!editor.state?.selection)return;
+    attachmentInsertionRef.current?.release();
+    attachmentInsertionRef.current=captureAttachmentInsertion(editor);
+    attachmentScopeRef.current=JSON.stringify([useStore.getState().activeServerConnectionId,draftKey]);
+  };
   const prevWelcomeVisibleRef = useRef(welcomeVisible);
   const prevLocaleRef = useRef(locale);
   useEffect(() => {
@@ -969,6 +978,8 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
       event.currentTarget.value = '';
       return;
     }
+    const uploadScope=JSON.stringify([useStore.getState().activeServerConnectionId,useStore.getState().currentSessionPath,useStore.getState().pendingDraftId]);
+    const uploadSessionPath=useStore.getState().currentSessionPath;
     const files = Array.from(event.currentTarget.files || []);
     event.currentTarget.value = '';
     try {
@@ -976,8 +987,9 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
       if (useStore.getState().attachedFiles.length >= 9) return;
 
       for (const file of files) {
+        if(uploadScope!==JSON.stringify([useStore.getState().activeServerConnectionId,useStore.getState().currentSessionPath,useStore.getState().pendingDraftId]))break;
         if (useStore.getState().attachedFiles.length >= 9) break;
-        const mimeType = file.type || (isAudioFileName(file.name) ? chatAudioMimeTypeForName(file.name) : chatImageMimeTypeForName(file.name));
+        const mimeType = file.type || (isAudioFileName(file.name) ? chatAudioMimeTypeForName(file.name) : (/\.(png|jpe?g|gif|webp|svg|avif)$/i.test(file.name)?chatImageMimeTypeForName(file.name):'application/octet-stream'));
         try {
           const base64Data = await readFileAsBase64(file);
           const uploadPayload = mimeType.startsWith('image/')
@@ -1007,11 +1019,12 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
               base64Data: uploadPayload.base64Data,
               mimeType: uploadPayload.mimeType,
               ...(waveform ? { waveform } : {}),
-              ...(useStore.getState().currentSessionPath ? { sessionPath: useStore.getState().currentSessionPath } : {}),
+              ...(uploadSessionPath ? { sessionPath: uploadSessionPath } : {}),
             }),
           });
           const data = await res.json();
           const upload = data?.uploads?.[0];
+          if(uploadScope!==JSON.stringify([useStore.getState().activeServerConnectionId,useStore.getState().currentSessionPath,useStore.getState().pendingDraftId]))return;
           if (upload?.dest) {
             addAttachedFile({
               fileId: upload.fileId,
@@ -1038,6 +1051,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
 
   const handleAttach = useCallback(async () => {
     if (inputLocked) return;
+    captureAttachmentPosition();
     if (surface === 'mobile') {
       browserFileInputRef.current?.click();
       return;
@@ -1053,7 +1067,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
     }
     browserFileInputRef.current?.click();
     window.setTimeout(restoreEditorFocus, 0);
-  }, [inputLocked, restoreEditorFocus, surface]);
+  }, [inputLocked, restoreEditorFocus, surface, editor, draftKey]);
 
   const ensureVoiceSessionRef = useCallback(async (): Promise<Readonly<SessionRef>> => {
     const state = useStore.getState();
@@ -1437,6 +1451,19 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
     }
   }, [editor, draftKey, draftText, draftDoc, draftsHydratedAt]);
 
+  useEffect(()=>{
+    if(!editor||editor.isDestroyed||!editor.state?.selection||typeof editor.commands.insertContentAt!=='function'||inputLocked||!draftKey||!attachedFiles.length)return;
+    const scope=JSON.stringify([useStore.getState().activeServerConnectionId,draftKey]);
+    const bookmark=attachmentInsertionRef.current;
+    const pos=attachmentScopeRef.current===scope?bookmark?.position():undefined;
+    const files=[...attachedFiles];
+    const nodes=files.map(file=>({type:'fileBadge',attrs:{fileId:file.fileId||null,path:file.path,name:file.name,isDirectory:!!file.isDirectory,mimeType:file.mimeType||null,inlineAttachment:true}}));
+    if(!editor.commands.insertContentAt(pos??editor.state.selection.from,nodes))return;
+    attachmentInsertionRef.current?.release();attachmentInsertionRef.current=null;
+    const keys=new Set(files.map(file=>file.fileId||file.path));
+    useStore.getState().setAttachedFiles(useStore.getState().attachedFiles.filter(file=>!keys.has(file.fileId||file.path)));
+  },[editor,attachedFiles,draftKey,inputLocked]);
+
   // 点击外部关闭斜杠菜单
   useEffect(() => {
     if (!slashMenuOpen) return;
@@ -1500,6 +1527,9 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
       e.preventDefault();
       return true;
     }
+    captureAttachmentPosition();
+    const pasteState=useStore.getState();
+    const pasteScope=JSON.stringify([pasteState.activeServerConnectionId,pasteState.currentSessionPath,pasteState.pendingDraftId]);
     const items = e.clipboardData?.items;
     if (items) {
       const pathItems: string[] = [];
@@ -1548,11 +1578,12 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
                 name: uploadPayload.name,
                 base64Data: uploadPayload.base64Data,
                 mimeType: uploadPayload.mimeType,
-                ...(useStore.getState().currentSessionPath ? { sessionPath: useStore.getState().currentSessionPath } : {}),
+                ...(pasteState.currentSessionPath ? { sessionPath: pasteState.currentSessionPath } : {}),
               }),
             });
             const data = await res.json();
             const upload = data?.uploads?.[0];
+            if(pasteScope!==JSON.stringify([useStore.getState().activeServerConnectionId,useStore.getState().currentSessionPath,useStore.getState().pendingDraftId]))return;
             if (upload?.dest) {
               addAttachedFile({ fileId: upload.fileId, path: upload.dest, name: upload.name || uploadPayload.name, isDirectory: false });
             } else {
@@ -1576,7 +1607,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
       return true;
     }
     return false;
-  }, [addAttachedFile, editor, inputLocked, t]);
+  }, [addAttachedFile, editor, inputLocked, t, draftKey]);
 
   pasteHandlerRef.current = handlePaste;
 
@@ -1743,7 +1774,8 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
       }
     }
 
-    const inputFiles = mergeEditorFileRefs(clickedAttachedFiles, fileRefs);
+    const inputFiles = mergeEditorFileRefs(mergeEditorFileRefs([],fileRefs), clickedAttachedFiles);
+    if(inputFiles.length>9){addToast('一次最多发送9个附件，请移除部分附件后再发送。','warning');return;}
     const hasFiles = inputFiles.length > 0;
     // 空输入静默 return 是合理行为（不是错误），不加 toast；与按钮侧 hasContent 共用同一份谓词（#2101）。
     if (composerPayloadIsEmpty({
@@ -1865,6 +1897,10 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
         }));
 
       let finalText = text;
+      if (/\[(?:图片|文件) \d+\]/.test(text)) {
+        const labels=inputFiles.map((file,index)=>`附件 ${index+1}: ${file.name} (${file.fileId||file.path})`);
+        finalText+=`\n\n[Enigma attachment map]\n正文中的图片/文件编号对应以下顺序：\n${labels.join('\n')}\n[/Enigma attachment map]`;
+      }
       if (otherFiles.length > 0) {
         const fileBlock = otherFiles.map(f => {
           const label = f.fileId ? (f.name || f.path) : f.path;
@@ -1872,7 +1908,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
             ? t('input.attachmentDirectory', { label })
             : t('input.attachmentFile', { label });
         }).join('\n');
-        finalText = text ? `${text}\n\n${fileBlock}` : fileBlock;
+        finalText = finalText ? `${finalText}\n\n${fileBlock}` : fileBlock;
       }
 
       // 图片 / 视频读 base64。统一走 platform 层：Electron 里 platform 代理到 hana，
@@ -1978,6 +2014,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
       const clientMessageId = createClientUserMessageId();
       const displayMessage = {
         text,
+        ...(/\[(?:图片|文件) \d+\]/.test(text) ? {inlineAttachments:true} : {}),
         skills: skills.length > 0 ? skills : undefined,
         quotedText: quotes.length > 0 ? quotes.map(q => q.text).join('\n\n') : undefined,
         sessionRefs: sessionRefs.length > 0 ? sessionRefs : undefined,
@@ -2282,7 +2319,6 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
             className={styles['browser-file-input']}
             type="file"
             multiple
-            accept="image/png,image/jpeg,image/gif,image/webp,audio/mpeg,audio/wav,audio/x-wav,audio/mp4,audio/ogg,audio/flac,audio/webm"
             disabled={inputLocked}
             onChange={handleBrowserFileInputChange}
           />

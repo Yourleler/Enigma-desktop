@@ -102,13 +102,14 @@ const BLOCK_BODY_CHAR_LIMIT = 300;
  */
 export function stripSessionReminderBlocks(value: unknown): string {
   if (typeof value !== "string" || !value) return typeof value === "string" ? value : "";
+  value = value.replace(/(?:\r?\n)?\[Enigma attachment map\]\r?\n[\s\S]*?\r?\n\[\/Enigma attachment map\](?:\r?\n)?/g,'');
 
   const visibleLines: string[] = [];
   let insideReminder = false;
   let insideReference = false;
   let dropSeparatorAfterReminder = false;
 
-  for (const line of value.split(/\r?\n/)) {
+  for (const line of (value as string).split(/\r?\n/)) {
     if (insideReference) {
       if (line === REFERENCE_BLOCK_END) {
         insideReference = false;

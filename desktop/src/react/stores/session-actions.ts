@@ -1165,7 +1165,7 @@ export async function createNewSession(options: CreateNewSessionOptions = {}): P
     : null;
   const pendingProjectId = typeof options.projectId === 'string' && options.projectId.trim()
     ? options.projectId.trim()
-    : null;
+    : 'cwd:';
 
   useStore.setState({
     welcomeVisible: true,

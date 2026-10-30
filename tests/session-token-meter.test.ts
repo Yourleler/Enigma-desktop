@@ -153,3 +153,11 @@ it('keeps model subtotals equal to the full round after switching models',()=>{
  meters.beginRequest('models',{model:'test/coder',now:4});meters.addDelta('models','12345678','writing',5);meters.endRequest('models',{input:20,output:2},6);
  const result=meters.snapshot('models',7)!;expect(result.byModel).toHaveLength(2);expect(result.byModel!.reduce((n,row)=>n+row.input,0)).toBe(result.up.tokens);expect(result.byModel!.reduce((n,row)=>n+row.output,0)).toBe(result.down.tokens);
 });
+
+it('reports parameter generation before tool execution without treating samples as progress',()=>{
+ const meters=new SessionTokenMeters();meters.startRun('activity',100);meters.beginRequest('activity',{now:110});
+ meters.addDelta('activity','{"content":"code', 'writing',120);meters.markPreparingTool('activity','write',120);
+ expect(meters.sample('activity',true,1000)?.activity).toEqual({kind:'preparing-tool',toolName:'write',at:120});
+ meters.markTool('activity',1100,'write');expect(meters.sample('activity',true,2200)?.activity).toEqual({kind:'tool',toolName:'write',at:1100});
+ meters.endRequest('activity',null,2400);expect(meters.sample('activity',true,3000)?.activity?.kind).toBe('processing');
+});

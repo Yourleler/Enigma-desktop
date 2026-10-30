@@ -9,6 +9,7 @@ import {
   normalizeSessionProjectId,
   isAutoProjectId,
   serializeSessionProjectCatalog,
+  normalizeProjectSettings,
 } from "../shared/session-projects.ts";
 
 export class SessionProjectCatalogStore {
@@ -83,7 +84,7 @@ export class SessionProjectCatalogStore {
     return catalog;
   }
 
-  createProject({ name, folderId = null }) {
+  createProject({ name, folderId = null, ...settings }) {
     const catalog = this.getCatalog();
     const normalizedFolderId = resolveFolderId(catalog, folderId);
     const project = {
@@ -91,6 +92,8 @@ export class SessionProjectCatalogStore {
       name: requiredName(normalizeProjectName(name), "project name is required"),
       folderId: normalizedFolderId,
       order: nextOrder(catalog.projects.filter(item => item.folderId === normalizedFolderId)),
+      ...normalizeProjectSettings(settings),
+      updatedAt: Date.now(),
     };
     catalog.projects.push(project);
     this._writeCatalog(catalog);
@@ -101,6 +104,8 @@ export class SessionProjectCatalogStore {
     const catalog = this.getCatalog();
     const projectId = normalizeSessionProjectId(id);
     const index = catalog.projects.findIndex(project => project.id === projectId);
+    for (const key of ['sharedContext','sharedNotes']) if(typeof patch[key]==='string'&&patch[key].length>12000) throw new Error('共享内容不能超过12000字，请精简后保存');
+    if(Array.isArray(patch.repositoryPaths)&&patch.repositoryPaths.length>20) throw new Error('协作目录最多20个');
     if (index < 0) {
       if (!isAutoProjectId(projectId)) throw new Error("project not found");
       const folderId = Object.prototype.hasOwnProperty.call(patch, "folderId")
@@ -111,13 +116,16 @@ export class SessionProjectCatalogStore {
         name: requiredName(normalizeProjectName(patch.name), "project name is required"),
         folderId,
         order: nextOrder(catalog.projects.filter(item => item.folderId === folderId)),
+        ...normalizeProjectSettings(patch),
+        updatedAt: Date.now(),
       };
       catalog.projects.push(project);
       this._writeCatalog(catalog);
       return project;
     }
     const current = catalog.projects[index];
-    const next = { ...current };
+    if (Object.hasOwn(patch,'expectedUpdatedAt') && (patch.expectedUpdatedAt ?? null) !== (current.updatedAt ?? null)) throw new Error('项目已被其他窗口修改，请重新打开后再保存');
+    const next = { ...current, ...normalizeProjectSettings(patch), updatedAt: Math.max(Date.now(),(current.updatedAt||0)+1) };
     if (Object.prototype.hasOwnProperty.call(patch, "name")) {
       next.name = requiredName(normalizeProjectName(patch.name), "project name is required");
     }

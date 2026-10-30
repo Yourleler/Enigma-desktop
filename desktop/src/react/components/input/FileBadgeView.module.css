@@ -79,3 +79,5 @@
   white-space: nowrap;
   color: var(--accent);
 }
+.attachment{max-width:min(240px,100%);gap:6px;padding:4px 6px;border:1px solid var(--border);border-radius:9px;background:color-mix(in srgb,var(--bg-card) 38%,transparent);vertical-align:middle;margin:2px 3px;line-height:1.5;color:var(--text);}
+.attachment .thumbnail{width:28px;height:28px;border-radius:5px}.attachment .name{color:var(--text);font-size:12px}.remove{flex-shrink:0;border:0;background:transparent;color:var(--text-muted);padding:0 3px;font:16px/1.2 var(--font-ui);cursor:pointer}.remove:hover{color:var(--text)}

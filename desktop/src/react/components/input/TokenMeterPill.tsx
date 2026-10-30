@@ -7,6 +7,7 @@ import { useStore } from '../../stores';
 import { AnchoredPortal } from '../../ui/AnchoredPortal';
 import { formatElapsed, formatTokenCount, METER_PHASE_LABEL, tokenMeterKey, useTokenMeterStore } from './token-meter-store';
 import styles from './TokenMeterPill.module.css';
+import {useAnimatedNumber} from '../../hooks/use-animated-number';
 
 /** Per-send usage stays available after completion. Raw usage and estimates
  * remain distinct; live updates do not make screen readers announce each tick. */
@@ -23,12 +24,15 @@ export function TokenMeterPill() {
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
   }, [meter?.state]);
+  const numberIdentity=JSON.stringify([connection,sessionPath,meter?.runId,meter?.startedAt]);
+  const animatedUp=useAnimatedNumber(meter?.up.tokens||0,numberIdentity,meter?.state==='running');
+  const animatedDown=useAnimatedNumber(meter?.down.tokens||0,numberIdentity,meter?.state==='running');
   const close = () => { setOpen(false); anchor.current?.focus(); };
   if (!sessionPath) return null;
   const running = meter?.state === 'running';
   const stale = running && (!connected || !!meter.sampledAt && now - meter.sampledAt > 5000);
   const phase = !meter ? '尚无用量' : stale ? '用量更新中断' : running ? METER_PHASE_LABEL[meter.phase] : meter.state === 'aborted' ? '已停止' : '本轮结束';
-  const counter = (side: 'up'|'down') => !meter ? '—' : (!meter.requests && meter[side].tokens === 0) ? '待统计' : `${meter[side].estimated ? '≈' : ''}${formatTokenCount(meter[side].tokens)}`;
+  const counter = (side: 'up'|'down') => !meter ? '—' : (!meter.requests && meter[side].tokens === 0) ? '待统计' : `${meter[side].estimated ? '≈' : ''}${formatTokenCount(side==='up'?animatedUp:animatedDown)}`;
   const rateVisible = running && !stale && ['thinking','writing'].includes(meter.phase) && meter.rate > 0;
   return <div className={styles.meterRow}>
     <button ref={anchor} type="button" className={styles.meter} data-liquid="control" data-testid="token-meter" data-state={meter?.state || 'idle'} aria-label="查看本轮模型用量" aria-expanded={open} aria-haspopup="dialog" data-tooltip="本次发送的模型用量：输入包含上下文与缓存，输出包含生成内容；点击查看明细" onClick={() => setOpen(v=>!v)}>

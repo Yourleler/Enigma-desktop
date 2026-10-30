@@ -75,6 +75,7 @@ export interface HistoryApiResponse {
     sessionRefs?: Array<{ sessionId: string; label: string }>;
     agentMentions?: Array<{ agentId: string; label: string }>;
     displayText?: string;
+    inlineAttachmentOrder?: Array<{fileId?:string;path?:string;name?:string}>;
   }>;
   sessionFiles?: SessionRegistryFile[];
   blocks?: Array<any>;
@@ -515,7 +516,7 @@ export function buildItemsFromHistory(data: HistoryApiResponse): ChatListItem[] 
       // 跨 session 协作：非用户本人发出的消息带 origin，此时以 displayText（干净正文，
       // 不含模型侧身份前缀）为准；老消息没有这两个字段，走既有 content 管道，行为不变。
       const origin = (m as any).origin;
-      const originDisplayText = (origin || m.agentReview || m.agentReviewRequest || m.sessionRefs?.length)
+      const originDisplayText = (origin || m.agentReview || m.agentReviewRequest || m.sessionRefs?.length || m.inlineAttachmentOrder?.length)
         && typeof m.displayText === 'string' ? m.displayText : null;
 
       // strip steer 前缀（内部标记，不应展示给用户）
@@ -528,7 +529,11 @@ export function buildItemsFromHistory(data: HistoryApiResponse): ChatListItem[] 
         continue;
       }
 
-      const { text, files, attachedImages, attachedVideos, attachedAudios, sessionFileRefs, deskContext, quotedText } = parseUserAttachments(rawContent);
+      // Presentation text excludes machine attachment mappings; retain markers
+      // from the actual content to resolve and order the registered files.
+      const parsed = parseUserAttachments(m.inlineAttachmentOrder?.length ? m.content || '' : rawContent);
+      const { files, attachedImages, attachedVideos, attachedAudios, sessionFileRefs, deskContext, quotedText } = parsed;
+      const text = m.inlineAttachmentOrder?.length && originDisplayText !== null ? originDisplayText : parsed.text;
       const hasMarkerMedia = attachedImages.length > 0 || attachedVideos.length > 0 || attachedAudios.length > 0;
       const visibleText = normalizeUserVisibleText(text, hasMarkerMedia);
       const consumedSessionFileMarkers = new Set<number>();
@@ -560,14 +565,16 @@ export function buildItemsFromHistory(data: HistoryApiResponse): ChatListItem[] 
       }));
       const markerVideoAtts = attachedVideos.map((ref) => attachmentFromRef(ref, sessionFileLookup));
       const markerAudioAtts = attachedAudios.map((ref) => attachmentFromRef(ref, sessionFileLookup));
-      const allAtts = [...fileAtts, ...markerImageAtts, ...markerVideoAtts, ...markerAudioAtts, ...imageAtts];
+      const allAtts: UserAttachment[] = [...fileAtts, ...markerImageAtts, ...markerVideoAtts, ...markerAudioAtts, ...imageAtts];
+      const ordered = m.inlineAttachmentOrder?.map(ref=>allAtts.find(file=>ref.fileId&&file.fileId===ref.fileId||ref.path&&file.path===ref.path||ref.name&&file.name===ref.name)).filter((file):file is NonNullable<typeof file>=>!!file);
+      const attachments = ordered && ordered.length === m.inlineAttachmentOrder?.length ? [...new Set([...ordered,...allAtts])] : allAtts;
       const msg: ChatMessage = {
         id,
         sourceEntryId: m.entryId,
         role: 'user',
         text: visibleText,
         textHtml: visibleText ? renderMarkdown(visibleText) : undefined,
-        attachments: allAtts.length ? allAtts : undefined,
+        attachments: attachments.length ? attachments : undefined,
         deskContext: deskContext || undefined,
         quotedText: quotedText || undefined,
         timestamp,

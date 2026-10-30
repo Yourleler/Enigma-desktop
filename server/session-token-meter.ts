@@ -50,6 +50,7 @@ interface MeterRequest {
 }
 
 interface MeterState {
+  activity?: TokenMeterSnapshotShape['activity'];
   runId: number;
   startedAt: number;
   endedAt: number | null;
@@ -120,6 +121,7 @@ export class SessionTokenMeters {
       rate: 0,
       pendingInputEstimate: 0,
       managedLifecycle,
+      activity: {kind: 'waiting', at: now},
     });
     const completed=[...this.meters].filter(([,meter])=>meter.state!=='running');
     for(const [path] of completed.slice(0,Math.max(0,completed.length-200)))this.drop(path);
@@ -141,6 +143,7 @@ export class SessionTokenMeters {
     } = {},
   ): void {
     const meter = this.ensure(sessionPath, opts.now ?? Date.now());
+    meter.activity = {kind:'waiting',at:opts.now ?? Date.now()};
     if (meter.idleFinishTimer) {
       clearTimeout(meter.idleFinishTimer);
       meter.idleFinishTimer = undefined;
@@ -222,6 +225,7 @@ export class SessionTokenMeters {
     if (req.firstByteAt == null) req.firstByteAt = now;
     req.lastOutputAt = now;
     req.phase = phase;
+    meter.activity = {kind:phase,at:now};
     const cjk = (delta.match(CJK_RE) || []).length;
     req.cjkChars += cjk;
     req.otherChars += delta.length - cjk;
@@ -264,11 +268,17 @@ export class SessionTokenMeters {
     return !meter || meter.state==='running' && (!req || req.inputReal==null && req.firstByteAt==null && req.endedAt==null);
   }
 
-  markTool(sessionPath: string, now = Date.now()): void {
+  markPreparingTool(sessionPath: string, toolName?: string, now = Date.now()): void {
+    const meter = this.ensure(sessionPath, now);
+    meter.activity = {kind:'preparing-tool',toolName:toolName?.slice(0,120),at:now};
+  }
+
+  markTool(sessionPath: string, now = Date.now(), toolName?: string): void {
     const meter = this.meters.get(sessionPath);
     const req = meter?.requests.at(-1);
     if (!req) return;
     req.phase = "tool";
+    meter!.activity = {kind:'tool',toolName:toolName?.slice(0,120),at:now};
     meter!.rate = 0;
     meter!.lastEmitAt = 0;
   }
@@ -322,6 +332,7 @@ export class SessionTokenMeters {
       }
     }
     req.phase = "processing";
+    meter.activity = {kind:'processing',at:now};
     meter.rate = 0;
     meter.lastEmitAt = 0;
   }
@@ -443,6 +454,7 @@ export class SessionTokenMeters {
       cacheRead,
       cacheWrite,
       sampledAt: now,
+      activity: meter.activity,
       firstOutputAt: meter.requests.find(req => req.firstByteAt != null)?.firstByteAt ?? null,
       excludedStatusNotices: meter.requests.reduce((n,req)=>n+req.statusFilter.excluded,0),
       byModel: this.modelBreakdown(meter),

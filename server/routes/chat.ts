@@ -1608,8 +1608,13 @@ export function createChatRoute(
         );
       } else if (sub === 'toolcall_delta') {
         tokenMeters.addDelta(sessionPath, event.assistantMessageEvent.delta, 'writing', Date.now(), meterRequestContext(sessionPath));
+        const update = event.assistantMessageEvent;
+        const block = update.partial?.content?.[update.contentIndex] ?? event.message?.content?.[update.contentIndex];
+        tokenMeters.markPreparingTool(sessionPath, block?.name);
       } else if (sub === "toolcall_start") {
-        // 不在这里关闭 thinking 状态
+        const update = event.assistantMessageEvent;
+        const block = update.partial?.content?.[update.contentIndex] ?? event.message?.content?.[update.contentIndex];
+        tokenMeters.markPreparingTool(sessionPath, block?.name);
       } else if (sub === "error") {
         ss.hasError = true;
         broadcast({
@@ -1622,7 +1627,7 @@ export function createChatRoute(
       if (!ss) return;
       flushPendingTurnInputConsumptions(sessionPath, ss, event.message);
       ss.hasToolCall = true;
-      tokenMeters.markTool(sessionPath);
+      tokenMeters.markTool(sessionPath, Date.now(), event.toolName);
       if (ss.isThinking) {
         ss.isThinking = false;
         emitStreamEvent(sessionPath, ss, { type: "thinking_end" });

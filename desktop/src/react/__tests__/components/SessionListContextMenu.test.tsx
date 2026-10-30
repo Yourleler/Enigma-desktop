@@ -56,6 +56,7 @@ import { useStore } from '../../stores';
 
 function jsonResponse(data: unknown) {
   return {
+    ok: true,
     json: async () => data,
   };
 }
@@ -729,7 +730,7 @@ describe('SessionList context menu', () => {
     expect(screen.getByRole('button',{name:'项目'})).toHaveAttribute('aria-pressed','true');
     useStore.setState({sidebarOpen:true,layoutDrawer:'sidebar'});
     fireEvent.click(within(row as HTMLElement).getByTitle('sidebar.projects.newChatInProject'));
-    expect(createNewSessionMock).toHaveBeenCalledWith({cwd});
+    expect(createNewSessionMock).toHaveBeenCalledWith({cwd,projectId:id});
     expect(useStore.getState()).toMatchObject({sidebarOpen:false,layoutDrawer:null});
   });
 
@@ -862,7 +863,7 @@ describe('SessionList context menu', () => {
       }));
       expect(useStore.getState().sessions[0].projectId).toBe('cwd:');
     });
-    expect(await screen.findByText('未归类')).toBeInTheDocument();
+    expect(await screen.findByText('单独对话')).toBeInTheDocument();
   });
 
   it('starts a new session draft inside the selected project from the hover action', async () => {
@@ -940,7 +941,7 @@ describe('SessionList context menu', () => {
     fireEvent.click(newChatButton);
 
     await waitFor(() => {
-      expect(createNewSessionMock).toHaveBeenCalledWith({ cwd: '/tmp/project' });
+      expect(createNewSessionMock).toHaveBeenCalledWith({ cwd: '/tmp/project', projectId:'cwd:%2Ftmp%2Fproject' });
     });
   });
 

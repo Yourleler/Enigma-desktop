@@ -3,6 +3,7 @@ import { useStore } from './index';
 import type { SessionProject, SessionProjectCatalog, SessionProjectFolder } from '../types/session-projects';
 import { EMPTY_SESSION_PROJECT_CATALOG } from './session-project-slice';
 import { UNCATEGORIZED_PROJECT_ID } from '../../../../shared/session-projects.ts';
+import { normalizeProjectSettings } from '../../../../shared/session-projects.ts';
 
 function asObject(value: unknown): Record<string, unknown> | null {
   return value && typeof value === 'object' && !Array.isArray(value)
@@ -18,6 +19,7 @@ function normalizeProject(raw: unknown, index: number): SessionProject | null {
     name: item.name,
     folderId: typeof item.folderId === 'string' && item.folderId.trim() ? item.folderId.trim() : null,
     order: Number.isFinite(item.order) ? item.order as number : index,
+    ...normalizeProjectSettings(item),
   };
 }
 
@@ -94,7 +96,7 @@ export async function createSessionProjectInCatalog(input: { name: string; folde
 
 export async function patchSessionProjectInCatalog(
   projectId: string,
-  patch: { folderId?: string | null; name?: string },
+  patch: { folderId?: string | null; name?: string; workspacePath?: string | null; sharedContext?: string; sharedNotes?: string; repositoryPaths?: string[]; expectedUpdatedAt?: number | null },
 ): Promise<SessionProject | null> {
   const res = await hanaFetch(`/api/session-projects/projects/${encodeURIComponent(projectId)}`, {
     method: 'PATCH',
@@ -102,6 +104,7 @@ export async function patchSessionProjectInCatalog(
     body: JSON.stringify(patch),
   });
   const data = await res.json().catch(() => ({}));
+  if(!res.ok)throw new Error(asObject(data)?.error as string || '项目保存失败');
   const project = normalizeProject(asObject(data)?.project, 0);
   if (!project) return null;
   useStore.setState(state => ({
@@ -204,11 +207,14 @@ export async function deleteSessionProjectFolderFromCatalog(folderId: string): P
 }
 
 export async function setSessionProjectAssignmentForSession(sessionPath: string, projectId: string | null): Promise<void> {
-  await hanaFetch('/api/session-projects/session-assignment', {
+  const connection=useStore.getState().activeServerConnectionId;
+  const response=await hanaFetch('/api/session-projects/session-assignment', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ sessionPath, projectId }),
   });
+  if(response.ok===false){const data=await response.json().catch(()=>({}));throw new Error(data?.error||'项目归属未能保存');}
+  if(useStore.getState().activeServerConnectionId!==connection)return;
   useStore.setState(state => ({
     sessions: state.sessions.map(session => session.path === sessionPath
       ? { ...session, projectId }

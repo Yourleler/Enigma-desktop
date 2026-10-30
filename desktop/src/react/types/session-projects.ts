@@ -5,6 +5,11 @@ export interface SessionProject {
   name: string;
   folderId: string | null;
   order: number;
+  workspacePath?: string | null;
+  sharedContext?: string;
+  sharedNotes?: string;
+  repositoryPaths?: string[];
+  updatedAt?: number;
 }
 
 export interface SessionProjectFolder {

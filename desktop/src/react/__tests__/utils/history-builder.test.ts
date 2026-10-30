@@ -2,6 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { buildItemsFromHistory } from '../../utils/history-builder';
 
 describe('buildItemsFromHistory user image restoration', () => {
+  it('restores inline order and clean display text independently of machine attachment markers',()=>{
+    const items=buildItemsFromHistory({messages:[{id:'inline',role:'user',content:'Compare [图片 1] and [文件 2]\n\n附件对应关系：machine-only\n[Attached file: /tmp/b.txt]\n[Attached image: /tmp/a.png]',displayText:'Compare [图片 1] and [文件 2]',inlineAttachmentOrder:[{path:'/tmp/a.png',name:'a.png'},{path:'/tmp/b.txt',name:'b.txt'}]}]});
+    expect(items[0]).toMatchObject({type:'message',data:{text:'Compare [图片 1] and [文件 2]'}});
+  });
+
   it('restores turn timing on a history page without the original input', () => {
     const [item] = buildItemsFromHistory({ messages: [{
       id: '2', entryId: 'assistant-entry', role: 'assistant', content: 'done',

@@ -12,6 +12,7 @@ import { ChatTimelineNavigator } from './ChatTimelineNavigator';
 import { ChatTranscript } from './ChatTranscript';
 import { buildTimelineAnchors, type TimelineAnchor } from './timeline-anchors';
 import styles from './Chat.module.css';
+import { RunActivity } from './RunActivity';
 
 const EMPTY_ITEMS: ChatListItem[] = [];
 const EMPTY_TIMELINE_ANCHORS: TimelineAnchor[] = [];
@@ -399,7 +400,7 @@ export const ChatMessageSurface = memo(function ChatMessageSurface({
             enableProcessFold
           />
           {isSessionStreaming && (
-            <div className={styles.typingIndicator} />
+            <RunActivity sessionPath={sessionPath}/>
           )}
           <div className={styles.sessionFooter} />
         </div>

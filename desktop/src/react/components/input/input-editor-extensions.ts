@@ -3,6 +3,7 @@ import StarterKit from '@tiptap/starter-kit';
 import { Bold } from '@tiptap/extension-bold';
 import Placeholder, { type PlaceholderOptions } from '@tiptap/extension-placeholder';
 import { SkillBadge } from './extensions/skill-badge';
+import { AttachmentInsertion } from './extensions/attachment-insertion';
 import { FileBadge } from './extensions/file-badge';
 import { SessionBadge } from './extensions/session-badge';
 import { AgentBadge } from './extensions/agent-badge';
@@ -30,6 +31,7 @@ export function createInputEditorExtensions(placeholder: InputEditorPlaceholder)
     Placeholder.configure({ placeholder }),
     SkillBadge,
     FileBadge,
+    AttachmentInsertion,
     SessionBadge,
     AgentBadge,
   ];

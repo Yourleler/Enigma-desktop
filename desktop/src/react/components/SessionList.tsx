@@ -418,7 +418,8 @@ function SessionListInner() {
       useStore.setState({sidebarOpen:false,sidebarAutoCollapsed:true,layoutDrawer:null});
     }
     const cwd = cwdFromAutoProjectId(project.id);
-    const pending = createNewSession(cwd ? { cwd } : { projectId: project.id, cwd: null });
+    const root=useStore.getState().sessionProjectCatalog.projects.find(p=>p.id===project.id)?.workspacePath||cwd;
+    const pending = createNewSession({ projectId: project.id, cwd: root||null });
     const draftId = useStore.getState().pendingDraftId;
     await pending;
     const current = useStore.getState();
@@ -1052,7 +1053,7 @@ function ProjectSessionView({
         onDragLeave={() => setDropTargetId(null)}
         onDrop={onDropRoot}
       >
-        {view.rootProjects.map(project => (
+        {view.rootProjects.filter(project=>project.id!=='cwd:').map(project => (
           <ProjectBlock
             key={project.id}
             project={project}
@@ -1095,6 +1096,7 @@ function ProjectSessionView({
           />
         ))}
       </div>
+      {!!view.rootProjects.find(project=>project.id==='cwd:')?.items.length&&<><SectionTitle><span>单独对话</span></SectionTitle>{view.rootProjects.find(project=>project.id==='cwd:')!.items.map(renderSessionItem)}</>}
       {view.pending ? (
         <div className={styles.sessionEmpty}>{t('sidebar.projects.loading')}</div>
       ) : view.rootProjects.length === 0 && view.folders.length === 0 ? (

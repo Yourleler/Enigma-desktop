@@ -9,6 +9,11 @@ export interface SessionProjectRecord {
   name: string;
   folderId: string | null;
   order: number;
+  workspacePath?: string | null;
+  sharedContext?: string;
+  sharedNotes?: string;
+  repositoryPaths?: string[];
+  updatedAt?: number;
 }
 
 export interface SessionProjectFolderRecord {
@@ -100,12 +105,23 @@ export function normalizeSessionProjectCatalog(input: unknown = {}): SessionProj
       name,
       folderId: folderId && folderIds.has(folderId) ? folderId : null,
       order: finiteOrder(entry.order, index),
+      ...normalizeProjectSettings(entry),
     });
   }
 
   folders.sort(compareOrderedByName);
   projects.sort(compareOrderedByName);
   return { folders, projects };
+}
+
+export function normalizeProjectSettings(entry: Record<string, unknown>) {
+  return {
+    ...(Object.hasOwn(entry,'workspacePath') ? {workspacePath:normalizeWorkspacePath(entry.workspacePath)||null} : {}),
+    ...(typeof entry.sharedContext==='string'?{sharedContext:entry.sharedContext.slice(0,12000)}:{}),
+    ...(typeof entry.sharedNotes==='string'?{sharedNotes:entry.sharedNotes.slice(0,12000)}:{}),
+    ...(Array.isArray(entry.repositoryPaths)?{repositoryPaths:[...new Set(entry.repositoryPaths.map(normalizeWorkspacePath).filter((p):p is string=>!!p))].slice(0,20)}:{}),
+    ...(typeof entry.updatedAt==='number'&&Number.isFinite(entry.updatedAt)?{updatedAt:entry.updatedAt}:{}),
+  };
 }
 
 export function serializeSessionProjectCatalog(catalog: unknown): {

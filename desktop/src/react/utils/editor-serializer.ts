@@ -59,6 +59,13 @@ export function serializeEditor(json: JSONContent): {
           isDirectory: node.attrs.isDirectory === true,
           ...(typeof node.attrs.mimeType === 'string' && node.attrs.mimeType ? { mimeType: node.attrs.mimeType } : {}),
         });
+        if(node.attrs.inlineAttachment){
+          const identity=(file:EditorFileRef)=>file.fileId||file.path;
+          const unique=[...new Set(fileRefs.map(identity))];
+          const number=unique.indexOf(node.attrs.fileId||path)+1;
+          const image=/\.(?:png|jpe?g|gif|webp|svg|avif)$/i.test(label)||String(node.attrs.mimeType||'').startsWith('image/');
+          return `[${image?'图片':'文件'} ${number}]`;
+        }
         if (options.emitFileBadgeText) {
           return `@${label}`;
         }
