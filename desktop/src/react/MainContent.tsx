@@ -248,6 +248,8 @@ export function MainContent({ children }: { children: React.ReactNode }) {
   const [dragActive, setDragActive] = useState(false);
   const dragCounter = useRef(0);
   const welcomeVisible = useStore(s => s.welcomeVisible);
+  const previewExpanded = useStore(s => s.previewExpanded);
+  const layoutDrawer = useStore(s => s.layoutDrawer);
   const currentTab = useStore(s => s.currentTab);
   const welcomeMode = welcomeVisible && currentTab === 'chat';
 
@@ -289,6 +291,9 @@ export function MainContent({ children }: { children: React.ReactNode }) {
   return (
     <div
       className={`main-content${welcomeMode ? ' welcome-mode' : ''}`}
+      data-layout-managed=""
+      inert={previewExpanded || !!layoutDrawer}
+      aria-hidden={previewExpanded || undefined}
       onDragEnter={onDragEnter}
       onDragLeave={onDragLeave}
       onDragOver={onDragOver}

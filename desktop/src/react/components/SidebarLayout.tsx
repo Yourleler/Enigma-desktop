@@ -1,162 +1,116 @@
-/**
- * SidebarLayout — 侧边栏布局管理 React 组件
- *
- * 管理：sidebar 折叠/展开、responsive 自动收缩、
- * 键盘快捷键、按钮事件绑定。
- * 从 sidebar-shim.ts 的 initSidebar / updateLayout / toggleSidebar 迁移。
- */
-
-import { useEffect } from 'react';
+/** Shared desktop layout arbitration: preserve useful reading widths and user intent. */
+import { useLayoutEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useStore } from '../stores';
 import { createNewSession } from '../stores/session-actions';
 import { closePreview } from '../stores/preview-actions';
-import { CHAT_MIN_WIDTH } from '../layout-constants';
 import { useEngineering } from '../engineering/state';
+import { resolveWorkspaceLayout, type LayoutIntent } from '../utils/workspace-layout';
+import './WorkspaceLayout.css';
 
-function getSidebarWidth(): number {
-  return parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sidebar-width')) || 240;
-}
-function getJianWidth(): number {
-  const actual = document.querySelector('.jian-sidebar-inner')?.getBoundingClientRect().width;
-  if (actual && actual > 0) return actual;
-  return parseInt(getComputedStyle(document.documentElement).getPropertyValue('--jian-sidebar-width')) || 260;
-}
-function getChannelInspectorWidth(): number {
-  return parseInt(getComputedStyle(document.documentElement).getPropertyValue('--channel-inspector-width')) || 280;
-}
-function getPreviewWidth(): number {
-  return parseInt(getComputedStyle(document.documentElement).getPropertyValue('--preview-panel-width')) || 580;
+function panelWidth(name: string, selector: string, fallback: number): number {
+  const css = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  if (/^\d+(?:\.\d+)?px$/.test(css)) return parseFloat(css);
+  const actual = document.querySelector(selector)?.getBoundingClientRect().width;
+  return actual && actual > 0 ? actual : fallback;
 }
 
-// ══════════════════════════════════════════════════════
-// 公开函数（bridge compat shim 也会调用）
-// ══════════════════════════════════════════════════════
-
-export function updateLayout(): void {
-  const s = useStore.getState();
-  const currentTab = s.currentTab;
-  const w = window.innerWidth;
-  const eng = useEngineering.getState();
-  // 工程工作台在 <860px 是覆盖式抽屉（见 engineering.css），不参与聊天最小宽度计算；
-  // 宽窗时它仍是右栏，正常计入布局。
-  const engineeringDrawer = w <= 860
-    && !!eng.snapshot?.connected
-    && eng.paneOpen
-    && !!eng.active;
-  const leftW = s.sidebarOpen ? getSidebarWidth() : 0;
-  const rightW = (s.jianOpen && !engineeringDrawer) ? getJianWidth() : 0;
-  const previewW = currentTab === 'chat' && s.previewOpen ? getPreviewWidth() : 0;
-  const channelInspectorW = currentTab === 'channels' && s.currentChannel ? getChannelInspectorWidth() : 0;
-  const contentW = w - leftW - rightW - previewW - channelInspectorW;
-  // Keep the content the user just opened. On medium windows reclaim the
-  // conversation list before squeezing the reading/chat columns.
-  const engineeringActive=!!eng.snapshot?.connected&&eng.paneOpen&&!!eng.active&&s.jianOpen;
-  const minimumContentWidth=engineeringActive?480:CHAT_MIN_WIDTH;
-  if(engineeringActive&&s.sidebarOpen&&contentW<minimumContentWidth){
-    useStore.setState({sidebarOpen:false,sidebarAutoCollapsed:true});
-    return;
-  }
-
-  if (contentW < minimumContentWidth) {
-    if (s.jianOpen && !engineeringDrawer) {
-      useStore.setState({ jianOpen: false, jianAutoCollapsed: true });
-
-      const newContentW = w - (s.sidebarOpen ? getSidebarWidth() : 0) - previewW - channelInspectorW;
-      if (newContentW < minimumContentWidth && s.sidebarOpen) {
-        useStore.setState({ sidebarOpen: false, sidebarAutoCollapsed: true });
-      }
-    } else if (s.sidebarOpen) {
-      useStore.setState({ sidebarOpen: false, sidebarAutoCollapsed: true });
+let resolving = false;
+export function updateLayout(intent?: LayoutIntent): void {
+  if (resolving) return;
+  resolving = true;
+  try {
+    const s = useStore.getState(), eng = useEngineering.getState();
+    const width = document.querySelector('.app')?.clientWidth || window.innerWidth;
+    const engineering = !!eng.snapshot?.connected && eng.paneOpen && !!eng.active;
+    const preferred = parseFloat(document.documentElement.style.getPropertyValue('--preview-preferred-width'))
+      || Number(localStorage.getItem('hana-preview-width')) || 580;
+    const result = resolveWorkspaceLayout({
+      width,
+      sidebarWidth: panelWidth('--sidebar-width', '.sidebar-inner', 250),
+      workspaceWidth: panelWidth('--jian-sidebar-width', '.jian-sidebar-inner', 260),
+      previewWidth: preferred,
+      inspectorWidth: s.currentTab === 'channels' && s.currentChannel ? panelWidth('--channel-inspector-width', '#channelInspector', 280) : 0,
+      sidebarWanted: !String(s.currentTab).startsWith('plugin:') && (s.sidebarOpen || s.sidebarAutoCollapsed),
+      workspaceWanted: s.jianOpen || s.jianAutoCollapsed,
+      sidebarAutoCollapsed: s.sidebarAutoCollapsed,
+      workspaceAutoCollapsed: s.jianAutoCollapsed,
+      previewOpen: s.currentTab === 'chat' && s.previewOpen,
+      engineeringDrawer: width <= 860 && engineering,
+      drawer: s.layoutDrawer,
+      intent,
+    });
+    const { previewWidth, ...state } = result;
+    const root = document.documentElement;
+    root.style.setProperty('--layout-sidebar-space', `${state.sidebarOpen && state.layoutDrawer !== 'sidebar' ? panelWidth('--sidebar-width', '.sidebar-inner', 250) : 0}px`);
+    root.style.setProperty('--layout-workspace-space', `${state.jianOpen && state.layoutDrawer !== 'workspace' ? panelWidth('--jian-sidebar-width', '.jian-sidebar-inner', 260) : 0}px`);
+    if (previewWidth) {
+      const px = `${previewWidth}px`;
+      document.documentElement.style.setProperty('--preview-panel-width', px);
+      const inner = document.querySelector<HTMLElement>('[data-preview-panel-inner]');
+      if (inner) { inner.style.width = px; inner.style.minWidth = px; }
     }
-  } else {
-    if (s.sidebarAutoCollapsed) {
-      const neededForLeft = getSidebarWidth();
-      if (w - rightW - previewW - channelInspectorW - neededForLeft >= minimumContentWidth) {
-        const tab = s.currentTab || 'chat';
-        const savedLeft = localStorage.getItem(`hana-sidebar-${tab}`);
-        if (savedLeft !== 'closed') {
-          useStore.setState({ sidebarOpen: true, sidebarAutoCollapsed: false });
-        }
-      }
-    }
-    const s2 = useStore.getState();
-    if (s2.jianAutoCollapsed) {
-      const leftW2 = s2.sidebarOpen ? getSidebarWidth() : 0;
-      const neededForRight = getJianWidth();
-      if (w - leftW2 - previewW - channelInspectorW - neededForRight >= minimumContentWidth) {
-        const savedRight = localStorage.getItem('hana-jian');
-        if (savedRight !== 'closed') {
-          useStore.setState({ jianOpen: true, jianAutoCollapsed: false });
-        }
-      }
-    }
-  }
+    if (Object.entries(state).some(([key, value]) => s[key as keyof typeof s] !== value)) useStore.setState(state);
+  } finally { resolving = false; }
 }
 
 export function toggleSidebar(forceOpen?: boolean): void {
-  const s = useStore.getState();
-  const open = forceOpen !== undefined ? forceOpen : !s.sidebarOpen;
-  useStore.setState({ sidebarOpen: open, sidebarAutoCollapsed: false });
-
-  const tab = s.currentTab || 'chat';
-  localStorage.setItem(`hana-sidebar-${tab}`, open ? 'open' : 'closed');
-
+  const s = useStore.getState(), open = forceOpen ?? !s.sidebarOpen;
+  localStorage.setItem(`hana-sidebar-${s.currentTab || 'chat'}`, open ? 'open' : 'closed');
+  useStore.setState({ sidebarOpen: open, sidebarAutoCollapsed: false,
+    ...(s.layoutDrawer === 'sidebar' && !open ? {layoutDrawer: null} : {}) });
+  updateLayout(open ? 'sidebar' : undefined);
 }
 
-// ══════════════════════════════════════════════════════
-// React 组件
-// ══════════════════════════════════════════════════════
-
-export function SidebarLayout() {
-  useEffect(() => {
-    // 迁移 localStorage
+export function SidebarLayout({ restorePreference = true }: { restorePreference?: boolean } = {}) {
+  const drawer = useStore(s => s.layoutDrawer);
+  useLayoutEffect(() => {
     const legacy = localStorage.getItem('hana-sidebar');
-    if (legacy && !localStorage.getItem('hana-sidebar-chat')) {
-      localStorage.setItem('hana-sidebar-chat', legacy);
-    }
-    const savedOpen = localStorage.getItem('hana-sidebar-chat');
-    const sidebarOpen = savedOpen !== 'closed';
-
-    useStore.setState({
-      sidebarOpen,
-      sidebarAutoCollapsed: false,
-      jianAutoCollapsed: false,
+    if (legacy && !localStorage.getItem('hana-sidebar-chat')) localStorage.setItem('hana-sidebar-chat', legacy);
+    if (restorePreference) useStore.setState({ sidebarOpen: localStorage.getItem('hana-sidebar-chat') !== 'closed', sidebarAutoCollapsed: false, jianAutoCollapsed: false });
+    let frame = 0;
+    const schedule = () => { if (!frame) frame = requestAnimationFrame(() => { frame = 0; updateLayout(); }); };
+    const unsubscribe = useStore.subscribe((s, previous) => {
+      if (['sidebarOpen','jianOpen','previewOpen','currentTab','currentChannel','layoutDrawer'].some(key => s[key as keyof typeof s] !== previous[key as keyof typeof previous])) schedule();
     });
-
-    // Resize
-    let resizeTimer: ReturnType<typeof setTimeout> | null = null;
-    const onResize = () => {
-      if (resizeTimer) clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(() => {
-        updateLayout();
-        resizeTimer = null;
-      }, 50);
-    };
-    window.addEventListener('resize', onResize);
-
-    // 键盘快捷键
+    const unsubscribeEngineering = useEngineering.subscribe((s, previous) => {
+      if (s.paneOpen && s.active && (s.paneOpen !== previous.paneOpen || s.active !== previous.active)) updateLayout('workspace');
+      else if (s.paneOpen !== previous.paneOpen || s.active !== previous.active || !!s.snapshot?.connected !== !!previous.snapshot?.connected) schedule();
+    });
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(schedule);
+    for (const el of document.querySelectorAll('.app,.sidebar-inner,.jian-sidebar-inner')) observer?.observe(el);
+    window.addEventListener('resize', schedule);
+    updateLayout();
     const onKeydown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 's') {
-        e.preventDefault();
-        toggleSidebar();
-      }
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'n') {
-        e.preventDefault();
-        createNewSession();
-      }
-      if (e.key === 'Escape' && useStore.getState().previewOpen) {
-        closePreview();
-      }
+      if (e.defaultPrevented) return;
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 's') { e.preventDefault(); toggleSidebar(); }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'n') { e.preventDefault(); createNewSession(); }
+      if (e.key === 'Escape' && !useStore.getState().layoutDrawer && !document.querySelector('[role="dialog"],[role="menu"],.cm-panels') && useStore.getState().previewOpen) closePreview();
     };
     document.addEventListener('keydown', onKeydown);
+    return () => { cancelAnimationFrame(frame); observer?.disconnect(); unsubscribe(); unsubscribeEngineering(); window.removeEventListener('resize', schedule); document.removeEventListener('keydown', onKeydown); };
+  }, [restorePreference]);
 
-    return () => {
-      if (resizeTimer) clearTimeout(resizeTimer);
-      window.removeEventListener('resize', onResize);
-      document.removeEventListener('keydown', onKeydown);
+  useLayoutEffect(() => {
+    if (drawer !== 'sidebar') return;
+    const previous = document.activeElement as HTMLElement | null;
+    const regions = [...document.querySelectorAll<HTMLElement>('.main-content:not([data-layout-managed]),#previewPanel:not([data-layout-managed]),#jianSidebar:not([data-layout-managed])')];
+    const inert = regions.map(el => el.inert);
+    regions.forEach(el => { el.inert = true; });
+    const sidebar = document.getElementById('sidebar');
+    if (!document.querySelector('[role="dialog"]')) sidebar?.querySelector<HTMLElement>('button')?.focus();
+    const key = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || document.querySelector('[role="dialog"],[role="menu"],.enigma-surface-menu')) return;
+      if (event.key === 'Escape') { event.preventDefault(); toggleSidebar(false); }
+      if (event.key === 'Tab') {
+        const items = [...sidebar?.querySelectorAll<HTMLElement>('button:not(:disabled),input:not(:disabled),[tabindex="0"]') || []].filter(el => el.getClientRects().length);
+        const first = items[0], last = items.at(-1);
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+      }
     };
-  }, []);
-
-  // 不渲染任何 DOM，只提供行为
-  return null;
+    document.addEventListener('keydown', key);
+    return () => { document.removeEventListener('keydown', key); regions.forEach((el,i) => { el.inert = inert[i]; }); if (previous?.isConnected) previous.focus(); };
+  }, [drawer]);
+  return drawer === 'sidebar' ? createPortal(<button className="enigma-layout-scrim" data-native-browser-occluder="" aria-label="关闭导航栏遮罩" tabIndex={-1} onClick={() => toggleSidebar(false)}/>, document.body) : null;
 }

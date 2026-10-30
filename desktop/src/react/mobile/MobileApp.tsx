@@ -6,7 +6,8 @@ import { ChatSidebar } from '../components/app/ChatSidebar';
 import { MainContent } from '../MainContent';
 import { StatusBar } from '../components/StatusBar';
 import { ToastContainer } from '../components/ToastContainer';
-import { toggleSidebar } from '../components/SidebarLayout';
+import { SidebarLayout, toggleSidebar } from '../components/SidebarLayout';
+import { useSidebarResize } from '../hooks/use-sidebar-resize';
 import { InteractionHints } from '../ui/InteractionHints';
 import { toggleJianSidebar } from '../stores/desk-actions';
 import { togglePreviewPanel } from '../stores/preview-actions';
@@ -167,6 +168,9 @@ function MobileDesktopShell({
   mobileUpdateAvailable: boolean;
   onApplyMobileUpdate: () => void;
 }) {
+  useSidebarResize();
+  const previewExpanded = useStore(s => s.previewExpanded);
+  const layoutDrawer = useStore(s => s.layoutDrawer);
   const settingsAvailable=!!principal&&principalHasRequiredScopes(principal,['settings.read']);
   const sidebarOpen = useStore(s => s.sidebarOpen);
   const jianOpen = useStore(s => s.jianOpen);
@@ -193,9 +197,6 @@ function MobileDesktopShell({
     useStore.setState({ currentTab: 'chat' });
   }, []);
 
-  useEffect(() => {
-    if (isNarrow) useStore.setState({ sidebarOpen: false, jianOpen: engineeringPane, previewOpen: false });
-  }, [isNarrow]);
 
   useEffect(() => {
     const unsubscribe = window.platform?.onOpenSettingsModal?.((tab?: string) => {
@@ -245,7 +246,7 @@ function MobileDesktopShell({
     }
   }, [refreshMobileSessions, wsState]);
 
-  const showDrawerScrim = (sidebarOpen || jianOpen) && isNarrow && !(engineeringPane&&jianOpen);
+  const showDrawerScrim = !layoutDrawer && (sidebarOpen || jianOpen) && isNarrow && !(engineeringPane&&jianOpen);
   const openMobileDrawerFromGesture = useCallback((edge: MobileEdgeGesture['edge']) => {
     if (edge === 'left') {
       useStore.setState({ jianOpen: false });
@@ -328,6 +329,7 @@ function MobileDesktopShell({
       onTouchEnd={handleTouchEnd}
       onTouchCancel={() => { edgeGestureRef.current = null; }}
     >
+      <SidebarLayout restorePreference={false}/>
       <AppTitlebar
         sidebarOpen={sidebarOpen}
         jianOpen={jianOpen}
@@ -347,7 +349,6 @@ function MobileDesktopShell({
           toggleJianSidebar(!jianOpen);
         }}
         onTogglePreview={() => {
-          if (!previewOpen) useStore.setState({ sidebarOpen: false, jianOpen: false });
           togglePreviewPanel();
         }}
       />
@@ -357,7 +358,7 @@ function MobileDesktopShell({
           <button type="button" onClick={onApplyMobileUpdate}>{t('mobile.update.reload')}</button>
         </div>
       )}
-      <div className="app mobile-desktop-app">
+      <div className="app mobile-desktop-app" data-preview-expanded={previewExpanded || undefined} data-layout-drawer={layoutDrawer || undefined}>
         <ChatSidebar
           open={sidebarOpen && currentTab === 'chat'}
           includeChannels={false}
@@ -371,11 +372,7 @@ function MobileDesktopShell({
         <MainContent>
           <ChatPage inputSurface="mobile" regionPrefix="mobile-" />
         </MainContent>
-        {previewOpen && (
-          <Suspense fallback={null}>
-            <LazyPreviewPanel />
-          </Suspense>
-        )}
+        <Suspense fallback={null}><LazyPreviewPanel /></Suspense>
         {(!isNarrow || jianOpen) && (
           <Suspense fallback={<WorkspaceCompanionRailFallback open={jianOpen} />}>
             <LazyWorkspaceCompanionRail />

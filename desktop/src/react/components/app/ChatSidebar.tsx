@@ -109,9 +109,11 @@ export function ChatSidebar({
   ...contentProps
 }: ChatSidebarProps) {
   const currentTab = useStore(s => s.currentTab);
+  const autoCollapsed = useStore(s => s.sidebarAutoCollapsed);
+  const layoutDrawer = useStore(s => s.layoutDrawer);
 
   return (
-    <aside className={`sidebar${open ? '' : ' collapsed'}`} id="sidebar" inert={!open} aria-hidden={!open}>
+    <aside className={`sidebar${open ? '' : ' collapsed'}`} id="sidebar" data-layout-managed="" data-auto-collapsed={autoCollapsed || undefined} inert={!open || layoutDrawer === 'workspace'} aria-hidden={!open}>
       <div className="sidebar-inner" data-liquid="sidebar">
         <div className={`sidebar-chat-content${currentTab === 'chat' ? '' : ' hidden'}`}>
           <ChatSidebarContent {...contentProps} showCollapseButton={false}/>

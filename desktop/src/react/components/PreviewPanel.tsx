@@ -14,7 +14,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import type { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from 'react';
 import { useStore } from '../stores';
 import { selectPreviewItems, selectActiveTabId, selectMarkdownPreviewIds, selectPreviewReadingPositions } from '../stores/preview-slice';
-import { consumePreviewAnchor, setMarkdownPreviewActive, upsertPreviewItem, updatePreviewReadingPosition } from '../stores/preview-actions';
+import { closePreview, consumePreviewAnchor, setMarkdownPreviewActive, upsertPreviewItem, updatePreviewReadingPosition } from '../stores/preview-actions';
 import {alignPreviewAnchor,findPreviewAnchor} from '../utils/preview-anchor';
 import { PreviewEditor, type PreviewEditorHandle, type PreviewEditorStats } from './PreviewEditor';
 import { PreviewRenderer } from './preview/PreviewRenderer';
@@ -42,6 +42,7 @@ import {
 } from '../utils/markdown-document';
 import type { PreviewScrollSnapshot } from '../../../../shared/preview-reading-position.ts';
 import previewStyles from './Preview.module.css';
+import { AppIcon } from '../ui/app-icons';
 
 const EDITABLE_TYPES = new Set(['markdown', 'code', 'csv']);
 const CHAPTER_RAIL_HOVER_ZONE_PX = 64;
@@ -111,6 +112,8 @@ function escapeCssId(id: string): string {
 
 export function PreviewPanel() {
   const previewOpen = useStore(s => s.previewOpen);
+  const previewExpanded = useStore(s => s.previewExpanded);
+  const layoutDrawer = useStore(s => s.layoutDrawer);
   const activeTabId = useStore(selectActiveTabId);
   const previewItems = useStore(selectPreviewItems);
   const markdownPreviewIds = useStore(selectMarkdownPreviewIds);
@@ -412,11 +415,15 @@ export function PreviewPanel() {
     <div
       className={`${previewStyles.previewPanel}${previewOpen ? '' : ` ${previewStyles.previewPanelCollapsed}`}`}
       id="previewPanel"
+      data-layout-managed=""
+      inert={!previewOpen || !!layoutDrawer}
+      aria-hidden={!previewOpen}
       data-preview-open={previewOpen ? 'true' : 'false'}
     >
       <OpenPreviewDocumentWatchBridge />
       <div className="resize-handle resize-handle-left" id="previewResizeHandle"></div>
       <div className={previewStyles.previewPanelInner} data-preview-panel-inner="">
+        {previewExpanded && <button className="enigma-preview-return" onClick={() => closePreview()}><AppIcon name="chevronLeft" size={16}/>返回对话<span>已打开的文件会保留</span></button>}
         <TabBar />
         {previewItem?.type==='csv'&&isEditable(previewItem)&&<div className="enigma-csv-mode" role="group" aria-label="CSV 显示方式"><button aria-pressed={!csvSource} onClick={()=>setCsvSource(false)}>表格预览</button><button aria-pressed={csvSource} onClick={()=>setCsvSource(true)}>编辑 CSV</button></div>}
         {previewOpen&&previewItem&&['markdown','code','text','html'].includes(previewItem.type)&&!['missing','unavailable'].includes(previewItem.status||'')&&<DocumentNavigation

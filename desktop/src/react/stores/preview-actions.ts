@@ -219,7 +219,7 @@ export function openPreview(previewItem: PreviewItem, options?: {anchor?:string}
     useStore.getState().setMarkdownPreviewActive(previewItem.id,true);
     useStore.setState(s=>({previewAnchorRequests:{...s.previewAnchorRequests,[previewItem.id]:{token:crypto.randomUUID(),anchor:options.anchor!}}}));
   }
-  updateLayout();
+  updateLayout('preview');
   schedulePersistCurrentWorkspaceUiState();
 }
 
@@ -236,7 +236,7 @@ export function togglePreviewPanel(forceOpen?: boolean): void {
   if (!open && s.quoteCandidate?.sourceKind === 'preview') s.clearQuoteCandidate();
   if (!open) previewOpenEpoch++;
   s.setPreviewOpen(open);
-  updateLayout();
+  updateLayout(open ? 'preview' : undefined);
   schedulePersistCurrentWorkspaceUiState();
 }
 

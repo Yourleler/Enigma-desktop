@@ -1,3 +1,4 @@
+import { updateLayout } from '../components/SidebarLayout';
 /**
  * desk-actions.ts — 工作台文件操作（纯函数，不依赖 DOM）
  *
@@ -1453,9 +1454,9 @@ export function updateDeskContextBtn(): void {
 export function toggleJianSidebar(forceOpen?: boolean): void {
   const s = useStore.getState();
   const newOpen = forceOpen !== undefined ? forceOpen : !s.jianOpen;
-  s.setJianOpen(newOpen);
+  useStore.setState({jianOpen: newOpen, jianAutoCollapsed: false, ...(!newOpen && s.layoutDrawer === 'workspace' ? {layoutDrawer: null} : {})});
   localStorage.setItem('hana-jian', newOpen ? 'open' : 'closed');
-  if (forceOpen === undefined) s.setJianAutoCollapsed(false);
+  updateLayout(newOpen ? 'workspace' : undefined);
 }
 
 export function initJian(): void {

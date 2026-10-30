@@ -14,6 +14,19 @@ beforeEach(()=>{
   useStore.setState({jianOpen:true,sidebarOpen:false});useEngineering.setState({snapshot:{connected:true},paneOpen:true,active:'group:reading'});
 });
 afterEach(()=>{cleanup();vi.unstubAllGlobals();useEngineering.setState({snapshot:null,paneOpen:false,active:''});});
+it('drawer cleanup does not restore stale inert state on a newly opened managed preview',()=>{
+  useStore.setState({previewOpen:false,layoutDrawer:'workspace'});
+  function ManagedPreview(){
+    const open=useStore(s=>s.previewOpen),drawer=useStore(s=>s.layoutDrawer);
+    return <section id="previewPanel" data-layout-managed="" inert={!open||!!drawer}><button>文档操作</button></section>;
+  }
+  const {container}=render(<><ManagedPreview/><WorkspaceCompanionRail/></>);
+  expect(container.querySelector('#previewPanel')).toHaveAttribute('inert');
+  act(()=>{useEngineering.setState({paneOpen:false});useStore.setState({previewOpen:true,jianOpen:false,layoutDrawer:null});});
+  expect(container.querySelector('#previewPanel')).not.toHaveAttribute('inert');
+  expect(screen.getByRole('button',{name:'文档操作'})).toBeInTheDocument();
+  useStore.setState({previewOpen:false});
+});
 it('removes collapsed right-panel controls from keyboard and accessibility navigation',()=>{
   useStore.setState({jianOpen:false});
   const {container}=render(<WorkspaceCompanionRail/>);

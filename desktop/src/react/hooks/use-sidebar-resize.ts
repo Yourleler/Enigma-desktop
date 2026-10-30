@@ -5,9 +5,10 @@
  * 在 useEffect 中绑定 resize handle 事件，并在 unmount 时完整清理。
  */
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useStore } from '../stores';
-import { CHAT_MIN_WIDTH } from '../layout-constants';
+import { CHAT_MIN_WIDTH, PREVIEW_MIN_WIDTH } from '../layout-constants';
+import { updateLayout } from '../components/SidebarLayout';
 
 type ResizeMax = number | (() => number);
 
@@ -15,8 +16,20 @@ export function useSidebarResize(): void {
   const currentTab = useStore(s => s.currentTab);
   const currentChannel = useStore(s => s.currentChannel);
   const previewOpen = useStore(s => s.previewOpen);
-  const sidebarOpen = useStore(s => s.sidebarOpen);
-  const jianOpen = useStore(s => s.jianOpen);
+  const [mountRevision, setMountRevision] = useState(0);
+
+  // Web panes load lazily. Bind when their real handles replace the fallback,
+  // including when a saved preview was already open before the module loaded.
+  useEffect(() => {
+    const ids = ['sidebarResizeHandle','jianResizeHandle','channelInspectorResizeHandle','previewResizeHandle'];
+    let handles = ids.map(id => document.getElementById(id));
+    const observer = new MutationObserver(() => {
+      const next = ids.map(id => document.getElementById(id));
+      if (next.some((handle, i) => handle !== handles[i])) { handles = next; setMountRevision(value => value + 1); }
+    });
+    observer.observe(document.querySelector('.app') || document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -31,21 +44,11 @@ export function useSidebarResize(): void {
     const LEFT_MIN = 180, LEFT_MAX = 400;
     const RIGHT_MIN = 200, RIGHT_MAX = 600;
     const CHANNEL_INSPECTOR_MIN = 220, CHANNEL_INSPECTOR_MAX = 620;
-    const PREVIEW_MIN = 320;
+    const PREVIEW_MIN = PREVIEW_MIN_WIDTH;
 
     const leftInner = sidebarEl?.querySelector('.sidebar-inner') as HTMLElement | null;
     const rightInner = jianSidebarEl?.querySelector('.jian-sidebar-inner') as HTMLElement | null;
     const previewInner = previewPanel?.querySelector('[data-preview-panel-inner]') as HTMLElement | null;
-
-    function cssWidth(name: string, fallback: number): number {
-      const parsed = parseInt(getComputedStyle(root).getPropertyValue(name), 10);
-      return Number.isFinite(parsed) ? parsed : fallback;
-    }
-
-    function visiblePanelWidth(el: HTMLElement | null, cssVar: string, fallback: number, visible: boolean): number {
-      if (!visible) return 0;
-      return el?.offsetWidth || cssWidth(cssVar, fallback);
-    }
 
     function clampWidth(value: number, min: number, max: number): number {
       const upper = Number.isFinite(max) ? Math.max(min, max) : min;
@@ -69,18 +72,7 @@ export function useSidebarResize(): void {
     }
 
     function getPreviewMaxWidth(): number {
-      const state = useStore.getState();
-      const occupiedWidth =
-        visiblePanelWidth(sidebarEl, '--sidebar-width', 240, state.sidebarOpen) +
-        visiblePanelWidth(jianSidebarEl, '--jian-sidebar-width', 260, state.jianOpen) +
-        visiblePanelWidth(
-          channelInspectorEl,
-          '--channel-inspector-width',
-          280,
-          state.currentTab === 'channels' && !!state.currentChannel,
-        );
-
-      return Math.max(PREVIEW_MIN, window.innerWidth - occupiedWidth - CHAT_MIN_WIDTH);
+      return Math.max(PREVIEW_MIN, window.innerWidth - CHAT_MIN_WIDTH);
     }
 
     function applySidebarWidth(w: number): void {
@@ -112,6 +104,7 @@ export function useSidebarResize(): void {
 
     function applyPreviewWidth(w: number): void {
       const px = w + 'px';
+      root.style.setProperty('--preview-preferred-width', px);
       root.style.setProperty('--preview-panel-width', px);
       if (previewInner) { previewInner.style.width = px; previewInner.style.minWidth = px; }
     }
@@ -127,16 +120,11 @@ export function useSidebarResize(): void {
     if (savedPreview) {
       const savedPreviewWidth = Number(savedPreview);
       if (Number.isFinite(savedPreviewWidth)) {
-        applyPreviewWidth(clampWidth(savedPreviewWidth, PREVIEW_MIN, getPreviewMaxWidth()));
+        applyPreviewWidth(Math.max(PREVIEW_MIN, savedPreviewWidth));
       }
     }
 
-    // A desktop window can shrink without dragging the panel handle. Keep
-    // the composer usable and reapply the preferred width when space returns.
-    let preferredPreviewWidth = Number(savedPreview) || cssWidth('--preview-panel-width', 580);
-    const fitPreviewToWindow = () => {
-      if (useStore.getState().previewOpen) applyPreviewWidth(clampWidth(preferredPreviewWidth, PREVIEW_MIN, getPreviewMaxWidth()));
-    };
+    const fitPreviewToWindow = () => updateLayout();
     fitPreviewToWindow();
     window.addEventListener('resize', fitPreviewToWindow);
 
@@ -187,6 +175,7 @@ export function useSidebarResize(): void {
           const w = clampWidth(startW + delta, min, maxWidth);
           liveWidth = w;
           setWidth(w);
+          updateLayout(storageKey === 'hana-sidebar-width' ? 'sidebar' : storageKey === 'hana-jian-width' ? 'workspace' : 'preview');
           const rect = handle!.getBoundingClientRect();
           handle!.style.setProperty('--handle-y', (e.clientY - rect.top) + 'px');
         }
@@ -259,7 +248,7 @@ export function useSidebarResize(): void {
       previewHandle,
       () => previewPanel,
       () => previewPanel?.offsetWidth || 580,
-      (w) => { preferredPreviewWidth = w; applyPreviewWidth(w); },
+      (w) => applyPreviewWidth(w),
       PREVIEW_MIN, getPreviewMaxWidth, 'hana-preview-width', true,
     );
 
@@ -267,5 +256,5 @@ export function useSidebarResize(): void {
       window.removeEventListener('resize', fitPreviewToWindow);
       for (const cleanup of cleanupFns) cleanup();
     };
-  }, [currentTab, currentChannel, previewOpen, sidebarOpen, jianOpen]);
+  }, [currentTab, currentChannel, previewOpen, mountRevision]);
 }

@@ -97,36 +97,6 @@ export function EngineeringToolbar() {
     };
   }, [sessionPath, connection]);
   useEffect(() => {
-    if (!snapshot?.connected) return;
-    const resize = () => {
-      const root = document.documentElement;
-      const narrow = window.innerWidth < 861;
-      const manual = parseInt(
-        root.style.getPropertyValue("--jian-sidebar-width"),
-        10,
-      );
-      const eng = useEngineering.getState();
-      const paneActive =
-        !!eng.snapshot?.connected && eng.paneOpen && !!eng.active;
-      if (narrow) {
-        if (Number.isFinite(manual))
-          root.style.removeProperty("--jian-sidebar-width");
-        // 工程抽屉不参与布局宽度：保证它不被 updateLayout 自动收起，
-        // 同时左栏收起给聊天让位
-        useStore.setState({
-          sidebarOpen: false,
-          sidebarAutoCollapsed: false,
-          ...(paneActive ? { jianOpen: true, jianAutoCollapsed: false } : {}),
-        });
-      } else if (Number.isFinite(manual) && window.innerWidth < manual + 640) {
-        root.style.removeProperty("--jian-sidebar-width");
-      }
-    };
-    resize();
-    window.addEventListener("resize", resize);
-    return () => window.removeEventListener("resize", resize);
-  }, [snapshot?.connected]);
-  useEffect(() => {
     // 产品设计语言覆盖整个工作台；
     // enigma-engineering 只控制工程右栏相关的布局/抽屉。
     document.body.classList.add("enigma-surface");

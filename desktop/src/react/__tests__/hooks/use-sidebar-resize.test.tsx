@@ -2,11 +2,10 @@
  * @vitest-environment jsdom
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, cleanup, fireEvent, render } from '@testing-library/react';
 import { useSidebarResize } from '../../hooks/use-sidebar-resize';
 import { useStore } from '../../stores';
-import { CHAT_MIN_WIDTH } from '../../layout-constants';
 
 function Harness() {
   useSidebarResize();
@@ -51,6 +50,21 @@ function installResizeDom() {
 }
 
 describe('useSidebarResize', () => {
+  afterEach(() => { cleanup(); vi.restoreAllMocks(); });
+  it('binds a preview handle that mounts after the shell restores an open document', async () => {
+    installResizeDom();
+    document.getElementById('previewResizeHandle')!.remove();
+    useStore.setState({previewOpen:true,sidebarOpen:false,jianOpen:false,currentTab:'chat'});
+    Object.defineProperty(window,'innerWidth',{configurable:true,value:1600});
+    const {unmount}=render(<Harness/>);
+    const handle=document.createElement('div');handle.id='previewResizeHandle';
+    await act(async()=>{document.body.appendChild(handle);});
+    fireEvent.mouseDown(handle,{clientX:900});
+    expect(document.querySelector('[data-resize-event-shield]')).toBeTruthy();
+    fireEvent.mouseMove(document,{clientX:800});fireEvent.mouseUp(document);
+    expect(window.localStorage.setItem).toHaveBeenCalledWith('hana-preview-width','680');
+    unmount();
+  });
   it('keeps chat space after native window shrinking and restores the preferred panel width',()=>{
     installResizeDom();
     useStore.setState({previewOpen:true,sidebarOpen:false,jianOpen:false,currentTab:'chat'});
@@ -59,13 +73,18 @@ describe('useSidebarResize', () => {
     const {unmount}=render(<Harness/>);
     Object.defineProperty(window,'innerWidth',{configurable:true,value:740});
     fireEvent(window,new Event('resize'));
-    expect(Number.parseInt(document.documentElement.style.getPropertyValue('--preview-panel-width'))).toBeLessThanOrEqual(740-CHAT_MIN_WIDTH);
+    expect(useStore.getState().previewExpanded).toBe(true);
+    expect(document.documentElement.style.getPropertyValue('--preview-panel-width')).toBe('740px');
     Object.defineProperty(window,'innerWidth',{configurable:true,value:1200});
     fireEvent(window,new Event('resize'));
     expect(document.documentElement.style.getPropertyValue('--preview-panel-width')).toBe('580px');
+    expect(useStore.getState().previewExpanded).toBe(false);
     unmount();useStore.setState({previewOpen:false});
   });
   beforeEach(() => {
+    document.documentElement.removeAttribute('style');
+    useStore.setState({previewOpen:false,previewExpanded:false,layoutDrawer:null,sidebarOpen:true,jianOpen:true,sidebarAutoCollapsed:false,jianAutoCollapsed:false,currentTab:'chat',currentChannel:null});
+    Object.defineProperty(window,'innerWidth',{configurable:true,value:1600});
     installResizeDom();
   });
 

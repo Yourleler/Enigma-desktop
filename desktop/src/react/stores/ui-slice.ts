@@ -18,6 +18,8 @@ export interface UiSlice {
   jianOpen: boolean;
   jianAutoCollapsed: boolean;
   previewOpen: boolean;
+  previewExpanded: boolean;
+  layoutDrawer: 'sidebar' | 'workspace' | null;
   welcomeVisible: boolean;
   currentTab: TabType;
   activePanel: ActivePanel;
@@ -61,6 +63,8 @@ export const createUiSlice = (
   jianOpen: true,
   jianAutoCollapsed: false,
   previewOpen: false,
+  previewExpanded: false,
+  layoutDrawer: null,
   welcomeVisible: true,
   currentTab: 'chat',
   activePanel: null,

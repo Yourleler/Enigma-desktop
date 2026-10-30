@@ -69,6 +69,8 @@ function App() {
   const sidebarOpen = useStore(s => s.sidebarOpen);
   const jianOpen = useStore(s => s.jianOpen);
   const previewOpen = useStore(s => s.previewOpen);
+  const previewExpanded = useStore(s => s.previewExpanded);
+  const layoutDrawer = useStore(s => s.layoutDrawer);
   const currentTab = useStore(s => s.currentTab);
   const currentTitle = useStore(s => {
     const session = s.sessions.find(item => item.path === s.currentSessionPath);
@@ -114,7 +116,7 @@ function App() {
         />
 
         {/* ── App body ── */}
-        <div className="app">
+        <div className="app" data-preview-expanded={previewExpanded || undefined} data-layout-drawer={layoutDrawer || undefined}>
           <ChatSidebar
             open={sidebarOpen && !isPluginTab}
             onNewSession={createNewSession}
