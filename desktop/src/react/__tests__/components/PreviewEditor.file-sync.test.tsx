@@ -991,6 +991,13 @@ describe('PreviewEditor file sync', () => {
       'Start\n![drop](<文本附件/drop-20260522-010203.png>)',
     );
   });
+  it('closes search on a primary pointer press without modifying the file',()=>{
+    vi.stubGlobal('PointerEvent',MouseEvent);
+    const ref=createRef<PreviewEditorHandle>();const {container}=render(<PreviewEditor ref={ref} content="keep this document" mode="code"/>);
+    act(()=>ref.current!.openSearch());const close=container.querySelector<HTMLButtonElement>('.cm-search [name=close]')!;
+    fireEvent.pointerDown(close,{button:0});expect(searchPanelOpen(ref.current!.getView()!.state)).toBe(false);expect(ref.current!.getView()!.state.doc.toString()).toBe('keep this document');vi.unstubAllGlobals();
+  });
+
   it('uses the upstream search/replace panel and saves replacements through the versioned path',async()=>{
     const ref=createRef<PreviewEditorHandle>();const rendered=render(<PreviewEditor ref={ref} content="alpha beta alpha" mode="code" filePath="/tmp/new-search.ts" fileVersion={{mtimeMs:1,size:16,sha256:"before"}}/>);
     await act(async()=>{await vi.advanceTimersByTimeAsync(10);});
