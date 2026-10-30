@@ -1,3 +1,4 @@
+import { AppearanceMenu } from '../../engineering/AppearanceMenu';
 import { AppIcon } from '../../ui/app-icons';
 import { ChannelTabBar } from '../channels/ChannelTabBar';
 import { WidgetButtons } from '../plugin/WidgetButtons';
@@ -48,7 +49,7 @@ export function AppTitlebar({
           onMouseDown={(e) => e.preventDefault()}
           onClick={onToggleSidebar}
         >
-          <AppIcon name="panelLeft" size={17}/>
+          <PanelToggleIcon side="left" open={sidebarOpen}/>
         </button>
         {showNewSessionButton && onNewSession && (
           <button
@@ -72,6 +73,7 @@ export function AppTitlebar({
       <div className="tb-right-group">
         {showChannelTabs && <div className="enigma-window-modes"><ChannelTabBar /></div>}
         {showWidgetButtons && <WidgetButtons />}
+        <AppearanceMenu compact/>
         {showPreviewToggle && onTogglePreview && (
           <button
             className={`tb-toggle tb-toggle-preview${previewOpen ? ' active' : ''}`}
@@ -92,14 +94,23 @@ export function AppTitlebar({
           aria-label={t('sidebar.jian')}
           aria-expanded={jianOpen}
           aria-controls="jianSidebar"
-          data-tooltip={jianOpen ? '收起右侧工作区' : '打开右侧工作区，继续查看工程内容'}
+          data-tooltip={jianOpen ? '收起文件与变更' : '打开目录文件、对话附件和代码变更'}
           onMouseDown={(e) => e.preventDefault()}
           onClick={onToggleJian}
         >
-          <AppIcon name="panelRight" size={17}/>
+          <PanelToggleIcon side="right" open={jianOpen}/>
         </button>
       </div>
       <WindowControls />
     </div>
   );
+}
+
+function PanelToggleIcon({side,open}:{side:'left'|'right';open:boolean}) {
+  return <svg className="enigma-panel-toggle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <rect x="3" y="3" width="18" height="18" rx="2"/>
+    <path d={side==='left'?'M9 3v18':'M15 3v18'}/>
+    <path className="enigma-panel-toggle-fill" d={side==='left'?'M4 4h4v16H4z':'M16 4h4v16h-4z'} fill="currentColor" stroke="none" opacity={open ? 0.22 : 0}/>
+    <path className="enigma-panel-toggle-arrow" d={side==='left'?'m13 9 3 3-3 3':'m11 9-3 3 3 3'} style={{transformOrigin:side==='left'?'14.5px 12px':'9.5px 12px',transform:`rotate(${open?180:0}deg)`}}/>
+  </svg>;
 }

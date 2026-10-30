@@ -1,3 +1,4 @@
+import { usePanelExit } from '../../hooks/use-panel-exit';
 import { useChangesPanel } from '../../stores/changes-panel-store';
 import { useStore } from '../../stores';
 import { RegionalErrorBoundary } from '../RegionalErrorBoundary';
@@ -20,6 +21,7 @@ export function WorkspaceCompanionRail() {
   const [narrow,setNarrow]=useState(()=>window.innerWidth<=860);
   const rail=useRef<HTMLElement>(null);
   const drawer=(layoutDrawer==='workspace'||narrow&&engineering)&&jianOpen;
+  const {floating,entering} = usePanelExit(drawer);
   const close=()=>{useChangesPanel.setState({open:false});useEngineering.setState({paneOpen:false});rememberEngineeringView();useStore.setState({jianOpen:false,jianAutoCollapsed:false,layoutDrawer:null});};
   useEffect(() => { document.body.classList.toggle('enigma-changes-open', changesOpen); updateLayout(); return () => document.body.classList.remove('enigma-changes-open'); }, [changesOpen]);
   useEffect(()=>{
@@ -55,10 +57,10 @@ export function WorkspaceCompanionRail() {
     <>
       <WorkspaceFileChangeBridge />
       {drawer&&createPortal(<button className="enigma-drawer-scrim" aria-label="关闭内容面板遮罩" tabIndex={-1} onClick={close}/>,document.body)}
-      <aside ref={rail} className={`jian-sidebar${jianOpen ? '' : ' collapsed'}${drawer?' enigma-drawer':''}`} id="jianSidebar" data-layout-managed="" data-auto-collapsed={autoCollapsed || undefined} inert={!jianOpen || layoutDrawer === 'sidebar'} aria-hidden={!jianOpen} role={drawer?'dialog':undefined} aria-modal={drawer||undefined} aria-label={drawer?(engineering?'工程内容面板':'文件与工作台'):undefined}>
+      <aside ref={rail} className={`jian-sidebar${jianOpen ? '' : ' collapsed'}${drawer?' enigma-drawer':''}`} id="jianSidebar" data-floating={floating || undefined} data-panel-entering={entering || undefined} data-layout-managed="" data-auto-collapsed={autoCollapsed || undefined} inert={!jianOpen || layoutDrawer === 'sidebar'} aria-hidden={!jianOpen} role={drawer?'dialog':undefined} aria-modal={drawer||undefined} aria-label={drawer?(engineering?'工程内容面板':'文件与变更'):undefined}>
         <div className="resize-handle resize-handle-left" id="jianResizeHandle"></div>
         <div className="jian-sidebar-inner">
-          {drawer && <button className="enigma-drawer-close" onClick={close}>关闭工作台</button>}
+          {drawer && <button className="enigma-drawer-close" onClick={close}>关闭文件侧栏</button>}
           <RegionalErrorBoundary region="right-workspace">
             <RightWorkspacePanel />
           </RegionalErrorBoundary>

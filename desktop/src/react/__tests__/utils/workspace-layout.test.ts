@@ -31,6 +31,10 @@ describe('workspace width arbitration', () => {
     expect(resolveWorkspaceLayout({...base,sidebarWanted:false})).toMatchObject({sidebarOpen:false,sidebarAutoCollapsed:false});
     expect(resolveWorkspaceLayout({...base,width:960,previewOpen:false,sidebarAutoCollapsed:true,workspaceAutoCollapsed:true})).toMatchObject({jianOpen:true,sidebarOpen:false});
   });
+  it('does not open a floating panel just because the window became narrow', () => {
+    expect(resolveWorkspaceLayout({...base,width:780,previewOpen:false,engineeringDrawer:true})).toMatchObject({layoutDrawer:null,jianOpen:false});
+    expect(resolveWorkspaceLayout({...base,width:780,previewOpen:false,engineeringDrawer:true,intent:'workspace'})).toMatchObject({layoutDrawer:'workspace',jianOpen:true});
+  });
   it('does not squeeze chat across narrow/wide sizes, stored widths and pane combinations', () => {
     for (const width of [420,600,740,899,900,960,1024,1280,1440,1920]) for (const sidebarWidth of [180,250,400]) for (const workspaceWidth of [200,320,600]) for (const previewOpen of [false,true]) {
       const layout=resolveWorkspaceLayout({...base,width,sidebarWidth,workspaceWidth,previewOpen});

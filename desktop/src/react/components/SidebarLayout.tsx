@@ -77,6 +77,7 @@ export function SidebarLayout({ restorePreference = true }: { restorePreference?
       if (['sidebarOpen','jianOpen','previewOpen','currentTab','currentChannel','layoutDrawer'].some(key => s[key as keyof typeof s] !== previous[key as keyof typeof previous])) schedule();
     });
     const unsubscribeEngineering = useEngineering.subscribe((s, previous) => {
+      if (s.sessionPath !== previous.sessionPath || s.connectionId !== previous.connectionId) { schedule(); return; }
       if (s.paneOpen && s.active && (s.paneOpen !== previous.paneOpen || s.active !== previous.active)) { useChangesPanel.setState({open:false}); updateLayout('workspace'); }
       else if (s.paneOpen !== previous.paneOpen || s.active !== previous.active || !!s.snapshot?.connected !== !!previous.snapshot?.connected) schedule();
     });

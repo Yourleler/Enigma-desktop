@@ -11,7 +11,7 @@ import {buildSessionProjectView} from '../session-sections';
 import {sessionScopedListIncludes} from '../../stores/session-slice';
 import './ProjectContextBar.css';
 
-export function ProjectContextBar(){
+export function ProjectContextBar({compact=false}:{compact?:boolean}={}){
   const sessions=useStore(s=>s.sessions),path=useStore(s=>s.currentSessionPath),pendingId=useStore(s=>s.pendingProjectId),catalog=useStore(s=>s.sessionProjectCatalog),connection=useStore(s=>s.activeServerConnectionId);
   const folder=useStore(s=>s.selectedFolder||s.deskBasePath),switching=useStore(s=>!!s.pendingSessionSwitchPath),running=useStore(s=>!!s.currentSessionPath&&sessionScopedListIncludes(s,s.streamingSessions,s.currentSessionPath));
   const session=sessions.find(s=>s.path===path);
@@ -35,10 +35,10 @@ export function ProjectContextBar(){
     }catch(e){if(token===request.current)setError(e instanceof Error?e.message:'无法更改项目');}
     finally{if(token===request.current)setBusy(false);}
   };
-  return <div className="enigma-project-context">
+  return <div className="enigma-project-context" data-compact={compact||undefined}>
     <AppIcon name="project" size={16}/>
     <SelectWidget ariaLabel="对话归属项目" value={id} disabled={busy||running||switching} options={[{value:UNCATEGORIZED_PROJECT_ID,label:'未归属项目',description:'作为单独对话保留'},...projects.map(p=>({value:p.id,label:p.name,description:catalog.projects.find(r=>r.id===p.id)?.workspacePath||cwdFromAutoProjectId(p.id)||'共享项目背景与笔记'}))]} onChange={next=>void choose(next)} popupMinWidth={280}/>
-    {project&&<button onClick={()=>{setError('');setSettings(true);}} title="查看和编辑项目共享背景、笔记与协作目录"><AppIcon name="layers" size={14}/>共享背景{record?.sharedContext||record?.sharedNotes?' · 已设置':''}</button>}
+    {project&&<button onClick={()=>{setError('');setSettings(true);}} aria-label="项目共享背景" data-tooltip="查看和编辑项目共享背景、笔记与协作目录"><AppIcon name="layers" size={14}/><span className="enigma-project-shared-label">共享背景{record?.sharedContext||record?.sharedNotes?' · 已设置':''}</span></button>}
     {running&&<span>运行中，结束后可调整归属</span>}
     {error&&<span role="alert">{error}</span>}
     {settings&&project&&createPortal(<ProjectSettings key={JSON.stringify([id,connection])} id={id} name={project.name} record={record} onClose={()=>setSettings(false)}/>,document.body)}

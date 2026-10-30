@@ -26,7 +26,7 @@ const choices: { id: string; label: string; icon: AppIconName }[] = [
   { id: 'auto', label: '跟随系统', icon: 'monitor' },
 ];
 
-export function AppearanceMenu() {
+export function AppearanceMenu({compact=false}:{compact?:boolean}={}) {
   const [theme, setTheme] = useState(readAppearance);
   const [material, setMaterial] = useMaterialPreferences();
   const [saving, setSaving] = useState(false);
@@ -52,9 +52,9 @@ export function AppearanceMenu() {
   };
   const tone = theme.dark ? '深色' : '浅色';
   const automatic = theme.selection === 'auto';
-  return <SurfaceMenu label="工作台外观" stayOpen triggerClassName="enigma-appearance-trigger" panelClassName="enigma-appearance-menu"
+  return <SurfaceMenu label="工作台外观" stayOpen triggerClassName={`enigma-appearance-trigger${compact?' enigma-appearance-icon':''}`} panelClassName="enigma-appearance-menu"
     hint={`当前${automatic ? '跟随系统，' : ''}${tone}；玻璃${material.glass ? '已开启' : '已关闭'}，动效${material.motion ? '已开启' : '已关闭'}`}
-    icon={<><AppIcon name={theme.dark ? 'moon' : 'sun'} size={17}/><span>外观 · {automatic ? '自动' : tone}</span><AppIcon name="chevronDown" size={12}/></>}>
+    icon={<><AppIcon name={theme.dark ? 'moon' : 'sun'} size={17}/>{!compact&&<><span>外观 · {automatic ? '自动' : tone}</span><AppIcon name="chevronDown" size={12}/></>}</>}>
     <div className="enigma-appearance-heading"><strong>主题</strong><span>{automatic ? '跟随系统 · ' : '当前：'}{tone}</span></div>
     <div className="enigma-appearance-themes" role="group" aria-label="主题模式" data-glass-segmented="">
       <GlassSelection selection={theme.selection}/>

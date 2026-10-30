@@ -8,7 +8,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useStore } from '../../stores';
 import type { TabType, PluginPageInfo } from '../../types';
-import { toggleSidebar } from '../SidebarLayout';
+import { updateLayout } from '../SidebarLayout';
 import { resolvePluginTitle } from '../../utils/resolve-plugin-title';
 import { reorderTabs, hidePluginTab, showPluginTab } from '../../stores/plugin-ui-actions';
 import { hydrateCurrentChannelIfNeeded } from '../../stores/channel-actions';
@@ -42,7 +42,7 @@ export function switchTab(tab: TabType) {
   if (!isPluginTab) {
     const savedLeft = localStorage.getItem(`hana-sidebar-${tab}`);
     const wantLeftOpen = savedLeft !== 'closed';
-    if (s.sidebarOpen !== wantLeftOpen) toggleSidebar(wantLeftOpen);
+    if (s.sidebarOpen !== wantLeftOpen) { useStore.setState({sidebarOpen:wantLeftOpen,sidebarAutoCollapsed:false,layoutDrawer:null}); updateLayout(); }
   }
 
 }
@@ -208,6 +208,7 @@ export function ChannelTabBar() {
             key={tab}
             className={cls}
             data-tab={tab}
+            data-tooltip={tab === 'channels' ? '多个助手参与的群聊，与普通工作对话分开' : tab === 'chat' ? '个人工作对话与项目' : undefined}
             aria-pressed={isActive}
             draggable={tab !== 'chat'}
             onClick={() => handleTabClick(tab)}

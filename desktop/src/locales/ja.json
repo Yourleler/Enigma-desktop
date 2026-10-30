@@ -44,7 +44,7 @@
     "sendFailed": "送信に失敗しました"
   },
   "channel": {
-    "tab": "チャンネル",
+    "tab": "エージェントグループ",
     "chatTab": "チャット",
     "moreTabs": "その他のタブ",
     "empty": "チャンネルはまだありません ✿",
@@ -146,7 +146,7 @@
     "expand": "チャット一覧を展開",
     "empty": "チャットはまだありません ✿",
     "activity": "アクティビティ",
-    "jian": "デスク",
+    "jian": "ファイルと変更",
     "bridge": "ソーシャル連携",
     "toggle": "サイドバー",
     "bridgeShort": "連携",
@@ -2720,7 +2720,7 @@
     "tabs": {
       "label": "右側ワークスペース",
       "sessionFiles": "会話ファイル",
-      "workspace": "ワークスペース"
+      "workspace": "フォルダー内のファイル"
     },
     "sessionFiles": {
       "title": "会話ファイル",
@@ -2772,7 +2772,7 @@
     "cwdSkillShadowed": "優先元により無効",
     "deleteSkill": "スキルを削除",
     "openInFinder": "フォルダを開く",
-    "jianLabel": "フォルダーの指示",
+    "jianLabel": "フォルダー巡回の指示",
     "fullPath": "完全なパスを表示",
     "jianHint": "フォルダーの用途とファイルの処理方法を記入します。自動保存され、巡回を有効にすると参照されます。",
     "cwdSkillsHelp": "このフォルダーで使えるスキルと用途を確認",

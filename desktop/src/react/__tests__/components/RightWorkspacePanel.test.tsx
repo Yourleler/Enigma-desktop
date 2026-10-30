@@ -883,6 +883,14 @@ describe('RightWorkspacePanel', () => {
     expect(screen.queryByRole('button', { name: `复制路径 ${name}` })).not.toBeInTheDocument();
   });
 
+  it('opens the current folder through the native platform and retains a keyboard-accessible title',()=>{
+    const openFolder=vi.fn(); window.platform={...window.platform,openFolder};
+    useStore.setState({deskBasePath:'/tmp/enigma-folder',deskWorkspaceMountId:null});
+    render(<RightWorkspacePanel/>);
+    fireEvent.click(screen.getByRole('button',{name:'在文件管理器打开 enigma-folder'}));
+    expect(openFolder).toHaveBeenCalledWith('/tmp/enigma-folder');
+  });
+
   it('collapses and expands the Jian drawer without unmounting its editor state', () => {
     render(<RightWorkspacePanel />);
 
@@ -893,10 +901,11 @@ describe('RightWorkspacePanel', () => {
     fireEvent.click(screen.getByRole('button', { name: '收起文件夹说明' }));
 
     expect(drawer).toHaveAttribute('data-open', 'false');
-    expect(screen.getByRole('button', { name: '展开文件夹说明' })).toHaveAttribute('aria-expanded', 'false');
+    expect(drawer).not.toBeVisible();
+    expect(screen.getByRole('button', {name:'目录巡检说明'})).toHaveAttribute('aria-expanded','false');
     expect(screen.getByPlaceholderText('写点什么...').closest('[inert]')).not.toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: '展开文件夹说明' }));
+    fireEvent.click(screen.getByRole('button', { name: '目录巡检说明' }));
 
     expect(drawer).toHaveAttribute('data-open', 'true');
     expect(screen.getByRole('button', { name: '收起文件夹说明' })).toHaveAttribute('aria-expanded', 'true');

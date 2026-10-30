@@ -1,3 +1,4 @@
+import './ConversationHeader.css';
 import {ProjectContextBar} from '../chat/ProjectContextBar';
 import { SessionClock } from '../chat/SessionClock';
 import { EngineeringToolbar } from '../../engineering/Engineering';
@@ -29,9 +30,11 @@ export function ChatPage({
 
   return (
     <>
-      <EngineeringToolbar />
-      <ProjectContextBar/>
-      <SessionClock />
+      <div className="enigma-conversation-header">
+        <ProjectContextBar compact/>
+        <EngineeringToolbar compact/>
+        <SessionClock compact/>
+      </div>
       <div className={`chat-area${hasPanels ? ' has-panels' : ''}`}>
         <WelcomeContainer />
         <RegionalErrorBoundary region={`${regionPrefix}chat`} resetKeys={[currentSessionPath]}>

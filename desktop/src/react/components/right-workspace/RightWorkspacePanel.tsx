@@ -1,3 +1,7 @@
+import { deskNativeRootDir, loadDeskFiles } from '../../stores/desk-actions';
+import { canUseNativeResourcePath } from '../../services/resource-access';
+import { resolveServerConnection } from '../../services/server-connection';
+import { isWebRuntime } from '../../utils/platform-runtime';
 import { useChangesPanel } from '../../stores/changes-panel-store';
 import { RepositoryChangesCard, RepositoryChangesPanel } from './RepositoryChangesCard';
 import { EngineeringPanel } from '../../engineering/Engineering';
@@ -43,8 +47,9 @@ function JianDrawer() {
   const t = window.t ?? ((p: string) => p);
   const label = t('desk.jianLabel');
   const bodyId = useId();
+
   return (
-    <section className={styles.jianDrawer} data-open={open ? 'true' : 'false'} role="region" aria-label={label}>
+    <section hidden={!open} className={styles.jianDrawer} data-open={open ? 'true' : 'false'} role="region" aria-label={label}>
       <button className={styles.jianHeader} type="button" aria-expanded={open} aria-controls={bodyId}
         aria-label={open ? t('rightWorkspace.jian.collapse') : t('rightWorkspace.jian.expand')}
         onClick={() => setOpen(!open)}>
@@ -75,16 +80,24 @@ function WorkspaceHeader() {
     ? (deskWorkspaceLabel || deskWorkspaceMountId)
     : workspaceDisplayName(deskBasePath || selectedFolder || homeFolder, t('desk.title'));
   const titlePath = deskWorkspaceMountId ? title : (deskBasePath || selectedFolder || homeFolder || undefined);
+  const nativeRoot = useStore(s => canUseNativeResourcePath({connection:resolveServerConnection(s)}) ? deskNativeRootDir(s) : null);
+  const notesOpen = useStore(s => s.jianDrawerOpen);
+  const nativeOpen = !isWebRuntime() && !!nativeRoot && typeof window.platform?.openFolder === 'function';
+  const openDirectory = () => {
+    if (nativeOpen) { window.platform?.openFolder?.(nativeRoot!); return; }
+    useStore.getState().setRightWorkspaceTab('workspace'); void loadDeskFiles('');
+  };
 
   return (
     <>
       <div className={styles.workspaceHeader}>
-        <div className={styles.workspaceTitle} title={titlePath}><AppIcon name="project" size={18}/><span>{title}</span></div>
+        <button type="button" className={styles.workspaceTitle} onClick={openDirectory} aria-label={nativeOpen?`在文件管理器打开 ${title}`:`打开目录文件 ${title}`} data-tooltip={`${nativeOpen?'在系统文件管理器中打开':'查看这个目录的文件'}\n${titlePath||''}`}><AppIcon name="project" size={18}/><span>{title}</span></button>
         <div className={styles.workspaceHeaderTools}>
           {titlePath && <details className={styles.workspacePath}>
             <summary>{t('desk.fullPath')}</summary>
             <code>{titlePath}</code>
           </details>}
+          <button type="button" className={styles.directoryNotes} aria-label="目录巡检说明" aria-expanded={notesOpen} data-tooltip="给自动巡检填写处理要求；不会自动作为每轮聊天的共享背景" onClick={()=>useStore.getState().setJianDrawerOpen(!notesOpen)}><AppIcon name="file" size={14}/>巡检说明</button>
           <DeskCwdSkillsButton inline />
         </div>
       </div>
@@ -129,6 +142,7 @@ export function RightWorkspacePanel({ compact = false }: { compact?: boolean }) 
         data-jian-open={jianDrawerOpen ? 'true' : 'false'}
       >
         <WorkspaceHeader />
+        <JianDrawer />
         <RepositoryChangesCard />
         <div className={styles.tabs} role="tablist" aria-label={t('rightWorkspace.tabs.label')} data-glass-segmented="">
           <GlassSelection selection={activeTab}/>
@@ -141,6 +155,7 @@ export function RightWorkspacePanel({ compact = false }: { compact?: boolean }) 
                 className={`${styles.tab}${selected ? ` ${styles.tabActive}` : ''}`}
                 role="tab"
                 aria-selected={selected}
+                data-tooltip={tab.id==='workspace'?'浏览当前工作目录中的全部文件':'本对话上传和生成的文件'}
                 onClick={() => setRightWorkspaceTab(tab.id)}
               >
                 {t(tab.labelKey)}
@@ -151,7 +166,6 @@ export function RightWorkspacePanel({ compact = false }: { compact?: boolean }) 
         <div className={styles.content} role="tabpanel">
           <TabContent activeTab={activeTab} />
         </div>
-        <JianDrawer />
       </div>
       {!compact && (
         <>

@@ -38,8 +38,6 @@ export function resolveWorkspaceLayout(input: LayoutInput) {
   let drawer: LayoutDrawer = input.intent === 'preview' ? null : input.drawer;
   if (input.intent === 'sidebar') drawer = sidebarInline ? null : 'sidebar';
   if (input.intent === 'workspace') drawer = workspaceInline ? null : 'workspace';
-  if (input.engineeringDrawer && input.workspaceWanted && input.intent !== 'preview'
-    && (!input.previewOpen || input.drawer === 'workspace' || input.intent === 'workspace')) drawer = 'workspace';
   if (drawer === 'sidebar' && (!input.sidebarWanted || sidebarInline)) drawer = null;
   if (drawer === 'workspace' && (!input.workspaceWanted || workspaceInline)) drawer = null;
   return {

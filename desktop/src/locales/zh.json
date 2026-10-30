@@ -44,7 +44,7 @@
     "sendFailed": "发送失败"
   },
   "channel": {
-    "tab": "频道",
+    "tab": "助手群聊",
     "chatTab": "聊天",
     "moreTabs": "更多标签",
     "empty": "还没有频道 ✿",
@@ -52,7 +52,7 @@
     "dmHint": "仅显示主助手的私聊",
     "groupLabel": "频道",
     "noMessages": "暂无消息",
-    "selectHint": "选择一个频道或私聊开始对话",
+    "selectHint": "选择一个助手群聊；普通 coding 对话请回到“聊天”。",
     "nameExists": "该频道名已存在",
     "membersCount": "位成员",
     "info": "频道信息",
@@ -78,9 +78,9 @@
     "deleteConfirm": "确定删除频道「{name}」？消息记录将不可恢复。",
     "deleted": "频道已删除",
     "deleteFailed": "删除失败",
-    "warningTitle": "关于频道",
-    "warningBody": "我相信让不同记忆与思维方式的助手互动、聊天可以带来更多灵感的碰撞，所以我给 agents 们搭建了一个可以互相说话的地方，在你不在的时候也可以消耗用不完的 token。\n\n但你需要注意的是，频道功能目前是测试版，可能会出现以下问题：\n1. token 消耗过多\n2. 助手未按预期回复\n3. 记忆出现错乱\n\n建议谨慎使用",
-    "warningConfirm": "我了解了，开启频道",
+    "warningTitle": "关于助手群聊",
+    "warningBody": "让多个助手在同一个群组中讨论，并分别保留聊天与记忆。你可以选择成员并设置工具权限和主动回复。各助手回复会使用模型额度；只做个人 coding 任务时无需开启。",
+    "warningConfirm": "开启助手群聊",
     "disabled": "频道功能已关闭",
     "toggleLabel": "频道功能开关",
     "members": "成员",
@@ -146,7 +146,7 @@
     "expand": "展开对话列表",
     "empty": "还没有对话哦 ✿",
     "activity": "助手活动",
-    "jian": "工作台",
+    "jian": "文件与变更",
     "bridge": "社交平台",
     "toggle": "侧边栏",
     "bridgeShort": "社交平台",
@@ -365,7 +365,7 @@
     "placeholder": "说点什么...",
     "floatingInput": "选区浮动输入",
     "selectFolder": "选择工作文件夹",
-    "workspace": "工作台：",
+    "workspace": "工作目录：",
     "project": "项目：",
     "selectWorkspace": "选择工作台",
     "currentWorkspace": "本次工作台",
@@ -2719,7 +2719,7 @@
     "tabs": {
       "label": "右侧工作台",
       "sessionFiles": "对话文件",
-      "workspace": "工作台"
+      "workspace": "目录文件"
     },
     "sessionFiles": {
       "title": "对话文件",
@@ -2753,8 +2753,8 @@
       }
     },
     "jian": {
-      "collapse": "收起文件夹说明",
-      "expand": "展开文件夹说明"
+      "collapse": "收起目录巡检说明",
+      "expand": "展开目录巡检说明"
     }
   },
   "desk": {
@@ -2771,9 +2771,9 @@
     "cwdSkillShadowed": "已被覆盖",
     "deleteSkill": "删除技能",
     "openInFinder": "打开文件夹",
-    "jianLabel": "文件夹说明",
+    "jianLabel": "目录巡检说明",
     "fullPath": "查看完整路径",
-    "jianHint": "记录目录用途与处理要求，内容会自动保存。开启工作台巡检后，助手会读取这些要求。",
+    "jianHint": "给自动巡检填写这个目录的处理要求。内容自动保存；只有开启目录巡检后才会定期处理。普通聊天的共享背景在项目设置中填写。",
     "cwdSkillsHelp": "查看当前目录可用的技能及其用途",
     "jianPlaceholder": "例如：文档按项目归档；保留原始文件；只整理本文件夹。",
     "execLogLabel": "执行记录",
@@ -2826,8 +2826,8 @@
       "activeShort": "{count} 类"
     },
     "search": {
-      "placeholder": "搜索工作台",
-      "label": "搜索工作台文件",
+      "placeholder": "搜索目录文件",
+      "label": "搜索目录文件",
       "results": "搜索结果",
       "empty": "没有找到匹配文件",
       "root": "根目录"

@@ -44,7 +44,7 @@
     "sendFailed": "Send failed"
   },
   "channel": {
-    "tab": "Channels",
+    "tab": "Agent groups",
     "chatTab": "Chat",
     "moreTabs": "More tabs",
     "empty": "No channels yet ✿",
@@ -146,7 +146,7 @@
     "expand": "Expand chat list",
     "empty": "No chats yet ✿",
     "activity": "Activity",
-    "jian": "Desk",
+    "jian": "Files & changes",
     "bridge": "Social Platforms",
     "toggle": "Sidebar",
     "bridgeShort": "Bridge",
@@ -2719,7 +2719,7 @@
     "tabs": {
       "label": "Right workspace",
       "sessionFiles": "Conversation Files",
-      "workspace": "Workspace"
+      "workspace": "Folder files"
     },
     "sessionFiles": {
       "title": "Conversation Files",
@@ -2771,7 +2771,7 @@
     "cwdSkillShadowed": "Shadowed",
     "deleteSkill": "Delete Skill",
     "openInFinder": "Open Folder",
-    "jianLabel": "Folder instructions",
+    "jianLabel": "Folder automation notes",
     "fullPath": "Show full path",
     "jianHint": "Describe this folder and how to handle its files. Edits save automatically. Workspace patrol reads these instructions when enabled.",
     "cwdSkillsHelp": "View the skills available in this folder and what they do",

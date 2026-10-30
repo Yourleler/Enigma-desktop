@@ -44,7 +44,7 @@
     "sendFailed": "보내기 실패"
   },
   "channel": {
-    "tab": "채널",
+    "tab": "에이전트 그룹",
     "chatTab": "채팅",
     "moreTabs": "더 많은 탭",
     "empty": "아직 채널이 없어요 ✿",
@@ -146,7 +146,7 @@
     "expand": "대화 목록 펼치기",
     "empty": "아직 대화가 없어요 ✿",
     "activity": "활동",
-    "jian": "책상",
+    "jian": "파일 및 변경",
     "bridge": "소셜 플랫폼",
     "toggle": "사이드바",
     "bridgeShort": "연결",
@@ -2720,7 +2720,7 @@
     "tabs": {
       "label": "오른쪽 작업공간",
       "sessionFiles": "대화 파일",
-      "workspace": "작업공간"
+      "workspace": "폴더 파일"
     },
     "sessionFiles": {
       "title": "대화 파일",
@@ -2772,7 +2772,7 @@
     "cwdSkillShadowed": "우선 소스에 의해 비활성",
     "deleteSkill": "스킬 삭제",
     "openInFinder": "폴더 열기",
-    "jianLabel": "폴더 지침",
+    "jianLabel": "폴더 점검 지침",
     "fullPath": "전체 경로 보기",
     "jianHint": "폴더 용도와 파일 처리 방법을 적습니다. 자동 저장되며 작업 공간 순찰을 켜면 이 지침을 참고합니다.",
     "cwdSkillsHelp": "이 폴더에서 사용 가능한 스킬과 용도 보기",

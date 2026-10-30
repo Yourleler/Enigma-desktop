@@ -19,23 +19,33 @@
 .enigma-preview-return:hover, .enigma-drawer-close:hover { background: var(--overlay-light); }
 .enigma-preview-return:focus-visible, .enigma-drawer-close:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
 .enigma-layout-scrim { position: fixed; inset: var(--titlebar-h,44px) 0 0; z-index: 790; padding: 0; border: 0; background: rgb(0 0 0 / 24%); }
-.app[data-layout-drawer="sidebar"] > .sidebar:not(.collapsed),
-.app .jian-sidebar.enigma-drawer:not(.collapsed) {
+/* Keep floating surfaces in the same coordinate space through both directions. */
+body.enigma-surface .app :is(.sidebar,.jian-sidebar)[data-floating="true"] {
   position: fixed; top: var(--titlebar-h,44px); bottom: 8px; z-index: 800;
   max-width: calc(100vw - 24px); border-radius: var(--lg-radius-panel,16px);
-  background: var(--bg-glass, var(--bg)); backdrop-filter: blur(24px);
-  border: 1px solid var(--border); box-shadow: 0 18px 54px rgb(0 0 0 / 24%);
+  background: color-mix(in srgb, var(--eg-sidebar, var(--bg)) 32%, transparent);
+  backdrop-filter: blur(22px) saturate(1.18); border: 1px solid var(--border);
+  box-shadow: 0 18px 54px rgb(0 0 0 / 24%); opacity:1;
+  transition: transform 180ms cubic-bezier(.22,.7,.25,1), opacity 180ms ease !important;
 }
-.app[data-layout-drawer="sidebar"] > .sidebar:not(.collapsed) { left: 8px; width: min(var(--sidebar-width), calc(100vw - 24px)); }
-.app .jian-sidebar.enigma-drawer:not(.collapsed) { right: 8px; width: min(420px, calc(100vw - 24px)) !important; }
-.app[data-layout-drawer="sidebar"] .sidebar-inner,
-.app .jian-sidebar.enigma-drawer .jian-sidebar-inner { width: 100% !important; min-width: 0 !important; padding: 0; }
-.app[data-layout-drawer="sidebar"] #sidebarResizeHandle,
-.app .jian-sidebar.enigma-drawer #jianResizeHandle { display: none; }
+body.enigma-surface .app .sidebar[data-floating="true"] { left:8px; width:min(var(--sidebar-width),calc(100vw - 24px)) !important; }
+body.enigma-surface .app .jian-sidebar[data-floating="true"] { right:8px; width:min(var(--jian-sidebar-width),calc(100vw - 24px)) !important; }
+body.enigma-surface .app .sidebar[data-floating="true"]:is(.collapsed,[data-panel-entering="true"]) { transform:translateX(calc(-100% - 16px)); opacity:0; pointer-events:none; }
+body.enigma-surface .app .jian-sidebar[data-floating="true"]:is(.collapsed,[data-panel-entering="true"]) { transform:translateX(calc(100% + 16px)); opacity:0; pointer-events:none; }
+.app [data-floating="true"] :is(.sidebar-inner,.jian-sidebar-inner) { width:100% !important; min-width:0 !important; padding:0; }
+.app [data-floating="true"] :is(#sidebarResizeHandle,#jianResizeHandle) { display:none; }
+body.enigma-surface .app :is(.sidebar,.jian-sidebar):not([data-floating="true"]) { transition:width 180ms cubic-bezier(.22,.7,.25,1); }
+body.enigma-surface .app :is(.sidebar-inner,.jian-sidebar-inner) { transform:none; transition:opacity 180ms ease; }
+body.enigma-surface .app .collapsed :is(.sidebar-inner,.jian-sidebar-inner) { transform:none; }
+body.enigma-surface.enigma-motion-off .app :is(.sidebar,.jian-sidebar,.sidebar-inner,.jian-sidebar-inner) { transition:none !important; }
 @media (prefers-reduced-motion: reduce) { .app > .sidebar, .app > .jian-sidebar, #previewPanel { transition: none !important; } }
 
 /* Reading a patch needs a wider surface; the same layout arbiter makes room. */
 :root:has(body.enigma-changes-open) { --jian-sidebar-width: clamp(360px, 42vw, 680px); }
 @media (max-width: 860px) {
-  body.enigma-changes-open .jian-sidebar.enigma-drawer:not(.collapsed) { z-index: 800; top: var(--titlebar-h,44px); bottom: 8px; right: 8px; width: min(680px, calc(100vw - 16px)) !important; }
+  body.enigma-changes-open .jian-sidebar[data-floating="true"] { z-index: 800; top: var(--titlebar-h,44px); bottom: 8px; right: 8px; width: min(680px, calc(100vw - 16px)) !important; }
 }
+
+body.enigma-surface.enigma-glass-off .app :is(.sidebar,.jian-sidebar)[data-floating="true"] { background:var(--eg-sidebar,var(--bg)); backdrop-filter:none; }
+
+body.enigma-surface .app .sidebar[data-floating="true"] { padding-top:0; }

@@ -62,7 +62,7 @@ const EMPTY_LIST: any[] = [];
 const featureHint = (id: string) => featureSections.flatMap(section => section.items).find(item => item.id === id)?.description || ({ project: '查看仓库、依赖和工程配置', plan: '查看任务目标、执行步骤与验收进度', reading: '按固定版本查看智能阅读、影响范围和完整差异', artifacts: '查看本任务产物、报告及其版本', timeline: '查看上下文与代码检查点，预览后选择恢复', conductor: '查看子任务分工、依赖与进度' } as Record<string, string>)[id];
 
 
-export function EngineeringToolbar() {
+export function EngineeringToolbar({compact=false}:{compact?:boolean}={}) {
   const sessionPath = useStore((s) => s.currentSessionPath) || "";
   const nativeSessionId=useStore(s=>s.currentSessionId);
   const connection = useStore((s) => s.activeServerConnectionId);
@@ -119,6 +119,21 @@ export function EngineeringToolbar() {
   const operation = snapshot?.state?.operation;
   const busy =
     operation?.state === "running" || snapshot?.state?.idle === false;
+  if (compact) return <div className="enigma-compact-tools" data-testid="engineering-toolbar" data-session-id={nativeSessionId||undefined} data-connection-id={connection||'local'}>
+    <SurfaceMenu label="工程工具" hint="仓库、任务、时光机、运行诊断与模型分工" icon={<><AppIcon name="skill" size={16}/><span>工程工具</span></>}>
+      {snapshot?.connected ? <>
+        {groups.filter(group=>snapshot.kind==='manager'||group.id!=='conductor').map(group=><button key={group.id} onClick={()=>openGroup(group.id)}>{group.label}<small>{featureHint(group.id)||featureSections.flatMap(s=>s.items).find(item=>item.id===group.id)?.description}</small></button>)}
+        <button onClick={()=>setCatalogOpen(true)}>全部工程操作<small>搜索操作和说明</small></button>
+        <button onClick={()=>void engineeringRequest('/conductor/new',sessionPath,{}).then(result=>switchSession(result.sessionPath)).catch(error=>useEngineering.setState({error:String(error)}))}>新建任务编排管家</button>
+      </> : <button onClick={()=>useEngineering.setState({connectOpen:true})}>连接工程目录<small>启用多仓库、任务计划、时光机等工程能力</small></button>}
+      <button onClick={()=>setModelsOpen(true)}>模型分工<small>规划、执行、复核使用的模型</small></button>
+      {snapshot?.connected&&<button onClick={()=>useEngineering.setState({connectOpen:true})}>切换工程目录<small>{snapshot.root}</small></button>}
+    </SurfaceMenu>
+    {snapshot?.connected&&(busy||operation?.state==='failed'||snapshot.overview?.blockers?.length>0)&&<button className="enigma-compact-status" onClick={()=>openGroup('observer')} data-tooltip="查看当前阶段、等待原因和旁路诊断"><span className={busy?'enigma-live':''}>●</span>{busy?'运行中':'待核对'}</button>}
+    <ConnectDialog/><ActionDialog/><ApprovalDialog/>
+    {catalogOpen&&<ActionCatalog close={()=>setCatalogOpen(false)}/>}
+    {modelsOpen&&<ModelPolicyDialog close={()=>setModelsOpen(false)}/>}
+  </div>;
   return (
     <>
       <div
