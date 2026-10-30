@@ -1,3 +1,4 @@
+vi.mock('../../components/input/InputQueue',()=>({InputQueue:()=>null}));
 // @vitest-environment jsdom
 
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
@@ -870,7 +871,7 @@ describe('InputArea media send', () => {
     });
   });
 
-  it('interjects streaming attachment sends with the same message envelope as prompt sends', async () => {
+  it('queues streaming attachment sends with the same message envelope as prompt sends', async () => {
     useStore.setState({
       streamingSessions: ['/session/media.jsonl'],
       attachedFiles: [{
@@ -889,6 +890,7 @@ describe('InputArea media send', () => {
       },
     } as never);
 
+    mocks.hanaFetch.mockImplementation(async()=>new Response(JSON.stringify({id:'queued'}),{status:200}));
     render(React.createElement(InputArea));
 
     const send = screen.getByTestId('send') as HTMLButtonElement;
@@ -896,10 +898,12 @@ describe('InputArea media send', () => {
     fireEvent.click(send);
 
     await waitFor(() => {
-      expect(mocks.wsSend).toHaveBeenCalledTimes(1);
+      expect(mocks.hanaFetch).toHaveBeenCalledWith('/api/enigma/input-queue',expect.objectContaining({method:'POST'}));
     });
-    const payload = JSON.parse(String(mocks.wsSend.mock.calls[0][0]));
-    expect(payload.type).toBe('interject');
+    const request=mocks.hanaFetch.mock.calls.find(call=>call[0]==='/api/enigma/input-queue')!;
+    const payload = JSON.parse(String(request[1].body)).payload;
+    expect(mocks.wsSend).not.toHaveBeenCalled();
+    expect(payload.type).toBe('queue');
     expect(payload.text).toBe('[附件] note.txt');
     expect(payload.sessionFileRefs).toEqual([{
       fileId: 'sf_note',

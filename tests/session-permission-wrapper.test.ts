@@ -1678,3 +1678,12 @@ describe("session permission wrapper", () => {
     expect(tool.execute).not.toHaveBeenCalled();
   });
 });
+
+it('keeps an interactive human fallback when automatic browser review needs confirmation',async()=>{
+ const execute=vi.fn(async()=>({content:[{type:'text',text:'browser ran'}]}));
+ const confirm={create:vi.fn(()=>({confirmId:'browser-confirm',promise:Promise.resolve({action:'confirmed'})}))};
+ const review={review:vi.fn(async()=>({action:'ask_user',reason:'confirm browser action'}))};
+ const [tool]=wrapWithSessionPermission([{name:'browser',execute}],{getPermissionMode:()=> 'auto',approvalPolicy:'interactive',getConfirmStore:()=>confirm,getApprovalGateway:()=>review,emitEvent:vi.fn()});
+ await tool.execute('browser-call',{action:'click'},null,null,{sessionPath:SESSION_PATH});
+ expect(confirm.create).toHaveBeenCalled();expect(execute).toHaveBeenCalledOnce();
+});

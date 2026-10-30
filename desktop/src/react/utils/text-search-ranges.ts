@@ -19,11 +19,11 @@ export function findTextRanges(root:HTMLElement,query:string,limit=2000):Range[]
  }
  return ranges;
 }
-export function createDocumentHighlights(root:HTMLElement){
+export function createDocumentHighlights(root:HTMLElement,prefix="enigma-document"){
  const registry=(globalThis.CSS as unknown as {highlights?:{set:(name:string,value:unknown)=>void;delete:(name:string)=>void}}|undefined)?.highlights;
  const HighlightType=(globalThis as unknown as {Highlight?:new(...ranges:Range[])=>unknown}).Highlight;
  if(!registry||!HighlightType)return null;
- return {set(ranges:Range[],index:number){registry.set('enigma-document-results',new HighlightType(...ranges));registry.set('enigma-document-current',new HighlightType(...(ranges[index]?[ranges[index]]:[])));},clear(){registry.delete('enigma-document-results');registry.delete('enigma-document-current');},scroll(range:Range|undefined){const target=range?.startContainer.parentElement;if(target&&range&&root.contains(target)){const container=root.closest<HTMLElement>('[data-preview-panel-body]')||root,rect=range.getBoundingClientRect(),bounds=container.getBoundingClientRect();container.scrollBy({top:rect.top-bounds.top+rect.height/2-container.clientHeight/2,left:rect.left<bounds.left||rect.right>bounds.right?rect.left-bounds.left+rect.width/2-container.clientWidth/2:0});}}};
+ return {set(ranges:Range[],index:number){registry.set(`${prefix}-results`,new HighlightType(...ranges));registry.set(`${prefix}-current`,new HighlightType(...(ranges[index]?[ranges[index]]:[])));},clear(){registry.delete(`${prefix}-results`);registry.delete(`${prefix}-current`);},scroll(range:Range|undefined){const target=range?.startContainer.parentElement;if(target&&range&&root.contains(target)){const container=root.closest<HTMLElement>('[data-preview-panel-body]')||root,rect=range.getBoundingClientRect(),bounds=container.getBoundingClientRect();container.scrollBy({top:rect.top-bounds.top+rect.height/2-container.clientHeight/2,left:rect.left<bounds.left||rect.right>bounds.right?rect.left-bounds.left+rect.width/2-container.clientWidth/2:0});}}};
 }
 
 /** Read one extra result to distinguish exactly-at-limit from a truncated set. */

@@ -52,6 +52,7 @@ export interface SidebarUiSlice {
   sidebarUiPrefsLoaded: boolean;
   applySidebarUiPrefs: (data: unknown) => void;
   setSidebarProjectViewPrefs: (patch: {
+    collapsedSectionIds?: string[];
     collapsedProjectIds?: string[];
     collapsedFolderIds?: string[];
     showAllProjectIds?: string[];
@@ -74,6 +75,7 @@ export const createSidebarUiSlice = (
     const next = normalizeSidebarUiPrefs({
       ...current,
       projectView: {
+        collapsedSectionIds: patch.collapsedSectionIds ?? current.projectView.collapsedSectionIds,
         collapsedProjectIds: patch.collapsedProjectIds ?? current.projectView.collapsedProjectIds,
         collapsedFolderIds: patch.collapsedFolderIds ?? current.projectView.collapsedFolderIds,
         showAllProjectIds: patch.showAllProjectIds ?? current.projectView.showAllProjectIds,

@@ -1,3 +1,5 @@
+import {InputQueue} from './input/InputQueue';
+import {ExpandedComposer} from './input/ExpandedComposer';
 import {isSubmittedDraft,withoutSubmittedFiles} from '../utils/submitted-composer';
 import {DraftSaveNotice} from './input/DraftSaveNotice';
 /**
@@ -512,6 +514,8 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
   const permissionMode = useStore(s => s.sessionPermissionMode);
   const setPermissionMode = useStore(s => s.setSessionPermissionMode);
   const [sending, setSending] = useState(false);
+  const [expandedComposer,setExpandedComposer]=useState(false);
+  const closeExpandedComposer=useCallback(()=>setExpandedComposer(false),[]);
   const [slashMenuOpen, setSlashMenuOpen] = useState(false);
   const [slashSelected, setSlashSelected] = useState(0);
   const [slashBusy, setSlashBusy] = useState<string | null>(null);
@@ -1725,7 +1729,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
   }, [addToast, editor, fileMentionRange, handleFileMentionSelect, inputLocked, t]);
 
   // ── Send / interject message ──
-  const submitEditorMessage = useCallback(async (type: 'prompt' | 'interject') => {
+  const submitEditorMessage = useCallback(async (type: 'prompt' | 'interject' | 'queue') => {
     if (inputLocked) return;
     if (!editor) return;
     const editorJson = editor.getJSON();
@@ -2037,7 +2041,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
         }) : undefined,
       };
 
-      useStore.getState().appendOptimisticUserMessage(sessionPathForSend, {
+      if(type!=='queue')useStore.getState().appendOptimisticUserMessage(sessionPathForSend, {
         id: clientMessageId,
         role: 'user',
         text,
@@ -2071,6 +2075,11 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
       if (skills.length > 0) wsMsg.skills = skills;
       if (sessionRefs.length > 0) wsMsg.sessionRefs = sessionRefs;
       if (agentMentions.length > 0) wsMsg.agentReviewRequests = agentMentions;
+      if(type==='queue'){
+        const response=await hanaFetch('/api/enigma/input-queue',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionPath:sessionPathForSend,text,doc:editorJson,payload:wsMsg}),throwOnHttpError:false});
+        const data=await response.json().catch(()=>({}));if(response.ok===false){addToast(data.error||'排队失败，输入已保留','error');return;}
+        window.dispatchEvent(new Event('enigma-input-queued'));
+      }else{
       if (!ws || (typeof ws.readyState==='number' && ws.readyState!==1)) {
         useStore.getState().markOptimisticUserMessageFailed(
           sessionPathForSend,
@@ -2084,6 +2093,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
         const message = err instanceof Error ? err.message : String(err);
         useStore.getState().markOptimisticUserMessageFailed(sessionPathForSend, clientMessageId, message);
         return;
+      }
       }
 
       // Preparation may await session creation, upload or file reads. Consume
@@ -2109,7 +2119,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
         useStore.setState({attachedFilesBySession:{...current.attachedFilesBySession,[key]:withoutSubmittedFiles(files,clickedAttachedFiles)}});
       }
       upsertOptimisticSessionFirstMessage(sessionPathForSend, text, new Date().toISOString());
-    } finally {
+    } catch(error){addToast(error instanceof Error?error.message:'消息未发送，输入已保留','error');} finally {
       setSending(false);
     }
   }, [addToast, editor, inputLocked, attachedFiles, docContextAttached, connected, isStreaming, sending, currentDoc, clearDraft, setDocContextAttached, slashCommands, slashSelected, handleSlashSelect, supportsVision, currentModelInfo, loadVisionAuxiliaryConfig, modelSwitching, t]);
@@ -2120,7 +2130,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
 
   // ── Steer ──
   const handleSteer = useCallback(async () => {
-    await submitEditorMessage('interject');
+    await submitEditorMessage('queue');
   }, [submitEditorMessage]);
 
   // ── Stop ──
@@ -2143,6 +2153,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
       return true;
     }
     if (e.defaultPrevented) return false;
+    if(expandedComposer)return false;
     if (fileMenuOpen) {
       if ((e.key === 'ArrowRight' || e.key === 'ArrowLeft')) {
         e.preventDefault();
@@ -2197,6 +2208,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
     }
     return false;
   }, [
+    expandedComposer,
     dismissSlashMenu,
     editor,
     fileMentionBusy,
@@ -2304,6 +2316,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
           />
         )}
       </div>
+      <InputQueue editor={editor}/>
       <TokenMeterPill />
       <DraftSaveNotice draftKey={draftKey ? (sessionScopedKey(useStore.getState(),draftKey)||draftKey) : null}/>
       {pendingSessionSwitchPath&&<p role="status" className={styles['session-switch-hint']}>{locale?.startsWith('zh')?'正在打开目标对话，草稿就绪后即可输入…':'Opening the selected chat; input resumes when its draft is ready…'}</p>}
@@ -2315,6 +2328,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
           />
         )}
         <div className={styles['input-wrapper']} ref={inputCardRef} data-liquid="composer">
+          <button className="enigma-expand-composer" type="button" aria-label="展开编辑消息" data-tooltip="展开编辑；Enter只换行，不发送消息" onClick={()=>{setSlashMenuOpen(false);setFileMenuOpen(false);setExpandedComposer(true);}}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M14 4h6v6m0-6-7 7M10 20H4v-6m0 6 7-7"/></svg></button>
           <input
             ref={browserFileInputRef}
             className={styles['browser-file-input']}
@@ -2330,7 +2344,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
             onCompositionStart={() => { isComposing.current = true; }}
             onCompositionEnd={() => { isComposing.current = false; }}
           >
-            <EditorContent editor={editor} />
+            {expandedComposer&&editor?<ExpandedComposer editor={editor} onClose={closeExpandedComposer}/>:<EditorContent editor={editor}/>}
           </div>
           <InputControlBar
             t={t}

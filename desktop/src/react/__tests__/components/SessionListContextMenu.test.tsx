@@ -129,15 +129,9 @@ function dragData() {
   };
 }
 
-async function openSortMenu() {
-  fireEvent.click(await screen.findByRole('button', { name: 'sidebar.view.sort' }));
-}
-
 async function switchToProjectView() {
-  await openSortMenu();
-  expect(await screen.findByText('sidebar.view.time')).toBeInTheDocument();
-  expect(await screen.findByText('sidebar.view.project')).toBeInTheDocument();
-  fireEvent.click(screen.getByText('sidebar.view.project'));
+  const heading=await screen.findByRole('button',{name:'项目'});
+  if(heading.getAttribute('aria-expanded')==='false')fireEvent.click(heading);
 }
 
 describe('SessionList context menu', () => {
@@ -435,6 +429,12 @@ describe('SessionList context menu', () => {
     expect(hanaFetchMock).not.toHaveBeenCalledWith('/api/preferences/sidebar-ui');
   });
 
+  it('uses a true content hit when a fuzzy title result points at the same conversation',async()=>{
+    hanaFetchMock.mockImplementation(async(url:string)=>jsonResponse(url.includes('phase=title')?{results:[{path:'/same',title:'Planning',firstMessage:'QUEUE_HOLD',matchKind:'title',snippet:'Planning QUEUE_HOLD'}]}:url.includes('phase=content')?{results:[{path:'/same',title:'Planning',matchKind:'content',snippet:'A matching QUEUE_FIRST message'}]}:{}));
+    render(<SessionList/>);fireEvent.change(screen.getByPlaceholderText('sidebar.searchPlaceholder'),{target:{value:'QUEUE_FIRST'}});
+    await waitFor(()=>expect(document.querySelector('mark')?.textContent).toBe('QUEUE_FIRST'));expect(screen.queryByText('Planning QUEUE_HOLD')).toBeNull();
+  });
+
   it('shows title search results first and then content results', async () => {
     hanaFetchMock.mockImplementation(async (url: string) => {
       if (url === '/api/browser/session-states') return jsonResponse({});
@@ -478,8 +478,8 @@ describe('SessionList context menu', () => {
       target: { value: '聊天记录' },
     });
 
-    expect(await screen.findByText('聊天记录搜索')).toBeInTheDocument();
-    expect(await screen.findByText(/和其他 Agent 的聊天记录/)).toBeInTheDocument();
+    expect(await screen.findByText((_text,element)=>!!element?.getAttribute('class')?.includes('sessionItemTitle')&&element.textContent==='聊天记录搜索')).toBeInTheDocument();
+    expect(await screen.findByText((_text,element)=>!!element?.getAttribute('class')?.includes('sessionSearchSnippet')&&element.textContent==='这里记录了和其他 Agent 的聊天记录排查。')).toBeInTheDocument();
 
     const searchCalls = hanaFetchMock.mock.calls
       .map(([url]) => String(url))
@@ -487,7 +487,7 @@ describe('SessionList context menu', () => {
     expect(searchCalls[0]).toContain('phase=title');
     expect(searchCalls[1]).toContain('phase=content');
 
-    const resultButton = screen.getByText('聊天记录搜索').closest('button');
+    const resultButton = screen.getByText((_text,element)=>!!element?.getAttribute('class')?.includes('sessionItemTitle')&&element.textContent==='聊天记录搜索').closest('button');
     if (!resultButton) throw new Error('missing search result button');
     fireEvent.click(resultButton);
     expect(switchSessionMock).toHaveBeenCalledWith('/tmp/agents/hana/sessions/title-search.jsonl');
@@ -660,47 +660,16 @@ describe('SessionList context menu', () => {
     expect(css).toMatch(/\.sessionSectionTitle:focus-within \.sectionTitleActions\s*\{[\s\S]*opacity:\s*1/);
   });
 
-  it('switches views through one Codex-like sort menu on the section heading', async () => {
-    makeSessionsToday();
-    hanaFetchMock.mockImplementation(async (url: string) => {
-      if (url === '/api/browser/session-states') return jsonResponse({});
-      if (url === '/api/session-projects') {
-        return jsonResponse({ catalog: { folders: [], projects: [] } });
-      }
-      return jsonResponse({});
-    });
-
-    render(<SessionList />);
-
-    await openSortMenu();
-    expect(await screen.findByText('sidebar.view.time')).toBeInTheDocument();
-    expect(await screen.findByText('sidebar.view.project')).toBeInTheDocument();
-    fireEvent.click(screen.getByText('sidebar.view.project'));
-
-    expect(await screen.findByText('sidebar.projects.title')).toBeInTheDocument();
-    expect(await screen.findByText('project')).toBeInTheDocument();
-
-    await openSortMenu();
-    expect(await screen.findByText('sidebar.view.time')).toBeInTheDocument();
-    expect(await screen.findByText('sidebar.view.project')).toBeInTheDocument();
-    fireEvent.click(screen.getByText('sidebar.view.time'));
-    expect(await screen.findByText('time.today')).toBeInTheDocument();
-  });
-
-  it('keeps the sort menu on an empty today heading when today has no sessions', async () => {
-    hanaFetchMock.mockImplementation(async (url: string) => {
-      if (url === '/api/browser/session-states') return jsonResponse({});
-      if (url === '/api/session-projects') {
-        return jsonResponse({ catalog: { folders: [], projects: [] } });
-      }
-      return jsonResponse({});
-    });
-
-    render(<SessionList />);
-
-    expect(await screen.findByText('time.today')).toBeInTheDocument();
-    await switchToProjectView();
-    expect(await screen.findByText('sidebar.projects.title')).toBeInTheDocument();
+  it('shows projects and recent conversations together with independent collapsible groups',async()=>{
+    seedSessions();useStore.setState(state=>({sessions:state.sessions.map((s,i)=>({...s,projectId:i===0?'cwd:':null}))}));
+    hanaFetchMock.mockImplementation(async(url:string)=>jsonResponse(url==='/api/session-projects'?{catalog:{projects:[],folders:[]}}:{}));
+    render(<SessionList/>);
+    expect(await screen.findByRole('button',{name:'项目'})).toHaveAttribute('aria-expanded','true');
+    expect(screen.getByRole('button',{name:'最近对话'})).toHaveAttribute('aria-expanded','true');
+    expect(screen.queryByRole('group',{name:'对话分组方式'})).toBeNull();
+    fireEvent.click(screen.getByRole('button',{name:'项目'}));
+    expect(screen.getByRole('button',{name:'最近对话'})).toHaveAttribute('aria-expanded','true');
+    fireEvent.click(screen.getByRole('button',{name:'最近对话'}));expect(useStore.getState().sidebarUiPrefs.projectView.collapsedSectionIds).toEqual(expect.arrayContaining(['projects','recent']));
   });
 
   it('keeps project navigation and empty projects visible before any conversation exists', async () => {
@@ -709,7 +678,6 @@ describe('SessionList context menu', () => {
       ? {catalog:{folders:[],projects:[{id:'project-empty',name:'Empty Project',folderId:null,order:0}]}} : {}));
     render(<SessionList/>);
     expect(screen.getByRole('button',{name:'新建项目'})).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button',{name:'项目'}));
     expect(await screen.findByText('Empty Project')).toBeInTheDocument();
   });
 
@@ -729,7 +697,7 @@ describe('SessionList context menu', () => {
     fireEvent.change(screen.getByRole('textbox',{name:'项目文件夹'}),{target:{value:cwd}});
     fireEvent.click(screen.getByText('sidebar.projects.createAction'));
     const row=(await screen.findByText('Folder Project')).closest('[role="button"]')!;
-    expect(screen.getByRole('button',{name:'项目'})).toHaveAttribute('aria-pressed','true');
+    expect(screen.getByRole('button',{name:'项目'})).toHaveAttribute('aria-expanded','true');
     useStore.setState({sidebarOpen:true,layoutDrawer:'sidebar'});
     fireEvent.click(within(row as HTMLElement).getByTitle('sidebar.projects.newChatInProject'));
     expect(createNewSessionMock).toHaveBeenCalledWith({cwd,projectId:id});
@@ -865,7 +833,7 @@ describe('SessionList context menu', () => {
       }));
       expect(useStore.getState().sessions[0].projectId).toBe('cwd:');
     });
-    expect(await screen.findByText('单独对话')).toBeInTheDocument();
+    expect(await screen.findByRole('button',{name:'最近对话'})).toBeInTheDocument();
   });
 
   it('starts a new session draft inside the selected project from the hover action', async () => {

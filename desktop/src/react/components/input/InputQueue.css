@@ -1,0 +1,11 @@
+.enigma-input-queue { max-height:230px; overflow:auto; border:1px solid var(--border); border-radius:var(--radius-card); margin:var(--space-6) 0; padding:var(--space-8); font:12px/1.6 var(--font-ui); background:var(--bg-card); color:var(--text); }
+.enigma-input-queue header,.enigma-queue-text,.enigma-queue-actions { display:flex; align-items:center; gap:var(--space-8); }
+.enigma-input-queue header>small { flex:1; color:var(--text-muted); }
+.enigma-input-queue button { background:transparent; border:0; border-radius:var(--radius-sm); color:var(--text-muted); padding:var(--space-4) var(--space-6); font:inherit; cursor:pointer; }
+.enigma-input-queue button:hover { background:var(--overlay-light); color:var(--text); }
+.enigma-input-queue button:disabled { opacity:.35;cursor:default; }
+.enigma-input-queue article { padding:var(--space-6) 0; border-top:1px solid var(--border); }
+.enigma-queue-text p { flex:1; margin:0; white-space:pre-wrap; overflow:hidden; max-height:48px; }
+.enigma-queue-text>small { color:var(--text-muted); }
+.enigma-queue-actions { justify-content:flex-end; flex-wrap:wrap; gap:var(--space-2); }
+.enigma-input-queue textarea { width:100%; min-height:90px; resize:vertical; background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font:inherit; }

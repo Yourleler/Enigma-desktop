@@ -572,6 +572,12 @@ describe('InputArea paste and slash menu behavior', () => {
     expect(useStore.getState().draftDocs.sess_input).toEqual(mocks.editorJson);
   });
 
+  it('uses Enter for editing without sending from the expanded composer',()=>{
+    render(<InputArea/>);fireEvent.click(screen.getByRole('button',{name:'展开编辑消息'}));
+    const preventDefault=vi.fn();expect(tiptapKeyDownHandler()?.(null,{key:'Enter',shiftKey:false,isComposing:false,defaultPrevented:false,preventDefault} as unknown as KeyboardEvent)).toBe(false);
+    expect(mocks.wsSend).not.toHaveBeenCalled();expect(preventDefault).not.toHaveBeenCalled();fireEvent.click(screen.getByRole('button',{name:'完成编辑'}));
+  });
+
   it('uses Shift+Enter inside list items to create the next list item', () => {
     mocks.editorIsActive.mockImplementation((name?: string) => name === 'listItem');
     render(React.createElement(InputArea));

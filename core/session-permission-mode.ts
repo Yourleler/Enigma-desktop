@@ -159,9 +159,11 @@ export function normalizeSessionApprovalPolicy(raw) {
 export function resolveSessionApprovalPolicy({ mode, approvalPolicy, allowHumanApproval }: { mode?: any; approvalPolicy?: any; allowHumanApproval?: any } = {}) {
   const normalizedMode = normalizeSessionPermissionMode(mode);
   if (normalizedMode === SESSION_PERMISSION_MODES.OPERATE) return SESSION_APPROVAL_POLICIES.NEVER;
-  if (normalizedMode === SESSION_PERMISSION_MODES.AUTO) return SESSION_APPROVAL_POLICIES.DENY_ON_PROMPT;
-  if (approvalPolicy != null) return normalizeSessionApprovalPolicy(approvalPolicy);
   if (allowHumanApproval === false) return SESSION_APPROVAL_POLICIES.DENY_ON_PROMPT;
+  // An interactive desktop explicitly supplies a human fallback. Background
+  // executions still specify deny_on_prompt and never silently grant a tool.
+  if (approvalPolicy != null) return normalizeSessionApprovalPolicy(approvalPolicy);
+  if (normalizedMode === SESSION_PERMISSION_MODES.AUTO) return SESSION_APPROVAL_POLICIES.DENY_ON_PROMPT;
   return SESSION_APPROVAL_POLICIES.INTERACTIVE;
 }
 

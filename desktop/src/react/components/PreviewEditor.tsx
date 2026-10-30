@@ -20,7 +20,7 @@ import {
   lineNumbers,
 } from '@codemirror/view';
 import { EditorState, Compartment, Transaction, EditorSelection } from '@codemirror/state';
-import {search,searchKeymap,openSearchPanel,closeSearchPanel,gotoLine} from '@codemirror/search';
+import {search,searchKeymap,openSearchPanel,gotoLine} from '@codemirror/search';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 import {
   syntaxHighlighting, bracketMatching, foldGutter, foldKeymap, foldAll, unfoldAll, LanguageDescription, ensureSyntaxTree,
@@ -1023,9 +1023,7 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
 
     return (
       <Fragment>
-        <div className={`preview-editor mode-${mode}`} ref={containerRef} onPointerDownCapture={event=>{
-          if(event.button===0&&event.target instanceof Element&&event.target.closest('.cm-search button[name="close"]')&&viewRef.current){event.preventDefault();event.stopPropagation();closeSearchPanel(viewRef.current);}
-        }} onInputCapture={event=>{
+        <div className={`preview-editor mode-${mode}`} ref={containerRef} onInputCapture={event=>{
           // Upstream commits on keyup/change. Also commit input events from
           // paste, accessibility and programmatic fill before a replace click.
           const target=event.target;

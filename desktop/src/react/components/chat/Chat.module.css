@@ -96,7 +96,7 @@
 
 /* 用户消息 */
 .messageUser {
-    background: var(--eg-secondary, rgba(0, 0, 0, 0.045));
+    background: color-mix(in srgb,var(--eg-secondary,var(--bg-card)) 74%,transparent);
     padding: var(--space-12) var(--space-16);
     border-radius: var(--radius-chat-card);
     color: var(--text);
@@ -2336,3 +2336,7 @@
 .messageGroup:focus-within .messageFooterActions { opacity:1; pointer-events:auto; }
 .messageFooterTime { font-size:12px; line-height:1.5; white-space:nowrap; }
 @media(hover:none){.messageTimeShort {display:none;}.messageTimeFull {display:inline;}.messageFooterActions:has(.messageFooterTime){opacity:.85;}}
+
+.emptyAssistantReply { color:var(--text-muted); font:13px/1.7 var(--font-ui); padding:var(--space-8) 0; }
+::highlight(enigma-chat-results) { background:var(--search-match-bg); color:var(--search-match-text); }
+::highlight(enigma-chat-current) { background:var(--search-active-bg); color:var(--search-active-text); }

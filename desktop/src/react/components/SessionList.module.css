@@ -872,15 +872,7 @@
 }
 
 /* Project navigation stays discoverable even before the first conversation. */
-.projectNavigation { display:flex;flex-wrap:wrap;align-items:center;gap:var(--enigma-spacing-5);padding:var(--enigma-spacing-2) var(--enigma-spacing-1) var(--enigma-spacing-1);flex-shrink:0; }
-.projectViewSwitch { display:flex;flex:1 1 108px;gap:var(--enigma-spacing-4);padding:var(--enigma-spacing-10);border-radius:10px;background:var(--overlay-subtle); }
-.projectViewSwitch button,.newProjectEntry { display:flex;align-items:center;justify-content:center;gap:var(--enigma-spacing-2);min-height:28px;padding:var(--enigma-spacing-2) var(--enigma-spacing-12);border:0;border-radius:8px;background:transparent;color:var(--text-muted);font:inherit;font-size:12px;white-space:nowrap;cursor:pointer; }
-.projectViewSwitch button { flex:1; }
-.projectViewSwitch button[aria-pressed="true"] { color:var(--text);background:var(--overlay-light); }
-.newProjectEntry { flex:0 0 auto;color:var(--accent); }
-.newProjectEntry svg { width:16px;height:16px; }
-.newProjectEntry:hover { background:var(--overlay-light); }
-.projectNavigation button:focus-visible { outline:2px solid var(--accent);outline-offset:1px; }
+
 .projectNameDialog { width:min(380px,calc(100vw - 32px));padding:var(--enigma-spacing-13);border-radius:16px;background:var(--bg-glass,var(--bg-card));backdrop-filter:blur(24px); }
 .projectNameDialogTitle { font-size:15px;color:var(--text);margin-bottom:var(--enigma-spacing-14); }
 .projectDirectory { display:flex;flex-wrap:wrap;gap:var(--enigma-spacing-1);margin-top:var(--enigma-spacing-14); }
@@ -895,3 +887,15 @@
     .projectRow .projectNewSessionButton { opacity:0; }
     .projectRow:hover .projectNewSessionButton,.projectRow:focus-within .projectNewSessionButton { opacity:1; }
 }
+
+.sidebarSection { margin:var(--space-8) 0; }
+.sidebarSectionHeading { display:flex; align-items:center; gap:var(--space-4); min-height:32px; padding:0 var(--space-4); }
+.sidebarSectionHeading > button { flex:1; min-width:0; display:flex; align-items:center; gap:var(--space-6); padding:var(--space-6) var(--space-4); background:transparent; border:0; color:var(--text-muted); font:12px/1.5 var(--font-ui); text-align:left; cursor:pointer; border-radius:var(--radius-sm); }
+.sidebarSectionHeading > button:hover { color:var(--text); }
+.sidebarSectionActions { display:flex; }
+.sidebarSectionActions button { display:grid; place-items:center; width:26px; height:26px; padding:0; background:transparent; border:0; border-radius:var(--radius-sm); color:var(--text-muted); cursor:pointer; }
+.sidebarSectionActions button:hover { background:var(--overlay-light); color:var(--text); }
+.sidebarSectionEmpty { margin:var(--space-4) var(--space-12); color:var(--text-muted); font:11px/1.6 var(--font-ui); }
+@media (any-hover:hover) and (any-pointer:fine) { .sidebarSectionActions { opacity:0; } .sidebarSectionHeading:hover .sidebarSectionActions,.sidebarSectionHeading:focus-within .sidebarSectionActions { opacity:1; } }
+
+.searchMatch { background:var(--search-match-bg);color:var(--search-match-text);border-radius:2px; }

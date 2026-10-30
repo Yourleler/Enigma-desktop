@@ -1,3 +1,4 @@
+import {desktopInputQueue} from '../../core/desktop-input-queue.ts';
 import { SessionChanges } from '../../plugins/enigma/session-changes.ts';
 import { Hono } from "hono";
 import { safeJson } from "../hono-helpers.ts";
@@ -46,6 +47,10 @@ export function createEnigmaRoute(engine: any) {
       return fail(c, error);
     }
   });
+  route.get('/enigma/input-queue',async c=>{try{return c.json(await desktopInputQueue(engine).read(await session(c)));}catch(error){return fail(c,error);}});
+  route.post('/enigma/input-queue',async c=>{try{const body=await safeJson(c),sessionPath=await session(c,true,body);return c.json(await desktopInputQueue(engine).add(sessionPath,body));}catch(error){return fail(c,error);}});
+  route.patch('/enigma/input-queue',async c=>{try{const body=await safeJson(c),sessionPath=await session(c,true,body);return c.json(await desktopInputQueue(engine).update(sessionPath,body));}catch(error){return fail(c,error);}});
+  route.post('/enigma/input-queue/send',async c=>{try{const body=await safeJson(c),sessionPath=await session(c,true,body);await desktopInputQueue(engine).sendNow(sessionPath,body.id);return c.json({ok:true});}catch(error){return fail(c,error);}});
   const changes = new SessionChanges(engine, host);
   route.get('/enigma/changes/files',async c=>{
     try{

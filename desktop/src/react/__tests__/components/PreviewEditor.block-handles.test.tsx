@@ -2,7 +2,8 @@
  * @vitest-environment jsdom
  */
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
-import { EditorSelection, EditorState } from '@codemirror/state';
+import {search,openSearchPanel,searchPanelOpen} from '@codemirror/search';
+import { EditorSelection, EditorState, StateEffect } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 import { history, undo } from '@codemirror/commands';
 import { fireEvent } from '@testing-library/react';
@@ -346,6 +347,14 @@ describe('markdown block handle rail', () => {
     expect(event.defaultPrevented).toBe(false);
     expect(writeText).not.toHaveBeenCalled();
     view.destroy();
+  });
+
+  it('leaves search controls clickable even outside the Markdown content column',()=>{
+    const {view}=createView();view.dispatch({effects:StateEffect.appendConfig.of(search({top:true}))});openSearchPanel(view);
+    const close=view.dom.querySelector<HTMLButtonElement>('.cm-search button[name="close"]')!;
+    fireEvent(close,pointerEvent('pointermove',91,80,900));expect(view.dom.classList.contains('cm-markdown-block-marquee-zone')).toBe(false);
+    const down=pointerEvent('pointerdown',91,80,900);fireEvent(close,down);expect(down.defaultPrevented).toBe(false);
+    fireEvent.click(close);expect(searchPanelOpen(view.state)).toBe(false);expect(view.state.doc.toString()).toBe('Alpha\n\nBeta\n\nGamma');view.destroy();
   });
 
   it('keeps the rubber-band origin attached to document content while scrolling', () => {

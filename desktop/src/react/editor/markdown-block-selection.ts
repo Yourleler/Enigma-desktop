@@ -115,10 +115,10 @@ function eventTargetNode(target: EventTarget | null): Node | null {
     : null;
 }
 
-function isHandleTarget(target: EventTarget | null): boolean {
+function isEditorControlTarget(target: EventTarget | null): boolean {
   const node = eventTargetNode(target);
   const element = node?.nodeType === 1 ? node as Element : node?.parentElement;
-  return Boolean(element?.closest('.cm-markdown-block-handle'));
+  return Boolean(element?.closest('.cm-markdown-block-handle, .cm-panels, .cm-tooltip, button, input, textarea, select, a[href], [role="button"]'));
 }
 
 interface ContentColumnBounds {
@@ -282,7 +282,7 @@ class MarkdownBlockSelectionView {
   }
 
   private readonly onPointerDown = (event: PointerEvent): void => {
-    if (event.button !== 0 || isHandleTarget(event.target)) return;
+    if (event.button !== 0 || isEditorControlTarget(event.target)) return;
     const targetNode = eventTargetNode(event.target);
     const insideEditor = Boolean(targetNode && this.view.dom.contains(targetNode));
     if (!insideEditor) {
@@ -318,7 +318,7 @@ class MarkdownBlockSelectionView {
       this.view.dom.classList.toggle(
         'cm-markdown-block-marquee-zone',
         insideEditor
-          && !isHandleTarget(event.target)
+          && !isEditorControlTarget(event.target)
           && isMarqueeOrigin(this.view, event.clientX, event.clientY),
       );
       return;

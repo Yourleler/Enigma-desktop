@@ -1,4 +1,5 @@
 export interface SidebarUiProjectViewPrefs {
+  collapsedSectionIds?: string[];
   collapsedProjectIds: string[];
   collapsedFolderIds: string[];
   showAllProjectIds: string[];
@@ -58,6 +59,7 @@ export function normalizeSidebarUiPrefs(raw: unknown = {}): SidebarUiPrefs {
     : {};
   return {
     projectView: {
+      ...(projectView.collapsedSectionIds!==undefined?{collapsedSectionIds:uniqueIds(projectView.collapsedSectionIds)}:{}),
       collapsedProjectIds: uniqueIds(projectView.collapsedProjectIds),
       collapsedFolderIds: uniqueIds(projectView.collapsedFolderIds),
       showAllProjectIds: uniqueIds(projectView.showAllProjectIds),
@@ -76,7 +78,7 @@ export function normalizeSidebarUiPrefsPatch(raw: unknown = {}): SidebarUiPrefsP
     : null;
   if (projectView) {
     const nextProjectView: Partial<SidebarUiProjectViewPrefs> = {};
-    for (const key of ["collapsedProjectIds", "collapsedFolderIds", "showAllProjectIds"] as const) {
+    for (const key of ["collapsedProjectIds", "collapsedFolderIds", "showAllProjectIds", "collapsedSectionIds"] as const) {
       if (Object.prototype.hasOwnProperty.call(projectView, key)) {
         nextProjectView[key] = uniqueIds(projectView[key]);
       }
@@ -108,7 +110,7 @@ export function mergeSidebarUiPrefs(current: unknown = {}, partial: unknown = {}
     ? (patch.projectView as Record<string, unknown>)
     : {};
   const nextProjectView: Record<string, string[]> = { ...base.projectView };
-  for (const key of ["collapsedProjectIds", "collapsedFolderIds", "showAllProjectIds"] as const) {
+  for (const key of ["collapsedProjectIds", "collapsedFolderIds", "showAllProjectIds", "collapsedSectionIds"] as const) {
     if (Object.prototype.hasOwnProperty.call(patchProjectView, key)) {
       nextProjectView[key] = uniqueIds(patchProjectView[key]);
     }

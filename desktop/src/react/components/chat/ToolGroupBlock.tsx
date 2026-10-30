@@ -113,6 +113,7 @@ const ToolIndicator = memo(function ToolIndicator({ tool, agentName }: { tool: T
   const label = getToolLabel(tool.name, phaseForStatus(status), agentName, tool.args);
 
   const presentation=toolPresentation(tool.name,label);
+  const approvalUnavailable=tool.details?.errorCode==='TOOL_APPROVAL_UNAVAILABLE'||tool.error?.includes('execution context cannot ask the user');
 
   // 如果 args 里有 tag 类型信息（如 agent 名）
   const tag = tool.args?.agentId as string | undefined;
@@ -157,7 +158,7 @@ const ToolIndicator = memo(function ToolIndicator({ tool, agentName }: { tool: T
           )
         )}
         {tool.error && (
-          <span className={styles.toolDetail} title={tool.error}>{tool.error}</span>
+          <span className={styles.toolDetail} title={tool.error}>{approvalUnavailable?'这次操作需要确认，原执行模式未能弹出审批。操作没有执行。':tool.error}</span>
         )}
         {tag && <span className={styles.toolTag}>{tag}</span>}
         {status !== 'running' ? (

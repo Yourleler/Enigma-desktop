@@ -7,19 +7,20 @@ export function readMaterialPreferences():MaterialPreferences{
  try{const value=JSON.parse(localStorage.getItem('enigma-appearance')||'{}');return {glass:value.glass!==false,motion:value.motion!==false,...(typeof value.tint==='number'&&Number.isFinite(value.tint)?{tint:Math.max(0,Math.min(100,value.tint))}:{}),...(['aurora','halo','solid'].includes(value.darkBackground)?{darkBackground:value.darkBackground}:{}),...(['ribbon','marble','solid'].includes(value.lightBackground)?{lightBackground:value.lightBackground}:{})};}catch{return {glass:true,motion:true};}
 }
 export function applyMaterialPreferences(value:MaterialPreferences){
- const tint=value.tint??50;
+ const tint=Math.max(0,Math.min(100,value.tint??50));
+ const dense=Math.pow(Math.max(0,(tint-50)/50),1.5);
  document.body.classList.toggle('enigma-glass-off',!value.glass);document.body.classList.toggle('enigma-motion-off',!value.motion);
  document.body.dataset.darkBackground=value.darkBackground??'aurora';
  document.body.dataset.lightBackground=value.lightBackground??'ribbon';
- document.body.style.setProperty('--glass-navigation-mix',`${15+tint*.4}%`);
- document.body.style.setProperty('--glass-control-mix',`${4+tint*.2}%`);
- document.body.style.setProperty('--glass-navigation-blur',`${2+tint*.06}px`);
- document.body.style.setProperty('--glass-control-blur',`${.5+tint*.02}px`);
- document.body.style.setProperty('--glass-composer-mix',`${3+tint*.7}%`);
- document.body.style.setProperty('--glass-composer-blur',`${.35+tint*.1}px`);
- document.body.style.setProperty('--glass-control-highlight',`${10+tint*.32}%`);
- document.body.style.setProperty('--glass-menu-mix',`${38+tint*.32}%`);
- document.body.style.setProperty('--glass-frame-mix',`${38+tint*.38}%`);
+ document.body.style.setProperty('--glass-navigation-mix',`${15+tint*.4+43*dense}%`);
+ document.body.style.setProperty('--glass-control-mix',`${4+tint*.2+72*dense}%`);
+ document.body.style.setProperty('--glass-navigation-blur',`${2+tint*.06+20*dense}px`);
+ document.body.style.setProperty('--glass-control-blur',`${.5+tint*.02+18*dense}px`);
+ document.body.style.setProperty('--glass-composer-mix',`${3+tint*.7+25*dense}%`);
+ document.body.style.setProperty('--glass-composer-blur',`${.35+tint*.1+14*dense}px`);
+ document.body.style.setProperty('--glass-control-highlight',`${10+tint*.32-35*dense}%`);
+ document.body.style.setProperty('--glass-menu-mix',`${38+tint*.32+28*dense}%`);
+ document.body.style.setProperty('--glass-frame-mix',`${38+tint*.38+22*dense}%`);
 }
 export function saveMaterialPreferences(value:MaterialPreferences){
  localStorage.setItem('enigma-appearance',JSON.stringify(value));

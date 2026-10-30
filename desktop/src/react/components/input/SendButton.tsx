@@ -18,8 +18,8 @@ export function SendButton({ isStreaming, hasInput, disabled, onSend, onSteer, o
     <button
       className={`${styles['send-btn']}${mode === 'steer' ? ` ${styles['is-steer']}` : mode === 'stop' ? ` ${styles['is-streaming']}` : ''}`}
       disabled={disabled}
-      aria-label={t(mode === 'send' ? 'chat.send' : mode === 'steer' ? 'chat.steer' : 'chat.stop')}
-      data-tooltip={disabled ? '请先输入消息或添加附件，并确认模型可用' : mode === 'steer' ? '将补充要求交给正在运行的助手' : mode === 'stop' ? '停止生成，保留已完成的回复和修改' : '发送消息 · Enter 发送，Shift + Enter 换行'}
+      aria-label={mode==='steer'?'加入发送队列':t(mode==='send'?'chat.send':'chat.stop')}
+      data-tooltip={disabled ? '请先输入消息或添加附件，并确认模型可用' : mode === 'steer' ? '加入队列，当前回复结束后发送；发送前可编辑、调序或撤回' : mode === 'stop' ? '停止生成，保留已完成的回复和修改' : '发送消息 · Enter 发送，Shift + Enter 换行'}
       onClick={mode === 'steer' ? onSteer : mode === 'stop' ? onStop : onSend}
     >
       {mode === 'send' && (
@@ -35,7 +35,7 @@ export function SendButton({ isStreaming, hasInput, disabled, onSend, onSteer, o
           <svg className={styles['send-enter-icon']} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6" />
           </svg>
-          <span>{t('chat.steer')}</span>
+          <span>排队</span>
         </span>
       )}
       {mode === 'stop' && (

@@ -6,6 +6,7 @@ import { useBoxSelection } from '../../hooks/use-box-selection';
 import { useContinuousBottomScroll } from '../../hooks/use-continuous-bottom-scroll';
 import { useI18n } from '../../hooks/use-i18n';
 import { resolveLocateStep } from './locate-step';
+import {findTextRanges,createDocumentHighlights} from '../../utils/text-search-ranges';
 import { applyFindMarks, clearFindMarks } from '../../utils/find-marks';
 import type { ChatListItem } from '../../stores/chat-types';
 import { ChatTimelineNavigator } from './ChatTimelineNavigator';
@@ -344,20 +345,19 @@ export const ChatMessageSurface = memo(function ChatMessageSurface({
       }
       return;
     }
-    const markKey = `${findState.query}|${(findState.tokens ?? []).join(',')}`;
-    // 流式期间同一查询已标注过：不重跑 TreeWalker，防与流式 reconcile 打架循环；
-    // 流式结束边沿（isSessionStreaming 翻 false）经依赖重跑补标。
-    if (isSessionStreaming && markKeyRef.current === markKey) return;
-    const terms = [findState.query.trim(), ...findState.tokens];
-    // rAF 合并：items 高频变化（流式）时不在同帧重复跑 TreeWalker
-    const raf = requestAnimationFrame(() => {
-      // scope 到消息正文（MarkdownContent 直渲根）：不碰 React 直渲文本节点
-      //（时间戳 / 按钮 / 折叠标题等），改写它们会与 React reconcile 冲突
-      applyFindMarks(container, terms, 'chat-find-mark', { scopeSelector: '[data-find-markable]' });
-      markKeyRef.current = markKey;
-      hadMarksRef.current = true;
-    });
-    return () => cancelAnimationFrame(raf);
+    const terms=[findState.query.trim(),...findState.tokens];
+    const highlight=createDocumentHighlights(container,'enigma-chat');
+    let raf=0;
+    const update=()=>{cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{
+      if(highlight){
+        const roots=container.querySelectorAll<HTMLElement>('[data-chat-search-body]'),ranges:Range[]=[];
+        for(const root of roots)for(const term of terms){ranges.push(...findTextRanges(root,term,Math.max(0,2000-ranges.length)));if(ranges.length>=2000)break;}
+        highlight.set(ranges,0);
+      }else applyFindMarks(container,terms,'chat-find-mark',{scopeSelector:'[data-find-markable]',maxMatches:2000});
+    });};
+    update();const observer=highlight?new MutationObserver(update):null;
+    observer?.observe(container,{subtree:true,childList:true,characterData:true});
+    return()=>{cancelAnimationFrame(raf);observer?.disconnect();highlight?.clear();if(!highlight)clearFindMarks(container,'chat-find-mark');};
   }, [variant, active, findState?.open, findState?.query, findState?.tokens, items, isSessionStreaming]);
 
   const shellClassName = variant === 'card'

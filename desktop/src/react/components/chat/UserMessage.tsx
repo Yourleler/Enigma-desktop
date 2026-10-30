@@ -226,7 +226,7 @@ export const UserMessage = memo(function UserMessage({
         />
       )}
       {hasTextBubble && (
-        <div className={`${styles.message} ${styles.messageUser}${editing ? ` ${styles.messageUserEditing}` : ''}`}>
+        <div data-chat-search-body="" className={`${styles.message} ${styles.messageUser}${editing ? ` ${styles.messageUserEditing}` : ''}`}>
           {message.skills && message.skills.length > 0 && message.skills.map(skillName => (
             <span key={skillName} className={badgeStyles.badge} style={{ cursor: 'default' }}>
               <svg className={badgeStyles.icon} width="13" height="13" viewBox="0 0 16 16" fill="none"
