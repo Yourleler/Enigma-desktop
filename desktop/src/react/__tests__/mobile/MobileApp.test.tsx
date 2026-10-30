@@ -243,7 +243,7 @@ describe('MobileApp', () => {
     });
     expect(useStore.getState().sessions.some(session => session.path === '/hana/sessions/one.jsonl')).toBe(true);
     expect(useStore.getState().sessionLocatorsById.sess_mobile_one).toEqual({ path: '/hana/sessions/one.jsonl' });
-    fireEvent.click(screen.getByTitle('sidebar.jian'));
+    fireEvent.click(screen.getByTitle('工作面板'));
     expect(await screen.findByText('note.md')).toBeInTheDocument();
   });
 
@@ -433,7 +433,7 @@ describe('MobileApp', () => {
       previewOpen: false,
     });
     expect(document.querySelector('.mobile-drawer-scrim')).not.toBeInTheDocument();
-    expect(document.querySelector('#previewPanel')).not.toBeInTheDocument();
+    expect(document.querySelector('#previewPanel')).not.toBeVisible();
   });
 
   it('refreshes mobile sessions when the phone returns to the foreground', async () => {
@@ -595,7 +595,7 @@ describe('MobileApp', () => {
     render(<MobileApp />);
 
     await waitForMobileChatReady();
-    fireEvent.click(screen.getByTitle('sidebar.jian'));
+    fireEvent.click(screen.getByTitle('工作面板'));
     fireEvent.click(await screen.findByRole('treeitem', { name: /note\.md/ }));
 
     await waitFor(() => {

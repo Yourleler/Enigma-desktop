@@ -2,7 +2,6 @@ import {dockScope,dockView,selectDockTab,useRightDock} from '../stores/right-doc
 import { useChangesPanel } from '../stores/changes-panel-store';
 /** Shared desktop layout arbitration: preserve useful reading widths and user intent. */
 import { useLayoutEffect } from 'react';
-import { createPortal } from 'react-dom';
 import { useStore } from '../stores';
 import { createNewSession } from '../stores/session-actions';
 import { closePreview } from '../stores/preview-actions';
@@ -10,57 +9,40 @@ import { useEngineering } from '../engineering/state';
 import { resolveWorkspaceLayout, type LayoutIntent } from '../utils/workspace-layout';
 import './WorkspaceLayout.css';
 
-function panelWidth(name: string, selector: string, fallback: number): number {
-  const css = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-  if (/^\d+(?:\.\d+)?px$/.test(css)) return parseFloat(css);
-  const actual = document.querySelector(selector)?.getBoundingClientRect().width;
-  return actual && actual > 0 ? actual : fallback;
+function preferredWidth(variable:string,key:string,fallback:number):number {
+  const explicit=parseFloat(document.documentElement.style.getPropertyValue(variable));
+  const saved=Number(localStorage.getItem(key));
+  return Number.isFinite(explicit)&&explicit>0?explicit:Number.isFinite(saved)&&saved>0?saved:fallback;
 }
-
-let resolving = false;
-export function updateLayout(intent?: LayoutIntent): void {
-  if (resolving) return;
-  resolving = true;
-  try {
-    const s = useStore.getState();
-    const width = document.querySelector('.app')?.clientWidth || window.innerWidth;
-    const view=dockView(dockScope(s));
-    const expanded=s.jianOpen&&view.expanded;
-    document.body.classList.toggle('enigma-dock-expanded',expanded);
-    const saved=parseFloat(document.documentElement.style.getPropertyValue('--right-dock-preferred-width'))||Number(localStorage.getItem('enigma-dock-width'))||580;
-    const preferredDockWidth=Math.min(900,Math.max(380,saved));
-    const dockWidth=width>860?Math.min(preferredDockWidth,Math.max(380,width-480)):preferredDockWidth;
-    document.documentElement.style.setProperty('--right-dock-width',`${dockWidth}px`);
-    const preferred = parseFloat(document.documentElement.style.getPropertyValue('--preview-preferred-width'))
-      || Number(localStorage.getItem('hana-preview-width')) || 580;
-    const result = resolveWorkspaceLayout({
-      width,
-      sidebarWidth: panelWidth('--sidebar-width', '.sidebar-inner', 250),
-      workspaceWidth: expanded?width:dockWidth,
-      previewWidth: preferred,
-      inspectorWidth: s.currentTab === 'channels' && s.currentChannel ? panelWidth('--channel-inspector-width', '#channelInspector', 280) : 0,
-      sidebarWanted: !expanded&&!String(s.currentTab).startsWith('plugin:') && (s.sidebarOpen || s.sidebarAutoCollapsed),
-      workspaceWanted: s.jianOpen || s.jianAutoCollapsed,
-      sidebarAutoCollapsed: s.sidebarAutoCollapsed,
-      workspaceAutoCollapsed: s.jianAutoCollapsed,
-      previewOpen:false,
-      engineeringDrawer:false,
-      drawer: s.layoutDrawer,
-      intent:intent==='preview'?'workspace':intent,
+let resolving=false;
+export function updateLayout(intent?:LayoutIntent):void {
+  if(resolving)return;
+  resolving=true;
+  try{
+    const s=useStore.getState(),root=document.documentElement;
+    const app=document.querySelector<HTMLElement>('.app');
+    const width=app?.clientWidth||window.innerWidth;
+    const expanded=(s.jianOpen||s.jianAutoCollapsed)&&dockView(dockScope(s)).expanded;
+    const result=resolveWorkspaceLayout({width,
+      sidebarWidth:preferredWidth('--sidebar-preferred-width','hana-sidebar-width',240),
+      workspaceWidth:preferredWidth('--right-dock-preferred-width','enigma-dock-width',520),
+      inspectorWidth:s.currentTab==='channels'&&s.currentChannel?preferredWidth('--channel-inspector-width','hana-channel-inspector-width',280):0,
+      sidebarWanted:!String(s.currentTab).startsWith('plugin:')&&(s.sidebarOpen||s.sidebarAutoCollapsed),
+      workspaceWanted:s.jianOpen||s.jianAutoCollapsed,
+      priority:s.layoutPriority,expanded,drawer:s.layoutDrawer,intent,
     });
-    const { previewWidth, ...state } = result;
-    if(expanded){state.jianOpen=true;state.jianAutoCollapsed=false;state.layoutDrawer=null;state.sidebarOpen=false;state.sidebarAutoCollapsed=s.sidebarOpen||s.sidebarAutoCollapsed;state.previewExpanded=false;}
-    const root = document.documentElement;
-    root.style.setProperty('--layout-sidebar-space', `${state.sidebarOpen && state.layoutDrawer !== 'sidebar' ? panelWidth('--sidebar-width', '.sidebar-inner', 250) : 0}px`);
-    root.style.setProperty('--layout-workspace-space', `${state.jianOpen && state.layoutDrawer !== 'workspace' ? dockWidth : 0}px`);
-    if (previewWidth) {
-      const px = `${previewWidth}px`;
-      document.documentElement.style.setProperty('--preview-panel-width', px);
-      const inner = document.querySelector<HTMLElement>('[data-preview-panel-inner]');
-      if (inner) { inner.style.width = px; inner.style.minWidth = px; }
-    }
-    if (Object.entries(state).some(([key, value]) => s[key as keyof typeof s] !== value)) useStore.setState(state);
-  } finally { resolving = false; }
+    const {sidebarWidth,workspaceWidth,previewWidth,...state}=result;
+    const properties:Record<string,string>={
+      '--layout-sidebar-width':`${sidebarWidth}px`,
+      '--right-dock-width':`${workspaceWidth}px`,
+      '--layout-chat-min':`${Math.min(400,width)}px`,
+      '--layout-sidebar-space':`${state.sidebarOpen?sidebarWidth:0}px`,
+      '--layout-workspace-space':`${state.jianOpen?workspaceWidth:0}px`,
+    };
+    for(const [name,value] of Object.entries(properties))if(root.style.getPropertyValue(name)!==value)root.style.setProperty(name,value);
+    document.body.classList.toggle('enigma-dock-expanded',expanded&&state.jianOpen);
+    if(Object.entries(state).some(([key,value])=>s[key as keyof typeof s]!==value))useStore.setState(state);
+  }finally{resolving=false;}
 }
 
 export function toggleSidebar(forceOpen?: boolean): void {
@@ -90,7 +72,9 @@ export function SidebarLayout({ restorePreference = true }: { restorePreference?
     const unsubscribeChanges = useChangesPanel.subscribe((s,previous) => { if(s.open&&(s.open!==previous.open||s.session!==previous.session)){selectDockTab(dockScope(useStore.getState()),'changes');useStore.setState({jianOpen:true,jianAutoCollapsed:false});updateLayout('workspace');} });
     const unsubscribeDock=useRightDock.subscribe(()=>schedule());
     const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(schedule);
-    for (const el of document.querySelectorAll('.app,.sidebar-inner,.jian-sidebar-inner')) observer?.observe(el);
+    // Inner panel widths animate; observing them feeds transient geometry back
+    // into the decision and can alternate open/closed states. Observe the viewport only.
+    const app=document.querySelector('.app');if(app)observer?.observe(app);
     window.addEventListener('resize', schedule);
     updateLayout();
     const onKeydown = (e: KeyboardEvent) => {
@@ -103,26 +87,18 @@ export function SidebarLayout({ restorePreference = true }: { restorePreference?
     return () => { cancelAnimationFrame(frame); observer?.disconnect(); unsubscribe(); unsubscribeEngineering(); unsubscribeChanges(); unsubscribeDock(); window.removeEventListener('resize', schedule); document.removeEventListener('keydown', onKeydown); };
   }, [restorePreference]);
 
-  useLayoutEffect(() => {
-    if (drawer !== 'sidebar') return;
-    const previous = document.activeElement as HTMLElement | null;
-    const regions = [...document.querySelectorAll<HTMLElement>('.main-content:not([data-layout-managed]),#previewPanel:not([data-layout-managed]),#jianSidebar:not([data-layout-managed])')];
-    const inert = regions.map(el => el.inert);
-    regions.forEach(el => { el.inert = true; });
-    const sidebar = document.getElementById('sidebar');
-    if (!document.querySelector('[role="dialog"]')) sidebar?.querySelector<HTMLElement>('button')?.focus();
-    const key = (event: KeyboardEvent) => {
-      if (event.defaultPrevented || document.querySelector('[role="dialog"],[role="menu"],.enigma-surface-menu')) return;
-      if (event.key === 'Escape') { event.preventDefault(); toggleSidebar(false); }
-      if (event.key === 'Tab') {
-        const items = [...sidebar?.querySelectorAll<HTMLElement>('button:not(:disabled),input:not(:disabled),[tabindex="0"]') || []].filter(el => el.getClientRects().length);
-        const first = items[0], last = items.at(-1);
-        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
-        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+  useLayoutEffect(()=>{
+    if(!drawer)return;
+    const key=(event:KeyboardEvent)=>{
+      if(event.defaultPrevented||document.querySelector('[role="dialog"],[role="menu"],.enigma-surface-menu'))return;
+      if(event.key==='Escape'){
+        event.preventDefault();
+        if(drawer==='sidebar')toggleSidebar(false);
+        else{useStore.setState({jianOpen:false,jianAutoCollapsed:false,layoutDrawer:null});updateLayout();}
       }
     };
-    document.addEventListener('keydown', key);
-    return () => { document.removeEventListener('keydown', key); regions.forEach((el,i) => { el.inert = inert[i]; }); if (previous?.isConnected) previous.focus(); };
-  }, [drawer]);
-  return drawer === 'sidebar' ? createPortal(<button className="enigma-layout-scrim" data-native-browser-occluder="" aria-label="关闭导航栏遮罩" tabIndex={-1} onClick={() => toggleSidebar(false)}/>, document.body) : null;
+    document.addEventListener('keydown',key);
+    return()=>document.removeEventListener('keydown',key);
+  },[drawer]);
+  return null;
 }

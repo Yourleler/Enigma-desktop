@@ -1,52 +1,63 @@
-import { CHAT_MIN_WIDTH, PREVIEW_MIN_WIDTH } from '../layout-constants';
-
 export type LayoutDrawer = 'sidebar' | 'workspace' | null;
 export type LayoutIntent = Exclude<LayoutDrawer, null> | 'preview';
+export const NAV_MIN_WIDTH = 200;
+export const DOCK_MIN_WIDTH = 320;
+export const CONVERSATION_MIN_WIDTH = 400;
 
 interface LayoutInput {
   width: number;
   sidebarWidth: number;
   workspaceWidth: number;
-  previewWidth: number;
-  inspectorWidth: number;
+  inspectorWidth?: number;
   sidebarWanted: boolean;
   workspaceWanted: boolean;
-  sidebarAutoCollapsed: boolean;
-  workspaceAutoCollapsed: boolean;
-  previewOpen: boolean;
-  engineeringDrawer: boolean;
-  drawer: LayoutDrawer;
+  priority?: 'sidebar'|'workspace';
+  expanded?: boolean;
+  drawer?: LayoutDrawer;
   intent?: LayoutIntent;
 }
+const clamp=(value:number,min:number,max:number)=>Math.min(max,Math.max(min,Number.isFinite(value)?value:min));
 
-/** Auxiliary panes yield before the conversation or document becomes unreadable.
- * Auto-collapse is transient; it never changes the user's saved open/width choice. */
+/** Decide from available width and user intent, never animated DOM geometry.
+ * Panels shrink before either is hidden. Small screens use the same flush pane
+ * in the work area; there is no floating navigation card. */
 export function resolveWorkspaceLayout(input: LayoutInput) {
-  const width = Math.max(0, input.width);
-  const compact = width <= 860;
-  const previewExpanded = input.previewOpen && width < CHAT_MIN_WIDTH + PREVIEW_MIN_WIDTH;
-  const previewWidth = input.previewOpen
-    ? previewExpanded ? width : Math.min(Math.max(PREVIEW_MIN_WIDTH, input.previewWidth), width - CHAT_MIN_WIDTH)
-    : 0;
-  let remaining = width - (previewExpanded ? width : Math.min(width, CHAT_MIN_WIDTH) + previewWidth) - input.inspectorWidth;
-  const restoreGap = 48;
-  const workspaceInline = input.workspaceWanted && !compact && !input.engineeringDrawer
-    && remaining >= input.workspaceWidth + (input.workspaceAutoCollapsed ? restoreGap : 0);
-  if (workspaceInline) remaining -= input.workspaceWidth;
-  const sidebarInline = input.sidebarWanted && !compact
-    && remaining >= input.sidebarWidth + (input.sidebarAutoCollapsed ? restoreGap : 0);
-  let drawer: LayoutDrawer = input.intent === 'preview' ? null : input.drawer;
-  if (input.intent === 'sidebar') drawer = sidebarInline ? null : 'sidebar';
-  if (input.intent === 'workspace') drawer = workspaceInline ? null : 'workspace';
-  if (drawer === 'sidebar' && (!input.sidebarWanted || sidebarInline)) drawer = null;
-  if (drawer === 'workspace' && (!input.workspaceWanted || workspaceInline)) drawer = null;
-  return {
-    sidebarOpen: sidebarInline || drawer === 'sidebar',
-    sidebarAutoCollapsed: input.sidebarWanted && !sidebarInline && drawer !== 'sidebar',
-    jianOpen: workspaceInline || drawer === 'workspace',
-    jianAutoCollapsed: input.workspaceWanted && !workspaceInline && drawer !== 'workspace',
-    layoutDrawer: drawer,
-    previewExpanded,
-    previewWidth,
-  };
+  const width=Math.max(0,input.width-(input.inspectorWidth||0));
+  const left=clamp(input.sidebarWidth,NAV_MIN_WIDTH,400);
+  const right=clamp(input.workspaceWidth,DOCK_MIN_WIDTH,900);
+  const priority=input.intent==='sidebar'?'sidebar':input.intent==='workspace'||input.intent==='preview'?'workspace':input.priority||'workspace';
+  let sidebarOpen=false,jianOpen=false,sidebarWidth=left,workspaceWidth=right;
+  let layoutDrawer:LayoutDrawer=null;
+  if(input.expanded&&input.workspaceWanted){
+    jianOpen=true;
+    sidebarOpen=input.sidebarWanted&&width>=NAV_MIN_WIDTH+DOCK_MIN_WIDTH;
+    sidebarWidth=sidebarOpen?Math.min(left,width-DOCK_MIN_WIDTH):left;
+    workspaceWidth=Math.max(0,width-(sidebarOpen?sidebarWidth:0));
+  }else if(input.sidebarWanted&&input.workspaceWanted&&width>=NAV_MIN_WIDTH+CONVERSATION_MIN_WIDTH+DOCK_MIN_WIDTH){
+    sidebarOpen=jianOpen=true;
+    sidebarWidth=Math.min(left,width-CONVERSATION_MIN_WIDTH-DOCK_MIN_WIDTH);
+    workspaceWidth=Math.min(right,width-CONVERSATION_MIN_WIDTH-sidebarWidth);
+  }else{
+    const candidates=priority==='sidebar'?['sidebar','workspace'] as const:['workspace','sidebar'] as const;
+    for(const pane of candidates){
+      const wanted=pane==='sidebar'?input.sidebarWanted:input.workspaceWanted;
+      if(!wanted)continue;
+      const minimum=pane==='sidebar'?NAV_MIN_WIDTH:DOCK_MIN_WIDTH;
+      const requested=input.intent===pane||(pane==='workspace'&&input.intent==='preview')||input.drawer===pane;
+      if(width>=minimum+CONVERSATION_MIN_WIDTH){
+        if(pane==='sidebar'){sidebarOpen=true;sidebarWidth=Math.min(left,width-CONVERSATION_MIN_WIDTH);}
+        else{jianOpen=true;workspaceWidth=Math.min(right,width-CONVERSATION_MIN_WIDTH);}
+        break;
+      }
+      if(requested){
+        layoutDrawer=pane;
+        if(pane==='sidebar'){sidebarOpen=true;sidebarWidth=width;}else{jianOpen=true;workspaceWidth=width;}
+        break;
+      }
+    }
+  }
+  return {sidebarOpen,jianOpen,sidebarWidth,workspaceWidth,
+    sidebarAutoCollapsed:input.sidebarWanted&&!sidebarOpen,
+    jianAutoCollapsed:input.workspaceWanted&&!jianOpen,
+    layoutDrawer,layoutPriority:priority,previewExpanded:false,previewWidth:0};
 }

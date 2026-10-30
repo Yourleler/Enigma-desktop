@@ -19,7 +19,9 @@ export interface UiSlice {
   jianAutoCollapsed: boolean;
   previewOpen: boolean;
   previewExpanded: boolean;
+  /** On small screens the selected pane occupies the work area, without an overlay. */
   layoutDrawer: 'sidebar' | 'workspace' | null;
+  layoutPriority: 'sidebar' | 'workspace';
   welcomeVisible: boolean;
   currentTab: TabType;
   activePanel: ActivePanel;
@@ -65,6 +67,7 @@ export const createUiSlice = (
   previewOpen: false,
   previewExpanded: false,
   layoutDrawer: null,
+  layoutPriority: 'workspace',
   welcomeVisible: true,
   currentTab: 'chat',
   activePanel: null,

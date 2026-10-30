@@ -136,45 +136,7 @@ body,
   margin-right: 4px;
 }
 
-.mobile-drawer-scrim {
-  position: fixed;
-  inset: var(--titlebar-h) 0 0;
-  z-index: 70;
-  border: 0;
-  padding: 0;
-  background: var(--overlay-medium);
-  -webkit-app-region: no-drag;
-}
-
 @media (max-width: 860px) {
-  .mobile-desktop-root {
-    --sidebar-width: min(84vw, 320px);
-    --jian-sidebar-width: min(88vw, 360px);
-  }
-
-  .mobile-desktop-root .sidebar,
-  .mobile-desktop-root .jian-sidebar {
-    position: fixed;
-    top: 0;
-    bottom: 0;
-    z-index: 90;
-    box-shadow: none;
-  }
-
-  .mobile-desktop-root .sidebar {
-    left: 0;
-    right: auto;
-  }
-
-  .mobile-desktop-root .jian-sidebar {
-    left: auto;
-    right: 0;
-  }
-
-  .mobile-desktop-root .jian-sidebar-inner {
-    box-shadow: none;
-  }
-
   .mobile-desktop-root .main-content {
     min-width: 0;
   }

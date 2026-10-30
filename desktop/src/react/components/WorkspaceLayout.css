@@ -1,51 +1,30 @@
-/* A document can take the work area, but never reduce the composer to a strip. */
-.app { position: relative; overflow: hidden; }
-.app > .sidebar.collapsed { width: 0; border: 0; }
-.app > :is(.sidebar,.jian-sidebar)[data-auto-collapsed="true"] { transition: none; }
-.app:not([data-preview-expanded]) #previewPanel[data-preview-open="true"] { max-width: max(0px, calc(100% - 480px - var(--layout-sidebar-space,0px) - var(--layout-workspace-space,0px))); }
-.app #previewPanel [data-preview-panel-inner] { max-width: 100%; min-width: 0 !important; }
-.app > .main-content { min-width: min(100%, 480px); }
-.app[data-preview-expanded] > .main-content { display: none; }
-.app[data-preview-expanded] #previewPanel { width: 100% !important; flex: 1; min-width: 0; border-left: 0; }
-.app[data-preview-expanded] [data-preview-panel-inner] { width: 100% !important; min-width: 0 !important; }
-.app[data-preview-expanded] #previewResizeHandle { display: none; }
-
-.enigma-preview-return, .enigma-drawer-close {
-  display: flex; align-items: center; gap: 6px; flex-shrink: 0;
-  border: 0; border-bottom: 1px solid var(--border); background: transparent;
-  color: var(--text); padding: 10px 14px; min-height: 40px; font: inherit; font-size: 13px; cursor: pointer;
+/* One flush three-column layout. The planner supplies stable target widths. */
+.app { position:relative; overflow:hidden; }
+body.enigma-surface .app > .main-content { min-width:var(--layout-chat-min,400px); flex:1 1 0; }
+body.enigma-surface .app > :is(.sidebar,.jian-sidebar) {
+  position:relative !important; inset:auto !important; flex:0 0 auto; min-width:0; max-width:none;
+  margin:0; padding:0; border-radius:0; box-shadow:none; z-index:10; overflow:hidden;
+  transition:width 180ms cubic-bezier(.22,.7,.25,1);
 }
-.enigma-preview-return span { margin-left: auto; color: var(--text-muted); font-size: 11px; }
-.enigma-preview-return:hover, .enigma-drawer-close:hover { background: var(--overlay-light); }
-.enigma-preview-return:focus-visible, .enigma-drawer-close:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
-.enigma-layout-scrim { position: fixed; inset: var(--titlebar-h,44px) 0 0; z-index: 790; padding: 0; border: 0; background: rgb(0 0 0 / 24%); }
-/* Keep floating surfaces in the same coordinate space through both directions. */
-body.enigma-surface .app :is(.sidebar,.jian-sidebar)[data-floating="true"] {
-  position: fixed; top: var(--titlebar-h,44px); bottom: 8px; z-index: 800;
-  max-width: calc(100vw - 24px); border-radius: var(--lg-radius-panel,16px);
-  background: color-mix(in srgb, var(--eg-sidebar, var(--bg)) 32%, transparent);
-  backdrop-filter: blur(22px) saturate(1.18); border: 1px solid var(--border);
-  box-shadow: 0 18px 54px rgb(0 0 0 / 24%); opacity:1;
-  transition: transform 180ms cubic-bezier(.22,.7,.25,1), opacity 180ms ease !important;
-}
-body.enigma-surface .app .sidebar[data-floating="true"] { left:8px; width:min(var(--sidebar-width),calc(100vw - 24px)) !important; }
-body.enigma-surface .app .jian-sidebar[data-floating="true"] { right:8px; width:min(var(--jian-sidebar-width),calc(100vw - 24px)) !important; }
-body.enigma-surface .app .sidebar[data-floating="true"]:is(.collapsed,[data-panel-entering="true"]) { transform:translateX(calc(-100% - 16px)); opacity:0; pointer-events:none; }
-body.enigma-surface .app .jian-sidebar[data-floating="true"]:is(.collapsed,[data-panel-entering="true"]) { transform:translateX(calc(100% + 16px)); opacity:0; pointer-events:none; }
-.app [data-floating="true"] :is(.sidebar-inner,.jian-sidebar-inner) { width:100% !important; min-width:0 !important; padding:0; }
-.app [data-floating="true"] :is(#sidebarResizeHandle,#jianResizeHandle) { display:none; }
-body.enigma-surface .app :is(.sidebar,.jian-sidebar):not([data-floating="true"]) { transition:width 180ms cubic-bezier(.22,.7,.25,1); }
-body.enigma-surface .app :is(.sidebar-inner,.jian-sidebar-inner) { transform:none; transition:opacity 180ms ease; }
-body.enigma-surface .app .collapsed :is(.sidebar-inner,.jian-sidebar-inner) { transform:none; }
-body.enigma-surface.enigma-motion-off .app :is(.sidebar,.jian-sidebar,.sidebar-inner,.jian-sidebar-inner) { transition:none !important; }
-@media (prefers-reduced-motion: reduce) { .app > .sidebar, .app > .jian-sidebar, #previewPanel { transition: none !important; } }
-
-/* Reading a patch needs a wider surface; the same layout arbiter makes room. */
-:root:has(body.enigma-changes-open) { --jian-sidebar-width: clamp(360px, 42vw, 680px); }
-@media (max-width: 860px) {
-  body.enigma-changes-open .jian-sidebar[data-floating="true"] { z-index: 800; top: var(--titlebar-h,44px); bottom: 8px; right: 8px; width: min(680px, calc(100vw - 16px)) !important; }
-}
-
-body.enigma-surface.enigma-glass-off .app :is(.sidebar,.jian-sidebar)[data-floating="true"] { background:var(--eg-sidebar,var(--bg)); backdrop-filter:none; }
-
-body.enigma-surface .app .sidebar[data-floating="true"] { padding-top:0; }
+body.enigma-surface .app > .sidebar { width:var(--layout-sidebar-width,240px) !important; border:0; border-right:1px solid var(--border); }
+body.enigma-surface .app > .jian-sidebar { width:var(--right-dock-width,520px) !important; border:0; border-left:1px solid var(--border); }
+body.enigma-surface .app > :is(.sidebar,.jian-sidebar).collapsed { width:0 !important; border-width:0; pointer-events:none; }
+body.enigma-surface .app .sidebar-inner { width:var(--layout-sidebar-width,240px) !important; min-width:var(--layout-sidebar-width,240px) !important; }
+body.enigma-surface .app .jian-sidebar-inner { width:var(--right-dock-width,520px) !important; min-width:var(--right-dock-width,520px) !important; }
+body.enigma-surface .app :is(.sidebar-inner,.jian-sidebar-inner) { padding:0; border-radius:0; box-shadow:none; transform:none !important; transition:opacity 180ms ease; }
+body.enigma-surface .app > :is(.sidebar,.jian-sidebar)::after { display:none; }
+body.enigma-surface .app[data-layout-drawer] > .main-content,
+body.enigma-dock-expanded .app > .main-content { display:none; }
+body.enigma-surface .app[data-layout-drawer] :is(#sidebarResizeHandle,#jianResizeHandle),
+body.enigma-dock-expanded #jianResizeHandle { display:none; }
+/* Browser shell has a fixed titlebar; native shell already has a separate row. */
+body.enigma-surface .mobile-desktop-app { padding-top:var(--titlebar-h,44px); box-sizing:border-box; }
+body.enigma-surface .mobile-desktop-app > .main-content { padding-top:0 !important; }
+body.enigma-surface .mobile-desktop-app :is(.sidebar-inner,.jian-sidebar-inner) { padding-top:0; }
+.app #previewPanel [data-preview-panel-inner] { max-width:100%; min-width:0 !important; }
+.enigma-preview-return { display:flex; align-items:center; gap:6px; flex-shrink:0; border:0; border-bottom:1px solid var(--border); background:transparent; color:var(--text); padding:10px 14px; font:inherit; font-size:13px; cursor:pointer; }
+.enigma-preview-return span { margin-left:auto; color:var(--text-muted); }
+body.resizing .app > :is(.sidebar,.jian-sidebar),
+body.enigma-motion-off .app > :is(.sidebar,.jian-sidebar),
+body.enigma-motion-off .app :is(.sidebar-inner,.jian-sidebar-inner) { transition:none !important; }
+@media(prefers-reduced-motion:reduce) { .app > :is(.sidebar,.jian-sidebar),.app :is(.sidebar-inner,.jian-sidebar-inner) { transition:none !important; } }

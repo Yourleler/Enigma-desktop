@@ -74,9 +74,9 @@ describe('useSidebarResize', () => {
     Object.defineProperty(window,'innerWidth',{configurable:true,value:740});
     fireEvent(window,new Event('resize'));
     expect(useStore.getState().previewExpanded).toBe(false);
-    expect(useStore.getState().jianOpen).toBe(false);
+    expect(useStore.getState().jianOpen).toBe(true);
     expect(useStore.getState().layoutDrawer).toBeNull();
-    expect(document.documentElement.style.getPropertyValue('--right-dock-width')).toBe('580px');
+    expect(document.documentElement.style.getPropertyValue('--right-dock-width')).toBe('340px');
     Object.defineProperty(window,'innerWidth',{configurable:true,value:1200});
     fireEvent(window,new Event('resize'));
     expect(document.documentElement.style.getPropertyValue('--preview-panel-width')).toBe('580px');

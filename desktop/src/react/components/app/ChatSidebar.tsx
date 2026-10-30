@@ -1,4 +1,3 @@
-import { usePanelExit } from '../../hooks/use-panel-exit';
 import { useEngineering } from '../../engineering/state';
 import { EngineeringSidebar } from '../../engineering/Engineering';
 import type { ActivePanel } from '../../types';
@@ -112,10 +111,9 @@ export function ChatSidebar({
   const currentTab = useStore(s => s.currentTab);
   const autoCollapsed = useStore(s => s.sidebarAutoCollapsed);
   const layoutDrawer = useStore(s => s.layoutDrawer);
-  const {floating,entering} = usePanelExit(layoutDrawer === 'sidebar');
 
   return (
-    <aside className={`sidebar${open ? '' : ' collapsed'}`} id="sidebar" data-floating={floating || undefined} data-panel-entering={entering || undefined} data-layout-managed="" data-auto-collapsed={autoCollapsed || undefined} inert={!open || layoutDrawer === 'workspace'} aria-hidden={!open}>
+    <aside className={`sidebar${open ? '' : ' collapsed'}`} id="sidebar" data-layout-managed="" data-auto-collapsed={autoCollapsed || undefined} inert={!open || layoutDrawer === 'workspace'} aria-hidden={!open}>
       <div className="sidebar-inner" data-liquid="sidebar">
         <div className={`sidebar-chat-content${currentTab === 'chat' ? '' : ' hidden'}`}>
           <ChatSidebarContent {...contentProps} showCollapseButton={false}/>

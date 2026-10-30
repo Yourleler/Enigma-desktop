@@ -41,8 +41,8 @@ export function useSidebarResize(): void {
     const channelInspectorHandle = document.getElementById('channelInspectorResizeHandle');
     const previewPanel = document.getElementById('previewPanel');
 
-    const LEFT_MIN = 180, LEFT_MAX = 400;
-    const RIGHT_MIN = 380, RIGHT_MAX = 900;
+    const LEFT_MIN = 200, LEFT_MAX = 400;
+    const RIGHT_MIN = 320, RIGHT_MAX = 900;
     const CHANNEL_INSPECTOR_MIN = 220, CHANNEL_INSPECTOR_MAX = 620;
     const PREVIEW_MIN = PREVIEW_MIN_WIDTH;
 
@@ -77,8 +77,8 @@ export function useSidebarResize(): void {
 
     function applySidebarWidth(w: number): void {
       const px = w + 'px';
-      root.style.setProperty('--sidebar-width', px);
-      if (leftInner) { leftInner.style.width = px; leftInner.style.minWidth = px; }
+      root.style.setProperty('--sidebar-preferred-width',px);
+      localStorage.setItem('hana-sidebar-width',String(w));
     }
 
     function updateJianColumns(w: number): void {
@@ -92,7 +92,6 @@ export function useSidebarResize(): void {
       root.style.setProperty('--right-dock-width',px);
       root.style.setProperty('--right-dock-preferred-width',px);
       localStorage.setItem('enigma-dock-width',String(w));
-      if (rightInner) { rightInner.style.width = px; rightInner.style.minWidth = px; }
       updateJianColumns(w);
     }
 

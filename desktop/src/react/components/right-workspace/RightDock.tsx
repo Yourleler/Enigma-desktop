@@ -51,6 +51,17 @@ export function RightDock(){
     const list=strip.current,tab=list?.querySelector<HTMLElement>('[aria-selected="true"]');
     if(list&&tab){const a=list.getBoundingClientRect(),b=tab.getBoundingClientRect();if(b.right>a.right)list.scrollLeft+=b.right-a.right+8;else if(b.left<a.left)list.scrollLeft-=a.left-b.left+8;}
   },[scope,resolved,tabs.length]);
+  useEffect(()=>{
+    const list=strip.current;if(!list||typeof ResizeObserver==='undefined')return;
+    const align=()=>{
+      const active=list.querySelector<HTMLElement>('[aria-selected="true"]');if(!active)return;
+      const a=list.getBoundingClientRect(),b=active.getBoundingClientRect();if(!a.width)return;
+      if(b.right>a.right)list.scrollLeft+=b.right-a.right+4;
+      else if(b.left<a.left)list.scrollLeft-=a.left-b.left+4;
+    };
+    const observer=new ResizeObserver(align);observer.observe(list);
+    return()=>observer.disconnect();
+  },[]);
   const choose=(tab:DockTab)=>{
     if(tab.startsWith('preview:')){useStore.getState().setPreviewOpen(true);setActiveTab(tab.slice(8));}
     selectDockTab(scope,tab,tab==='browser'&&view?.browserSession===undefined?{browserSession:session}:{});

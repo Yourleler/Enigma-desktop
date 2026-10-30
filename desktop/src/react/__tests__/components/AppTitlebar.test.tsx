@@ -5,8 +5,9 @@ import React from 'react';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppTitlebar } from '../../components/app/AppTitlebar';
-import { SidebarLayout, toggleSidebar } from '../../components/SidebarLayout';
+import { SidebarLayout, toggleSidebar, updateLayout } from '../../components/SidebarLayout';
 import { useStore } from '../../stores';
+import {dockScope,expandDock,useRightDock} from '../../stores/right-dock-store';
 
 vi.mock('../../components/channels/ChannelTabBar', () => ({
   ChannelTabBar: () => <div data-testid="channel-tabs" />,
@@ -82,6 +83,30 @@ describe('AppTitlebar', () => {
     expect(tabs.closest('.enigma-window-modes')?.parentElement).toHaveClass('tb-right-group');
     view.rerender(<AppTitlebar {...props} centerTitle="回到聊天"/>);
     expect(screen.getByTestId('channel-tabs')).toBe(tabs);
+  });
+
+  it('keeps both panels open at 1280px even when measured animation frames are narrow',()=>{
+    document.documentElement.removeAttribute('style');localStorage.clear();
+    Object.defineProperty(window,'innerWidth',{configurable:true,value:1280});
+    useRightDock.setState({views:{}});useStore.setState({sidebarOpen:false,sidebarAutoCollapsed:false,jianOpen:true,jianAutoCollapsed:false,layoutDrawer:null,layoutPriority:'workspace',currentTab:'chat'});
+    document.body.innerHTML='<div class="app"><aside class="sidebar"><div class="sidebar-inner"></div></aside><main class="main-content"></main><aside class="jian-sidebar"><div class="jian-sidebar-inner"></div></aside></div>';
+    const inner=document.querySelector('.sidebar-inner')!;
+    toggleSidebar(true);
+    for(const width of [0,42,115,201,240,238,240]){
+      vi.spyOn(inner,'getBoundingClientRect').mockReturnValue({width} as DOMRect);
+      updateLayout();
+      expect(useStore.getState()).toMatchObject({sidebarOpen:true,jianOpen:true,layoutDrawer:null});
+      expect(document.documentElement.style.getPropertyValue('--right-dock-width')).toBe('520px');
+    }
+    document.body.innerHTML='';
+  });
+
+  it('allows opening navigation while the reading panel is expanded',()=>{
+    Object.defineProperty(window,'innerWidth',{configurable:true,value:1512});
+    useStore.setState({sidebarOpen:false,sidebarAutoCollapsed:false,jianOpen:true,jianAutoCollapsed:false,layoutDrawer:null,layoutPriority:'workspace',currentTab:'chat'});
+    expandDock(dockScope(useStore.getState()),true);toggleSidebar(true);
+    expect(useStore.getState()).toMatchObject({sidebarOpen:true,jianOpen:true,layoutDrawer:null});
+    expandDock(dockScope(useStore.getState()),false);updateLayout();
   });
 
   it('uses one right-side entry for files, previews, changes and browser',()=>{

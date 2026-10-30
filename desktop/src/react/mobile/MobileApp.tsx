@@ -237,14 +237,11 @@ function MobileDesktopShell({
     }
   }, [refreshMobileSessions, wsState]);
 
-  const showDrawerScrim = !layoutDrawer && (sidebarOpen || jianOpen) && isNarrow && !(engineeringPane&&jianOpen);
   const openMobileDrawerFromGesture = useCallback((edge: MobileEdgeGesture['edge']) => {
     if (edge === 'left') {
-      useStore.setState({ jianOpen: false });
       toggleSidebar(true);
       return;
     }
-    useStore.setState({ sidebarOpen: false });
     toggleJianSidebar(true);
   }, []);
 
@@ -332,11 +329,9 @@ function MobileDesktopShell({
         centerTitle={titlebarTitle}
         onNewSession={() => void createNewSession()}
         onToggleSidebar={() => {
-          if (isNarrow&&!sidebarOpen) useStore.setState({ jianOpen: false });
           toggleSidebar(!sidebarOpen);
         }}
         onToggleJian={() => {
-          if (isNarrow&&!jianOpen) useStore.setState({ sidebarOpen: false });
           toggleJianSidebar(!jianOpen);
         }}
         onTogglePreview={() => {
@@ -369,7 +364,6 @@ function MobileDesktopShell({
           </Suspense>
         )}
       </div>
-      {showDrawerScrim && <button className="mobile-drawer-scrim" type="button" aria-label={t('mobile.closeSidebar')} onClick={closeMobileDrawers} />}
       <StatusBar />
       <Suspense fallback={null}>
         <LazySettingsModalShell />
