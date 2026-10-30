@@ -217,3 +217,12 @@ describe("HTML preview route", () => {
     expect(await register.json()).toEqual({ error: "html_preview_too_large" });
   });
 });
+
+it('enables document search without relaxing the preview sandbox or changing the original registration',async()=>{
+ const app=new Hono();app.route('/',createHtmlPreviewRoute());
+ const created=await app.request('http://localhost/api/preview/html',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({content:'<h1>Searchable page</h1>',enableDocumentSearch:true})});
+ const {previewUrl}=await created.json(),response=await app.request(previewUrl);
+ expect(await response.text()).toContain('data-enigma-preview-search');
+ expect(response.headers.get('Content-Security-Policy')).toContain("connect-src 'none'");
+ expect(response.headers.get('Content-Security-Policy')).not.toContain('allow-same-origin');
+});

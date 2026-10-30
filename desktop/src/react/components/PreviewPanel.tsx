@@ -376,7 +376,7 @@ export function PreviewPanel({embedded=false,visible=true,itemId,panelId='previe
       setFindCount(0);setFindTruncated(false);
       return undefined;
     }
-    if (editable) return;
+    if (editable || previewItem.type==='html') return;
     const root=previewBodyRef.current?.querySelector<HTMLElement>('.preview-markdown')||previewBodyRef.current;
     const highlight=root?createDocumentHighlights(root):null;
     if(root&&highlight){
@@ -432,7 +432,7 @@ export function PreviewPanel({embedded=false,visible=true,itemId,panelId='previe
         {!embedded&&<TabBar />}
         {previewItem?.type==='csv'&&isEditable(previewItem)&&<div className="enigma-csv-mode" role="group" aria-label="CSV 显示方式"><button aria-pressed={!csvSource} onClick={()=>setCsvSource(false)}>表格预览</button><button aria-pressed={csvSource} onClick={()=>setCsvSource(true)}>编辑 CSV</button></div>}
         {previewOpen&&previewItem&&['markdown','code','text','html'].includes(previewItem.type)&&!['missing','unavailable'].includes(previewItem.status||'')&&<DocumentNavigation
-          documentId={previewItem.id} headings={markdownHeadings} activeHeadingId={activeHeadingId} editable={editable} wrapLines={wrapLines}
+          documentId={previewItem.id} contentType={previewItem.type} findOpen={findOpen} headings={markdownHeadings} activeHeadingId={activeHeadingId} editable={editable} wrapLines={wrapLines}
           onJump={handleJumpHeading} onFind={()=>{if(editable)editorRef.current?.openSearch();else setFindOpen(true);}}
           onGotoLine={()=>editorRef.current?.gotoLine()} onToggleWrap={()=>setWrapLines(value=>{try{localStorage.setItem('enigma-preview-wrap',String(!value));}catch{}return !value;})}
           onFold={editable?()=>editorRef.current?.foldAll():undefined} onUnfold={editable?()=>editorRef.current?.unfoldAll():undefined}>
@@ -479,7 +479,7 @@ export function PreviewPanel({embedded=false,visible=true,itemId,panelId='previe
           {previewOpen && anchorMessage && <div role="status" className={previewStyles.previewAnchorMessage}>{anchorMessage}<button type="button" aria-label="关闭章节提示" onClick={()=>setAnchorMessage('')}>×</button></div>}
           <div ref={previewBodyRef} className={`universal-card ${previewStyles.previewPanelBody}`} id={panelId==='previewPanel'?'previewBody':`${panelId}-body`} data-preview-panel-body="" onMouseUp={handleMouseUp}>
             {previewOpen && previewItem && !editable && (
-              <PreviewRenderer previewItem={previewItem} />
+              <PreviewRenderer previewItem={previewItem} htmlFind={previewItem.type==='html'?{open:findOpen,query:findQuery,index:findIndex,onResult:(count,truncated)=>{setFindCount(count);setFindTruncated(truncated);},onOpen:()=>setFindOpen(true)}:undefined}/>
             )}
             {previewOpen && previewItem && editable && (
               <PreviewEditor key={previewItem.id}

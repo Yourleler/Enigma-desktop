@@ -19,7 +19,7 @@ import {
   normalizeWorkbenchContentRef,
 } from '../../utils/remote-file-preview';
 import { refreshPreviewDocumentTarget } from '../../utils/preview-document-refresh';
-import {previewCopyText} from '../../utils/preview-copy';
+import {previewCopyText,previewCopyInfo} from '../../utils/preview-copy';
 import type {
   MarkdownCoverImageInput,
   MarkdownCoverTargetInput,
@@ -183,6 +183,8 @@ export function FloatingActions({
   onToggleMarkdownPreview,
 }: Props) {
   const [copyLabel, setCopyLabel] = useState<string | null>(null);
+  const copyInfo=previewCopyInfo(contentType);
+  const copyGeneration=useRef(0);
   const [coverBusy, setCoverBusy] = useState(false);
   const [coverMenuOpen, setCoverMenuOpen] = useState(false);
   const [coverGalleryOpen, setCoverGalleryOpen] = useState(false);
@@ -233,13 +235,16 @@ export function FloatingActions({
     };
   }, [contentType, coverTarget]);
 
+  useEffect(()=>{copyGeneration.current++;setCopyLabel(null);if(timerRef.current)clearTimeout(timerRef.current);},[content,filePath,contentType]);
   const handleCopy = useCallback(() => {
+    const generation=++copyGeneration.current;
     navigator.clipboard.writeText(previewCopyText(content,contentType)).then(() => {
+      if(generation!==copyGeneration.current)return;
       const _t = window.t ?? ((p: string) => p);
       setCopyLabel(_t('attach.copied'));
       if (timerRef.current) clearTimeout(timerRef.current);
       timerRef.current = setTimeout(() => setCopyLabel(null), 1500);
-    }).catch(()=>{setCopyLabel('复制失败，请重试');});
+    }).catch(()=>{if(generation===copyGeneration.current)setCopyLabel('复制失败，请重试');});
   }, [content,contentType]);
 
   const handleScreenshot = useCallback(async () => {
@@ -433,12 +438,12 @@ export function FloatingActions({
   return (
     <div className={floatingActionsClassName} data-react-managed ref={floatingActionsRef}>
       <div className={styles.floatingActionsSurface}>
-        <button className={styles.actionBtn} onClick={handleCopy}>
+        <button className={`${styles.actionBtn} enigma-document-copy`} onClick={handleCopy} aria-label={copyLabel||copyInfo.label} data-tooltip={copyLabel||copyInfo.description} title={copyInfo.description}>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
           </svg>
-          <span>{copyLabel ?? t('attach.copy')}</span>
+          <span>{copyLabel ?? copyInfo.label}</span>
         </button>
         {contentType === 'markdown' && coverTarget && systemCoverAvailable && (
           <div className={styles.coverActionWrap} ref={coverMenuRef}>

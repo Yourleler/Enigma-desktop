@@ -5,6 +5,7 @@ import { Hono } from "hono";
 import { guessMime } from "../http/file-content.ts";
 import { resolveWorkbenchPreviewSource } from '../http/workbench-preview-source.ts';
 import { isLocalOwnerPrincipal } from '../http/route-security.ts';
+import {withHtmlPreviewSearch} from '../../shared/html-preview-search.ts';
 
 const DEFAULT_TTL_MS = 10 * 60 * 1000;
 const DEFAULT_MAX_CONTENT_BYTES = 2 * 1024 * 1024;
@@ -72,7 +73,7 @@ export function createHtmlPreviewRoute({
     const expiresAt = now() + ttlMs;
     previews.set(id, {
       token,
-      content: servedContent,
+      content: body.enableDocumentSearch===true?withHtmlPreviewSearch(servedContent):servedContent,
       title: typeof body?.title === "string" ? body.title.slice(0, 240) : "",
       assetRoot: assetScope?.assetRoot || null,
       csp: buildHtmlPreviewCsp(assetRootUrl),

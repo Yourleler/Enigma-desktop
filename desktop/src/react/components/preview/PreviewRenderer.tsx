@@ -93,7 +93,9 @@ function LegacyMediaFallback({ previewItem }: { previewItem: PreviewItem }) {
   );
 }
 
+export type HtmlFindState={open:boolean;query:string;index:number;onResult:(count:number,truncated:boolean)=>void;onOpen:()=>void};
 interface PreviewRendererProps {
+  htmlFind?:HtmlFindState;
   previewItem: PreviewItem;
 }
 
@@ -132,8 +134,21 @@ function UnavailablePreviewTarget({previewItem}: {previewItem: PreviewItem}) {
 // HTML 内容由 server 注册为 token 化短期文档；右侧 Preview 只承载本地
 // artifact/file-backed HTML，用 DOM iframe 渲染，外部网页访问交给内置浏览器。
 
-function HtmlPreview({ previewItem }: { previewItem: PreviewItem }) {
+function HtmlPreview({ previewItem,htmlFind }: { previewItem: PreviewItem;htmlFind?:HtmlFindState }) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const frame=useRef<HTMLIFrameElement>(null),search=useRef(htmlFind),request=useRef('');search.current=htmlFind;
+  const [loaded,setLoaded]=useState(0),searchEnabled=!!htmlFind;
+  useEffect(()=>{
+    const receive=(event:MessageEvent)=>{
+      if(event.source!==frame.current?.contentWindow)return;const data=event.data;
+      if(data?.type==='enigma-preview-find-open'){search.current?.onOpen();return;}
+      if(data?.type==='enigma-preview-find-result'&&data.id===request.current&&Number.isInteger(data.count)&&data.count>=0&&data.count<=2000)search.current?.onResult(data.count,data.truncated===true);
+    };window.addEventListener('message',receive);return()=>window.removeEventListener('message',receive);
+  },[]);
+  useEffect(()=>{
+    if(!searchEnabled||!previewUrl||!loaded)return;request.current=crypto.randomUUID();
+    frame.current?.contentWindow?.postMessage({type:'enigma-preview-find',id:request.current,query:htmlFind?.open?htmlFind.query:'',index:htmlFind?.index||0},'*');
+  },[previewUrl,loaded,searchEnabled,htmlFind?.query,htmlFind?.index,htmlFind?.open]);
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
   const ref=previewItem.remoteContentRef;
@@ -151,6 +166,7 @@ function HtmlPreview({ previewItem }: { previewItem: PreviewItem }) {
       body: JSON.stringify({
         title: previewItem.title,
         content: previewItem.content,
+        ...(searchEnabled?{enableDocumentSearch:true}:{}),
         sourceFilePath: previewItem.filePath,
         sourceRootPath: previewItem.sourceRootPath,
         ...(sourceKey ? {remoteContentRef: JSON.parse(sourceKey)} : {}),
@@ -171,7 +187,7 @@ function HtmlPreview({ previewItem }: { previewItem: PreviewItem }) {
     return () => {
       cancelled = true;
     };
-  }, [previewItem.content, previewItem.filePath, previewItem.sourceRootPath, sourceKey, previewItem.title, attempt]);
+  }, [previewItem.content, previewItem.filePath, previewItem.sourceRootPath, sourceKey, previewItem.title, attempt, searchEnabled]);
 
   if (error) {
     return <div className={previewStyles.previewUnavailable} role="alert"><p>{error}</p><button onClick={() => setAttempt(value => value + 1)}>重新加载</button></div>;
@@ -182,6 +198,7 @@ function HtmlPreview({ previewItem }: { previewItem: PreviewItem }) {
     <iframe
       className="preview-html-frame"
       data-html-preview-frame=""
+      ref={frame} onLoad={()=>setLoaded(value=>value+1)}
       title={previewItem.title}
       src={previewUrl || 'about:blank'}
       sandbox="allow-scripts"
@@ -735,7 +752,7 @@ function FileInfoPreview({ previewItem }: { previewItem: PreviewItem }) {
 
 // ── PreviewRenderer ──
 
-export function PreviewRenderer({ previewItem }: PreviewRendererProps) {
+export function PreviewRenderer({ previewItem,htmlFind }: PreviewRendererProps) {
   if (previewItem.status === 'unavailable') return <UnavailablePreviewTarget previewItem={previewItem}/>;
   if (previewItem.status === 'missing') {
     return <MissingPreviewTarget previewItem={previewItem} />;
@@ -747,7 +764,7 @@ export function PreviewRenderer({ previewItem }: PreviewRendererProps) {
     case 'browser':
       return <SidebarBrowser key={previewItem.id} sessionPath={previewItem.browserSessionPath} />;
     case 'html':
-      return <HtmlPreview previewItem={previewItem} />;
+      return <HtmlPreview previewItem={previewItem} htmlFind={htmlFind}/>;
 
     case 'markdown':
       return <MarkdownPreview previewItem={previewItem} />;

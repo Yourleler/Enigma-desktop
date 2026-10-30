@@ -244,6 +244,6 @@
     50% { opacity: 1; transform: translateY(-1px); }
 }
 
-.inlineActions{position:relative;top:auto;right:auto;padding:0;margin-inline-start:auto;z-index:15;}
-.inlineActions .floatingActionsSurface{opacity:1;pointer-events:auto;transform:none;box-shadow:none;background:transparent;flex-wrap:wrap;}
+.inlineActions{position:relative;top:auto;right:auto;padding:0;margin-inline-start:0;z-index:15;}
+.inlineActions .floatingActionsSurface{opacity:1;pointer-events:auto;transform:none;box-shadow:none;background:transparent;flex-wrap:nowrap;}
 .inlineActions .actionBtn{min-height:30px;padding:var(--space-4) var(--space-7);cursor:pointer;}
