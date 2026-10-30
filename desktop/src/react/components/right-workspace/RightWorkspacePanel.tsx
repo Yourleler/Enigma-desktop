@@ -6,7 +6,7 @@ import { useChangesPanel } from '../../stores/changes-panel-store';
 import { RepositoryChangesCard, RepositoryChangesPanel } from './RepositoryChangesCard';
 import { EngineeringPanel } from '../../engineering/Engineering';
 import { useEngineering } from '../../engineering/state';
-import { useId } from 'react';
+import { useId,useState } from 'react';
 import { GlassSelection } from '../../ui/GlassSelection';
 import { AppIcon } from '../../ui/app-icons';
 import { useStore } from '../../stores';
@@ -64,8 +64,9 @@ function JianDrawer() {
   );
 }
 
-function TabContent({ activeTab }: { activeTab: RightWorkspaceTab }) {
-  if (activeTab === 'session-files') return <SessionRegistryFilesPanel />;
+function TabContent({ activeTab,filesOnly }: { activeTab: RightWorkspaceTab;filesOnly?:boolean }) {
+  const [query,setQuery]=useState('');
+  if (activeTab === 'session-files') return <><input className="enigma-attachment-search" aria-label="搜索附件" placeholder="搜索附件名称或路径" value={query} onChange={event=>setQuery(event.target.value)}/><SessionRegistryFilesPanel query={query} placement={filesOnly?'files':undefined}/></>;
   return <DeskSection framed={false} showHeader={false} rightWorkspaceLayout />;
 }
 
@@ -164,7 +165,7 @@ export function RightWorkspacePanel({ compact = false, filesOnly = false }: { co
           })}
         </div>
         <div className={styles.content} role="tabpanel">
-          <TabContent activeTab={activeTab} />
+          <TabContent activeTab={activeTab} filesOnly={filesOnly}/>
         </div>
       </div>
       {!compact&&!filesOnly && (

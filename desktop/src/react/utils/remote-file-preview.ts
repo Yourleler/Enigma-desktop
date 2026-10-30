@@ -26,6 +26,7 @@ import { openMediaPreview } from './media-preview';
 export { isWebRuntime };
 
 export interface WorkbenchPreviewInput {
+  placement?: 'files'|'tab';
   anchor?: string;
   file: DeskFile;
   mountId?: string | null;
@@ -37,6 +38,7 @@ export interface WorkbenchPreviewInput {
 }
 
 export interface FileRefPreviewContext {
+  placement?: 'files'|'tab';
   origin: 'desk' | 'session';
   sessionPath?: string;
   messageId?: string;
@@ -204,6 +206,7 @@ async function openRemoteContentPreview({
   remoteContentRef,
   resourceId,
   anchor,
+  placement,
   isCurrent = beginPreviewOpen(),
 }: {
   contentPath: string;
@@ -215,11 +218,12 @@ async function openRemoteContentPreview({
   remoteContentRef?: RemoteWorkbenchContentRef;
   resourceId?: string;
   anchor?: string;
+  placement?: 'files'|'tab';
   isCurrent?: () => boolean;
 }): Promise<void> {
   const mediaKind = inferKindByExt(ext);
   if ((isMediaKind(mediaKind) || mediaKind === 'audio') && mediaRef) {
-    if (mediaContext.origin === 'desk' || mediaKind === 'audio') openMediaPreview(mediaRef, remoteContentRef);
+    if (mediaContext.origin === 'desk' || mediaKind === 'audio' || placement) openMediaPreview(mediaRef, remoteContentRef,placement);
     else openMediaViewerForRef(mediaRef, mediaContext);
     return;
   }
@@ -228,7 +232,7 @@ async function openRemoteContentPreview({
   if(previewType==='docx'||previewType==='xlsx') {
     const item: PreviewItem={id,type:previewType,title,ext,content:'',remoteContentRef,contentResourceId:resourceId,storageKind:'remote-content'};
     const ready=await readOfficePreviewItem(item);
-    if(isCurrent())openPreview(ready);
+    if(isCurrent())openPreview(ready,{placement});
     return;
   }
   if (previewType && previewType !== 'docx' && previewType !== 'xlsx') {
@@ -247,7 +251,7 @@ async function openRemoteContentPreview({
       remoteContentRef: remoteContentRefWithVersion(remoteContentRef, fileVersion),
       contentResourceId: resourceId,
     };
-    if(anchor)openPreview(previewItem,{anchor});else openPreview(previewItem);
+    openPreview(previewItem,{anchor,placement});
     return;
   }
 
@@ -259,7 +263,7 @@ async function openRemoteContentPreview({
     ext,
     storageKind: 'remote-content',
     remoteContentRef,
-  });
+  },{placement});
 }
 
 /** Restore content without activating tabs or changing the user's selection. */
@@ -374,6 +378,7 @@ export async function openWorkbenchFilePreview(input: WorkbenchPreviewInput): Pr
       origin: 'desk',
       sourceRootPath: access.sourceRootPath,
       anchor:input.anchor,
+      placement:input.placement,
     });
     return;
   }
@@ -407,6 +412,7 @@ export async function openWorkbenchFilePreview(input: WorkbenchPreviewInput): Pr
       mediaContext: { origin: 'desk' },
       remoteContentRef: access.remoteContentRef,
       anchor: input.anchor,
+      placement: input.placement,
       isCurrent,
     });
   } catch (err) {
@@ -423,7 +429,7 @@ export async function openMobileWorkbenchPreview(input: WorkbenchPreviewInput): 
 export async function openFileRefPreview(file: FileRef, context: FileRefPreviewContext): Promise<void> {
   if (file.status === 'expired') return;
   if (isMediaKind(file.kind) || file.kind === 'audio') {
-    if (context.origin === 'desk' || file.kind === 'audio') openMediaPreview(file);
+    if (context.origin === 'desk' || file.kind === 'audio' || context.placement) openMediaPreview(file,undefined,context.placement);
     else openMediaViewerForRef(file, {
       origin: context.origin,
       sessionPath: context.sessionPath,
@@ -440,6 +446,7 @@ export async function openFileRefPreview(file: FileRef, context: FileRefPreviewC
       messageId: context.messageId,
       fileId: file.fileId,
       blockIdx: context.blockIdx,
+      placement:context.placement,
     });
     return;
   }
@@ -452,6 +459,7 @@ export async function openFileRefPreview(file: FileRef, context: FileRefPreviewC
       resourceId: access.resourceId,
       title: file.name,
       ext: file.ext || extOfName(file.name) || '',
+      placement:context.placement,
       mediaContext: {
         origin: context.origin,
         sessionPath: context.sessionPath,

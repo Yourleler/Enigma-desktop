@@ -66,7 +66,7 @@ export function SidebarLayout({ restorePreference = true }: { restorePreference?
     });
     const unsubscribeEngineering = useEngineering.subscribe((s, previous) => {
       if (s.sessionPath !== previous.sessionPath || s.connectionId !== previous.connectionId) { schedule(); return; }
-      if (s.paneOpen && s.active && (s.paneOpen !== previous.paneOpen || s.active !== previous.active)) { useChangesPanel.setState({open:false});selectDockTab(dockScope(useStore.getState()),'tools');useStore.setState({jianOpen:true,jianAutoCollapsed:false}); updateLayout('workspace'); }
+      if (s.paneOpen && s.active && (s.paneOpen !== previous.paneOpen || s.active !== previous.active)) { useChangesPanel.setState({open:false});const group=s.tabs.find(tab=>tab.id===s.active)?.group;selectDockTab(dockScope(useStore.getState()),group?`tool:${group}`:'tools');useStore.setState({jianOpen:true,jianAutoCollapsed:false}); updateLayout('workspace'); }
       else if (s.paneOpen !== previous.paneOpen || s.active !== previous.active || !!s.snapshot?.connected !== !!previous.snapshot?.connected) schedule();
     });
     const unsubscribeChanges = useChangesPanel.subscribe((s,previous) => { if(s.open&&(s.open!==previous.open||s.session!==previous.session)){selectDockTab(dockScope(useStore.getState()),'changes');useStore.setState({jianOpen:true,jianAutoCollapsed:false});updateLayout('workspace');} });

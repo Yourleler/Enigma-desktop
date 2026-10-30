@@ -110,7 +110,7 @@ function escapeCssId(id: string): string {
 }
 
 
-export function PreviewPanel({embedded=false,visible=true,itemId}:{embedded?:boolean;visible?:boolean;itemId?:string|null}={}) {
+export function PreviewPanel({embedded=false,visible=true,itemId,panelId='previewPanel',watchDocuments=true}:{embedded?:boolean;visible?:boolean;itemId?:string|null;panelId?:string;watchDocuments?:boolean}={}) {
   const previewOpen = useStore(s => s.previewOpen);
   const previewExpanded = useStore(s => s.previewExpanded);
   const layoutDrawer = useStore(s => s.layoutDrawer);
@@ -354,7 +354,7 @@ export function PreviewPanel({embedded=false,visible=true,itemId}:{embedded?:boo
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (!visible || !previewOpen || !['markdown','code','text','html'].includes(previewItem?.type || '') || !(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== 'f') return;
-      const panel=previewBodyRef.current?.closest('#previewPanel');
+      const panel=previewBodyRef.current?.closest('[data-preview-root]');
       if(!panel?.contains(event.target as Node)||editable)return;
       event.preventDefault();
       event.stopPropagation();
@@ -416,7 +416,8 @@ export function PreviewPanel({embedded=false,visible=true,itemId}:{embedded?:boo
   return (
     <div
       className={`${previewStyles.previewPanel}${previewOpen ? '' : ` ${previewStyles.previewPanelCollapsed}`}`}
-      id="previewPanel"
+      id={panelId}
+      data-preview-root=""
       data-layout-managed=""
       inert={!previewOpen || (embedded ? !visible || layoutDrawer==='sidebar' : !!layoutDrawer)}
       hidden={embedded&&!visible}
@@ -424,7 +425,7 @@ export function PreviewPanel({embedded=false,visible=true,itemId}:{embedded?:boo
       aria-hidden={!previewOpen || embedded&&!visible}
       data-preview-open={previewOpen ? 'true' : 'false'}
     >
-      <OpenPreviewDocumentWatchBridge />
+      {watchDocuments&&<OpenPreviewDocumentWatchBridge/>}
       {!embedded&&<div className="resize-handle resize-handle-left" id="previewResizeHandle"></div>}
       <div className={previewStyles.previewPanelInner} data-preview-panel-inner="">
         {!embedded&&previewExpanded && <button className="enigma-preview-return" onClick={() => closePreview()}><AppIcon name="chevronLeft" size={16}/>返回对话<span>已打开的文件会保留</span></button>}
@@ -476,7 +477,7 @@ export function PreviewPanel({embedded=false,visible=true,itemId}:{embedded?:boo
             onClose={() => setFindOpen(false)}
           />
           {previewOpen && anchorMessage && <div role="status" className={previewStyles.previewAnchorMessage}>{anchorMessage}<button type="button" aria-label="关闭章节提示" onClick={()=>setAnchorMessage('')}>×</button></div>}
-          <div ref={previewBodyRef} className={`universal-card ${previewStyles.previewPanelBody}`} id="previewBody" data-preview-panel-body="" onMouseUp={handleMouseUp}>
+          <div ref={previewBodyRef} className={`universal-card ${previewStyles.previewPanelBody}`} id={panelId==='previewPanel'?'previewBody':`${panelId}-body`} data-preview-panel-body="" onMouseUp={handleMouseUp}>
             {previewOpen && previewItem && !editable && (
               <PreviewRenderer previewItem={previewItem} />
             )}

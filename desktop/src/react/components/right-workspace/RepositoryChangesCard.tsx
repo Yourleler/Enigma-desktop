@@ -4,6 +4,7 @@ import { useStore } from '../../stores';
 import { hanaFetch } from '../../hooks/use-hana-fetch';
 import { useEngineering, rememberEngineeringView } from '../../engineering/state';
 import { Changes } from '../../engineering/Changes';
+import { DockIcon } from './DockIcon';
 import { openPreview } from '../../stores/preview-actions';
 import { AppIcon } from '../../ui/app-icons';
 import styles from './RepositoryChangesCard.module.css';
@@ -72,14 +73,17 @@ export function RepositoryChangesPanel({embedded=false}:{embedded?:boolean}={}) 
   const [value, setValue] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [noRepository,setNoRepository]=useState(false);
   const generation = useRef(0), requestController = useRef<AbortController | null>(null);
   const load = useCallback(async () => {
     if (!session) return;
     const current = ++generation.current;
     requestController.current?.abort();
     const controller = new AbortController(); requestController.current = controller;
-    setLoading(true); setError('');
+    setLoading(true); setError('');setNoRepository(false);
     try {
+      const overview=await request(session,undefined,controller.signal);
+      if(!overview.git){if(current===generation.current){setNoRepository(true);setValue(null);}return;}
       const data = await request(session, kind, controller.signal);
       if (current === generation.current) setValue(data);
     } catch (err) {
@@ -101,11 +105,14 @@ export function RepositoryChangesPanel({embedded=false}:{embedded?:boolean}={}) 
       openPreview({ id: `change-source:${connection}:${source.repo}:${source.file}`, type: 'code', title: `${source.file} · 当前源码`, content: data.content, language: source.file.split('.').pop(), ext: source.file.split('.').pop() }, { anchor: `L${source.line}` });
     } catch (err) { if (current === generation.current) setError(err instanceof Error ? err.message : '无法读取当前源码'); }
   };
-  return <section className={`enigma-panel ${styles.panel}`} aria-label="变更与阅读" data-liquid="sidebar">
+  return <section className={`${styles.panel} enigma-changes-surface`} aria-label="代码变更">
+    <header className="enigma-changes-heading"><DockIcon name="changes"/><div><strong>代码变更</strong><small>智能阅读与完整差异，共用同一个源码版本</small></div></header>
+    {noRepository?<div className="enigma-changes-empty"><DockIcon name="changes"/><h3>这个文件夹还没有 Git 记录</h3><p>选择代码仓库后，便可查看改动、影响范围和完整差异。当前文件仍可在“文件”中阅读。</p></div>:<>
     {!embedded&&<header className={styles.header}><button onClick={() => useChangesPanel.setState({ open: false })}><AppIcon name="chevronLeft" size={16}/>返回工作台</button><strong>变更与阅读</strong></header>}
-    <div className={styles.source}><label>变更来源 <select value={kind} onChange={event => setKind(event.target.value as 'working'|'staged')}><option value="working">工作区 · 相对 HEAD</option><option value="staged">暂存区 · 相对 HEAD</option></select></label><small>包含当前仓库的全部改动，不只属于这个对话。</small></div>
+    <div className={styles.source}><label>查看范围 <select value={kind} onChange={event => setKind(event.target.value as 'working'|'staged')}><option value="working">全部未提交改动</option><option value="staged">已暂存的改动</option></select></label><small>包含当前仓库的全部改动，不只属于这个对话。</small></div>
     {loading && <p className={styles.progress} role="status">正在保存同一版本的差异并分析源码关系…<button onClick={() => { generation.current++; requestController.current?.abort(); setLoading(false); }}>取消</button></p>}
     {error && <div className={styles.error} role="alert">{error}<button onClick={() => void load()}>重试</button></div>}
     {value ? <Changes value={value} files={null} standalone={{ refresh: () => void load(), loading, openSource }}/> : !loading && !error && <button onClick={() => void load()}>读取当前变更</button>}
+    </>}
   </section>;
 }

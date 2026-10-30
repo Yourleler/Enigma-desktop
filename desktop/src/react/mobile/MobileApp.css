@@ -153,7 +153,7 @@ body,
     display: none;
   }
 
-  .mobile-desktop-root #previewPanel:not([data-dock-preview])[data-preview-open="true"] {
+  .mobile-desktop-root [data-preview-root]:not([data-dock-preview])[data-preview-open="true"] {
     position: fixed;
     inset: var(--titlebar-h) 0 0;
     z-index: 88;
@@ -164,17 +164,17 @@ body,
     background: var(--bg);
   }
 
-  .mobile-desktop-root #previewPanel:not([data-dock-preview])[data-preview-open="true"] .resize-handle {
+  .mobile-desktop-root [data-preview-root]:not([data-dock-preview])[data-preview-open="true"] .resize-handle {
     display: none;
   }
 
-  .mobile-desktop-root #previewPanel:not([data-dock-preview])[data-preview-open="true"] [data-preview-panel-inner] {
+  .mobile-desktop-root [data-preview-root]:not([data-dock-preview])[data-preview-open="true"] [data-preview-panel-inner] {
     width: 100%;
     min-width: 0;
     height: 100%;
   }
 
-  .mobile-desktop-root #previewPanel:not([data-dock-preview])[data-preview-open="true"] [data-preview-body-shell] {
+  .mobile-desktop-root [data-preview-root]:not([data-dock-preview])[data-preview-open="true"] [data-preview-body-shell] {
     margin: var(--panel-edge-gap);
   }
 

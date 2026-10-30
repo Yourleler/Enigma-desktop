@@ -59,6 +59,7 @@ export async function openFilePreview(
   ext: string,
   context?: {
     origin?: 'desk' | 'session';
+    placement?: 'files'|'tab';
     sessionPath?: string;
     messageId?: string;
     fileId?: string;
@@ -85,7 +86,7 @@ export async function openFilePreview(
           title: name,
           content: body,
         };
-        if(context?.anchor)openPreview(previewItem,{anchor:context.anchor});else openPreview(previewItem);
+        if(context?.anchor||context?.placement)openPreview(previewItem,{anchor:context?.anchor,placement:context?.placement});else openPreview(previewItem);
         return;
       }
       // 读取失败（可能是 zip 格式），尝试 skill viewer
@@ -95,12 +96,12 @@ export async function openFilePreview(
 
     // Media 类型（image / svg / video）分流到 MediaViewer，不经过 Preview 面板。
     const mediaKind = inferKindByExt(normalizedExt);
-    if ((isMediaKind(mediaKind) && context?.origin === 'desk') || mediaKind === 'audio') {
+    if ((isMediaKind(mediaKind) && (context?.origin === 'desk' || context?.placement)) || mediaKind === 'audio') {
       const files = context?.origin === 'session' ? selectSessionFiles(useStore.getState(), context.sessionPath || '') : selectDeskFiles(useStore.getState());
       const registered = files.find(file => context?.fileId && (file.fileId === context.fileId || file.legacyFileIds?.includes(context.fileId)))
         || files.find(file => file.path === filePath || file.legacyFilePaths?.includes(filePath));
       openMediaPreview(registered || {id: `file-${filePath}`, source: context?.origin === 'session' ? 'session-attachment' : 'desk',
-        name: fileName, path: filePath, ext: normalizedExt, kind: mediaKind, fileId: context?.fileId});
+        name: fileName, path: filePath, ext: normalizedExt, kind: mediaKind, fileId: context?.fileId},undefined,context?.placement);
       return;
     }
     if (isMediaKind(mediaKind)) {
@@ -136,7 +137,7 @@ export async function openFilePreview(
           fileVersion: readResult.fileVersion,
           language: previewType === 'code' ? normalizedExt : undefined,
         };
-        if(context?.anchor)openPreview(previewItem,{anchor:context.anchor});else openPreview(previewItem);
+        if(context?.anchor||context?.placement)openPreview(previewItem,{anchor:context?.anchor,placement:context?.placement});else openPreview(previewItem);
         return;
       }
       throw new Error(`无法读取文件“${fileName}”，请确认文件仍存在且有访问权限。`);
@@ -151,7 +152,7 @@ export async function openFilePreview(
       filePath,
       ext: normalizedExt,
     };
-    openPreview(previewItem);
+    if(context?.placement)openPreview(previewItem,{placement:context.placement});else openPreview(previewItem);
   } catch (err) {
     if(!isCurrent())return;
     console.error('[file-preview] open preview failed:', err);

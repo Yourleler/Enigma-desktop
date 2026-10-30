@@ -277,11 +277,11 @@ export function EngineeringSidebar() {
   return (
     <div className="enigma-sidebar-tools" aria-label="工程项目功能">
       <button data-tooltip="管理本任务的仓库、角色、依赖和检查命令" onClick={() => openGroup("project")}>
-        <AppIcon name="project" size={17}/> 项目与仓库 <span>{snapshot.overview?.repositories?.length || 0}</span>
+        <AppIcon name="project" size={17}/> 项目 <span>{snapshot.overview?.repositories?.length || 0}</span>
       </button>
       <div>
         <button data-tooltip="检索工程经验、查看来源与适用范围，整理记忆候选" onClick={() => openGroup("memory")}><AppIcon name="memory" size={17}/>记忆</button>
-        <button data-tooltip="查看可用技能与可复用的工程操作配方" onClick={() => openGroup("skills")}><AppIcon name="skill" size={17}/>技能与配方</button>
+        <button data-tooltip="查看可用技能与可复用的工程操作配方" onClick={() => openGroup("skills")}><AppIcon name="skill" size={17}/>技能</button>
       </div>
       {snapshot.kind !== "manager" && (
         <button data-tooltip="交代目标与允许范围，由管家编排多个工作对话" onClick={() => setConductorOpen(true)}><AppIcon name="team" size={17}/>新建管家任务</button>
@@ -293,7 +293,7 @@ export function EngineeringSidebar() {
   );
 }
 
-export function EngineeringPanel() {
+export function EngineeringPanel({embedded=false}:{embedded?:boolean}={}) {
   const state = useEngineering();
   const [query, setQuery] = useState("");
   const active = state.tabs.find((tab) => tab.id === state.active);
@@ -349,7 +349,7 @@ export function EngineeringPanel() {
       data-glass-frame="workspace" data-glass-controls=""
       aria-busy={state.loading}
     >
-      <div className="enigma-tabs-row"><div className="enigma-tabbar" role="tablist" aria-label="已打开内容" data-glass-segmented=""><GlassSelection selection={state.active || ""} selector=".enigma-tab[data-active='true']"/>
+      {!embedded&&<div className="enigma-tabs-row"><div className="enigma-tabbar" role="tablist" aria-label="已打开内容" data-glass-segmented=""><GlassSelection selection={state.active || ""} selector=".enigma-tab[data-active='true']"/>
         {state.tabs.map((tab, index) => (
           <div
             className="enigma-tab"
@@ -385,7 +385,8 @@ export function EngineeringPanel() {
         >
           ⇥
         </button>
-      </div>
+      </div>}
+      {embedded&&state.tabs.filter(t=>t.group===active.group).length>1&&<SurfaceMenu label="相关页面">{state.tabs.filter(t=>t.group===active.group).map(tab=><button key={tab.id} onClick={()=>switchTab(tab)}>{tab.title}</button>)}</SurfaceMenu>}
       <div className="enigma-panel-head">
         <div>
           <small>

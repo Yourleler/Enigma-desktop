@@ -187,7 +187,7 @@ export function DeskSection({
         <DeskSearchBox />
         <div className={s.toolbar}>
           <div className={s.toolbarActions}>
-            <DeskPreviewIconButton />
+            {!rightWorkspaceLayout&&<DeskPreviewIconButton/>}
             <DeskOpenIconButton />
             <DeskFilterButton filters={typeFilters} onFiltersChange={handleTypeFiltersChange} onShowMenu={handleShowMenu} />
             <DeskSortButton sortMode={sortMode} onSort={setSortMode} onShowMenu={handleShowMenu} />

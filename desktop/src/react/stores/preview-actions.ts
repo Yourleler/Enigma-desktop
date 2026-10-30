@@ -1,4 +1,4 @@
-import {dockScope,selectDockTab} from './right-dock-store';
+import {dockScope,dockView,selectDockTab,showDirectoryPreview} from './right-dock-store';
 /**
  * preview-actions.ts — PreviewItem 预览管理
  *
@@ -108,14 +108,14 @@ export function upsertPreviewItem(previewItem: PreviewItem): void {
 }
 
 /** 打开 tab 并激活（已存在的 id 只切换激活） */
-export function openTab(id: string): void {
+export function openTab(id: string, activateDock = true): void {
   previewOpenEpoch++;
   updatePreview(prev => {
     const tabs = prev.openTabs.includes(id) ? prev.openTabs : [...prev.openTabs, id];
     return { openTabs: tabs, activeTabId: id };
   });
   const current=useStore.getState(),item=current.previewItems.find(item=>item.id===id);
-  if(item)selectDockTab(dockScope(current),item.type==='browser'?'browser':`preview:${id}`,item.type==='browser'?{browserSession:item.browserSessionPath??null}:{});
+  if(item&&activateDock)selectDockTab(dockScope(current),item.type==='browser'?'browser':`preview:${id}`,item.type==='browser'?{browserSession:item.browserSessionPath??null}:{});
   schedulePersistCurrentWorkspaceUiState();
 }
 
@@ -216,9 +216,12 @@ export function updatePreviewReadingPosition(
 // ── High-level actions ──
 
 /** 注册 previewItem 并打开为 tab，展开面板 */
-export function openPreview(previewItem: PreviewItem, options?: {anchor?:string}): void {
+export function openPreview(previewItem: PreviewItem, options?: {anchor?:string;placement?:'files'|'tab'}): void {
+  const before=useStore.getState(),scope=dockScope(before);
+  const pinned=before.openTabs.includes(previewItem.id)&&!(dockView(scope).inlineIds||[]).includes(previewItem.id);
   upsertPreviewItem(previewItem);
-  openTab(previewItem.id);
+  openTab(previewItem.id,options?.placement!=='files');
+  if(options?.placement==='files')showDirectoryPreview(scope,previewItem.id,pinned);
   useStore.setState({previewOpen:true,jianOpen:true,jianAutoCollapsed:false});
   if (options?.anchor && previewItem.type === 'markdown') {
     useStore.getState().setMarkdownPreviewActive(previewItem.id,true);

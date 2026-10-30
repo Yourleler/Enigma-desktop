@@ -247,19 +247,10 @@ describe('RightWorkspacePanel', () => {
     expect(universalCardBlock).toMatch(/box-shadow:\s*var\(--panel-card-shadow\);/);
   });
 
-  it('places the preview toggle before the open-folder icon in the workspace toolbar', () => {
-    render(<RightWorkspacePanel />);
-
-    const previewToggle = screen.getByRole('button', { name: '预览面板' });
-    const openFolder = screen.getByRole('button', { name: '打开文件夹' });
-
-    expect(previewToggle.compareDocumentPosition(openFolder) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(previewToggle).toHaveAttribute('aria-pressed', 'false');
-
-    fireEvent.click(previewToggle);
-
-    expect(useStore.getState().previewOpen).toBe(true);
-    expect(previewToggle).toHaveAttribute('aria-pressed', 'true');
+  it('does not duplicate the global preview/panel toggle in the file toolbar', () => {
+    render(<RightWorkspacePanel/>);
+    expect(screen.queryByRole('button',{name:'预览面板'})).not.toBeInTheDocument();
+    expect(screen.getByRole('button',{name:'打开文件夹'})).toBeVisible();
   });
 
   it('uses natural empty copy without a duplicate session files heading', () => {

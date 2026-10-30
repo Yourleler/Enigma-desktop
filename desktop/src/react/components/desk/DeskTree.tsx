@@ -373,6 +373,7 @@ function TreeNode({
   const previewFile = useCallback(() => {
     if (file.isDir) return;
     void openWorkbenchFilePreview({
+      placement:'files',
       file,
       subdir: parent,
       mountId: deskWorkspaceMountId || null,
@@ -387,8 +388,7 @@ function TreeNode({
     if (file.isDir && !multi && !event.shiftKey) toggleFolder();
     const shouldPreviewOnClick = !file.isDir
       && !multi
-      && !event.shiftKey
-      && (isWebRuntime() || !!deskWorkspaceMountId || !canUseNativeResourcePath(currentResourceAccessContext()));
+      && !event.shiftKey;
     if (shouldPreviewOnClick) previewFile();
   }, [deskWorkspaceMountId, file.isDir, onSelect, previewFile, subdir, toggleFolder]);
 
@@ -532,10 +532,10 @@ function TreeNode({
       files: draggedFiles,
     });
     e.currentTarget.addEventListener('dragend', () => clearAppFileDragPayload(payload.dragId), { once: true });
-    e.preventDefault();
     const nativePaths = dragRows.map(row => row.nativePath).filter((path): path is string => !!path);
-    if (nativePaths.length === dragRows.length && nativePaths.length > 0) {
-      window.platform?.startDrag?.(nativePaths.length === 1 ? nativePaths[0] : nativePaths);
+    if (!isWebRuntime() && typeof window.platform?.startDrag === 'function' && nativePaths.length === dragRows.length && nativePaths.length > 0) {
+      e.preventDefault();
+      window.platform.startDrag(nativePaths.length === 1 ? nativePaths[0] : nativePaths);
     }
   }, [deskBasePath, deskWorkspaceMountId, getDragEntries, nativeRootDir, onSelect, selectedPaths, subdir]);
 

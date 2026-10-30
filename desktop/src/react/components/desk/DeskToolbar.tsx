@@ -1,3 +1,4 @@
+import {openWorkbenchFilePreview} from '../../utils/remote-file-preview';
 /**
  * DeskToolbar — 面包屑导航、排序按钮、Finder 打开按钮
  */
@@ -234,7 +235,10 @@ export function DeskSearchBox() {
 
   const handlePick = useCallback(async (result: DeskSearchResult) => {
     setOpen(false);
+    const before=useStore.getState();
     await jumpToDeskSearchResult(result);
+    const now=useStore.getState();
+    if(!result.isDir&&before.currentSessionPath===now.currentSessionPath&&before.deskBasePath===now.deskBasePath)await openWorkbenchFilePreview({file:{name:result.name,isDir:false},subdir:result.parentSubdir||'',mountId:now.deskWorkspaceMountId,localRootPath:now.deskBasePath,nativeRootPath:deskNativeRootDir(now),placement:'files'});
   }, []);
 
   return (

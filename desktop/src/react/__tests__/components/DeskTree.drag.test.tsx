@@ -100,6 +100,13 @@ describe('DeskTree drag payloads for workspace roots', () => {
     cleanup();
   });
 
+  it('allows HTML dragging in Web even when the workspace has a native path',()=>{
+    document.documentElement.setAttribute('data-platform','web');
+    useStore.setState({deskBasePath:'/workspace',deskWorkspaceMountId:null});
+    const {getByRole}=renderTree();const event=new Event('dragstart',{bubbles:true,cancelable:true});
+    Object.defineProperty(event,'dataTransfer',{value:makeDataTransfer()});fireEvent(getByRole('treeitem',{name:'report.md'}),event);
+    expect(event.defaultPrevented).toBe(false);expect(startDrag).not.toHaveBeenCalled();expect(getActiveAppFileDragPayload()?.files[0].name).toBe('report.md');
+  });
   it('drags plain folder workspace files with native paths', () => {
     useStore.setState({
       deskBasePath: '/Users/me/project',

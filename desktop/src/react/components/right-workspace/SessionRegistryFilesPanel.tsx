@@ -1,3 +1,4 @@
+import { isWebRuntime } from '../../utils/platform-runtime';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type React from 'react';
 import { useStore } from '../../stores';
@@ -199,10 +200,11 @@ function copyPaths(files: readonly FileRef[]): void {
   navigator.clipboard?.writeText?.(paths.join('\n')).catch(() => {});
 }
 
-function previewFile(file: FileRef, sessionPath: string | null): void {
+function previewFile(file: FileRef, sessionPath: string | null, placement?:'files'|'tab'): void {
   if (!canPreviewFile(file)) return;
   void openFileRefPreview(file, {
     origin: 'session',
+    placement,
     sessionPath: sessionPath ?? undefined,
     messageId: file.sessionMessageId,
     blockIdx: file.sessionBlockIdx,
@@ -277,6 +279,7 @@ function ActionIcon({ type }: { type: 'preview' | 'open' | 'reveal' | 'copy' | '
 function SessionFileRow({
   file,
   sessionPath,
+  placement,
   selected,
   onSelect,
   onContextMenu,
@@ -284,6 +287,7 @@ function SessionFileRow({
 }: {
   file: FileRef;
   sessionPath: string | null;
+  placement?:'files'|'tab';
   selected: boolean;
   onSelect: (file: FileRef, meta: { multi: boolean; shift: boolean }) => void;
   onContextMenu: (event: React.MouseEvent, file: FileRef) => void;
@@ -304,11 +308,12 @@ function SessionFileRow({
   const handleClick = (event: React.MouseEvent) => {
     if ((event.target as HTMLElement).closest('[data-session-file-action]')) return;
     onSelect(file, { multi: event.metaKey || event.ctrlKey, shift: event.shiftKey });
+    if(placement==='files'&&!event.metaKey&&!event.ctrlKey&&!event.shiftKey)previewFile(file,sessionPath,placement);
   };
 
   const handleDoubleClick = (event: React.MouseEvent) => {
     if ((event.target as HTMLElement).closest('[data-session-file-action]')) return;
-    previewFile(file, sessionPath);
+    previewFile(file, sessionPath,placement);
   };
 
   return (
@@ -344,7 +349,7 @@ function SessionFileRow({
           aria-label={actionLabel('rightWorkspace.sessionFiles.actions.preview', file)}
           title={actionLabel('rightWorkspace.sessionFiles.actions.preview', file)}
           disabled={!canPreview}
-          onClick={(event) => stopAction(event, () => previewFile(file, sessionPath))}
+          onClick={(event) => stopAction(event, () => previewFile(file, sessionPath,placement))}
         >
           <ActionIcon type="preview" />
         </button>
@@ -405,7 +410,7 @@ function SessionFileRow({
   );
 }
 
-export function SessionRegistryFilesPanel() {
+export function SessionRegistryFilesPanel({placement,query=''}:{placement?:'files'|'tab';query?:string}={}) {
   const currentSessionPath = useStore(s => s.currentSessionPath);
   const agents = useStore(s => s.agents);
   const currentAgentId = useStore(s => s.currentAgentId);
@@ -414,7 +419,7 @@ export function SessionRegistryFilesPanel() {
     s.currentSessionPath ? selectSessionFiles(s, s.currentSessionPath) : EMPTY_FILES
   ));
   const [sortMode, setSortMode] = useState<SessionFileSortMode>(getInitialSortMode);
-  const sortedFiles = useMemo(() => sortSessionFiles(files, sortMode), [files, sortMode]);
+  const sortedFiles = useMemo(() => sortSessionFiles(files.filter(file=>`${file.name} ${file.path}`.toLowerCase().includes(query.trim().toLowerCase())), sortMode), [files, sortMode,query]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const selectedIdsRef = useRef(selectedIds);
   selectedIdsRef.current = selectedIds;
@@ -640,7 +645,7 @@ export function SessionRegistryFilesPanel() {
           : [{ label: tr('rightWorkspace.sessionFiles.actions.sendToBridgeEmpty'), disabled: true }];
 
     return [
-      { label: tr('rightWorkspace.sessionFiles.actions.preview'), disabled: !canPreviewFile(file), action: () => previewFile(file, currentSessionPath) },
+      { label: tr('rightWorkspace.sessionFiles.actions.preview'), disabled: !canPreviewFile(file), action: () => previewFile(file, currentSessionPath,placement) },
       ...(canUseFilePath(file) || canCopyFilePath(file) ? [
         { label: tr('rightWorkspace.sessionFiles.actions.open'), disabled: !canUseFilePath(file), action: () => openFile(file) },
         { label: tr('rightWorkspace.sessionFiles.actions.reveal'), disabled: !canUseFilePath(file), action: () => revealFile(file) },
@@ -708,7 +713,7 @@ export function SessionRegistryFilesPanel() {
     const paths = availableFiles
       .map(item => nativePathForFile(item, { requireAvailable: true }))
       .filter((path): path is string => !!path);
-    if (paths.length > 0) {
+    if (paths.length > 0 && !isWebRuntime() && typeof window.platform?.startDrag === 'function') {
       event.preventDefault();
       window.platform?.startDrag?.(paths.length === 1 ? paths[0] : paths);
     }
@@ -789,7 +794,7 @@ export function SessionRegistryFilesPanel() {
   return (
     <section className={styles.sessionFilesPanel} aria-label={tr('rightWorkspace.tabs.sessionFiles')}>
       {sortedFiles.length === 0 ? (
-        <div className={styles.emptyState}>{tr('rightWorkspace.sessionFiles.empty')}</div>
+        <div className={styles.emptyState}>{query?'没有匹配的附件':tr('rightWorkspace.sessionFiles.empty')}</div>
       ) : (
         <>
           <div className={styles.sessionFilesToolbar}>
@@ -820,6 +825,7 @@ export function SessionRegistryFilesPanel() {
                 key={file.id}
                 file={file}
                 sessionPath={currentSessionPath}
+                placement={placement}
                 selected={selectedIds.has(file.id)}
                 onSelect={selectFile}
                 onContextMenu={handleFileContextMenu}
