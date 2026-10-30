@@ -48,3 +48,5 @@ body.enigma-surface .enigma-sidebar-tools .enigma-icon {margin:0;color:inherit;}
 body.enigma-surface .enigma-sidebar-tools button {gap:var(--space-8);}
 body.enigma-surface .enigma-submenu-chevron {margin-left:auto;color:var(--eg-muted);}
 body.enigma-surface .context-menu-item.has-submenu::after {display:none;}
+/* Portal menus must sit above both navigation rails and native browser surfaces. */
+body.enigma-surface [data-menu-surface][data-menu-position="fixed"] { z-index:11000; }

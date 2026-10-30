@@ -3,7 +3,7 @@ import { useGlassMotion } from './use-glass-motion';
 import './GlassSelection.css';
 
 /** One persistent lens per group. Only its geometry moves; labels stay still. */
-export function GlassSelection({ selection, selector = '[aria-selected="true"], [aria-pressed="true"]' }: { selection: string; selector?: string }) {
+export function GlassSelection({ selection, selector = '[aria-selected="true"], [aria-pressed="true"]', layoutCoordinates = false }: { selection: string; selector?: string; layoutCoordinates?:boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   const positioned = useRef(false);
   const previousPosition = useRef<{ x: number; y: number } | null>(null);
@@ -18,8 +18,8 @@ export function GlassSelection({ selection, selector = '[aria-selected="true"], 
       const bounds = active?.getBoundingClientRect();
       if (!active || !bounds?.width || !bounds.height) { lens.style.opacity = '0'; return; }
       const parent = group.getBoundingClientRect();
-      const nextX = bounds.left - parent.left + group.scrollLeft - group.clientLeft;
-      const nextY = bounds.top - parent.top + group.scrollTop - group.clientTop;
+      const nextX = layoutCoordinates ? active.offsetLeft : bounds.left - parent.left + group.scrollLeft - group.clientLeft;
+      const nextY = layoutCoordinates ? active.offsetTop : bounds.top - parent.top + group.scrollTop - group.clientTop;
       const previous = previousPosition.current;
       const dx = previous ? nextX - previous.x : 0, dy = previous ? nextY - previous.y : 0;
       if (dx || dy) {
@@ -28,8 +28,8 @@ export function GlassSelection({ selection, selector = '[aria-selected="true"], 
       }
       previousPosition.current = { x: nextX, y: nextY };
       if (!positioned.current) lens.style.transition = 'none';
-      lens.style.width = `${bounds.width}px`;
-      lens.style.height = `${bounds.height}px`;
+      lens.style.width = `${layoutCoordinates ? active.offsetWidth : bounds.width}px`;
+      lens.style.height = `${layoutCoordinates ? active.offsetHeight : bounds.height}px`;
       lens.style.transform = `translate3d(${nextX}px,${nextY}px,0)`;
       lens.style.borderRadius = getComputedStyle(active).borderRadius || '10px';
       lens.style.opacity = '1';
@@ -47,6 +47,6 @@ export function GlassSelection({ selection, selector = '[aria-selected="true"], 
     if (active) observer?.observe(active);
     window.addEventListener('resize', place);
     return () => { cancelAnimationFrame(frame); lens.style.transition = ''; observer?.disconnect(); window.removeEventListener('resize', place); };
-  }, [selection, selector]);
+  }, [selection, selector, layoutCoordinates]);
   return <div id={id} ref={ref} className="enigma-glass-selection" data-glass-selection="" aria-hidden="true"/>;
 }

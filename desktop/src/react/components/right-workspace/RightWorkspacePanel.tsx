@@ -1,3 +1,4 @@
+import {FileStatusProvider,DeletedFiles} from './FileStatus';
 import { deskNativeRootDir, loadDeskFiles } from '../../stores/desk-actions';
 import { canUseNativeResourcePath } from '../../services/resource-access';
 import { resolveServerConnection } from '../../services/server-connection';
@@ -67,7 +68,7 @@ function JianDrawer() {
 function TabContent({ activeTab,filesOnly }: { activeTab: RightWorkspaceTab;filesOnly?:boolean }) {
   const [query,setQuery]=useState('');
   if (activeTab === 'session-files') return <><input className="enigma-attachment-search" aria-label="搜索附件" placeholder="搜索附件名称或路径" value={query} onChange={event=>setQuery(event.target.value)}/><SessionRegistryFilesPanel query={query} placement={filesOnly?'files':undefined}/></>;
-  return <DeskSection framed={false} showHeader={false} rightWorkspaceLayout />;
+  return <><DeskSection framed={false} showHeader={false} rightWorkspaceLayout /><DeletedFiles/></>;
 }
 
 function WorkspaceHeader() {
@@ -107,7 +108,7 @@ function WorkspaceHeader() {
   );
 }
 
-export function RightWorkspacePanel({ compact = false, filesOnly = false }: { compact?: boolean;filesOnly?:boolean }) {
+export function RightWorkspacePanel({ compact = false, filesOnly = false,active = true }: { compact?: boolean;filesOnly?:boolean;active?:boolean }) {
   const session = useStore(s => s.currentSessionPath);
   const connection = useStore(s => s.activeServerConnectionId || 'local');
   const changesOpen = useChangesPanel(s => s.open && s.session === session && s.connection === connection);
@@ -135,7 +136,7 @@ export function RightWorkspacePanel({ compact = false, filesOnly = false }: { co
     : 'workspace';
 
   return (
-    <div className={`${styles.shell} enigma-workspace-shell`} data-liquid="sidebar">
+    <FileStatusProvider active={active}><div className={`${styles.shell} enigma-workspace-shell`} data-liquid="sidebar">
       {!compact&&!filesOnly && <SessionTodoCard />}
       <div
         className={`universal-card ${styles.workspaceCard}`}
@@ -175,6 +176,6 @@ export function RightWorkspacePanel({ compact = false, filesOnly = false }: { co
           <SessionStatusCard />
         </>
       )}
-    </div>
+    </div></FileStatusProvider>
   );
 }

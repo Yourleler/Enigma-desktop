@@ -5,6 +5,7 @@
  * never derives ownership from the current focused file or session.
  */
 
+import {FileStatusBadge} from '../right-workspace/FileStatus';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, Dispatch, SetStateAction } from 'react';
 import { useStore } from '../../stores';
@@ -629,7 +630,7 @@ function TreeNode({
             onCancel={onCancelRename}
           />
         ) : (
-          <span className={s.itemName} title={file.name}>{file.name}</span>
+          <><span className={s.itemName} title={file.name}>{file.name}</span><FileStatusBadge path={nativeRootDir?`${nativeRootDir}/${subdir}`:undefined} isDir={file.isDir}/></>
         )}
       </div>
       {expanded && (children.length > 0 || pendingChild) && (

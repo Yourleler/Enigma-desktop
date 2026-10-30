@@ -17,6 +17,7 @@ import {
   refreshEngineering,
   restoreTabs,
   openGroup,
+  openProjectTool,
   openEngineering,
   loadEngineeringTab,
   showAction,
@@ -126,7 +127,7 @@ export function EngineeringToolbar({compact=false}:{compact?:boolean}={}) {
         {toolSections.map(section=><div className="enigma-feature-section" key={section.label}><div className="enigma-menu-section-title">{section.label}</div>{section.ids.filter(id=>snapshot.kind==='manager'||id!=='conductor').map(id=><button key={id} onClick={()=>openGroup(id)}>{groups.find(g=>g.id===id)?.label}<small>{featureHint(id)}</small></button>)}</div>)}
         <button onClick={()=>setCatalogOpen(true)}>全部操作<small>搜索操作和说明</small></button>
         <button onClick={()=>void engineeringRequest('/conductor/new',sessionPath,{}).then(result=>switchSession(result.sessionPath)).catch(error=>useEngineering.setState({error:String(error)}))}>新建任务管家</button>
-      </> : <button onClick={()=>useEngineering.setState({connectOpen:true})}>选择项目目录<small>启用多仓库、任务计划、时光机等工程能力</small></button>}
+      </> : toolSections.map(section=><div className="enigma-feature-section" key={section.label}><div className="enigma-menu-section-title">{section.label}</div>{section.ids.filter(id=>id!=='conductor').map(id=><button key={id} onClick={()=>void openProjectTool(id)}>{groups.find(g=>g.id===id)?.label}<small>{featureHint(id)}</small></button>)}</div>)}
       <button onClick={()=>setModelsOpen(true)}>模型分工<small>规划、执行、复核使用的模型</small></button>
       {snapshot?.connected&&<button onClick={()=>useEngineering.setState({connectOpen:true})}>切换项目目录<small>{snapshot.root}</small></button>}
     </SurfaceMenu>
@@ -277,7 +278,7 @@ export function EngineeringSidebar() {
   return (
     <div className="enigma-sidebar-tools" aria-label="工程项目功能">
       <button data-tooltip="管理本任务的仓库、角色、依赖和检查命令" onClick={() => openGroup("project")}>
-        <AppIcon name="project" size={17}/> 项目 <span>{snapshot.overview?.repositories?.length || 0}</span>
+        <AppIcon name="project" size={17}/> 仓库 <span>{snapshot.overview?.repositories?.length || 0}</span>
       </button>
       <div>
         <button data-tooltip="检索工程经验、查看来源与适用范围，整理记忆候选" onClick={() => openGroup("memory")}><AppIcon name="memory" size={17}/>记忆</button>
@@ -697,14 +698,15 @@ export function ConnectDialog() {
   const sessionPath = useEngineering(s => s.sessionPath);
   const connection = useStore(s => s.activeServerConnectionId);
   const snapshot = useEngineering(s => s.snapshot);
+  const sessionFolder = useStore(s=>s.sessions.find(item=>item.path===s.currentSessionPath)?.cwd||s.selectedFolder||'');
   const server = resolveServerConnection(useStore.getState());
   const nativePicker = !!window.hana && server?.kind === 'local' && (!connection || server.connectionId === connection) && typeof window.platform?.selectFolder === 'function';
   const action = useSideAction(sessionPath, open ? 'connect-open' : 'connect-closed');
   const close = () => useEngineering.setState({ connectOpen: false });
   if (!open) return null;
-  return <Modal title="选择工程工作区" close={close}>
+  return <Modal title="工作目录" close={close}>
     <WorkspaceChooser key={JSON.stringify([sessionPath, connection, nativePicker])}
-      initialRoot={snapshot?.root || ''} initialMemory={snapshot?.memory === true}
+      initialRoot={snapshot?.root || sessionFolder} initialMemory={snapshot?.memory === true}
       nativePicker={nativePicker} busy={!!action.busy} error={action.error} canConnect={!!sessionPath}
       onCancel={close} onConnect={(root, memory) => {
         void action.run('connect', () => engineeringRequest('/connect', sessionPath, { root, memory }), value => {

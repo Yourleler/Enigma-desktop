@@ -1,3 +1,4 @@
+import {FileStatusBadge} from './FileStatus';
 import { isWebRuntime } from '../../utils/platform-runtime';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type React from 'react';
@@ -334,7 +335,7 @@ function SessionFileRow({
         <FileKindIcon kind={file.kind} size={16} />
       </div>
       <div className={styles.fileMain}>
-        <div className={styles.fileName} data-testid="session-file-name" title={file.name}>{file.name}</div>
+        <div className="enigma-file-name-status"><div className={styles.fileName} data-testid="session-file-name" title={file.name}>{file.name}</div><FileStatusBadge file={file}/></div>
         <div className={styles.fileMeta}>
           <span>{sourceLabel(file)}</span>
           <span>{formatKind(file)}</span>

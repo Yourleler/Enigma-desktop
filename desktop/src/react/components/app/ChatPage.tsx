@@ -31,7 +31,7 @@ export function ChatPage({
   return (
     <>
       <div className="enigma-conversation-header">
-        <ProjectContextBar compact/>
+        {!currentSessionPath&&<ProjectContextBar compact/>}
         <EngineeringToolbar compact/>
         <SessionClock compact/>
       </div>

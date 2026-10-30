@@ -534,7 +534,7 @@ describe('SessionList context menu', () => {
 
     expect(css).toMatch(/\.sessionItem:not\(\.sessionItemSingleLine\):hover \.sessionPinBtn/);
     expect(css).toMatch(/\.sessionItem:not\(\.sessionItemSingleLine\):hover \.sessionArchiveBtn/);
-    expect(css).toMatch(/\.sessionItem:not\(\.sessionItemSingleLine\):hover \.sessionItemMeta\s*\{[\s\S]*padding-right:\s*52px/);
+    expect(css).toMatch(/\.sessionItem:not\(\.sessionItemSingleLine\):hover \.sessionItemMeta\s*\{[\s\S]*padding-right:\s*var\(--enigma-spacing-\d+\)/);
     expect(css).toMatch(/\.sessionItem:not\(\.sessionItemSingleLine\) \.sessionItemActions\s*\{[\s\S]*position:\s*absolute/);
     expect(css).toMatch(/\.sessionItemSingleLine \.sessionItemActions\s*\{[\s\S]*width:\s*0/);
     expect(css).not.toMatch(/\.sessionItemActive \.sessionPinBtn/);
@@ -1288,14 +1288,14 @@ describe('SessionList context menu', () => {
     });
   });
 
-  it('keeps project-view session rows unindented because their two-line shape already separates them', () => {
+  it('indents project chats and separates them with a subtle guide', () => {
     const css = fs.readFileSync(
       path.join(__dirname, '../../components/SessionList.module.css'),
       'utf-8',
     );
 
-    expect(css).toMatch(/\.projectSessionList\s*\{[\s\S]*padding-left:\s*0/);
-    expect(css).not.toMatch(/\.projectSessionList\s*\{[\s\S]*margin-left:/);
+    expect(css).toMatch(/\.projectSessionList\s*\{[^}]*padding-left:\s*var\(--space-8\)/);
+    expect(css).toMatch(/\.projectSessionList\s*\{[^}]*border-left:\s*1px solid var\(--border\)/);
   });
 
   describe('pinned strip reordering', () => {

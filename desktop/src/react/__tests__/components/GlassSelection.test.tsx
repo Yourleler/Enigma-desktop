@@ -40,3 +40,12 @@ it('hides a missing selection rather than showing the wrong option, and restores
   view.rerender(<Group value="b"/>); expect(lens.style.opacity).toBe('1');
   expect(lens.style.transform).toBe('translate3d(90px,5px,0)');
 });
+it('anchors reordered tabs to their layout position instead of a transient animation transform',()=>{
+ vi.spyOn(HTMLElement.prototype,'offsetLeft','get').mockReturnValue(170);
+ vi.spyOn(HTMLElement.prototype,'offsetTop','get').mockReturnValue(0);
+ vi.spyOn(HTMLElement.prototype,'offsetWidth','get').mockReturnValue(90);
+ vi.spyOn(HTMLElement.prototype,'offsetHeight','get').mockReturnValue(32);
+ const {container}=render(<div><GlassSelection selection="reordered" layoutCoordinates/><button data-slot="b" aria-selected="true">Selected</button></div>);
+ const lens=container.querySelector<HTMLElement>('[data-glass-selection]')!;
+ expect(lens.style.transform).toBe('translate3d(170px,0px,0)');expect(lens.style.width).toBe('90px');
+});

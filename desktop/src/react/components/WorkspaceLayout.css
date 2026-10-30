@@ -4,14 +4,14 @@ body.enigma-surface .app > .main-content { min-width:var(--layout-chat-min,400px
 body.enigma-surface .app > :is(.sidebar,.jian-sidebar) {
   position:relative !important; inset:auto !important; flex:0 0 auto; min-width:0; max-width:none;
   margin:0; padding:0; border-radius:0; box-shadow:none; z-index:10; overflow:hidden;
-  transition:width 180ms cubic-bezier(.22,.7,.25,1);
+  transition:width var(--enigma-duration-21) cubic-bezier(.22,.7,.25,1);
 }
 body.enigma-surface .app > .sidebar { width:var(--layout-sidebar-width,240px) !important; border:0; border-right:1px solid var(--border); }
 body.enigma-surface .app > .jian-sidebar { width:var(--right-dock-width,520px) !important; border:0; border-left:1px solid var(--border); }
 body.enigma-surface .app > :is(.sidebar,.jian-sidebar).collapsed { width:0 !important; border-width:0; pointer-events:none; }
 body.enigma-surface .app .sidebar-inner { width:var(--layout-sidebar-width,240px) !important; min-width:var(--layout-sidebar-width,240px) !important; }
 body.enigma-surface .app .jian-sidebar-inner { width:var(--right-dock-width,520px) !important; min-width:var(--right-dock-width,520px) !important; }
-body.enigma-surface .app :is(.sidebar-inner,.jian-sidebar-inner) { padding:0; border-radius:0; box-shadow:none; transform:none !important; transition:opacity 180ms ease; }
+body.enigma-surface .app :is(.sidebar-inner,.jian-sidebar-inner) { padding:0; border-radius:0; box-shadow:none; transform:none !important; transition:opacity var(--enigma-duration-21) ease; }
 body.enigma-surface .app > :is(.sidebar,.jian-sidebar)::after { display:none; }
 body.enigma-surface .app[data-layout-drawer] > .main-content,
 body.enigma-dock-expanded .app > .main-content { display:none; }
@@ -22,7 +22,7 @@ body.enigma-surface .mobile-desktop-app { padding-top:var(--titlebar-h,44px); bo
 body.enigma-surface .mobile-desktop-app > .main-content { padding-top:0 !important; }
 body.enigma-surface .mobile-desktop-app :is(.sidebar-inner,.jian-sidebar-inner) { padding-top:0; }
 .app #previewPanel [data-preview-panel-inner] { max-width:100%; min-width:0 !important; }
-.enigma-preview-return { display:flex; align-items:center; gap:6px; flex-shrink:0; border:0; border-bottom:1px solid var(--border); background:transparent; color:var(--text); padding:10px 14px; font:inherit; font-size:13px; cursor:pointer; }
+.enigma-preview-return { display:flex; align-items:center; gap:var(--enigma-spacing-5); flex-shrink:0; border:0; border-bottom:1px solid var(--border); background:transparent; color:var(--text); padding:var(--enigma-spacing-7) var(--enigma-spacing-14); font:inherit; font-size:13px; cursor:pointer; }
 .enigma-preview-return span { margin-left:auto; color:var(--text-muted); }
 body.resizing .app > :is(.sidebar,.jian-sidebar),
 body.enigma-motion-off .app > :is(.sidebar,.jian-sidebar),

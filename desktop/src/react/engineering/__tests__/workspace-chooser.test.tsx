@@ -21,10 +21,12 @@ it('opens the native chooser once under StrictMode, shows the selected folder, t
   fireEvent.click(screen.getByRole('button',{name:'连接工作区'}));
   expect(p.onConnect).toHaveBeenCalledWith('/workspace/project with spaces',true);
 });
-it('cancels without connecting or overwriting an existing workspace', async () => {
+it('reuses the existing directory without automatically opening a native chooser', async () => {
   const p={...props(),initialRoot:'/existing'}; picker.mockResolvedValue(null);
   render(<WorkspaceChooser {...p}/>); await act(async () => { vi.runOnlyPendingTimers(); });
-  expect(p.onCancel).toHaveBeenCalledOnce(); expect(p.onConnect).not.toHaveBeenCalled();
+  expect(picker).not.toHaveBeenCalled(); expect(p.onCancel).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('button',{name:'连接工作区'}));
+  expect(p.onConnect).toHaveBeenCalledWith('/existing',false);
 });
 it('keeps the chosen path if the user cancels a replacement picker', async () => {
   const p=props(); picker.mockResolvedValueOnce('/chosen').mockResolvedValueOnce(null);

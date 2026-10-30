@@ -838,3 +838,8 @@
 /* Inline workspace details participate in layout instead of covering files. */
 .cwdPanelInline { flex: 0 0 auto; z-index: auto; margin-bottom: var(--space-8); }
 .cwdPanelInline .cwdPanel { position: relative; min-height: 0; max-height: min(200px, 28vh); box-shadow: none; }
+
+.treeItem:has(> :global(.enigma-file-status)) {
+    grid-template-columns:calc(var(--tree-leading-inset) + (var(--tree-depth,0) * var(--tree-indent-step))) 14px 22px minmax(0,1fr) auto;
+}
+.treeItem > :global(.enigma-file-status) { margin-left:var(--space-6); }

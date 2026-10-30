@@ -1,9 +1,12 @@
+import {motion,useReducedMotion} from 'motion/react';
+import {createPortal} from 'react-dom';
+import {FileSplitPane} from './FileSplitPane';
 import {OpenPreviewDocumentWatchBridge} from '../app/OpenPreviewDocumentWatchBridge';
 import {useEffect,useLayoutEffect,useRef,useState} from 'react';
 import {useStore} from '../../stores';
-import {dockScope,dockView,expandDock,hideDockTab,moveDockTab,orderedDockTabs,patchDockView,selectDockTab,useRightDock,type DockTab} from '../../stores/right-dock-store';
+import {dockScope,dockView,expandDock,hideDockTab,moveDockTab,reorderDockTabs,orderedDockTabs,patchDockView,selectDockTab,useRightDock,type DockTab} from '../../stores/right-dock-store';
 import {openPreview,setActiveTab} from '../../stores/preview-actions';
-import {useEngineering,openGroup,groups,toolSections} from '../../engineering/state';
+import {useEngineering,openGroup,openProjectTool,groups,toolSections} from '../../engineering/state';
 import {useChangesPanel} from '../../stores/changes-panel-store';
 import {RightWorkspacePanel} from './RightWorkspacePanel';
 import {RepositoryChangesPanel} from './RepositoryChangesCard';
@@ -35,9 +38,11 @@ export function RightDock(){
   const view=useRightDock(s=>s.views[scope]);
   const engineering=useEngineering(s=>s.snapshot),engineeringActive=useEngineering(s=>s.active),engineeringTabs=useEngineering(s=>s.tabs);
   const active=view?.tab||'files';
-  const [visited,setVisited]=useState<Record<string,Set<string>>>({}),[dragOver,setDragOver]=useState<DockTab|null>(null),[fileDrop,setFileDrop]=useState(false),[dropError,setDropError]=useState('');
-  const dragCleanup=useRef<()=>void>(()=>{}),suppressClick=useRef(false);
-  useEffect(()=>()=>dragCleanup.current(),[]);
+  const [visited,setVisited]=useState<Record<string,Set<string>>>({}),[draftOrder,setDraftOrder]=useState<DockTab[]|null>(null),[fileDrop,setFileDrop]=useState(false),[dropError,setDropError]=useState('');
+  const suppressClick=useRef(false),orderRef=useRef<DockTab[]|null>(null),reduceMotion=useReducedMotion(),dragCleanup=useRef<()=>void>(()=>{});
+  const [dragGhost,setDragGhost]=useState<{tab:TabInfo;x:number;y:number;width:number}|null>(null);
+  useEffect(()=>()=>dragCleanup.current(),[scope]);
+  useEffect(()=>{setDraftOrder(null);orderRef.current=null;dragging.current=null;},[scope]);
   const strip=useRef<HTMLDivElement>(null),root=useRef<HTMLDivElement>(null),body=useRef<HTMLDivElement>(null),picker=useRef<HTMLInputElement>(null),dragging=useRef<DockTab|null>(null),last=useRef({scope,active}),positions=useRef<Record<string,number>>({});
   const inline=new Set(view?.inlineIds||[]);
   const fileTabs=openTabs.map(id=>items.find(item=>item.id===id)).filter(item=>item&&item.type!=='browser'&&!inline.has(item.id));
@@ -46,7 +51,7 @@ export function RightDock(){
   const toolsLabel=groups.find(g=>`group:${g.id}`===engineeringActive)?.label||'工具';
   const customIds=[...new Set([...(view?.order||[]),active,...(view?.hidden||[])])].filter(id=>id.startsWith('tool:')&&groups.some(group=>group.id===id.slice(5)));
   const available:TabInfo[]=[...fixed,...customIds.map(id=>({id,label:groups.find(g=>g.id===id.slice(5))!.label,icon:'skill' as AppIconName,hint:'打开项目工具'})),...(active==='tools'&&engineering?.connected&&engineeringActive?[{id:'tools' as DockTab,label:toolsLabel,icon:'skill' as AppIconName,hint:'已打开的项目工具'}]:[]),...fileTabs.map(item=>({id:`preview:${item!.id}` as DockTab,label:item!.title,icon:'file' as AppIconName,hint:item!.filePath||item!.title}))];
-  const availableIds=available.map(t=>t.id),ordered=orderedDockTabs(view,availableIds),tabs=ordered.map(id=>available.find(t=>t.id===id)!);
+  const availableIds=available.map(t=>t.id),ordered=(draftOrder||orderedDockTabs(view,availableIds)).filter(id=>availableIds.includes(id)),tabs=ordered.map(id=>available.find(t=>t.id===id)!);
   const resolved=tabs.some(t=>t.id===active)?active:tabs[0]?.id||null;
   useEffect(()=>{
     if(view)return;
@@ -70,22 +75,27 @@ export function RightDock(){
     if(tab.startsWith('preview:')){useStore.getState().setPreviewOpen(true);setActiveTab(tab.slice(8));}
     selectDockTab(scope,tab,tab==='browser'&&view?.browserSession===undefined?{browserSession:session}:{});
     if(tab==='changes')useChangesPanel.setState({session:session||'',connection,open:true});
-    if(tab.startsWith('tool:')&&engineering?.connected)openGroup(tab.slice(5));
+    if(tab.startsWith('tool:'))void openProjectTool(tab.slice(5));
   };
-  const startDrag=(id:DockTab,event:React.PointerEvent<HTMLDivElement>)=>{
-    if(event.button!==0||(event.target as HTMLElement).closest('.enigma-dock-tab-close'))return;
-    dragCleanup.current();const x=event.clientX,y=event.clientY;let moved=false,target:DockTab|undefined;
+  const startDrag=(tab:TabInfo,event:React.PointerEvent<HTMLDivElement>)=>{
+    if(event.button!==0||(event.target as HTMLElement).closest('.enigma-dock-tab-close')||!strip.current)return;
+    dragCleanup.current();const startX=event.clientX,startY=event.clientY,list=strip.current,rect=event.currentTarget.getBoundingClientRect();
+    const offset=startX-rect.left,widths=new Map([...list.querySelectorAll<HTMLElement>('[data-dock-tab-id]')].map(e=>[e.dataset.dockTabId,e.offsetWidth]));
+    const original=[...ordered],others=original.filter(id=>id!==tab.id);let moved=false;
     const move=(e:PointerEvent)=>{
-      if(!moved&&Math.hypot(e.clientX-x,e.clientY-y)<6)return;
-      moved=true;dragging.current=id;e.preventDefault();
-      target=document.elementFromPoint(e.clientX,e.clientY)?.closest<HTMLElement>('[data-dock-tab-id]')?.dataset.dockTabId as DockTab|undefined;
-      setDragOver(target||null);
-      if(strip.current){const box=strip.current.getBoundingClientRect();if(e.clientX>box.right-20)strip.current.scrollLeft+=12;else if(e.clientX<box.left+20)strip.current.scrollLeft-=12;}
+      if(!moved&&Math.hypot(e.clientX-startX,e.clientY-startY)<6)return;
+      moved=true;e.preventDefault();dragging.current=tab.id;suppressClick.current=true;
+      const box=list.getBoundingClientRect();if(e.clientX>box.right-24)list.scrollLeft+=12;else if(e.clientX<box.left+24)list.scrollLeft-=12;
+      let x=box.left-list.scrollLeft,index=0;const center=e.clientX-offset+rect.width/2;
+      for(const id of original){const width=widths.get(id)||80,midpoint=x+width/2;x+=width+2;if(id===tab.id)continue;if(center<midpoint)break;index++;}
+      const next=[...others];next.splice(index,0,tab.id);orderRef.current=next;setDraftOrder(next);
+      setDragGhost({tab,x:e.clientX-offset,y:rect.top,width:rect.width});
     };
-    const finish=()=>{if(moved){suppressClick.current=true;setTimeout(()=>{suppressClick.current=false;},0);if(dockScope(useStore.getState())===scope&&target)moveDockTab(scope,id,target,availableIds);}dragCleanup.current();};
-    const cancel=()=>dragCleanup.current();
-    dragCleanup.current=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',finish);window.removeEventListener('pointercancel',cancel);dragging.current=null;setDragOver(null);};
-    window.addEventListener('pointermove',move,{passive:false});window.addEventListener('pointerup',finish);window.addEventListener('pointercancel',cancel);
+    const finish=()=>{if(moved&&orderRef.current&&dockScope(useStore.getState())===scope)reorderDockTabs(scope,orderRef.current);dragCleanup.current();setTimeout(()=>{suppressClick.current=false;},0);};
+    const cancel=()=>{dragCleanup.current();setTimeout(()=>{suppressClick.current=false;},0);};
+    const escape=(e:KeyboardEvent)=>{if(e.key==='Escape'){e.preventDefault();cancel();}};
+    dragCleanup.current=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',finish);window.removeEventListener('pointercancel',cancel);window.removeEventListener('blur',cancel);window.removeEventListener('keydown',escape);dragging.current=null;orderRef.current=null;setDraftOrder(null);setDragGhost(null);};
+    window.addEventListener('pointermove',move,{passive:false});window.addEventListener('pointerup',finish);window.addEventListener('pointercancel',cancel);window.addEventListener('blur',cancel);window.addEventListener('keydown',escape);
   };
   const show=(tab:string)=>resolved===tab&&visible,hasVisited=(tab:string)=>resolved===tab||visited[scope]?.has(tab);
   const pin=()=>{if(inlineItem)openPreview(inlineItem,{placement:'tab'});};
@@ -99,17 +109,18 @@ export function RightDock(){
     onDragOverCapture={event=>{if(canFileDrop(event)&&!preserveTreeMove(event)){event.preventDefault();event.stopPropagation();event.dataTransfer.dropEffect='copy';setFileDrop(true);}}}
     onDragLeave={event=>{if(!event.currentTarget.contains(event.relatedTarget as Node))setFileDrop(false);}}
     onDropCapture={event=>{if(canFileDrop(event)&&!preserveTreeMove(event)){event.preventDefault();event.stopPropagation();void drop(Array.from(event.dataTransfer.files),readAppFileDragPayload(event.dataTransfer));}}}>
+    {dragGhost&&createPortal(<div className="enigma-dock-drag-ghost" style={{left:dragGhost.x,top:dragGhost.y,width:dragGhost.width}} aria-hidden="true"><DockIcon name={dragGhost.tab.icon}/><span>{dragGhost.tab.label}</span></div>,document.body)}
     <OpenPreviewDocumentWatchBridge/>
     <header className="enigma-dock-header">
-      <div className="enigma-dock-tabs" role="tablist" aria-label="工作面板" ref={strip} data-glass-segmented="" onWheel={event=>{if(strip.current&&strip.current.scrollWidth>strip.current.clientWidth)strip.current.scrollLeft+=Math.abs(event.deltaX)>Math.abs(event.deltaY)?event.deltaX:event.deltaY;}}>
-        <GlassSelection selection={`${resolved}:${ordered.join(',')}`} selector=".enigma-dock-tab.active"/>
-        {tabs.map((tab,index)=><div key={tab.id} className={`enigma-dock-tab${resolved===tab.id?' active':''}`} data-dock-tab-id={tab.id} data-drop-before={dragOver===tab.id||undefined} onPointerDown={event=>startDrag(tab.id,event)} onDragStart={event=>event.preventDefault()}>
+      <div className="enigma-dock-tabs" data-reordering={!!draftOrder||undefined} role="tablist" aria-label="工作面板" ref={strip} data-glass-segmented="" onWheel={event=>{if(strip.current&&strip.current.scrollWidth>strip.current.clientWidth)strip.current.scrollLeft+=Math.abs(event.deltaX)>Math.abs(event.deltaY)?event.deltaX:event.deltaY;}}>
+        <GlassSelection selection={`${resolved}:${ordered.join(',')}`} selector=".enigma-dock-tab.active" layoutCoordinates/>
+        {tabs.map((tab,index)=><motion.div layout="position" key={tab.id} transition={{layout:{duration:reduceMotion?0:0.18}}} className={`enigma-dock-tab${resolved===tab.id?' active':''}`} data-dock-tab-id={tab.id} data-drag-placeholder={dragGhost?.tab.id===tab.id||undefined} onPointerDown={event=>startDrag(tab,event)} onDragStartCapture={event=>event.preventDefault()}>
           <button role="tab" id={`dock-tab-${index}`} aria-selected={resolved===tab.id} aria-controls="enigma-dock-body" tabIndex={resolved===tab.id?0:-1} data-tooltip={`${tab.hint}\n拖动调整顺序`} onClick={()=>choose(tab.id)} onKeyDown={event=>{
             if(event.altKey&&['ArrowLeft','ArrowRight'].includes(event.key)){event.preventDefault();const offset=event.key==='ArrowRight'?1:-1;if(index+offset>=0&&index+offset<tabs.length)moveDockTab(scope,tab.id,tabs[index+(offset===1?2:-1)]?.id,availableIds);return;}
             if(['ArrowLeft','ArrowRight','Home','End'].includes(event.key)){event.preventDefault();const i=event.key==='Home'?0:event.key==='End'?tabs.length-1:(index+(event.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;choose(tabs[i].id);strip.current?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[i]?.focus();}
           }}><DockIcon name={tab.icon}/><span>{tab.label}</span></button>
-          <button className="enigma-dock-tab-close" aria-label={`关闭${tab.id.startsWith('preview:')?'文件':'面板'} ${tab.label}`} data-tooltip="关闭标签；可通过＋重新添加" onClick={()=>hideDockTab(scope,tab.id,availableIds)}>×</button>
-        </div>)}
+          <button className="enigma-dock-tab-close" onPointerDown={event=>event.stopPropagation()} aria-label={`关闭${tab.id.startsWith('preview:')?'文件':'面板'} ${tab.label}`} data-tooltip="关闭标签；可通过＋重新添加" onClick={()=>hideDockTab(scope,tab.id,availableIds)}>×</button>
+        </motion.div>)}
       </div>
       <div className="enigma-dock-actions">
         <button aria-label="搜索文件" data-tooltip="搜索项目文件或对话附件" onClick={search}><DockIcon name="search"/></button>
@@ -128,15 +139,14 @@ export function RightDock(){
     <div ref={body} id="enigma-dock-body" className="enigma-dock-body" role="tabpanel" aria-labelledby={resolved?`dock-tab-${Math.max(0,tabs.findIndex(t=>t.id===resolved))}`:undefined}>
       <section hidden={!show('files')} inert={!show('files')} aria-hidden={!show('files')} className="enigma-dock-section enigma-files-section">
         {inlineItem&&<header className="enigma-file-preview-header"><button aria-label="切换文件列表" onClick={()=>patchDockView(scope,{fileListOpen:!view?.fileListOpen})}><AppIcon name="panelLeft" size={15}/>文件列表</button><span title={inlineItem.filePath||inlineItem.title}>{inlineItem.title}</span><button aria-label="固定为独立标签" data-tooltip="将此预览固定到顶部，与浏览器等面板并列" onClick={pin}><AppIcon name="add" size={15}/>固定为标签</button></header>}
-        <div className="enigma-files-grid" data-has-preview={!!inlineItem} data-list-open={view?.fileListOpen||undefined}>
-          <div className="enigma-files-list"><RightWorkspacePanel filesOnly/></div>
-          {inlineItem&&<div className="enigma-files-document">{!(previewShown&&fileId===inlineItem.id)&&<PreviewPanel embedded watchDocuments={false} visible={show('files')} itemId={inlineItem.id} panelId="fileBrowserPreview"/>}</div>}
-        </div>
+        <FileSplitPane scope={scope} listOpen={view?.fileListOpen} preview={inlineItem&&!(previewShown&&fileId===inlineItem.id)?<PreviewPanel embedded watchDocuments={false} visible={show('files')} itemId={inlineItem.id} panelId="fileBrowserPreview"/>:null}>
+          <RightWorkspacePanel filesOnly active={show('files')}/>
+        </FileSplitPane>
       </section>
       {hasVisited('changes')&&<section key={`changes:${scope}`} hidden={!show('changes')} inert={!show('changes')} aria-hidden={!show('changes')} className="enigma-dock-section">{session?<RepositoryChangesPanel embedded/>:<div className="enigma-dock-empty">开始项目对话后，在这里查看代码变更。</div>}</section>}
       {hasVisited('browser')&&<section key={`browser:${scope}`} hidden={!show('browser')} inert={!show('browser')} aria-hidden={!show('browser')} className="enigma-dock-section"><SidebarBrowser sessionPath={view?.browserSession===undefined?session:view.browserSession}/></section>}
       {hasVisited('tasks')&&<section hidden={!show('tasks')} inert={!show('tasks')} aria-hidden={!show('tasks')} className="enigma-dock-section enigma-dock-task-list"><div className="enigma-dock-task-intro"><h3>任务概览</h3><p>当前对话的计划、协作和运行信息。</p>{engineering?.connected&&<div><button onClick={()=>openGroup('plan')}>计划</button><button onClick={()=>openGroup('acceptance')}>检查结果</button><button onClick={()=>openGroup('observer')}>运行诊断</button></div>}</div><SessionTodoCard/><WorkflowCard/><AgentActivityCard/><SessionStatusCard/></section>}
-      {(resolved==='tools'||resolved?.startsWith('tool:'))&&<section className="enigma-dock-section">{engineering?.connected?<EngineeringPanel embedded/>:<div className="enigma-dock-empty"><h3>先选择项目目录</h3><p>这些工具会使用项目中的仓库和任务信息。</p><button onClick={()=>useEngineering.setState({connectOpen:true})}>选择项目目录</button></div>}</section>}
+      {(resolved==='tools'||resolved?.startsWith('tool:'))&&<section className="enigma-dock-section">{engineering?.connected?<EngineeringPanel embedded/>:<div className="enigma-dock-empty"><h3>打开项目工具</h3><p>沿用当前对话的目录。没有目录的项目也可以管理任务；代码功能需要在“仓库”中关联代码目录。</p><button onClick={()=>void openProjectTool(resolved?.startsWith('tool:')?resolved.slice(5):'project')}>打开工具</button></div>}</section>}
       {!(show('files')&&inlineItem?.id===fileId)&&<PreviewPanel embedded watchDocuments={false} visible={previewShown} itemId={fileId||null}/>}
       {!resolved&&<div className="enigma-dock-empty"><h3>添加工作面板</h3><p>点击上方＋，选择文件、浏览器、变更或其他工具。</p></div>}
     </div>

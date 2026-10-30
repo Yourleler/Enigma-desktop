@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { afterEach, expect, it } from 'vitest';
-import { SessionChanges, summarizeRepository } from '../plugins/enigma/session-changes';
+import { SessionChanges, summarizeRepository, parseGitFileStatuses } from '../plugins/enigma/session-changes';
 
 const roots: string[] = [];
 afterEach(async () => { for (const root of roots.splice(0)) await fs.rm(root, { recursive: true, force: true }); });
@@ -61,4 +61,20 @@ it('opens current source separately and rejects source path traversal and secret
   await expect(f.changes.source('session', 'main', '../outside.txt')).rejects.toThrow('超出');
   await expect(f.changes.source('session', 'main', 'alias.txt')).rejects.toThrow('超出');
   await expect(f.changes.source('session', 'main', '.env')).rejects.toThrow('可读范围');
+});
+
+it('shows real added, modified, deleted and renamed paths without treating secrets as visible files', async () => {
+  const f=await fixture();
+  await fs.writeFile(path.join(f.repo,'removed.txt'),'remove\n');
+  await fs.writeFile(path.join(f.repo,'before.txt'),'rename\n');f.git('add','.');f.git('commit','-qm','more files');
+  await fs.writeFile(path.join(f.repo,'main.ts'),'export const value = 3;\n');
+  await fs.writeFile(path.join(f.repo,'new file.txt'),'new\n');
+  await fs.writeFile(path.join(f.repo,'.env'),'private');
+  await fs.unlink(path.join(f.repo,'removed.txt'));f.git('mv','before.txt','after.txt');
+  const result=await f.changes.fileStatuses('session');
+  expect(result.repositories[0].files).toEqual(expect.arrayContaining([
+    {path:'main.ts',status:'modified'}, {path:'new file.txt',status:'added'}, {path:'removed.txt',status:'deleted'}, {path:'after.txt',status:'renamed',previousPath:'before.txt'},
+  ]));
+  expect(result.repositories[0].files.some(file=>file.path==='.env')).toBe(false);
+  expect(parseGitFileStatuses('UU conflict.ts\0?? a\nb.txt\0')).toEqual([{path:'conflict.ts',status:'conflict'},{path:'a\nb.txt',status:'added'}]);
 });

@@ -18,7 +18,7 @@ export function WorkspaceChooser({ initialRoot, initialMemory, nativePicker, bus
   const [root, setRoot] = useState(initialRoot);
   const [memory, setMemory] = useState(initialMemory);
   const [manual, setManual] = useState(!nativePicker);
-  const [picking, setPicking] = useState(nativePicker);
+  const [picking, setPicking] = useState(nativePicker&&!initialRoot);
   const [pickerError, setPickerError] = useState('');
   const alive = useRef(true), pending = useRef(false);
   const input = useRef<HTMLInputElement>(null);
@@ -37,7 +37,7 @@ export function WorkspaceChooser({ initialRoot, initialMemory, nativePicker, bus
     alive.current = true;
     // A deferred launch avoids opening two native sheets during StrictMode's
     // setup/cleanup probe. Unmounting also discards a late picker result.
-    const timer = nativePicker ? setTimeout(() => { void browse(true); }, 0) : null;
+    const timer = nativePicker&&!initialRoot ? setTimeout(() => { void browse(true); }, 0) : null;
     return () => { alive.current = false; if (timer !== null) clearTimeout(timer); };
   }, []);
   useEffect(() => { if (manual) input.current?.focus(); }, [manual]);
@@ -47,7 +47,7 @@ export function WorkspaceChooser({ initialRoot, initialMemory, nativePicker, bus
     event.preventDefault();
     if (trimmed && !busy && !picking && canConnect) onConnect(trimmed, memory);
   }}>
-    <p className="enigma-workspace-intro">选择项目文件夹，其他协作仓库可以稍后加入。</p>
+    <p className="enigma-workspace-intro">这是当前任务的默认工作目录，不要求是 Git 仓库。多个代码仓库可以在“仓库”中分别关联，文件仍留在原来的位置。</p>
     <div className="enigma-workspace-folder">
       <span className="enigma-workspace-folder-icon"><AppIcon name="project" size={27}/></span>
       <div className="enigma-workspace-folder-copy">

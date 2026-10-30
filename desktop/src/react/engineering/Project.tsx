@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import {useStore} from '../stores';
+import {autoProjectIdForCwd} from '../../../../shared/session-projects';
 import {openEngineering,showAction,useEngineering,type Action,type Field} from './state';
 import {explainEvidenceProblem} from './interaction-copy';
 
@@ -12,6 +13,10 @@ export function dependencyAction(action:Action,repo:any):Action{
 }
 export function ProjectPanel({value,evidence}:{value:any;evidence:(value:any)=>ReactNode}){
  const snapshot=useEngineering(s=>s.snapshot),readOnly=useStore(s=>s.sessionPermissionMode==='read_only');
+ const session=useStore(s=>s.sessions.find(item=>item.path===s.currentSessionPath)),catalog=useStore(s=>s.sessionProjectCatalog);
+ const project=catalog.projects.find(item=>item.id===(session?.projectId||autoProjectIdForCwd(session?.cwd)));
+ const candidates=[...new Set([project?.workspacePath,...project?.repositoryPaths||[]].filter((value):value is string=>!!value))].filter(root=>!(value.repositories||[]).some((repo:any)=>repo.root===root));
+
  const busy=snapshot?.state?.idle===false||snapshot?.state?.operation?.state==='running',blocked=readOnly||busy;
  const actions:Action[]=snapshot?.actions||[],action=(id:string)=>actions.find(item=>item.id===id);
  const open=(id:string)=>{const item=action(id);if(item&&!blocked)void showAction(item);};
@@ -19,6 +24,7 @@ export function ProjectPanel({value,evidence}:{value:any;evidence:(value:any)=>R
  return <section className="enigma-project">
   <p className="enigma-feature-intro">把相关仓库放进同一项目，声明它们的依赖，并登记真正需要通过的检查。加入仓库不会搬动原目录。</p>
   <div className="enigma-inline-actions">{action('repo-add')&&<button disabled={blocked} data-tooltip={readOnly?'当前对话只读，不能加入仓库':'关联现有本地 Git 仓库，保留原目录'} onClick={()=>open('repo-add')}>加入仓库</button>}{action('check-add')&&<button disabled={blocked||!repos.length} data-tooltip={!repos.length?'先加入要运行检查的仓库':'登记检查命令；保存后不会自动执行'} onClick={()=>open('check-add')}>添加验收检查</button>}</div>
+  {!!candidates.length&&<div className="enigma-project-directories"><h3>项目已关联的目录</h3><p className="enigma-source-note">选择需要协作的 Git 仓库；加入时可确认职责与读写权限。</p>{candidates.map(root=><button key={root} disabled={blocked||!action('repo-add')} onClick={()=>{const original=action('repo-add');if(original)void showAction({...original,fields:original.fields.map(field=>field.name==='path'||field.name==='root'?{...field,value:root}:field.name==='readOnly'?{...field,value:true}:field)});}}>{root}</button>)}</div>}
   {!repos.length&&<div className="enigma-empty-feature"><h3>先加入要处理的仓库</h3><p>仓库可以位于不同目录；之后可按上下游关系联动修改。</p></div>}
   <p className="enigma-source-note">{repos.length} 个仓库 · {checks.length} 项检查 · {blockers.length} 项待核对</p>
   {repos.map((repo:any)=><article className="enigma-repo" key={repo.id}><div><strong>{repo.id}</strong><p>{repo.role||'尚未填写职责'}</p><small title={repo.root} data-tooltip={repo.root}>{repo.root}</small><div className="enigma-chips"><span>{repo.access==='write'?'可写':'只读'}</span><span>{repo.dependsOn.length?`依赖：${repo.dependsOn.join('、')}`:'未声明上游依赖'}</span></div><div className="enigma-inline-actions"><button onClick={()=>openEngineering({id:`repo:${repo.id}`,title:repo.id,group:'reading',repo:repo.id})}>浏览代码</button>{action('repo-dependencies')&&<button disabled={blocked} data-tooltip="查看并修改这个仓库直接依赖的上游，已有选择会带入" onClick={()=>void showAction(dependencyAction(action('repo-dependencies')!,repo))}>调整上游依赖</button>}</div></div></article>)}

@@ -77,7 +77,7 @@ export const useEngineering = create<EngineeringState>(() => ({
 
 export const groups = [
   { id: "conductor", label: "任务管家" },
-  { id: "project", label: "项目" },
+  { id: "project", label: "仓库" },
   { id: "plan", label: "计划" },
   { id: "collaboration", label: "协作" },
   { id: "timeline", label: "时光机" },
@@ -230,6 +230,21 @@ export function openEngineering(tab: Tab) {
   });
   rememberEngineeringView();
   void loadEngineeringTab(tab);
+}
+
+const projectConnections = new Map<string,Promise<any>>();
+/** Resolve the current project's existing directory on the server, once per connection. */
+export async function openProjectTool(group:string){
+  const current=useStore.getState(),sessionPath=current.currentSessionPath,connection=current.activeServerConnectionId;
+  if(!sessionPath||current.pendingSessionSwitchPath){current.addToast('请先打开一个对话。','info');return;}
+  if(useEngineering.getState().snapshot?.connected&&activeConversationMatches()){openGroup(group);return;}
+  const key=JSON.stringify([sessionPath,connection]);
+  let pending=projectConnections.get(key);
+  if(!pending){pending=engineeringRequest('/connect',sessionPath,{});projectConnections.set(key,pending);}
+  const stillCurrent=()=>useStore.getState().currentSessionPath===sessionPath&&useStore.getState().activeServerConnectionId===connection&&useEngineering.getState().sessionPath===sessionPath;
+  try{const snapshot=await pending;if(stillCurrent()){useEngineering.setState({snapshot,error:''});openGroup(group);}}
+  catch(error){if(stillCurrent())useStore.getState().addToast(error instanceof Error?error.message:'无法打开项目工具','error');}
+  finally{if(projectConnections.get(key)===pending)projectConnections.delete(key);}
 }
 
 export function openGroup(group: string) {

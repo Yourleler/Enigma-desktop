@@ -47,6 +47,13 @@ export function createEnigmaRoute(engine: any) {
     }
   });
   const changes = new SessionChanges(engine, host);
+  route.get('/enigma/changes/files',async c=>{
+    try{
+      const sessionPath=await session(c);
+      if(!createRequestContext(c,engine).authorize?.('files.read',{kind:'session',sessionPath})?.allowed)return c.json({error:'没有读取当前项目的权限'},403);
+      return c.json(await changes.fileStatuses(sessionPath,AbortSignal.any([c.req.raw.signal,AbortSignal.timeout(25000)])));
+    }catch(error){return fail(c,error);}
+  });
   route.get('/enigma/changes', async c => {
     try {
       const sessionPath = await session(c);
@@ -75,8 +82,9 @@ export function createEnigmaRoute(engine: any) {
     try {
       const body = await safeJson(c),
         sessionPath = await session(c, true, body);
+      if (body.root === undefined) return c.json(await host.connectProject(sessionPath, body.memory === true));
       if (typeof body.root !== "string" || !body.root.trim())
-        throw new Error("Select an engineering workspace directory");
+        throw new Error("请选择有效的工作目录");
       return c.json(
         await host.connect(sessionPath, body.root, body.memory === true),
       );

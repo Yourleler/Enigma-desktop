@@ -81,7 +81,7 @@ export function ContextMenu({ items, position, onClose }: ContextMenuProps) {
   return createPortal(
     <div
       className="context-menu"
-      data-liquid="menu" data-menu-surface="" data-menu-position="fixed"
+      data-liquid="menu" data-menu-surface="" data-menu-position="fixed" data-native-browser-occluder=""
       ref={menuRef}
       style={{ left: position.x, top: position.y }}
     >

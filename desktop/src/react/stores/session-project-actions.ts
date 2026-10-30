@@ -47,10 +47,12 @@ export function normalizeSessionProjectCatalogResponse(data: unknown): SessionPr
 }
 
 export async function loadSessionProjectCatalog(): Promise<SessionProjectCatalog> {
+  const connection=useStore.getState().activeServerConnectionId;
   const res = await hanaFetch('/api/session-projects');
   const data = await res.json().catch(() => ({}));
+  if(res.ok===false)throw new Error('项目列表暂不可用');
   const catalog = normalizeSessionProjectCatalogResponse(data);
-  useStore.getState().setSessionProjectCatalog(catalog);
+  if(connection===useStore.getState().activeServerConnectionId)useStore.getState().setSessionProjectCatalog(catalog);
   return catalog;
 }
 
@@ -98,6 +100,7 @@ export async function patchSessionProjectInCatalog(
   projectId: string,
   patch: { folderId?: string | null; name?: string; workspacePath?: string | null; sharedContext?: string; sharedNotes?: string; repositoryPaths?: string[]; expectedUpdatedAt?: number | null },
 ): Promise<SessionProject | null> {
+  const connection=useStore.getState().activeServerConnectionId;
   const res = await hanaFetch(`/api/session-projects/projects/${encodeURIComponent(projectId)}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
@@ -107,6 +110,7 @@ export async function patchSessionProjectInCatalog(
   if(!res.ok)throw new Error(asObject(data)?.error as string || '项目保存失败');
   const project = normalizeProject(asObject(data)?.project, 0);
   if (!project) return null;
+  if(connection!==useStore.getState().activeServerConnectionId)return project;
   useStore.setState(state => ({
     sessionProjectCatalog: {
       ...state.sessionProjectCatalog,

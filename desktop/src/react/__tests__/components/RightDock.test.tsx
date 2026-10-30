@@ -6,7 +6,7 @@ import {act,cleanup,fireEvent,render,screen} from '@testing-library/react';
 import {afterEach,beforeEach,expect,it,vi} from 'vitest';
 import {useStore} from '../../stores';
 import {useEngineering} from '../../engineering/state';
-import {dockScope,dockView,hideDockTab,moveDockTab,normalizeDockView,orderedDockTabs,selectDockTab,useRightDock} from '../../stores/right-dock-store';
+import {dockScope,dockView,hideDockTab,moveDockTab,reorderDockTabs,patchDockView,normalizeDockView,orderedDockTabs,selectDockTab,useRightDock} from '../../stores/right-dock-store';
 import {openPreview} from '../../stores/preview-actions';
 import {RightDock} from '../../components/right-workspace/RightDock';
 vi.mock('../../utils/dock-file-drop',()=>({openDockFiles:vi.fn(async()=>{})}));
@@ -78,4 +78,35 @@ it('accepts an arriving file before the next drag movement and opens the drop on
  expect(screen.getByText('松开后固定为独立标签')).toBeInTheDocument();
  await act(async()=>{fireEvent.drop(dock,{dataTransfer});});
  expect(openDockFiles).toHaveBeenCalledWith([file],null);
+});
+
+it('preserves hidden tab slots while committing a live reorder',()=>{
+ const scope=dockScope(useStore.getState());patchDockView(scope,{order:['files','changes','browser','tasks'],hidden:['changes']});
+ reorderDockTabs(scope,['browser','files','tasks']);
+ expect(dockView(scope).order).toEqual(['browser','changes','files','tasks']);
+ expect(dockView(scope).hidden).toEqual(['changes']);
+});
+it('resizes file preview by keyboard and restores its split after reopening',()=>{
+ render(<RightDock/>);act(()=>openPreview({id:'inline',type:'markdown',title:'Guide.md',content:'# guide'},{placement:'files'}));
+ const separator=screen.getByRole('separator',{name:'调整文件列表与预览宽度'});
+ fireEvent.keyDown(separator,{key:'ArrowRight'});
+ expect(dockView(dockScope(useStore.getState())).fileListWidth).toBe(220);
+ fireEvent.doubleClick(separator);expect(dockView(dockScope(useStore.getState())).fileListWidth).toBe(200);
+});
+
+it('shows a provisional insertion slot before release, commits once and cancels without saving',()=>{
+ vi.stubGlobal('PointerEvent',MouseEvent);
+ const {container}=render(<RightDock/>),scope=dockScope(useStore.getState());
+ const strip=container.querySelector('.enigma-dock-tabs')!;
+ vi.spyOn(strip,'getBoundingClientRect').mockReturnValue({left:0,right:600,width:600,top:0,height:32,bottom:32} as DOMRect);
+ [...container.querySelectorAll<HTMLElement>('[data-dock-tab-id]')].forEach((element,i)=>{Object.defineProperty(element,'offsetWidth',{value:100});vi.spyOn(element,'getBoundingClientRect').mockReturnValue({left:i*102,right:i*102+100,width:100,top:0,bottom:32,height:32} as DOMRect);});
+ const browser=container.querySelector('[data-dock-tab-id="browser"]')!;
+ fireEvent.pointerDown(browser,{button:0,clientX:250,clientY:16});fireEvent.pointerMove(window,{clientX:5,clientY:16});
+ expect(container.querySelector('[data-dock-tab-id]')).toHaveAttribute('data-dock-tab-id','browser');
+ expect(container.querySelector('[data-drag-placeholder]')).toBeTruthy();
+ expect(dockView(scope).order).toBeUndefined();
+ fireEvent.pointerUp(window);expect(dockView(scope).order?.[0]).toBe('browser');
+ const before=[...dockView(scope).order!];
+ fireEvent.pointerDown(container.querySelector('[data-dock-tab-id="tasks"]')!,{button:0,clientX:350,clientY:16});fireEvent.pointerMove(window,{clientX:5,clientY:16});fireEvent.keyDown(window,{key:'Escape'});
+ expect(dockView(scope).order).toEqual(before);
 });

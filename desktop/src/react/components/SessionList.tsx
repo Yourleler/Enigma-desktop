@@ -5,6 +5,8 @@
  * 通过 portal 渲染到 #sessionList，从 Zustand sessions 状态驱动。
  */
 
+import {ProjectSettings} from './chat/ProjectContextBar';
+import {AppIcon} from '../ui/app-icons';
 import { Fragment, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Collapse } from '@/ui';
@@ -189,6 +191,7 @@ function SessionListInner() {
   const streamingSessions = useStore(s => s.streamingSessions);
   const unreadOutputSessionPaths = useStore(s => s.unreadOutputSessionPaths);
   const browserBySession = useStore(s => s.browserBySession);
+  const projectConnection = useStore(s=>s.activeServerConnectionId);
   const projectCatalog = useStore(s => s.sessionProjectCatalog);
   const projectCatalogLoaded = useStore(s => s.sessionProjectCatalogLoaded);
   const metaRecovery = useStore(s => s.metaRecovery);
@@ -213,9 +216,11 @@ function SessionListInner() {
   const [browserSessions, setBrowserSessions] = useState<Record<string, BrowserSessionState>>({});
   const [viewMode, setViewModeState] = useState<SessionViewMode>(readInitialSessionViewMode);
   const [projectMenuPosition, setProjectMenuPosition] = useState<{ x: number; y: number } | null>(null);
+  const [projectSettings,setProjectSettings]=useState<SessionProjectGroup|null>(null);
   const [projectActionMenu, setProjectActionMenu] = useState<ProjectActionMenuState>(null);
   const [folderActionMenu, setFolderActionMenu] = useState<FolderActionMenuState>(null);
   const [projectNameDialog, setProjectNameDialog] = useState<ProjectNameDialogState>(null);
+  useEffect(()=>{setProjectSettings(null);setProjectActionMenu(null);setProjectNameDialog(null);},[projectConnection]);
   const [dragState, setDragState] = useState<SidebarDragState>(null);
   const [dropTargetId, setDropTargetId] = useState<string | null>(null);
   const [pinnedDropTarget, setPinnedDropTarget] = useState<PinnedDropTarget>(null);
@@ -825,6 +830,8 @@ function SessionListInner() {
           position={projectActionMenu.position}
           onClose={() => setProjectActionMenu(null)}
           items={[
+            {label:'项目设置',action:()=>setProjectSettings(projectActionMenu.project)},
+            {label:'新建项目对话',action:()=>void handleCreateProjectSession(projectActionMenu.project)},
             {
               label: t('sidebar.projects.renameProject'),
               action: () => setProjectNameDialog({
@@ -860,6 +867,7 @@ function SessionListInner() {
           ]}
         />
       )}
+      {projectSettings&&createPortal(<ProjectSettings key={projectSettings.id} id={projectSettings.id} name={projectSettings.name} record={projectCatalog.projects.find(p=>p.id===projectSettings.id)} onClose={()=>setProjectSettings(null)}/>,document.body)}
       {projectNameDialog && (
         <ProjectNameDialog
           dialog={projectNameDialog}
@@ -1173,6 +1181,7 @@ function ProjectBlock({
       >
         <FolderIcon className={styles.projectIcon} size={16} open={!collapsed} />
         <span className={styles.projectName} title={cwdFromAutoProjectId(project.id)||undefined}>{project.name}</span>
+        <button type="button" className={`${styles.projectNewSessionButton} ${styles.projectSettingsButton}`} aria-label={`项目设置 ${project.name}`} data-tooltip="项目设置、共享背景与目录" onPointerDown={event=>event.stopPropagation()} onKeyDown={event=>event.stopPropagation()} onClick={event=>{event.stopPropagation();const box=event.currentTarget.getBoundingClientRect();onOpenProjectMenu({x:box.left,y:box.bottom},project);}}><AppIcon name="settings" size={15}/></button>
         <button
           type="button"
           className={styles.projectNewSessionButton}

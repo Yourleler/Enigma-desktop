@@ -21,6 +21,18 @@ export interface ChangeRepository {
   error?: string;
 }
 const included = (file: string) => !excludedSourcePath(file);
+export function parseGitFileStatuses(output:string){
+  const entries=output.split('\0'),files:Array<{path:string;status:string;previousPath?:string}>=[];
+  for(let i=0;i<entries.length;i++){
+    const entry=entries[i];if(!entry)continue;
+    const state=entry.slice(0,2),file=entry.slice(3);
+    const previousPath=/[RC]/.test(state)?entries[++i]:undefined;
+    if(!file||!included(file))continue;
+    const status=state.includes('U')||state==='AA'||state==='DD'?'conflict':state.includes('D')?'deleted':state.includes('R')?'renamed':state==='??'||/[AC]/.test(state)?'added':'modified';
+    files.push({path:file,status,...(previousPath?{previousPath}:{})});
+  }
+  return files;
+}
 async function git(root: string, args: string[], signal?: AbortSignal) {
   const result = await runProcess(['git', '-c', 'core.fsmonitor=false', '-c', 'core.hooksPath=/dev/null', ...args], root,
     { signal, internalGit: true, timeoutMs: 8000, limit: 2_000_000, env: { GIT_OPTIONAL_LOCKS: '0' } });
@@ -130,6 +142,15 @@ export class SessionChanges {
     const repositories: ChangeRepository[] = [];
     for (const repo of repos) repositories.push(await summarizeRepository(repo.root, repo.id, signal));
     return { repositories, at: new Date().toISOString(), git: repos.length > 0 };
+  }
+
+  async fileStatuses(sessionPath:string,signal?:AbortSignal){
+    const repos=await this.repositories(sessionPath),repositories=[];
+    for(const repo of repos){
+      try{repositories.push({id:repo.id,root:repo.root,files:parseGitFileStatuses(await git(repo.root,['status','--porcelain=v1','-z','--untracked-files=all'],signal))});}
+      catch(error){signal?.throwIfAborted();repositories.push({id:repo.id,root:repo.root,files:[],error:error instanceof Error?error.message:'文件状态暂不可用'});}
+    }
+    return {repositories,git:repos.length>0};
   }
 
   async read(sessionPath: string, kind: 'working' | 'staged', signal?: AbortSignal) {

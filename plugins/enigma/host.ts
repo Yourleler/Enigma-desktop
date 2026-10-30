@@ -3,6 +3,7 @@ import {
   nativeEngineeringPolicy,
 } from "./execution-policy.ts";
 import { isReadOnlyPermissionMode } from "../../core/session-permission-mode.ts";
+import {autoProjectIdForCwd,cwdFromAutoProjectId} from '../../shared/session-projects.ts';
 import fs from "node:fs/promises";
 import path from "node:path";
 import { SessionManager } from "../../lib/pi-sdk/index.ts";
@@ -191,6 +192,7 @@ function scopedFactory(
 export class EngineeringHost {
   private bindings?: Record<string, Binding>;
   private loading?: Promise<Record<string, Binding>>;
+  private readonly projectConnections = new Map<string,Promise<any>>();
   private readonly sessions = new Map<string, NativeEngineeringSession>();
   private readonly overviews = new Map<
     string,
@@ -999,6 +1001,26 @@ export class EngineeringHost {
     controller.chat.provider = session.model?.provider || "";
     controller.chat.model = session.model?.id || "";
     return controller;
+  }
+  async connectProject(sessionPath: string, memory = false) {
+    if(!this.isEnabled())throw new Error('Engineering plugin is disabled');
+    const pending=this.projectConnections.get(sessionPath);if(pending)return pending;
+    const task=this.connectProjectOnce(sessionPath,memory);this.projectConnections.set(sessionPath,task);
+    try{return await task;}finally{if(this.projectConnections.get(sessionPath)===task)this.projectConnections.delete(sessionPath);}
+  }
+  private async connectProjectOnce(sessionPath:string,memory:boolean){
+    if (await this.binding(sessionPath)) return this.snapshot(sessionPath);
+    const info = (await this.engine.listSessions()).find((item: any) => item.path === sessionPath);
+    if (!info) throw new Error('无法找到当前对话');
+    const projectId = info.projectId || autoProjectIdForCwd(info.cwd);
+    const project = this.engine.getSessionProjectCatalog().projects.find((item: any) => item.id === projectId);
+    let root = project?.workspacePath || cwdFromAutoProjectId(projectId) || (!project ? info.cwd : null);
+    if (!root) {
+      // Folderless projects share task metadata, without granting access to a code directory.
+      root = path.join(this.engine.hanakoHome, 'plugin-data', 'enigma', 'workspaces', hash(project ? project.id : sessionPath));
+      await fs.mkdir(root, {recursive: true});
+    }
+    return this.connect(sessionPath, root, memory);
   }
   async connect(sessionPath: string, root: string, memory = false) {
     if (!this.isEnabled()) throw new Error("Engineering plugin is disabled");
