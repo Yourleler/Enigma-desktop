@@ -10,11 +10,13 @@ function omission(text:string){return ({'Nonregular Git object; retained in diff
 export function Changes({
   value,
   files,
+  standalone,
 }: {
   value: any;
   files: React.ReactNode;
+  standalone?: { refresh: () => void; loading: boolean; openSource?: (source: any) => void };
 }) {
-  const modes=['diff','smart','files','maps'] as const;
+  const modes: Array<'diff'|'smart'|'files'|'maps'>=standalone?['smart','diff']:['diff','smart','files','maps'];
   const section=useEngineering(state=>state.sections?.reading),view=modes.includes(section as any)?section as typeof modes[number]:'smart';
   const setView=(next:typeof modes[number])=>{useEngineering.setState(state=>({sections:{...state.sections,reading:next}}));rememberEngineeringView();};
   const [selected, setSelected] = useState("");
@@ -44,6 +46,7 @@ export function Changes({
     finally{if(expansion.current===generation)setExpanding(false);}
   };
   const start = () => {
+    if (standalone) { standalone.refresh(); return; }
     const action = state.snapshot?.actions?.find(
       (item: any) => item.id === "changes-build",
     );
@@ -60,10 +63,10 @@ export function Changes({
         ><GlassSelection selection={view}/>
           {modes.map((key,index)=><button key={key} ref={node=>{tabs.current[key]=node;}} id={`${tabId}-${key}`} role="tab" aria-selected={view===key} aria-controls={`${tabId}-panel`} tabIndex={view===key?0:-1} data-tooltip={{diff:'逐文件查看固定版本的差异；未展开内容会明确标示',smart:'按意图、影响范围和源码证据阅读同一版本',files:'浏览当前文件；可能与冻结版本不同',maps:'按整个任务查看阅读路线、源码节点与需求覆盖'}[key]} onClick={()=>setView(key)} onKeyDown={event=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(event.key)){event.preventDefault();const next=modes[event.key==='Home'?0:event.key==='End'?modes.length-1:(index+(event.key==='ArrowRight'?1:modes.length-1))%modes.length];setView(next);tabs.current[next]?.focus();}}}>{{diff:'全量 diff',smart:'智能阅读',files:'项目文件',maps:'任务地图'}[key]}</button>)}
         </div>
-        {(view==='diff'||view==='smart')&&<button className="enigma-primary" disabled={busy||readOnly} data-tooltip="选择暂存、提交或 MR 来源，为同一版本生成差异与智能阅读" onClick={start}>
-          生成阅读
+        {(view==='diff'||view==='smart')&&<button className="enigma-primary" disabled={standalone ? standalone.loading : busy||readOnly} data-tooltip="选择暂存、提交或 MR 来源，为同一版本生成差异与智能阅读" onClick={start}>
+          {standalone ? '更新到当前版本' : '生成阅读'}
         </button>}
-        <SurfaceMenu label="阅读工具">
+        {!standalone && <SurfaceMenu label="阅读工具">
             {(state.snapshot?.actions || [])
               .filter(
                 (action: any) =>
@@ -75,7 +78,7 @@ export function Changes({
                   <small>{action.description}</small>
                 </button>
               ))}
-        </SurfaceMenu>
+        </SurfaceMenu>}
       </div>
       <div id={`${tabId}-panel`} role="tabpanel" aria-labelledby={`${tabId}-${view}`}>
       {view==='maps'?<TaskMaps/>:view === "files" ? (
@@ -88,7 +91,7 @@ export function Changes({
             暂存、提交或 MR 产生后，Agent 可以生成同版本的全量 diff
             和智能阅读。按职责与行为展开，也可直接核对每一处源码。
           </p>
-          <button className="enigma-primary" disabled={busy||readOnly} onClick={start}>
+          <button className="enigma-primary" disabled={standalone ? standalone.loading : busy||readOnly} onClick={start}>
             选择变更来源
           </button>
         </div>
@@ -123,6 +126,7 @@ export function Changes({
                 : record.error || "已保存全量 diff，智能阅读尚未完成"}
             </div>
           )}
+          {changes.length === 0 && <p className="enigma-source-note">这个版本没有代码变更。</p>}
           {view === "diff" ? (
             <div className="enigma-diff-layout">
               {changes.length>8&&<input className="enigma-timeline-search enigma-diff-filter" value={filter} aria-label="筛选变更文件" placeholder="按路径查找文件" onChange={e=>setFilter(e.target.value)}/>}
@@ -229,7 +233,7 @@ export function Changes({
                           <pre>{node.source.snippet}</pre>
                           <button
                             onClick={() =>
-                              openEngineering({
+                              standalone?.openSource ? standalone.openSource(node.source) : openEngineering({
                                 id: `file:${node.source.repo}:${node.source.file}`,
                                 title: node.source.file.split("/").pop(),
                                 group: "reading",

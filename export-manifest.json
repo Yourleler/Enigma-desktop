@@ -591,6 +591,7 @@
     "plugins/computer-control/",
     "plugins/enigma/",
     "plugins/enigma/memory-host.ts",
+    "plugins/enigma/session-changes.ts",
     "scripts/enigma-profile.mjs",
     "scripts/launch-enigma.mjs",
     "scripts/open-enigma-workbench.mjs",

@@ -7618,6 +7618,11 @@
         },
         {
           "root": "server-bootstrap",
+          "from": "plugins/enigma/session-changes.ts",
+          "kind": "import-statement"
+        },
+        {
+          "root": "server-bootstrap",
           "from": "server/routes/chat.ts",
           "kind": "import-statement"
         },
@@ -7652,7 +7657,7 @@
           "kind": "import-statement"
         }
       ],
-      "reason": "Reached via esbuild source module graph, imported by plugins/enigma/host.ts (import-statement); core/compaction-utils.ts (import-statement); lib/llm/cache-preserving-compaction-agent-run.ts (import-statement); +52 more importer(s)."
+      "reason": "Reached via esbuild source module graph, imported by plugins/enigma/host.ts (import-statement); core/compaction-utils.ts (import-statement); lib/llm/cache-preserving-compaction-agent-run.ts (import-statement); +53 more importer(s)."
     },
     {
       "path": "lib/pi-sdk/model-auth-adapter.ts",
@@ -8745,9 +8750,14 @@
           "root": "server-bootstrap",
           "from": "lib/sandbox/index.ts",
           "kind": "import-statement"
+        },
+        {
+          "root": "server-bootstrap",
+          "from": "plugins/enigma/session-changes.ts",
+          "kind": "import-statement"
         }
       ],
-      "reason": "Reached via esbuild source module graph, imported by plugins/enigma/execution-policy.ts (import-statement); lib/resource-io/resource-access-policy.ts (import-statement); lib/sandbox/index.ts (import-statement)."
+      "reason": "Reached via esbuild source module graph, imported by plugins/enigma/execution-policy.ts (import-statement); lib/resource-io/resource-access-policy.ts (import-statement); lib/sandbox/index.ts (import-statement); +1 more importer(s)."
     },
     {
       "path": "lib/sandbox/platform.ts",
@@ -8789,9 +8799,14 @@
           "root": "server-bootstrap",
           "from": "lib/sandbox/index.ts",
           "kind": "import-statement"
+        },
+        {
+          "root": "server-bootstrap",
+          "from": "plugins/enigma/session-changes.ts",
+          "kind": "import-statement"
         }
       ],
-      "reason": "Reached via esbuild source module graph, imported by lib/sandbox/path-guard.ts (import-statement); plugins/enigma/execution-policy.ts (import-statement); core/platform-prompt.ts (import-statement); +2 more importer(s)."
+      "reason": "Reached via esbuild source module graph, imported by lib/sandbox/path-guard.ts (import-statement); plugins/enigma/execution-policy.ts (import-statement); core/platform-prompt.ts (import-statement); +3 more importer(s)."
     },
     {
       "path": "lib/sandbox/read-enhanced.ts",
@@ -73758,11 +73773,16 @@
         },
         {
           "root": "server-bootstrap",
+          "from": "plugins/enigma/session-changes.ts",
+          "kind": "import-statement"
+        },
+        {
+          "root": "server-bootstrap",
           "from": "server/routes/enigma.ts",
           "kind": "import-statement"
         }
       ],
-      "reason": "Reached via esbuild source module graph, imported by plugins/enigma/host.ts (import-statement); server/routes/enigma.ts (import-statement)."
+      "reason": "Reached via esbuild source module graph, imported by plugins/enigma/host.ts (import-statement); plugins/enigma/session-changes.ts (import-statement); server/routes/enigma.ts (import-statement)."
     },
     {
       "path": "plugins/enigma/guardian-host.ts",
@@ -73836,6 +73856,18 @@
         }
       ],
       "reason": "Reached via esbuild source module graph, imported by plugins/enigma/conductor.ts (import-statement); plugins/enigma/host.ts (import-statement)."
+    },
+    {
+      "path": "plugins/enigma/session-changes.ts",
+      "inputType": "source-graph",
+      "provenance": [
+        {
+          "root": "server-bootstrap",
+          "from": "server/routes/enigma.ts",
+          "kind": "import-statement"
+        }
+      ],
+      "reason": "Reached via esbuild source module graph, imported by server/routes/enigma.ts (import-statement)."
     },
     {
       "path": "server/app-events.ts",
@@ -77687,9 +77719,9 @@
     }
   ],
   "stats": {
-    "totalFiles": 6409,
+    "totalFiles": 6410,
     "byInputType": {
-      "source-graph": 706,
+      "source-graph": 707,
       "runtime-asset": 11,
       "nft-runtime-trace": 5692
     }

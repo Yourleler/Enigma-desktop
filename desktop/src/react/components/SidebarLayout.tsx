@@ -1,3 +1,4 @@
+import { useChangesPanel } from '../stores/changes-panel-store';
 /** Shared desktop layout arbitration: preserve useful reading widths and user intent. */
 import { useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
@@ -22,7 +23,9 @@ export function updateLayout(intent?: LayoutIntent): void {
   try {
     const s = useStore.getState(), eng = useEngineering.getState();
     const width = document.querySelector('.app')?.clientWidth || window.innerWidth;
-    const engineering = !!eng.snapshot?.connected && eng.paneOpen && !!eng.active;
+    const changes = useChangesPanel.getState();
+    const changesOpen = changes.open && changes.session === s.currentSessionPath && changes.connection === (s.activeServerConnectionId || 'local');
+    const engineering = (!!eng.snapshot?.connected && eng.paneOpen && !!eng.active) || changesOpen;
     const preferred = parseFloat(document.documentElement.style.getPropertyValue('--preview-preferred-width'))
       || Number(localStorage.getItem('hana-preview-width')) || 580;
     const result = resolveWorkspaceLayout({
@@ -74,9 +77,10 @@ export function SidebarLayout({ restorePreference = true }: { restorePreference?
       if (['sidebarOpen','jianOpen','previewOpen','currentTab','currentChannel','layoutDrawer'].some(key => s[key as keyof typeof s] !== previous[key as keyof typeof previous])) schedule();
     });
     const unsubscribeEngineering = useEngineering.subscribe((s, previous) => {
-      if (s.paneOpen && s.active && (s.paneOpen !== previous.paneOpen || s.active !== previous.active)) updateLayout('workspace');
+      if (s.paneOpen && s.active && (s.paneOpen !== previous.paneOpen || s.active !== previous.active)) { useChangesPanel.setState({open:false}); updateLayout('workspace'); }
       else if (s.paneOpen !== previous.paneOpen || s.active !== previous.active || !!s.snapshot?.connected !== !!previous.snapshot?.connected) schedule();
     });
+    const unsubscribeChanges = useChangesPanel.subscribe((s) => { document.body.classList.toggle('enigma-changes-open', s.open); updateLayout(s.open ? 'workspace' : undefined); });
     const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(schedule);
     for (const el of document.querySelectorAll('.app,.sidebar-inner,.jian-sidebar-inner')) observer?.observe(el);
     window.addEventListener('resize', schedule);
@@ -88,7 +92,7 @@ export function SidebarLayout({ restorePreference = true }: { restorePreference?
       if (e.key === 'Escape' && !useStore.getState().layoutDrawer && !document.querySelector('[role="dialog"],[role="menu"],.cm-panels') && useStore.getState().previewOpen) closePreview();
     };
     document.addEventListener('keydown', onKeydown);
-    return () => { cancelAnimationFrame(frame); observer?.disconnect(); unsubscribe(); unsubscribeEngineering(); window.removeEventListener('resize', schedule); document.removeEventListener('keydown', onKeydown); };
+    return () => { cancelAnimationFrame(frame); observer?.disconnect(); unsubscribe(); unsubscribeEngineering(); unsubscribeChanges(); window.removeEventListener('resize', schedule); document.removeEventListener('keydown', onKeydown); };
   }, [restorePreference]);
 
   useLayoutEffect(() => {

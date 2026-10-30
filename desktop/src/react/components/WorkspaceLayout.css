@@ -33,3 +33,9 @@
 .app[data-layout-drawer="sidebar"] #sidebarResizeHandle,
 .app .jian-sidebar.enigma-drawer #jianResizeHandle { display: none; }
 @media (prefers-reduced-motion: reduce) { .app > .sidebar, .app > .jian-sidebar, #previewPanel { transition: none !important; } }
+
+/* Reading a patch needs a wider surface; the same layout arbiter makes room. */
+:root:has(body.enigma-changes-open) { --jian-sidebar-width: clamp(360px, 42vw, 680px); }
+@media (max-width: 860px) {
+  body.enigma-changes-open .jian-sidebar.enigma-drawer:not(.collapsed) { z-index: 800; top: var(--titlebar-h,44px); bottom: 8px; right: 8px; width: min(680px, calc(100vw - 16px)) !important; }
+}

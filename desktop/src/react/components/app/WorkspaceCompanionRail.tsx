@@ -1,3 +1,4 @@
+import { useChangesPanel } from '../../stores/changes-panel-store';
 import { useStore } from '../../stores';
 import { RegionalErrorBoundary } from '../RegionalErrorBoundary';
 import { RightWorkspacePanel } from '../right-workspace/RightWorkspacePanel';
@@ -9,13 +10,18 @@ import { updateLayout } from '../SidebarLayout';
 
 export function WorkspaceCompanionRail() {
   const jianOpen = useStore(s => s.jianOpen);
-  const engineering = useEngineering(s => !!s.snapshot?.connected && s.paneOpen && !!s.active);
+  const currentSession = useStore(s => s.currentSessionPath);
+  const currentConnection = useStore(s => s.activeServerConnectionId || 'local');
+  const changesOpen = useChangesPanel(s => s.open && s.session === currentSession && s.connection === currentConnection);
+  const engineeringConnected = useEngineering(s => !!s.snapshot?.connected && s.paneOpen && !!s.active);
+  const engineering = engineeringConnected || changesOpen;
   const layoutDrawer=useStore(s=>s.layoutDrawer);
   const autoCollapsed=useStore(s=>s.jianAutoCollapsed);
   const [narrow,setNarrow]=useState(()=>window.innerWidth<=860);
   const rail=useRef<HTMLElement>(null);
   const drawer=(layoutDrawer==='workspace'||narrow&&engineering)&&jianOpen;
-  const close=()=>{useEngineering.setState({paneOpen:false});rememberEngineeringView();useStore.setState({jianOpen:false,jianAutoCollapsed:false,layoutDrawer:null});};
+  const close=()=>{useChangesPanel.setState({open:false});useEngineering.setState({paneOpen:false});rememberEngineeringView();useStore.setState({jianOpen:false,jianAutoCollapsed:false,layoutDrawer:null});};
+  useEffect(() => { document.body.classList.toggle('enigma-changes-open', changesOpen); updateLayout(); return () => document.body.classList.remove('enigma-changes-open'); }, [changesOpen]);
   useEffect(()=>{
     if(engineering)updateLayout();
   },[engineering,jianOpen,narrow]);

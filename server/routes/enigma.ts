@@ -1,3 +1,4 @@
+import { SessionChanges } from '../../plugins/enigma/session-changes.ts';
 import { Hono } from "hono";
 import { safeJson } from "../hono-helpers.ts";
 import { createRequestContext } from "../http/boundary.ts";
@@ -44,6 +45,31 @@ export function createEnigmaRoute(engine: any) {
     } catch (error) {
       return fail(c, error);
     }
+  });
+  const changes = new SessionChanges(engine, host);
+  route.get('/enigma/changes', async c => {
+    try {
+      const sessionPath = await session(c);
+      if (!createRequestContext(c, engine).authorize?.('files.read', { kind: 'session', sessionPath })?.allowed) return c.json({ error: '没有读取当前项目的权限' }, 403);
+      return c.json(await changes.summary(sessionPath, c.req.raw.signal));
+    }
+    catch (error) { return fail(c, error); }
+  });
+  route.get('/enigma/changes/source', async c => {
+    try {
+      const sessionPath = await session(c);
+      if (!createRequestContext(c, engine).authorize?.('files.read', { kind: 'session', sessionPath })?.allowed) return c.json({ error: '没有读取当前项目的权限' }, 403);
+      return c.json(await changes.source(sessionPath, c.req.query('repo') || '', c.req.query('file') || ''));
+    } catch (error) { return fail(c, error); }
+  });
+  route.post('/enigma/changes/read', async c => {
+    try {
+      const body = await safeJson(c), sessionPath = await session(c, false, body);
+      if (!['working', 'staged'].includes(body.kind)) return c.json({ error: '请选择工作区或暂存变更' }, 400);
+      const context = createRequestContext(c, engine);
+      if (!context.authorize?.('files.read', { kind: 'session', sessionPath })?.allowed) return c.json({ error: '没有读取当前项目的权限' }, 403);
+      return c.json(await changes.read(sessionPath, body.kind, AbortSignal.any([c.req.raw.signal, AbortSignal.timeout(90000)])));
+    } catch (error) { return fail(c, error); }
   });
   route.post("/enigma/connect", async (c) => {
     try {

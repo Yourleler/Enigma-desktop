@@ -1,4 +1,4 @@
-export { Workspace } from './workspace.js';
+export { Workspace, excluded as excludedSourcePath } from './workspace.js';
 export { traceCode, readSource, repoGraph } from './reading.js';
 export { runProcess } from './process.js';
 export { notePage } from './requirements.js';

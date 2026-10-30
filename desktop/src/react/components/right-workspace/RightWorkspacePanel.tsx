@@ -1,3 +1,5 @@
+import { useChangesPanel } from '../../stores/changes-panel-store';
+import { RepositoryChangesCard, RepositoryChangesPanel } from './RepositoryChangesCard';
 import { EngineeringPanel } from '../../engineering/Engineering';
 import { useEngineering } from '../../engineering/state';
 import { useId } from 'react';
@@ -92,12 +94,17 @@ function WorkspaceHeader() {
 }
 
 export function RightWorkspacePanel({ compact = false }: { compact?: boolean }) {
+  const session = useStore(s => s.currentSessionPath);
+  const connection = useStore(s => s.activeServerConnectionId || 'local');
+  const changesOpen = useChangesPanel(s => s.open && s.session === session && s.connection === connection);
   const rightWorkspaceTab = useStore(s => s.rightWorkspaceTab);
   const engineeringVisible = useEngineering(s => !!s.snapshot?.connected && s.paneOpen && !!s.active);
   const setRightWorkspaceTab = useStore(s => s.setRightWorkspaceTab);
   const jianView = useStore(s => s.jianView);
   const jianDrawerOpen = useStore(s => s.jianDrawerOpen);
   const t = window.t ?? ((p: string) => p);
+
+  if (changesOpen) return <RepositoryChangesPanel />;
 
   if (engineeringVisible) return <EngineeringPanel />;
 
@@ -122,6 +129,7 @@ export function RightWorkspacePanel({ compact = false }: { compact?: boolean }) 
         data-jian-open={jianDrawerOpen ? 'true' : 'false'}
       >
         <WorkspaceHeader />
+        <RepositoryChangesCard />
         <div className={styles.tabs} role="tablist" aria-label={t('rightWorkspace.tabs.label')} data-glass-segmented="">
           <GlassSelection selection={activeTab}/>
           {BASE_TABS.map(tab => {
