@@ -1,3 +1,5 @@
+import {normalizedSearchOptions,matchCenteredSnippet} from '../../shared/history-search.ts';
+import {autoProjectIdForCwd} from '../../shared/session-projects.ts';
 /**
  * Session 管理 REST 路由
  */
@@ -263,7 +265,7 @@ const FIND_TURN_TAG_PREFIX_RE = /^<t>[^<]*<\/t>\s*/;
 // revision（stat 签名，与 /api/sessions 列表投影同源同格式）不一致即失效；
 // revision 为 null（修订未知）时不写缓存，防止把"未知"固化成陈旧命中。
 // 容量上限 FIND_ENTRIES_CACHE_MAX，超限时按插入序淘汰最早的 key。
-const FIND_ENTRIES_CACHE_MAX = 8;
+const FIND_ENTRIES_CACHE_MAX = 80;
 const findEntriesCache = new Map();
 
 export function collectFindableHistoryEntries(sourceMessages, sanitizeVisibleContent) {
@@ -283,11 +285,11 @@ export function collectFindableHistoryEntries(sourceMessages, sanitizeVisibleCon
       const visible = content
         .replace(FIND_LEGACY_STEER_PREFIX_RE, "")
         .replace(FIND_TURN_TAG_PREFIX_RE, "");
-      if (visible.trim()) entries.push({ index: currentIndex, text: visible });
+      if (visible.trim()) entries.push({ index: currentIndex, text: visible,role:'user',timestamp:Number(m.timestamp)||Date.parse(m.timestamp)||0 });
     } else {
       const { text } = extractTextContent(m.content, { stripThink: true, includeCommentary: includesCompatibleResponseText(m) });
       const content = sanitizeVisibleContent(text);
-      if (content.trim()) entries.push({ index: currentIndex, text: content });
+      if (content.trim()) entries.push({ index: currentIndex, text: content,role:'assistant',timestamp:Number(m.timestamp)||Date.parse(m.timestamp)||0,model:[m.provider,typeof m.model==='string'?m.model:m.model?.id].filter(Boolean).join('/') });
     }
   }
   return entries;
@@ -967,8 +969,38 @@ export function createSessionsRoute(engine, hub = null) {
         }, 400);
       }
 
-      const sessions = await engine.listSessions();
-      const results = searchSessions(sessions, trimmedQuery, { phase, limit }).map((s) => ({
+      const searchOptions=normalizedSearchOptions({match:c.req.query('match'),source:c.req.query('source'),caseSensitive:c.req.query('caseSensitive')});
+      const advanced=c.req.query('advanced')==='true';
+      const status=c.req.query('status')||'active',project=c.req.query('project')||'',model=(c.req.query('model')||'').toLocaleLowerCase();
+      const after=Number(c.req.query('after'))||0,before=Number(c.req.query('before'))||Infinity;
+      let sessions=status==='archived'?[]:await engine.listSessions();
+      if(status!=='active'&&engine.listArchivedSessions)sessions.push(...(await engine.listArchivedSessions()).map(item=>({...item,archived:true,modified:item.archivedAt})));
+      sessions=sessions.filter(item=>(!project||(item.projectId||autoProjectIdForCwd(item.cwd))===project)&&Date.parse(item.modified?.toISOString?.()||item.modified||'')>=after&&Date.parse(item.modified?.toISOString?.()||item.modified||'')<=before);
+      let matches;let skipped=0;
+      if(advanced&&phase==='content'){
+        matches=[];
+        for(const item of sessions){
+          if(c.req.raw.signal.aborted)throw new Error('搜索已取消');
+          if(!isValidSessionPath(item.path,engine.agentsDir)||!authorizeSessionRoute(requestContext,'sessions.read',{kind:'session',studioId:requestContext.studioId,sessionPath:item.path}).allowed)continue;
+          try{
+          const revision=await readSessionFileRevision(item.path),cached=findEntriesCache.get(item.path);
+          let entries;
+          if(revision&&cached?.revision===revision)entries=cached.entries;
+          else{const messages=await loadSessionHistoryMessages(engine,item.path);entries=collectFindableHistoryEntries(messages,value=>stripSessionReminderBlocks(value));if(revision){findEntriesCache.set(item.path,{revision,entries});if(findEntriesCache.size>FIND_ENTRIES_CACHE_MAX)findEntriesCache.delete(findEntriesCache.keys().next().value);}}
+          if(model&&!entries.some(entry=>entry.model?.toLocaleLowerCase().includes(model)))continue;
+          const selected=entries.filter(entry=>(searchOptions.source==='all'||entry.role===searchOptions.source)&&(!model||entry.role!=='assistant'||entry.model?.toLocaleLowerCase().includes(model)));
+          const found=findInSessionMessages(selected,trimmedQuery,searchOptions);
+          if(!found.total)continue;
+          const best=found.matches.find(match=>match.index===found.bestIndex)||found.matches[0],entry=selected.find(entry=>entry.index===best.index);
+          matches.push({...item,matchKind:'content',snippet:best.snippet,score:best.exact?700:100,matchedTerms:searchOptions.match==='all'?trimmedQuery.split(/\s+/):best.exact?[trimmedQuery]:found.tokens,matchCount:found.total,matchRole:entry?.role,messageIndex:best.index});
+          }catch(error){if(c.req.raw.signal.aborted)throw error;skipped++;}
+        }
+      }else matches=searchSessions(sessions.filter(item=>!model||`${item.modelProvider||''}/${item.modelId||''}`.toLocaleLowerCase().includes(model)),trimmedQuery,{phase,limit:50,allResults:true,...searchOptions});
+      const byTime=(a,b)=>Date.parse(b.modified?.toISOString?.()||b.modified||'')-Date.parse(a.modified?.toISOString?.()||a.modified||'');
+      matches.sort((a,b)=>c.req.query('sort')==='newest'?byTime(a,b):(b.score-a.score)||byTime(a,b));
+      const offset=Math.max(0,Number(c.req.query('offset'))||0),pageSize=Math.max(1,Math.min(50,limit||20));
+      const total=matches.length;
+      const results = matches.slice(offset,offset+pageSize).map((s) => ({
         path: s.path,
         sessionId: s.sessionId || engine.getSessionIdForPath?.(s.path) || null,
         title: s.title || null,
@@ -991,9 +1023,9 @@ export function createSessionsRoute(engine, hub = null) {
         deletedAt: s.deletedAt || null,
         matchKind: s.matchKind,
         snippet: s.snippet || "",
-        score: s.score,
+        score: s.score, archived:s.archived===true,matchedTerms:s.matchedTerms||[trimmedQuery],matchCount:s.matchCount||1,matchRole:s.matchRole,messageIndex:s.messageIndex,
       }));
-      return c.json({ query, phase, results });
+      return c.json({ query, phase, results,total,hasMore:offset+results.length<total,skipped });
     } catch (err) {
       if (err instanceof SessionSearchTokenizerUnavailableError) {
         log.error(`session search tokenizer unavailable: ${err.cause || err}`);
@@ -1065,7 +1097,7 @@ export function createSessionsRoute(engine, hub = null) {
           }
         }
       }
-      const result = findInSessionMessages(entries, query);
+      const result = findInSessionMessages(entries, query,normalizedSearchOptions({match:c.req.query('match'),source:c.req.query('source'),caseSensitive:c.req.query('caseSensitive')}));
       return c.json({ query, revision, ...result });
     } catch (err) {
       if (err instanceof SessionSearchTokenizerUnavailableError) {

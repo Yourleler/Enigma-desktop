@@ -67,6 +67,8 @@ describe('ChatSidebarContent', () => {
     expect(screen.queryByRole('button', { name: '新对话' })).not.toBeInTheDocument();
   });
 
+  it('places settings at the bottom of the narrow application rail',()=>{const onOpenSettings=vi.fn();render(<ChatSidebarContent onNewSession={vi.fn()} onCollapse={vi.fn()} onOpenSettings={onOpenSettings}/>);const settings=screen.getByRole('button',{name:'设置'});expect(settings.closest('.enigma-sidebar-rail-bottom')).toBeTruthy();fireEvent.click(settings);expect(onOpenSettings).toHaveBeenCalledOnce();expect(screen.getByRole('button',{name:'搜索对话历史'})).toBeVisible();});
+
   it('opens the skills panel from the activity bar below automation', () => {
     const onTogglePanel = vi.fn();
 
@@ -80,7 +82,7 @@ describe('ChatSidebarContent', () => {
     );
 
     const skillsButton = screen.getByRole('button', { name: 'Skills' });
-    expect(skillsButton.previousElementSibling).toHaveTextContent('任务计划');
+    expect(skillsButton.previousElementSibling).toHaveAttribute('aria-label','任务计划');
 
     fireEvent.click(skillsButton);
 

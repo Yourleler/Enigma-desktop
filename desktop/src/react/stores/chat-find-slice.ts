@@ -1,3 +1,4 @@
+import type {HistorySearchOptions} from '../../../../shared/history-search';
 /**
  * chat-find-slice.ts — 会话内查找条状态 + 消息定位意图
  *
@@ -10,6 +11,7 @@ import { sessionScopedKey, sessionScopedValue } from './session-slice';
 export interface ChatFindMatch { index: number; exact: boolean; snippet: string; }
 
 export interface ChatFindResults {
+  options?:HistorySearchOptions;
   matches: ChatFindMatch[];
   total: number;
   tokens: string[];

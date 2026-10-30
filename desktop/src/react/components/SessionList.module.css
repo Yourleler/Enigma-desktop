@@ -899,3 +899,30 @@
 @media (any-hover:hover) and (any-pointer:fine) { .sidebarSectionActions { opacity:0; } .sidebarSectionHeading:hover .sidebarSectionActions,.sidebarSectionHeading:focus-within .sidebarSectionActions { opacity:1; } }
 
 .searchMatch { background:var(--search-match-bg);color:var(--search-match-text);border-radius:2px; }
+
+/* Compact section labels do not become full-width segmented controls. */
+.sidebarSectionHeading > button { flex:0 1 auto; padding:var(--space-4) 0; gap:var(--space-5); }
+.sidebarSectionHeading > button > svg { order:2; }
+.sidebarSectionActions { margin-left:auto; }
+.sidebarSectionHeading { min-height:28px; }
+.sidebarSection { margin:var(--space-10) 0 var(--space-6); }
+:global(.enigma-compact-session-list) .sessionItem { padding:var(--space-6) var(--space-8);min-height:32px; }
+:global(.enigma-compact-session-list) .sessionItemMeta { display:none; }
+:global(.enigma-compact-session-list) .sessionItemTitle { font-size:13px;line-height:1.5; }
+:global(.enigma-compact-session-list) .sessionItemActions { position:absolute;right:4px;top:50%;transform:translateY(-50%);opacity:0;pointer-events:none;display:flex;gap:var(--space-2);background:var(--bg-card);border-radius:var(--radius-sm); }
+:global(.enigma-compact-session-list) .sessionItem:is(:hover,:focus-within) .sessionItemActions { opacity:1;pointer-events:auto; }
+:global(.enigma-compact-session-list) .sessionItem:is(:hover,:focus-within) .sessionItemHeader { padding-right:var(--space-70,70px); }
+:global(.enigma-compact-session-list) .sessionItemActions > * { display:grid;place-items:center;width:20px;height:22px;opacity:1;pointer-events:auto;position:static; }
+.projectSessionList { margin-left:var(--space-6);padding-left:var(--space-8);border-left:0; }
+.enigmaProjectInfo { padding:var(--space-8) var(--space-10);border-bottom:1px solid var(--border); }
+.sessionMoreBtn { border:0;background:transparent;color:var(--text-muted);padding:0;cursor:pointer; }
+.sessionSearchSnippet { -webkit-line-clamp:3;line-height:1.6; }
+:global(.enigma-history-results) .sessionItemTitle { font-size:14px; }
+:global(.enigma-history-results) .sessionSearchSnippet { font-size:13px; }
+
+@media(any-hover:none) { :global(.enigma-compact-session-list) .sessionItemActions {opacity:1;pointer-events:auto;} :global(.enigma-compact-session-list) .sessionItemHeader {padding-right:var(--space-70,70px);} }
+
+.sidebarSectionHeading > button > :global(.enigma-icon) { order:2; }
+:global(.enigma-project-context-menu) { width:310px;max-width:calc(100vw - 24px); }
+:global(.enigma-project-context-menu .context-menu-label) { overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+:global(.enigma-project-context-menu .context-menu-item:first-child .context-menu-label) { color:var(--text);font-weight:600; }

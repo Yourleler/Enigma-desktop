@@ -20,12 +20,13 @@ export interface ContextMenuItem {
 }
 
 export interface ContextMenuProps {
+  className?:string;
   items: ContextMenuItem[];
   position: { x: number; y: number };
   onClose: () => void;
 }
 
-export function ContextMenu({ items, position, onClose }: ContextMenuProps) {
+export function ContextMenu({ items, position, onClose,className='' }: ContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
   const [openSubmenuIndex, setOpenSubmenuIndex] = useState<number | null>(null);
   const [submenuSide, setSubmenuSide] = useState<'left' | 'right'>('right');
@@ -80,7 +81,7 @@ export function ContextMenu({ items, position, onClose }: ContextMenuProps) {
 
   return createPortal(
     <div
-      className="context-menu"
+      className={['context-menu',className].filter(Boolean).join(' ')}
       data-liquid="menu" data-menu-surface="" data-menu-position="fixed" data-native-browser-occluder=""
       ref={menuRef}
       style={{ left: position.x, top: position.y }}
@@ -119,7 +120,7 @@ export function ContextMenu({ items, position, onClose }: ContextMenuProps) {
             {item.checked !== undefined && (
               <span className="context-menu-check" aria-hidden="true">{item.checked&&<AppIcon name="check" size={14}/>}</span>
             )}
-            <span className={`context-menu-label${item.disabled ? ' disabled' : ''}`}>{item.label || ''}</span>
+            <span title={item.label} className={`context-menu-label${item.disabled ? ' disabled' : ''}`}>{item.label || ''}</span>
             {hasSubmenu&&<AppIcon name="chevronRight" size={14} className="enigma-submenu-chevron"/>}
             {submenuOpen && (
               <div className={`context-menu-submenu ${submenuSide}`} data-liquid="menu" data-menu-surface="" data-menu-position="absolute">

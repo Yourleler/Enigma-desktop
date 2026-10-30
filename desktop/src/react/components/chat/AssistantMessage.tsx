@@ -170,7 +170,7 @@ export const AssistantMessage = memo(function AssistantMessage({
           <span className={styles.avatarName}>{displayName}</span>
         </div>
       )}
-      <div data-chat-search-body="" className={`${styles.message} ${styles.messageAssistant}${hasWideBlock ? ` ${styles.messageHasWideBlock}` : ''}${isInterludeOnly ? ` ${styles.messageAssistantInterludeOnly}` : ''}`}>
+      <div data-chat-search-body="" data-search-role="assistant" className={`${styles.message} ${styles.messageAssistant}${hasWideBlock ? ` ${styles.messageHasWideBlock}` : ''}${isInterludeOnly ? ` ${styles.messageAssistantInterludeOnly}` : ''}`}>
         {!isStreaming&&!blocks.some(block=>block.type==='thinking'?!!block.content?.trim():block.type==='text'?!!extractTextBlockPlainText([block]).trim():true)&&<p className={styles.emptyAssistantReply} role="status">本轮没有返回可显示的内容。可重新发送或检查本轮运行记录。</p>}
         {blocks.map((block, i) => (
           <ContentBlockErrorBoundary

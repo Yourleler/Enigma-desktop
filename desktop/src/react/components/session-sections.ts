@@ -182,6 +182,7 @@ export function buildSessionProjectView(
       folderId: project.folderId && folderIds.has(project.folderId) ? project.folderId : null,
       order: project.order,
       source: 'catalog',
+      pinnedAt:project.pinnedAt,
       items: [],
     });
   }
@@ -253,6 +254,7 @@ function normalizeCatalogProjects(
     .map((project, index) => ({
       id: project.id,
       name: project.name,
+      pinnedAt:project.pinnedAt,
       folderId: typeof project.folderId === 'string' && project.folderId.trim() ? project.folderId.trim() : null,
       order: Number.isFinite(project.order) ? project.order : index,
     }));
@@ -272,6 +274,7 @@ function normalizeCatalogFolders(
 }
 
 function compareProjectGroups(a: SessionProjectGroup, b: SessionProjectGroup): number {
+  if(!!a.pinnedAt!==!!b.pinnedAt)return a.pinnedAt?-1:1;
   if (a.source !== b.source) return a.source === 'catalog' ? -1 : 1;
   const latestDelta = latestModifiedTime(b) - latestModifiedTime(a);
   return a.order - b.order

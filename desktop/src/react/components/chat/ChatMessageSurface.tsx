@@ -345,20 +345,20 @@ export const ChatMessageSurface = memo(function ChatMessageSurface({
       }
       return;
     }
-    const terms=[findState.query.trim(),...findState.tokens];
+    const terms=[...new Set([findState.query.trim(),...findState.tokens])];
     const highlight=createDocumentHighlights(container,'enigma-chat');
     let raf=0;
     const update=()=>{cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{
       if(highlight){
-        const roots=container.querySelectorAll<HTMLElement>('[data-chat-search-body]'),ranges:Range[]=[];
-        for(const root of roots)for(const term of terms){ranges.push(...findTextRanges(root,term,Math.max(0,2000-ranges.length)));if(ranges.length>=2000)break;}
-        highlight.set(ranges,0);
+        const roots=[...container.querySelectorAll<HTMLElement>('[data-chat-search-body]')].filter(root=>!findState.options?.source||findState.options.source==='all'||root.dataset.searchRole===findState.options.source),ranges:Range[]=[];let currentRange=-1;const activeMessage=String(findState.matches[findState.activePos]?.index);
+        for(const root of roots){const start=ranges.length;for(const term of terms){ranges.push(...findTextRanges(root,term,Math.max(0,2000-ranges.length),findState.options?.caseSensitive));if(ranges.length>=2000)break;}if(ranges.length>start&&root.closest('[data-message-id]')?.getAttribute('data-message-id')===activeMessage)currentRange=start;}
+        highlight.set(ranges,currentRange<0?0:currentRange);
       }else applyFindMarks(container,terms,'chat-find-mark',{scopeSelector:'[data-find-markable]',maxMatches:2000});
     });};
     update();const observer=highlight?new MutationObserver(update):null;
     observer?.observe(container,{subtree:true,childList:true,characterData:true});
     return()=>{cancelAnimationFrame(raf);observer?.disconnect();highlight?.clear();if(!highlight)clearFindMarks(container,'chat-find-mark');};
-  }, [variant, active, findState?.open, findState?.query, findState?.tokens, items, isSessionStreaming]);
+  }, [variant, active, findState?.open, findState?.query, findState?.tokens,findState?.options,findState?.activePos, items, isSessionStreaming]);
 
   const shellClassName = variant === 'card'
     ? `${styles.sessionShell} ${styles.cardSessionShell}`

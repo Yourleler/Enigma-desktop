@@ -1,5 +1,5 @@
 /** Match rendered text across inline formatting without rewriting React-owned DOM. */
-export function findTextRanges(root:HTMLElement,query:string,limit=2000):Range[]{
+export function findTextRanges(root:HTMLElement,query:string,limit=2000,caseSensitive=false):Range[]{
  if(!query)return [];
  const blocks=new Map<Element,Text[]>();
  const walker=root.ownerDocument.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode(node){const p=node.parentElement;return p&&!p.closest('script,style,button,input,textarea,[hidden],[aria-hidden=true]')&&node.nodeValue?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_REJECT;}});
@@ -8,7 +8,7 @@ export function findTextRanges(root:HTMLElement,query:string,limit=2000):Range[]
   const block=node.parentElement?.closest('p,h1,h2,h3,h4,h5,h6,li,td,th,pre,blockquote,div')||root;
   const nodes=blocks.get(block)||[];nodes.push(node as Text);blocks.set(block,nodes);
  }
- const ranges:Range[]=[],pattern=new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'giu');
+ const ranges:Range[]=[],pattern=new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),caseSensitive?'gu':'giu');
  for(const nodes of blocks.values()){
   const text=nodes.map(n=>n.data).join('');
   for(const match of text.matchAll(pattern)){

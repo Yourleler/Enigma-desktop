@@ -6912,6 +6912,7 @@ export class SessionCoordinator {
       let files;
       try { files = await fsp.readdir(archDir); } catch { return []; }
       const titles = await this._loadSessionTitlesFor(sessionDir).catch(() => ({}));
+      const meta = await this._readMetaCached(path.join(sessionDir,"session-meta.json")).catch(()=>({}));
       const rows = await Promise.all(files
         .filter(isSessionJsonlFilename)
         .map(async (f) => {
@@ -6940,6 +6941,8 @@ export class SessionCoordinator {
               });
             return {
               path: full,
+              ...(typeof meta[f]?.projectId==='string'?{projectId:meta[f].projectId}:{}),
+              ...(manifest?.workspaceScope?.primaryCwd?{cwd:manifest.workspaceScope.primaryCwd}:{}),
               sessionId: manifest?.sessionId || null,
               title: this._sessionTitleFromMap(titles, full, [activeKey]) || null,
               archivedAt: stat.mtime.toISOString(),

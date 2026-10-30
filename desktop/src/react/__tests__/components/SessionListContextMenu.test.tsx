@@ -113,7 +113,7 @@ function makeSessionsToday() {
 }
 
 function sessionButton(title: string) {
-  const button = screen.getByText(title).closest('button');
+  const button = screen.getByText(title).closest('[data-session-path]');
   if (!button) throw new Error(`Missing session button: ${title}`);
   return button;
 }
@@ -431,7 +431,7 @@ describe('SessionList context menu', () => {
 
   it('uses a true content hit when a fuzzy title result points at the same conversation',async()=>{
     hanaFetchMock.mockImplementation(async(url:string)=>jsonResponse(url.includes('phase=title')?{results:[{path:'/same',title:'Planning',firstMessage:'QUEUE_HOLD',matchKind:'title',snippet:'Planning QUEUE_HOLD'}]}:url.includes('phase=content')?{results:[{path:'/same',title:'Planning',matchKind:'content',snippet:'A matching QUEUE_FIRST message'}]}:{}));
-    render(<SessionList/>);fireEvent.change(screen.getByPlaceholderText('sidebar.searchPlaceholder'),{target:{value:'QUEUE_FIRST'}});
+    render(<SessionList/>);act(()=>window.dispatchEvent(new Event('enigma-open-history-search')));fireEvent.change(screen.getByPlaceholderText('sidebar.searchPlaceholder'),{target:{value:'QUEUE_FIRST'}});
     await waitFor(()=>expect(document.querySelector('mark')?.textContent).toBe('QUEUE_FIRST'));expect(screen.queryByText('Planning QUEUE_HOLD')).toBeNull();
   });
 
@@ -474,6 +474,7 @@ describe('SessionList context menu', () => {
     });
 
     render(<SessionList />);
+    act(()=>window.dispatchEvent(new Event('enigma-open-history-search')));
     fireEvent.change(screen.getByPlaceholderText('sidebar.searchPlaceholder'), {
       target: { value: '聊天记录' },
     });

@@ -1,3 +1,7 @@
+import {SurfaceMenu} from '../engineering/SurfaceMenu';
+import {HistorySearchControls} from './chat/HistorySearchControls';
+import {defaultHistoryFilters,type HistorySearchFilters} from '../../../../shared/history-search';
+import {Overlay} from '../ui';
 /**
  * SessionList — 侧边栏 session 列表 React 组件
  *
@@ -86,6 +90,7 @@ interface SessionSearchResult extends Session {
   matchKind: 'title' | 'content';
   snippet: string;
   score?: number;
+  archived?:boolean;matchedTerms?:string[];matchCount?:number;matchRole?:string;messageIndex?:number;
 }
 
 function normalizeBrowserSessionStates(data: unknown): Record<string, BrowserSessionState> {
@@ -144,6 +149,7 @@ function normalizeSessionSearchResults(data: unknown): SessionSearchResult[] {
       matchKind: item.matchKind === 'content' ? 'content' : 'title',
       snippet: typeof item.snippet === 'string' ? item.snippet : '',
       score: typeof item.score === 'number' ? item.score : undefined,
+      archived:item.archived===true,matchedTerms:item.matchedTerms,matchCount:item.matchCount,matchRole:item.matchRole,messageIndex:item.messageIndex,
     }];
   });
 }
@@ -210,11 +216,14 @@ function SessionListInner() {
   const [projectActionMenu, setProjectActionMenu] = useState<ProjectActionMenuState>(null);
   const [folderActionMenu, setFolderActionMenu] = useState<FolderActionMenuState>(null);
   const [projectNameDialog, setProjectNameDialog] = useState<ProjectNameDialogState>(null);
-  useEffect(()=>{setProjectSettings(null);setProjectActionMenu(null);setProjectNameDialog(null);},[projectConnection]);
+  useEffect(()=>{setProjectSettings(null);setProjectActionMenu(null);setProjectNameDialog(null);setSearchOpen(false);},[projectConnection]);
   const [dragState, setDragState] = useState<SidebarDragState>(null);
   const [dropTargetId, setDropTargetId] = useState<string | null>(null);
   const [pinnedDropTarget, setPinnedDropTarget] = useState<PinnedDropTarget>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchOpen,setSearchOpen]=useState(false),[searchFilters,setSearchFilters]=useState<HistorySearchFilters>({...defaultHistoryFilters}),[searchLimit,setSearchLimit]=useState(20),[searchMore,setSearchMore]=useState(false),[searchSkipped,setSearchSkipped]=useState(0);
+  useEffect(()=>{const open=()=>setSearchOpen(true);window.addEventListener('enigma-open-history-search',open);return()=>window.removeEventListener('enigma-open-history-search',open);},[]);
+  useEffect(()=>{setSearchLimit(20);},[searchQuery,searchFilters]);
   const [titleResults, setTitleResults] = useState<SessionSearchResult[]>([]);
   const [contentResults, setContentResults] = useState<SessionSearchResult[]>([]);
   const [searchStatus, setSearchStatus] = useState<'idle' | 'title' | 'content' | 'done' | 'error'>('idle');
@@ -254,7 +263,7 @@ function SessionListInner() {
   }, [sessions, browserBySession, setVisibleBrowserSessions]);
 
   useEffect(() => {
-    if (!searchQueryTrimmed) {
+    if (!searchOpen||!searchQueryTrimmed) {
       setTitleResults([]);
       setContentResults([]);
       setSearchStatus('idle');
@@ -265,28 +274,24 @@ function SessionListInner() {
     const controller = new AbortController();
     setTitleResults([]);
     setContentResults([]);
-    setSearchStatus('title');
+    setSearchStatus(searchFilters.scope==='content'?'content':'title');
 
     const timer = window.setTimeout(async () => {
-      const encodedQuery = encodeURIComponent(searchQueryTrimmed);
+      const params=new URLSearchParams({q:searchQueryTrimmed,advanced:'true',source:searchFilters.source||'all',match:searchFilters.match||'phrase',caseSensitive:String(searchFilters.caseSensitive||false),project:searchFilters.project,model:searchFilters.model,status:searchFilters.status,sort:searchFilters.sort});
+      if(searchFilters.after)params.set('after',String(new Date(searchFilters.after+'T00:00:00').getTime()));
+      if(searchFilters.before)params.set('before',String(new Date(searchFilters.before+'T23:59:59.999').getTime()));
       try {
-        const titleRes = await hanaFetch(`/api/sessions/search?q=${encodedQuery}&phase=title&limit=20`, {
-          signal: controller.signal,
-          timeout: 12_000,
-        });
-        const titleData = await titleRes.json();
-        if (cancelled) return;
-        setTitleResults(normalizeSessionSearchResults(titleData));
+        let more=false,skipped=0;
+        const load=async(phase:string)=>{
+          const rows:SessionSearchResult[]=[];let phaseMore=false;
+          for(let offset=0;offset<searchLimit;offset+=50){params.set('offset',String(offset));params.set('limit',String(Math.min(50,searchLimit-offset)));params.set('phase',phase);
+            const response=await hanaFetch(`/api/sessions/search?${params}`,{signal:controller.signal,timeout:30000});const data=await response.json();if(response.ok===false)throw new Error(data.error||'搜索失败');rows.push(...normalizeSessionSearchResults(data));skipped+=data.skipped||0;phaseMore=data.hasMore===true;if(!data.hasMore)break;
+          }more=more||phaseMore;return rows;
+        };
+        if(searchFilters.scope!=='content'){const rows=await load('title');if(cancelled)return;setTitleResults(rows);}
         setSearchStatus('content');
-
-        const contentRes = await hanaFetch(`/api/sessions/search?q=${encodedQuery}&phase=content&limit=20`, {
-          signal: controller.signal,
-          timeout: 12_000,
-        });
-        const contentData = await contentRes.json();
-        if (cancelled) return;
-        setContentResults(normalizeSessionSearchResults(contentData));
-        setSearchStatus('done');
+        if(searchFilters.scope!=='title'){const rows=await load('content');if(cancelled)return;setContentResults(rows);}
+        setSearchMore(more);setSearchSkipped(skipped);setSearchStatus('done');
       } catch (err) {
         if (controller.signal.aborted || cancelled) return;
         console.warn('[sessions] search failed:', err);
@@ -299,7 +304,7 @@ function SessionListInner() {
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [searchQueryTrimmed, sessionsSignature]);
+  }, [searchOpen,searchQueryTrimmed, sessionsSignature,searchFilters,searchLimit,projectConnection]);
 
   useEffect(() => {
     loadSessionProjectCatalog().catch(err=>console.warn('[sessions] fetch project catalog failed:',err));
@@ -678,7 +683,7 @@ function SessionListInner() {
   const handleProjectNameChange = useCallback((value: string) => {
     setProjectNameDialog(dialog => dialog ? { ...dialog, value } : dialog);
   }, []);
-  const content = isSearching ? (
+  const searchContent = (
     <SessionSearchResults
       titleResults={exactTitleResults}
       contentResults={visibleContentResults}
@@ -687,9 +692,10 @@ function SessionListInner() {
       agents={agents}
       activeSessionPath={activeSessionPath}
       pendingNewSession={pendingNewSession}
-      query={searchQueryTrimmed}
+      query={searchQueryTrimmed} filters={searchFilters} onOpened={()=>setSearchOpen(false)}
     />
-  ) : (
+  );
+  const content = (
     <ProjectSessionView
       view={projectView}
       renderSessionItem={(session) => renderSessionItem(session, { draggable: true })}
@@ -719,21 +725,28 @@ function SessionListInner() {
 
   return (
     <>
-      <SessionSearchBox
-        value={searchQuery}
-        onChange={setSearchQuery}
-        onClear={() => setSearchQuery('')}
-      />
+      {searchOpen&&createPortal(<div className="enigma-history-backdrop" data-native-browser-occluder="" onMouseDown={event=>{if(event.target===event.currentTarget)setSearchOpen(false);}}><div role="dialog" aria-modal="true" aria-label="搜索对话历史" className="enigma-history-dialog" onKeyDown={event=>{if(event.key==='Escape'){event.stopPropagation();setSearchOpen(false);}if(event.key==='Tab'){const elements=[...event.currentTarget.querySelectorAll<HTMLElement>('button,input,select,summary')].filter(e=>e.getClientRects().length&&!e.hasAttribute('disabled'));if(event.shiftKey&&document.activeElement===elements[0]){event.preventDefault();elements.at(-1)?.focus();}else if(!event.shiftKey&&document.activeElement===elements.at(-1)){event.preventDefault();elements[0]?.focus();}}}}>
+        <header><strong>搜索对话历史</strong><button aria-label="关闭历史搜索" onClick={()=>setSearchOpen(false)}>×</button></header>
+        <SessionSearchBox value={searchQuery} onChange={setSearchQuery} onClear={()=>setSearchQuery('')}/>
+        <HistorySearchControls filters={searchFilters} onChange={setSearchFilters}/>
+        <div className="enigma-history-results">{searchSkipped>0&&<p role="status">{searchSkipped} 个对话暂时无法读取，当前结果不完整。</p>}{isSearching?searchContent:<p className="enigma-history-empty">输入记得的文字，搜索标题、用户输入或模型回复。</p>}{searchMore&&searchStatus==='done'&&<button className="enigma-history-load-more" onClick={()=>setSearchLimit(limit=>limit+50)}>显示更多结果</button>}</div>
+      </div></div>,document.body)}
       <div className={styles.sessionListScroller}>
         {content}
       </div>
       {projectActionMenu && (
         <ContextMenu
-          position={projectActionMenu.position}
+          position={projectActionMenu.position} className="enigma-project-context-menu"
           onClose={() => setProjectActionMenu(null)}
           items={[
-            {label:'项目设置',action:()=>setProjectSettings(projectActionMenu.project)},
+            {label:projectActionMenu.project.name,disabled:true},
+            {label:`${sessions.filter(item=>(item.projectId||autoProjectIdForCwd(item.cwd))===projectActionMenu.project.id).length} 次对话 · ${sessions.filter(item=>(item.projectId||autoProjectIdForCwd(item.cwd))===projectActionMenu.project.id&&sessionScopedListIncludes(useStore.getState(),streamingSessions,item.path)).length} 个运行中`,disabled:true},
+            ...[projectCatalog.projects.find(item=>item.id===projectActionMenu.project.id)?.workspacePath||cwdFromAutoProjectId(projectActionMenu.project.id),...projectCatalog.projects.find(item=>item.id===projectActionMenu.project.id)?.repositoryPaths||[]].filter(Boolean).map(root=>({label:root!,disabled:!window.hana||!window.platform?.openFolder,action:()=>window.platform?.openFolder?.(root!)})),
+            {divider:true},
+            {label:'编辑项目',action:()=>setProjectSettings(projectActionMenu.project)},
+            {label:projectActionMenu.project.pinnedAt?'取消置顶项目':'置顶项目',action:()=>void patchSessionProjectInCatalog(projectActionMenu.project.id,{name:projectActionMenu.project.name,pinnedAt:projectActionMenu.project.pinnedAt?null:Date.now()})},
             {label:'新建项目对话',action:()=>void handleCreateProjectSession(projectActionMenu.project)},
+            {label:'归档项目内对话',action:async()=>{const owned=sessions.filter(item=>(item.projectId||autoProjectIdForCwd(item.cwd))===projectActionMenu.project.id);if(window.confirm(`归档 ${projectActionMenu.project.name} 内的 ${owned.length} 个对话？可以在已归档对话中恢复。`))for(const item of owned)await archiveSession(item.path);}},
             {
               label: t('sidebar.projects.renameProject'),
               action: () => setProjectNameDialog({
@@ -918,10 +931,11 @@ function ProjectSessionView({
   onOpenFolderMenu: (position: { x: number; y: number }, folder: SessionProjectFolderGroup) => void;
 }) {
   const { t } = useI18n();
+  const setPrefs=useStore(s=>s.setSidebarProjectViewPrefs);
   return (
     <>
       {view.pinned.length>0&&<SidebarSection id="pinned" label="置顶">{view.pinned.map(session=>renderPinnedSessionItem(session,view.pinned))}</SidebarSection>}
-      <SidebarSection id="projects" label="项目" action={<button type="button" aria-label="新建项目" data-tooltip="新建项目" onClick={onNewProject}><AppIcon name="add" size={15}/></button>}>
+      <SidebarSection id="projects" label="项目" action={<><SurfaceMenu label="项目列表选项" hint="展开、收起或添加项目" icon={<span aria-hidden="true">···</span>}><button onClick={()=>setPrefs({collapsedProjectIds:[]})}>展开所有项目</button><button onClick={()=>setPrefs({collapsedProjectIds:[...view.rootProjects,...view.folders.flatMap(folder=>folder.projects)].map(project=>project.id)})}>收起所有项目</button><button onClick={onNewProject}>新建项目</button></SurfaceMenu><button type="button" aria-label="新建项目" data-tooltip="新建项目" onClick={onNewProject}><AppIcon name="add" size={15}/></button></>}>
       <div
         className={`${styles.projectRootDrop}${dropTargetId === 'root' ? ` ${styles.dropTarget}` : ''}`}
         onDragOver={(event) => {
@@ -1057,7 +1071,7 @@ function ProjectBlock({
         onDrop={(event) => onDropProject(event, project)}
       >
         <FolderIcon className={styles.projectIcon} size={16} open={!collapsed} />
-        <span className={styles.projectName} title={cwdFromAutoProjectId(project.id)||undefined}>{project.name}</span>
+        <span className={styles.projectName} title={cwdFromAutoProjectId(project.id)||undefined}>{project.name}</span>{project.pinnedAt&&<span title="已置顶项目"><PinIcon/></span>}
         <button type="button" className={`${styles.projectNewSessionButton} ${styles.projectSettingsButton}`} aria-label={`项目设置 ${project.name}`} data-tooltip="项目设置、共享背景与目录" onPointerDown={event=>event.stopPropagation()} onKeyDown={event=>event.stopPropagation()} onClick={event=>{event.stopPropagation();const box=event.currentTarget.getBoundingClientRect();onOpenProjectMenu({x:box.left,y:box.bottom},project);}}><AppIcon name="settings" size={15}/></button>
         <button
           type="button"
@@ -1269,7 +1283,7 @@ function SessionSearchBox({
       </svg>
       <input
         className={styles.sessionSearchInput}
-        value={value}
+        value={value} autoFocus aria-label="搜索历史关键词"
         placeholder={t('sidebar.searchPlaceholder')}
         onChange={(e) => onChange(e.target.value)}
       />
@@ -1298,8 +1312,9 @@ function SessionSearchResults({
   agents,
   activeSessionPath,
   pendingNewSession,
-  query,
+  query,filters,onOpened,
 }: {
+  filters?:HistorySearchFilters;onOpened?:()=>void;
   titleResults: SessionSearchResult[];
   contentResults: SessionSearchResult[];
   status: 'idle' | 'title' | 'content' | 'done' | 'error';
@@ -1324,7 +1339,7 @@ function SessionSearchResults({
           agents={agents}
           activeSessionPath={activeSessionPath}
           pendingNewSession={pendingNewSession}
-          query={query}
+          query={query} filters={filters} onOpened={onOpened}
         />
       )}
       {status === 'title' && (
@@ -1338,7 +1353,7 @@ function SessionSearchResults({
           activeSessionPath={activeSessionPath}
           pendingNewSession={pendingNewSession}
           placeholder={status === 'content' && contentResults.length === 0 ? t('sidebar.searchingContent') : null}
-          query={query}
+          query={query} filters={filters} onOpened={onOpened}
         />
       )}
       {status === 'done' && !hasResults && (
@@ -1355,8 +1370,9 @@ function SessionSearchSection({
   activeSessionPath,
   pendingNewSession,
   placeholder = null,
-  query,
+  query,filters,onOpened,
 }: {
+  filters?:HistorySearchFilters;onOpened?:()=>void;
   title: string;
   results: SessionSearchResult[];
   agents: Agent[];
@@ -1376,7 +1392,7 @@ function SessionSearchSection({
           result={result}
           isActive={!pendingNewSession && result.path === activeSessionPath}
           agents={agents}
-          query={query}
+          query={query} filters={filters} onOpened={onOpened}
         />
       ))}
     </section>
@@ -1387,8 +1403,9 @@ export const SessionSearchItem = memo(function SessionSearchItem({
   result,
   isActive,
   agents,
-  query,
+  query,filters,onOpened,
 }: {
+  filters?:HistorySearchFilters;onOpened?:()=>void;
   result: SessionSearchResult;
   isActive: boolean;
   agents: Agent[];
@@ -1404,16 +1421,19 @@ export const SessionSearchItem = memo(function SessionSearchItem({
   }
   if (result.modified) parts.push(formatSessionDate(result.modified));
 
+  const [archivedPreview,setArchivedPreview]=useState(false);
   const handleClick = useCallback(() => {
+    if(result.archived){setArchivedPreview(true);return;}
+    onOpened?.();
     if (result.matchKind === 'content' && query.trim()) {
-      void locateSearchHit(result.path, query);
+      void locateSearchHit(result.path, query,filters);
       return;
     }
     switchSession(result.path);
-  }, [result.matchKind, result.path, query]);
+  }, [result.matchKind, result.path, result.archived, query, filters,onOpened]);
 
   return (
-    <button
+    <><button
       className={`${styles.sessionSearchItem}${isActive ? ` ${styles.sessionSearchItemActive}` : ''}`}
       data-session-path={result.path}
       onClick={handleClick}
@@ -1423,17 +1443,26 @@ export const SessionSearchItem = memo(function SessionSearchItem({
           {highlightSearchText(result.title || result.firstMessage || t('session.untitled'),query)}
         </div>
       </div>
-      <div className={styles.sessionItemMeta}>{parts.join(' · ')}</div>
+      <div className={styles.sessionItemMeta}>{[result.archived?'已归档':result.matchRole==='user'?'用户输入':result.matchRole==='assistant'?'模型回复':null,...parts].filter(Boolean).join(' · ')}</div>
       {result.snippet && (
-        <div className={styles.sessionSearchSnippet}>{highlightSearchText(result.snippet,query)}</div>
-      )}
-    </button>
+        <div className={styles.sessionSearchSnippet} title={result.snippet}>{highlightSearchText(result.snippet,result.matchedTerms?.length?result.matchedTerms:query)}</div>
+      )}{!!result.matchCount&&result.matchCount>1&&<small className={styles.sessionItemMeta}>{result.matchCount} 处匹配</small>}
+    </button>{archivedPreview&&<ArchivedSearchPreview result={result} query={query} onClose={()=>setArchivedPreview(false)}/>}</>
   );
 });
 
-function highlightSearchText(text:string,query:string){
- if(!query.trim())return text;const needle=query.trim(),parts:React.ReactNode[]=[];let cursor=0,index=text.toLocaleLowerCase().indexOf(needle.toLocaleLowerCase());
- while(index>=0){parts.push(text.slice(cursor,index),<mark className={styles.searchMatch} key={index}>{text.slice(index,index+needle.length)}</mark>);cursor=index+needle.length;index=text.toLocaleLowerCase().indexOf(needle.toLocaleLowerCase(),cursor);}parts.push(text.slice(cursor));return parts;
+function ArchivedSearchPreview({result,query,onClose}:{result:SessionSearchResult;query:string;onClose:()=>void}){
+ const [messages,setMessages]=useState<any[]>([]),[error,setError]=useState('');
+ useEffect(()=>{let alive=true;hanaFetch(`/api/sessions/messages?path=${encodeURIComponent(result.path)}&all=1`).then(r=>r.json()).then(data=>{if(alive)setMessages(data.messages||[]);}).catch(()=>{if(alive)setError('无法读取归档对话');});return()=>{alive=false;};},[result.path]);
+ return <Overlay open onClose={onClose} zIndex={12000} scope="window"><section className="enigma-history-dialog" role="dialog" aria-label="归档对话预览"><header><strong>{result.title||'归档对话'}</strong><button onClick={onClose}>关闭</button></header><div className="enigma-history-results">{error||messages.map((message,index)=><article key={index}><small>{message.role==='user'?'用户':'模型'}</small><p className="enigma-archived-search-text">{highlightSearchText(typeof message.content==='string'?message.content:'',query)}</p></article>)}</div></section></Overlay>;
+}
+
+function highlightSearchText(text:string,query:string|string[]){
+ const terms=(Array.isArray(query)?query:[query]).map(value=>value.trim()).filter(Boolean).sort((a,b)=>b.length-a.length);
+ const lower=text.toLocaleLowerCase(),hits:Array<{start:number;end:number}>=[];
+ for(const term of terms){let index=lower.indexOf(term.toLocaleLowerCase());while(index>=0){const end=index+term.length;if(!hits.some(hit=>index<hit.end&&end>hit.start))hits.push({start:index,end});index=lower.indexOf(term.toLocaleLowerCase(),Math.max(end,index+1));}}
+ hits.sort((a,b)=>a.start-b.start);const parts:React.ReactNode[]=[];let cursor=0;
+ for(const hit of hits){parts.push(text.slice(cursor,hit.start),<mark className={styles.searchMatch} key={hit.start}>{text.slice(hit.start,hit.end)}</mark>);cursor=hit.end;}parts.push(text.slice(cursor));return parts;
 }
 // ── Session Item ──
 
@@ -1580,7 +1609,7 @@ const SessionItem = memo(function SessionItem({ session: s, isActive, isPending,
 
   return (
     <>
-      <button
+      <div role="button" tabIndex={0} onKeyDown={event=>{if(event.target===event.currentTarget&&['Enter',' '].includes(event.key)){event.preventDefault();handleClick();}}}
         className={`${styles.sessionItem}${isSingleLine ? ` ${styles.sessionItemSingleLine}` : ''}${isActive ? ` ${styles.sessionItemActive}` : ''}${isDeletedAgentSession ? ` ${styles.sessionItemReadOnly}` : ''}`}
         data-session-path={s.path}
         data-row-mode={rowMode}
@@ -1645,17 +1674,18 @@ const SessionItem = memo(function SessionItem({ session: s, isActive, isPending,
           )}
           <div className={styles.sessionItemActions} data-session-actions="">
             {!editing && (!isDeletedAgentSession || isPinned) && (
-              <div className={styles.sessionPinBtn} title={t(isPinned ? 'session.unpin' : 'session.pin')} onClick={handlePin}>
+              <button type="button" className={styles.sessionPinBtn} aria-label={t(isPinned ? 'session.unpin' : 'session.pin')} title={t(isPinned ? 'session.unpin' : 'session.pin')} onClick={handlePin}>
                 <PinIcon />
-              </div>
+              </button>
             )}
-            <div className={styles.sessionArchiveBtn} title={t('session.archive')} onClick={handleArchive}>
+            <button type="button" className={styles.sessionArchiveBtn} aria-label={t('session.archive')} title={t('session.archive')} onClick={handleArchive}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="21 8 21 21 3 21 3 8" />
                 <rect x="1" y="3" width="22" height="5" />
                 <line x1="10" y1="12" x2="14" y2="12" />
               </svg>
-            </div>
+            </button>
+            <button type="button" className={styles.sessionMoreBtn} aria-label={`对话选项 ${displayTitle}`} data-tooltip="重命名、移动到项目、置顶或归档" onClick={event=>{event.stopPropagation();const rect=event.currentTarget.getBoundingClientRect();setMenuPosition({x:rect.right,y:rect.bottom});}}>···</button>
           </div>
         </div>
 
@@ -1671,7 +1701,7 @@ const SessionItem = memo(function SessionItem({ session: s, isActive, isPending,
           </div>
         )}
 
-      </button>
+      </div>
       {menuPosition && (
         <SessionContextMenu
           session={s}

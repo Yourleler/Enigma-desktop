@@ -1,3 +1,4 @@
+import {historySearchParams,type HistorySearchOptions} from '../../../../shared/history-search';
 /**
  * 会话内查找与 Session Bar 命中定位的编排动作。
  * 模式对齐 session-actions.ts：模块级 async 函数 + useStore.getState()。
@@ -18,10 +19,10 @@ function findStateFor(path: string): ChatFindState | undefined {
   return sessionScopedValue(state as Record<string, any>, state.chatFindBySession, path) as ChatFindState | undefined;
 }
 
-export async function fetchSessionFind(path: string, query: string): Promise<ChatFindResults | null> {
+export async function fetchSessionFind(path: string, query: string,options?:HistorySearchOptions): Promise<ChatFindResults | null> {
   try {
     const res = await hanaFetch(
-      `/api/sessions/find?path=${encodeURIComponent(path)}&q=${encodeURIComponent(query)}`,
+      `/api/sessions/find?path=${encodeURIComponent(path)}&q=${encodeURIComponent(query)}${options?'&'+historySearchParams(options):''}`,
     );
     const data = await res.json();
     if (!res.ok || data.error) {
@@ -29,6 +30,7 @@ export async function fetchSessionFind(path: string, query: string): Promise<Cha
       return null;
     }
     return {
+      options,
       matches: Array.isArray(data.matches) ? data.matches : [],
       total: Number(data.total) || 0,
       tokens: Array.isArray(data.tokens) ? data.tokens : [],
@@ -50,7 +52,7 @@ export async function fetchSessionFind(path: string, query: string): Promise<Cha
 export async function runChatFind(path: string, query: string): Promise<void> {
   const trimmed = query.trim();
   if (!trimmed) return;
-  const results = await fetchSessionFind(path, trimmed);
+  const results = await fetchSessionFind(path, trimmed,findStateFor(path)?.options);
   // 竞态护栏：查询已变化或查找条已关闭时丢弃结果
   const current = findStateFor(path);
   if (!current || !current.open || current.query.trim() !== trimmed) return;
@@ -84,13 +86,13 @@ export function stepChatFind(path: string, direction: 1 | -1): void {
 }
 
 /** Session Bar 内容命中点击：切 session + 定位最佳命中 + 打开查找条带入搜词 */
-export async function locateSearchHit(path: string, query: string): Promise<void> {
+export async function locateSearchHit(path: string, query: string,options?:HistorySearchOptions): Promise<void> {
   const trimmed = query.trim();
   if (!trimmed) {
     await switchSession(path);
     return;
   }
-  const findPromise = fetchSessionFind(path, trimmed);
+  const findPromise = fetchSessionFind(path, trimmed,options);
   await switchSession(path);
   if (useStore.getState().currentSessionPath !== path) return; // 切换失败或已被抢占
   const results = await findPromise;

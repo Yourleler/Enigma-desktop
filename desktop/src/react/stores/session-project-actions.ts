@@ -98,7 +98,7 @@ export async function createSessionProjectInCatalog(input: { name: string; folde
 
 export async function patchSessionProjectInCatalog(
   projectId: string,
-  patch: { folderId?: string | null; name?: string; workspacePath?: string | null; sharedContext?: string; sharedNotes?: string; repositoryPaths?: string[]; expectedUpdatedAt?: number | null },
+  patch: { folderId?: string | null; name?: string; workspacePath?: string | null; sharedContext?: string; sharedNotes?: string; repositoryPaths?: string[]; expectedUpdatedAt?: number | null; pinnedAt?:number|null },
 ): Promise<SessionProject | null> {
   const connection=useStore.getState().activeServerConnectionId;
   const res = await hanaFetch(`/api/session-projects/projects/${encodeURIComponent(projectId)}`, {

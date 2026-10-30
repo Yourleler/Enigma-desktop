@@ -10,6 +10,7 @@ export interface SessionProject {
   sharedNotes?: string;
   repositoryPaths?: string[];
   updatedAt?: number;
+  pinnedAt?: number|null;
 }
 
 export interface SessionProjectFolder {
@@ -29,6 +30,7 @@ export interface SessionProjectGroup {
   folderId: string | null;
   order: number;
   source: 'catalog' | 'cwd';
+  pinnedAt?:number|null;
   items: Session[];
 }
 

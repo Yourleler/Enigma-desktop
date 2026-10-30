@@ -1,0 +1,12 @@
+.enigma-sidebar-layout { display:flex;flex:1;min-height:0;min-width:0;height:100%; }
+.enigma-sidebar-rail { width:38px;flex:0 0 38px;display:flex;flex-direction:column;align-items:center;gap:var(--space-8);padding:var(--space-16) var(--space-3) var(--space-8);border-right:1px solid var(--border); }
+.enigma-sidebar-rail button { position:relative;display:grid;place-items:center;width:30px;height:32px;min-height:32px;padding:0;border:0;border-radius:var(--radius-sm);background:transparent;color:var(--text-muted);cursor:pointer; }
+.enigma-sidebar-rail button:hover,.enigma-sidebar-rail button:focus-visible {color:var(--text);background:var(--overlay-light);}
+.enigma-sidebar-rail-bottom {margin-top:auto;display:flex;flex-direction:column;gap:var(--space-8);}
+.enigma-sidebar-list-column {flex:1;min-width:0;display:flex;flex-direction:column;min-height:0;}
+body.enigma-surface .enigma-sidebar-list-column .sidebar-header {padding:var(--space-16) var(--space-8) var(--space-8);}
+body.enigma-surface .enigma-sidebar-list-column .enigma-new-chat {margin:0 var(--space-6) var(--space-8);padding:var(--space-6);font-size:13px;}
+body.enigma-surface .enigma-sidebar-list-column .session-list {padding:0 var(--space-4);}
+body.enigma-surface .enigma-sidebar-tools-compact {display:flex;flex-direction:column;gap:var(--space-8);padding:0;border:0;margin:0;}
+body.enigma-surface .enigma-sidebar-tools-compact > div {display:contents;}
+body.enigma-surface .enigma-sidebar-tools-compact button {display:grid;place-items:center;width:30px;min-height:32px;padding:0;}

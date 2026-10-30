@@ -3,6 +3,8 @@ import {
   tokenizeSessionSearchQuery,
 } from "./session-search-tokenizer.ts";
 import { buildSnippet, isSearchableToken } from "./session-search.ts";
+import {matchLiteralText} from './session-search.ts';
+import {literalSearchTerms,type HistorySearchOptions} from '../../shared/history-search.ts';
 
 const MAX_MATCHES = 500;
 
@@ -11,6 +13,9 @@ const MAX_MATCHES = 500;
  * findInSessionMessages 保序不排序，输出 matches 的顺序即输入顺序。
  */
 export interface SessionFindEntry {
+  role?:'user'|'assistant';
+  timestamp?:number;
+  model?:string;
   /** displayable 全局序号，与 /api/sessions/messages 返回的消息 id 同源 */
   index: number;
   /** 与前端可见文本尽量一致的消息文本 */
@@ -38,14 +43,15 @@ export interface SessionFindResult {
 export function findInSessionMessages(
   entries: SessionFindEntry[],
   query: string,
+  options:HistorySearchOptions={},
 ): SessionFindResult {
   const normalizedQuery = normalizeSessionSearchText(query);
   if (!normalizedQuery) {
     return { total: 0, bestIndex: null, tokens: [], matches: [], truncated: false };
   }
-  const tokens = tokenizeSessionSearchQuery(normalizedQuery)
-    .filter((token) => token !== normalizedQuery)
-    .filter(isSearchableToken);
+  const tokens = options.match&&options.match!=='smart'
+    ? literalSearchTerms(query,options).filter(token=>token!==query.trim())
+    : tokenizeSessionSearchQuery(normalizedQuery).filter(token=>token!==normalizedQuery).filter(isSearchableToken);
 
   const matches: SessionFindMatch[] = [];
   let total = 0;
@@ -54,15 +60,18 @@ export function findInSessionMessages(
   let bestScore = -1;
 
   for (const entry of Array.isArray(entries) ? entries : []) {
+    if(options.source&&options.source!=='all'&&entry.role!==options.source)continue;
     const normalized = normalizeSessionSearchText(entry?.text);
     if (!normalized) continue;
 
-    const exact = normalized.includes(normalizedQuery);
+    const literal=options.match&&options.match!=='smart'?matchLiteralText(entry.text,query,options):null;
+    if(literal&&!literal.matched)continue;
+    const exact = literal?literal.matched:normalized.includes(normalizedQuery);
     let score = 0;
     let matchedNeedle: string | null = null;
     if (exact) {
       score = 1000 + Math.min(200, normalizedQuery.length * 8);
-      matchedNeedle = normalizedQuery;
+      matchedNeedle = literal?.token||normalizedQuery;
     } else {
       for (const token of tokens) {
         if (!normalized.includes(token)) continue;

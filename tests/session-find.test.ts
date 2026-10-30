@@ -91,3 +91,8 @@ describe("findInSessionMessages", () => {
     expect(caught).toBeInstanceOf(SessionSearchTokenizerUnavailableError);
   });
 });
+
+it('retains one-character terms for all-words highlighting and source-filtered navigation',()=>{
+ const result=findInSessionMessages([{index:0,role:'user',text:'首屏内容'},{index:1,role:'assistant',text:'首段与末屏'}],'首 屏',{match:'all',source:'assistant'});
+ expect(result.matches.map(match=>match.index)).toEqual([1]);expect(result.tokens).toEqual(['首','屏']);
+});

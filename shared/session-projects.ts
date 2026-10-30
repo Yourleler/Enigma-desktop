@@ -14,6 +14,7 @@ export interface SessionProjectRecord {
   sharedNotes?: string;
   repositoryPaths?: string[];
   updatedAt?: number;
+  pinnedAt?: number|null;
 }
 
 export interface SessionProjectFolderRecord {
@@ -116,6 +117,7 @@ export function normalizeSessionProjectCatalog(input: unknown = {}): SessionProj
 
 export function normalizeProjectSettings(entry: Record<string, unknown>) {
   return {
+    ...(Object.hasOwn(entry,'pinnedAt')?{pinnedAt:typeof entry.pinnedAt==='number'&&Number.isFinite(entry.pinnedAt)?entry.pinnedAt:null}:{}),
     ...(Object.hasOwn(entry,'workspacePath') ? {workspacePath:normalizeWorkspacePath(entry.workspacePath)||null} : {}),
     ...(typeof entry.sharedContext==='string'?{sharedContext:entry.sharedContext.slice(0,12000)}:{}),
     ...(typeof entry.sharedNotes==='string'?{sharedNotes:entry.sharedNotes.slice(0,12000)}:{}),

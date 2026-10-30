@@ -165,3 +165,9 @@ describe("SessionProjectCatalogStore", () => {
     expect(store.reorderProjects({ folderId: null, projectIds: [project.id] }).projects[0].id).toBe(project.id);
   });
 });
+
+it('persists project pin state without changing its directories or ownership',()=>{
+ const {store}=makeStore();const project=store.createProject({name:'Pinned project',workspacePath:'/test/repo',repositoryPaths:['/test/api']});
+ store.updateProject(project.id,{pinnedAt:1234});expect(store.getCatalog().projects[0]).toMatchObject({pinnedAt:1234,workspacePath:'/test/repo',repositoryPaths:['/test/api']});
+ store.updateProject(project.id,{pinnedAt:null});expect(store.getCatalog().projects[0].pinnedAt).toBeNull();
+});

@@ -2,27 +2,29 @@ import {
   normalizeSessionSearchText,
   tokenizeSessionSearchQuery,
 } from "./session-search-tokenizer.ts";
+import {literalSearchIndex,literalSearchTerms,matchCenteredSnippet,type HistorySearchOptions} from '../../shared/history-search.ts';
 
 const DEFAULT_LIMIT = 30;
 const MAX_LIMIT = 50;
 
-export function searchSessions(sessions, query, options: { phase?: string; limit?: number } = {}) {
+export function searchSessions(sessions, query, options: HistorySearchOptions&{ phase?: string; limit?: number;allResults?:boolean } = {}) {
   const phase = options.phase === "content" ? "content" : "title";
   const limit = normalizeLimit(options.limit);
   const normalizedQuery = normalizeSessionSearchText(query);
   if (!normalizedQuery) return [];
 
-  const tokens = tokenizeSessionSearchQuery(normalizedQuery);
+  const tokens = options.match&&options.match!=='smart'?[]:tokenizeSessionSearchQuery(normalizedQuery);
   const results = [];
 
   for (const session of Array.isArray(sessions) ? sessions : []) {
     const fieldText = phase === "content"
       ? session?.allMessagesText
       : [session?.title, session?.firstMessage].filter(Boolean).join(" ");
-    const match = scoreText(fieldText, normalizedQuery, tokens, phase);
+    const match = options.match&&options.match!=='smart'?matchLiteralText(String(fieldText||''),query,options,phase):scoreText(fieldText, normalizedQuery, tokens, phase);
     if (!match.matched) continue;
 
     results.push({
+      sessionId:session.sessionId||null,projectId:session.projectId||null,archived:session.archived===true,workspaceMountId:session.workspaceMountId||null,workspaceLabel:session.workspaceLabel||null,
       path: session.path,
       title: session.title || null,
       firstMessage: session.firstMessage || "",
@@ -38,12 +40,14 @@ export function searchSessions(sessions, query, options: { phase?: string; limit
       matchKind: phase,
       snippet: buildSnippet(fieldText, normalizedQuery, match.token),
       score: match.score,
+      matchedTerms:match.token?[match.token]:[],
     });
+    delete results.at(-1).allMessagesText;
   }
 
   return results
     .sort((a, b) => compareResults(a, b))
-    .slice(0, limit);
+    .slice(0,options.allResults?undefined:limit);
 }
 
 function normalizeLimit(value) {
@@ -124,19 +128,13 @@ function timestampOf(value) {
 }
 
 export function buildSnippet(text, normalizedQuery, token) {
-  const raw = collapseWhitespace(text);
-  if (!raw) return "";
+  return matchCenteredSnippet(String(text||''),token||normalizedQuery);
+}
 
-  const normalizedRaw = normalizeSessionSearchText(raw);
-  const needle = token || normalizedQuery;
-  const index = normalizedRaw.indexOf(needle);
-  if (index < 0) return raw.slice(0, 120);
-
-  const start = Math.max(0, index - 36);
-  const end = Math.min(raw.length, index + needle.length + 72);
-  const prefix = start > 0 ? "..." : "";
-  const suffix = end < raw.length ? "..." : "";
-  return `${prefix}${raw.slice(start, end)}${suffix}`;
+export function matchLiteralText(text:string,query:string,options:HistorySearchOptions,phase='content'){
+ const terms=literalSearchTerms(query,options),indices=terms.map(term=>literalSearchIndex(text,term,options.caseSensitive));
+ const matched=!!terms.length&&indices.every(index=>index>=0);
+ return {matched,score:matched?(phase==='title'?1000:700):0,token:matched?terms[indices.indexOf(Math.min(...indices))]:null};
 }
 
 function collapseWhitespace(value) {
