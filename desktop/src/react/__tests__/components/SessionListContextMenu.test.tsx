@@ -700,6 +700,50 @@ describe('SessionList context menu', () => {
     expect(await screen.findByText('sidebar.projects.title')).toBeInTheDocument();
   });
 
+  it('keeps project navigation and empty projects visible before any conversation exists', async () => {
+    useStore.setState({sessions:[]});
+    hanaFetchMock.mockImplementation(async (url:string) => jsonResponse(url==='/api/session-projects'
+      ? {catalog:{folders:[],projects:[{id:'project-empty',name:'Empty Project',folderId:null,order:0}]}} : {}));
+    render(<SessionList/>);
+    expect(screen.getByRole('button',{name:'新建项目'})).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button',{name:'项目'}));
+    expect(await screen.findByText('Empty Project')).toBeInTheDocument();
+  });
+
+  it('creates a folder-backed project with no conversations and uses that folder for a new draft', async () => {
+    useStore.setState({sessions:[]});
+    const cwd='/tmp/project-lab',id=`cwd:${encodeURIComponent(cwd)}`;
+    const project={id,name:'Folder Project',folderId:null,order:0};
+    let created=false;
+    hanaFetchMock.mockImplementation(async(url:string,init?:RequestInit)=>{
+      if(url==='/api/session-projects')return jsonResponse({catalog:{folders:[],projects:created?[project]:[]}});
+      if(url===`/api/session-projects/projects/${encodeURIComponent(id)}`&&init?.method==='PATCH'){created=true;return jsonResponse({ok:true,project});}
+      return jsonResponse({});
+    });
+    render(<SessionList/>);
+    fireEvent.click(screen.getByRole('button',{name:'新建项目'}));
+    fireEvent.change(screen.getByRole('textbox',{name:'项目名称'}),{target:{value:'Folder Project'}});
+    fireEvent.change(screen.getByRole('textbox',{name:'项目文件夹'}),{target:{value:cwd}});
+    fireEvent.click(screen.getByText('sidebar.projects.createAction'));
+    const row=(await screen.findByText('Folder Project')).closest('[role="button"]')!;
+    expect(screen.getByRole('button',{name:'项目'})).toHaveAttribute('aria-pressed','true');
+    useStore.setState({sidebarOpen:true,layoutDrawer:'sidebar'});
+    fireEvent.click(within(row as HTMLElement).getByTitle('sidebar.projects.newChatInProject'));
+    expect(createNewSessionMock).toHaveBeenCalledWith({cwd});
+    expect(useStore.getState()).toMatchObject({sidebarOpen:false,layoutDrawer:null});
+  });
+
+  it('keeps a failed project form and its values available for correction', async () => {
+    useStore.setState({sessions:[]});render(<SessionList/>);
+    fireEvent.click(screen.getByRole('button',{name:'新建项目'}));
+    fireEvent.change(screen.getByRole('textbox',{name:'项目名称'}),{target:{value:'My Project'}});
+    fireEvent.change(screen.getByRole('textbox',{name:'项目文件夹'}),{target:{value:'relative/path'}});
+    fireEvent.click(screen.getByText('sidebar.projects.createAction'));
+    expect(await screen.findByRole('alert')).toHaveTextContent('完整的目录路径');
+    expect(screen.getByRole('textbox',{name:'项目名称'})).toHaveValue('My Project');
+    expect(screen.getByRole('textbox',{name:'项目文件夹'})).toHaveValue('relative/path');
+  });
+
   it('creates a project directly through the project heading button', async () => {
     makeSessionsToday();
     hanaFetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
@@ -716,7 +760,7 @@ describe('SessionList context menu', () => {
     render(<SessionList />);
     await switchToProjectView();
 
-    fireEvent.click(await screen.findByRole('button', { name: 'sidebar.projects.create' }));
+    fireEvent.click(await screen.findByRole('button', { name: '新建项目' }));
     fireEvent.change(await screen.findByPlaceholderText('sidebar.projects.newProjectPrompt'), {
       target: { value: 'Created Project' },
     });

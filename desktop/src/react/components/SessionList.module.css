@@ -867,3 +867,22 @@
     color: var(--text-muted);
     font-size: var(--fs-caption);
 }
+
+/* Project navigation stays discoverable even before the first conversation. */
+.projectNavigation { display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:4px 8px 8px;flex-shrink:0; }
+.projectViewSwitch { display:flex;flex:1 1 108px;gap:2px;padding:3px;border-radius:10px;background:var(--overlay-subtle); }
+.projectViewSwitch button,.newProjectEntry { display:flex;align-items:center;justify-content:center;gap:4px;min-height:28px;padding:4px 7px;border:0;border-radius:8px;background:transparent;color:var(--text-muted);font:inherit;font-size:12px;white-space:nowrap;cursor:pointer; }
+.projectViewSwitch button { flex:1; }
+.projectViewSwitch button[aria-pressed="true"] { color:var(--text);background:var(--overlay-light); }
+.newProjectEntry { flex:0 0 auto;color:var(--accent); }
+.newProjectEntry svg { width:16px;height:16px; }
+.newProjectEntry:hover { background:var(--overlay-light); }
+.projectNavigation button:focus-visible { outline:2px solid var(--accent);outline-offset:1px; }
+.projectNameDialog { width:min(380px,calc(100vw - 32px));padding:18px;border-radius:16px;background:var(--bg-glass,var(--bg-card));backdrop-filter:blur(24px); }
+.projectNameDialogTitle { font-size:15px;color:var(--text);margin-bottom:14px; }
+.projectDirectory { display:flex;flex-wrap:wrap;gap:8px;margin-top:14px; }
+.projectDirectory label { display:flex;flex-direction:column;gap:7px;flex:1 1 100%;font-size:12px;color:var(--text-muted); }
+.projectDirectory input { min-width:0;width:100%;height:34px;border:1px solid var(--border);border-radius:8px;background:var(--overlay-subtle);color:var(--text);padding:6px 9px;font:inherit; }
+.projectDirectory button { border:1px solid var(--border);border-radius:8px;padding:6px 10px;background:transparent;color:var(--text);font:inherit;font-size:12px;cursor:pointer; }
+.projectDirectory small { flex-basis:100%;color:var(--text-muted);font-size:11px;line-height:1.5; }
+.projectError { color:var(--coral);font-size:12px;line-height:1.5; }

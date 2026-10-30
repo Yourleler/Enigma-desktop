@@ -15,6 +15,7 @@ import { formatSessionDate } from '../utils/format';
 import { switchSession, archiveSession, renameSession, pinSession, createNewSession, reorderPinnedSessions } from '../stores/session-actions';
 import { locateSearchHit } from '../stores/chat-find-actions';
 import { setBrowserStateForPath } from '../stores/browser-slice';
+import { closePreview } from '../stores/preview-actions';
 import { sessionScopedListIncludes } from '../stores/session-slice';
 import type { Session, Agent } from '../types';
 import { AgentAvatar, resolveAgentDisplayInfo } from '../utils/agent-display';
@@ -60,7 +61,7 @@ type SidebarDragState =
 type PinnedDropTarget = { sessionPath: string; edge: 'before' | 'after' } | null;
 
 type ProjectNameDialogState =
-  | { kind: 'create-project'; value: string }
+  | { kind: 'create-project'; value: string; cwd?: string }
   | { kind: 'rename-project'; projectId: string; value: string }
   | { kind: 'rename-folder'; folderId: string; value: string }
   | null;
@@ -225,6 +226,8 @@ function SessionListInner() {
   const [searchStatus, setSearchStatus] = useState<'idle' | 'title' | 'content' | 'done' | 'error'>('idle');
   const closingBrowserSessionsRef = useRef(new Set<string>());
   const projectNameInputRef = useRef<HTMLInputElement>(null);
+  const [projectBusy,setProjectBusy]=useState(false);
+  const [projectError,setProjectError]=useState('');
   const searchQueryTrimmed = searchQuery.trim();
   const sessionsSignature = useMemo(() => (
     sessions.map(s => `${s.path}:${s.title || ''}:${s.modified || ''}:${s.messageCount}:${s.projectId || ''}`).join('\n')
@@ -372,8 +375,17 @@ function SessionListInner() {
     await reorderSessionProjectFoldersInCatalog(folderIds);
   }, []);
 
-  const createProject = useCallback(async (name: string) => {
-    await createSessionProjectInCatalog({ name, folderId: null });
+  const createProject = useCallback(async (name: string, cwd = '') => {
+    let project;
+    if (cwd.trim()) {
+      const root = cwd.trim();
+      if (!/^(?:\/|[A-Za-z]:[\\/]|\\\\)/.test(root)) throw new Error('请选择文件夹或填写完整的目录路径。');
+      const id = autoProjectIdForCwd(root);
+      const catalog = await loadSessionProjectCatalog();
+      if (catalog.projects.some(item => item.id === id)) throw new Error('此文件夹已关联项目，请使用已有项目。');
+      project = await patchSessionProjectInCatalog(id, { name, folderId: null });
+    } else project = await createSessionProjectInCatalog({ name, folderId: null });
+    if (!project) throw new Error('项目未能保存，请重试。');
   }, []);
 
   const deleteProject = useCallback(async (project: SessionProjectGroup) => {
@@ -401,29 +413,35 @@ function SessionListInner() {
     setSidebarProjectViewPrefs({ collapsedFolderIds: [...next] });
   }, [collapsedFolderIds, setSidebarProjectViewPrefs, t]);
 
-  const handleCreateProjectSession = useCallback((project: SessionProjectGroup) => {
-    if (project.source === 'cwd') {
-      const cwd = cwdFromAutoProjectId(project.id);
-      void createNewSession({ cwd });
-      return;
+  const handleCreateProjectSession = useCallback(async (project: SessionProjectGroup) => {
+    if (useStore.getState().layoutDrawer === 'sidebar') {
+      useStore.setState({sidebarOpen:false,sidebarAutoCollapsed:true,layoutDrawer:null});
     }
-    void createNewSession({ projectId: project.id, cwd: null });
+    const cwd = cwdFromAutoProjectId(project.id);
+    const pending = createNewSession(cwd ? { cwd } : { projectId: project.id, cwd: null });
+    const draftId = useStore.getState().pendingDraftId;
+    await pending;
+    const current = useStore.getState();
+    if (current.pendingNewSession && current.pendingDraftId === draftId) closePreview();
   }, []);
 
   const handleProjectNameDialogSubmit = useCallback(async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!projectNameDialog) return;
+    if (!projectNameDialog || projectBusy) return;
     const name = projectNameDialog.value.trim();
     if (!name) return;
-    if (projectNameDialog.kind === 'create-project') {
-      await createProject(name);
-    } else if (projectNameDialog.kind === 'rename-project') {
-      await patchProject(projectNameDialog.projectId, { name });
-    } else {
-      await patchFolder(projectNameDialog.folderId, { name });
-    }
-    setProjectNameDialog(null);
-  }, [createProject, patchFolder, patchProject, projectNameDialog]);
+    setProjectBusy(true); setProjectError('');
+    try {
+      if (projectNameDialog.kind === 'create-project') {
+        await createProject(name, projectNameDialog.cwd);
+        setViewMode('project'); setSearchQuery('');
+      } else if (projectNameDialog.kind === 'rename-project') {
+        await patchProject(projectNameDialog.projectId, { name });
+      } else await patchFolder(projectNameDialog.folderId, { name });
+      setProjectNameDialog(null);
+    } catch(error) { setProjectError(error instanceof Error ? error.message : '保存失败，请重试。'); }
+    finally { setProjectBusy(false); }
+  }, [createProject, patchFolder, patchProject, projectNameDialog, projectBusy, setViewMode]);
 
   const handleSessionDragStart = useCallback((event: React.DragEvent, session: Session) => {
     event.dataTransfer.effectAllowed = 'move';
@@ -656,7 +674,7 @@ function SessionListInner() {
   const visibleContentResults = contentResults.filter(result => !titleResultPaths.has(result.path));
   const hasSearchResults = titleResults.length > 0 || visibleContentResults.length > 0;
   const isSearching = !!searchQueryTrimmed;
-  const showEmptyState = sessions.length === 0 && !isSearching;
+  const showEmptyState = sessions.length === 0 && !isSearching && viewMode !== 'project';
   const renderSortMenuButton = () => (
     <button
       type="button"
@@ -761,7 +779,6 @@ function SessionListInner() {
       onDropFolder={handleDropOnFolder}
       onDropRoot={handleDropOnProjectRoot}
       onOpenMenu={setProjectMenuPosition}
-      onCreateProject={() => setProjectNameDialog({ kind: 'create-project', value: '' })}
       onCreateProjectSession={handleCreateProjectSession}
       onOpenProjectMenu={(position, project) => setProjectActionMenu({ position, project })}
       onOpenFolderMenu={(position, folder) => setFolderActionMenu({ position, folder })}
@@ -775,6 +792,13 @@ function SessionListInner() {
         onChange={setSearchQuery}
         onClear={() => setSearchQuery('')}
       />
+      <div className={styles.projectNavigation}>
+        <div className={styles.projectViewSwitch} role="group" aria-label="对话分组方式" data-glass-segmented="">
+          <button type="button" aria-pressed={viewMode==='time'} onClick={()=>setViewMode('time')}>最近对话</button>
+          <button type="button" aria-pressed={viewMode==='project'} onClick={()=>setViewMode('project')}>项目</button>
+        </div>
+        <button type="button" className={styles.newProjectEntry} onClick={()=>{setProjectError('');setProjectNameDialog({kind:'create-project',value:''});}} title="创建项目，归拢对话并关联代码文件夹"><ProjectPlusIcon/>新建项目</button>
+      </div>
       <div className={styles.sessionListScroller}>
         {content}
       </div>
@@ -842,7 +866,9 @@ function SessionListInner() {
           inputRef={projectNameInputRef}
           onChange={handleProjectNameChange}
           onSubmit={handleProjectNameDialogSubmit}
-          onClose={() => setProjectNameDialog(null)}
+          busy={projectBusy} error={projectError}
+          onCwdChange={cwd=>setProjectNameDialog(dialog=>dialog?.kind==='create-project'?{...dialog,cwd}:dialog)}
+          onClose={() => {if(!projectBusy)setProjectNameDialog(null);}}
         />
       )}
     </>
@@ -867,12 +893,14 @@ function SectionTitle({
 }
 
 function ProjectNameDialog({
+  busy, error, onCwdChange,
   dialog,
   inputRef,
   onChange,
   onSubmit,
   onClose,
 }: {
+  busy: boolean; error: string; onCwdChange: (cwd:string)=>void;
   dialog: NonNullable<ProjectNameDialogState>;
   inputRef: React.RefObject<HTMLInputElement | null>;
   onChange: (value: string) => void;
@@ -880,6 +908,10 @@ function ProjectNameDialog({
   onClose: () => void;
 }) {
   const { t } = useI18n();
+  const server = useStore(s=>s.activeServerConnection);
+  const nativePicker=!!window.hana && server?.kind==='local' && typeof window.platform?.selectFolder==='function';
+  const [picking,setPicking]=useState(false),[pickerError,setPickerError]=useState('');
+  const browse=async()=>{setPicking(true);setPickerError('');try{const cwd=await window.platform.selectFolder();if(cwd)onCwdChange(cwd);}catch{setPickerError('无法打开文件夹选择器，请重试或填写路径。');}finally{setPicking(false);}};
   const titleKey = dialog.kind === 'create-project'
     ? 'sidebar.projects.newProject'
     : dialog.kind === 'rename-folder'
@@ -896,26 +928,38 @@ function ProjectNameDialog({
 
   return createPortal(
     <div
-      className={styles.projectNameDialogBackdrop}
+      className={styles.projectNameDialogBackdrop} data-native-browser-occluder=""
       onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onClose();
+        if (event.target === event.currentTarget && !busy && !picking) onClose();
       }}
     >
-      <form className={styles.projectNameDialog} onSubmit={onSubmit}>
+      <form className={styles.projectNameDialog} role="dialog" aria-modal="true" aria-label={t(titleKey)} data-liquid="sheet" onKeyDown={event=>{
+        if(event.key==='Escape'&&!busy&&!picking){event.preventDefault();event.stopPropagation();onClose();}
+        if(event.key==='Tab'){
+          const items=[...event.currentTarget.querySelectorAll<HTMLElement>('input:not(:disabled),button:not(:disabled)')];
+          if(event.shiftKey&&document.activeElement===items[0]){event.preventDefault();items.at(-1)?.focus();}
+          else if(!event.shiftKey&&document.activeElement===items.at(-1)){event.preventDefault();items[0]?.focus();}
+        }
+      }} onSubmit={event=>{if(picking){event.preventDefault();return;}onSubmit(event);}}>
         <div className={styles.projectNameDialogTitle}>{t(titleKey)}</div>
         <input
           ref={inputRef}
           className={styles.projectNameInput}
           value={dialog.value}
+          disabled={busy||picking}
+          aria-label="项目名称"
           placeholder={t(placeholderKey)}
           onChange={(event) => onChange(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === 'Escape') onClose();
-          }}
         />
+        {dialog.kind==='create-project'&&<div className={styles.projectDirectory}>
+          <label>关联代码文件夹（可选）<input aria-label="项目文件夹" value={dialog.cwd||''} disabled={busy||picking} onChange={event=>onCwdChange(event.target.value)} placeholder="项目文件夹的完整路径"/></label>
+          {nativePicker&&<button type="button" disabled={busy||picking} onClick={()=>void browse()}>{picking?'正在选择…':'选择文件夹'}</button>}
+          <small>{nativePicker?'关联后，从此项目新建对话会自动使用该目录。':'填写当前服务所在电脑的目录；留空可先归拢对话。'}</small>
+        </div>}
+        {(error||pickerError)&&<p className={styles.projectError} role="alert">{error||pickerError}</p>}
         <div className={styles.projectNameDialogActions}>
-          <button type="button" onClick={onClose}>{t('sidebar.projects.cancel')}</button>
-          <button type="submit" disabled={!dialog.value.trim()}>{t(actionKey)}</button>
+          <button type="button" onClick={onClose} disabled={busy||picking}>{t('sidebar.projects.cancel')}</button>
+          <button type="submit" disabled={busy||picking||!dialog.value.trim()}>{busy?'正在保存…':t(actionKey)}</button>
         </div>
       </form>
     </div>,
@@ -943,7 +987,6 @@ function ProjectSessionView({
   onDropFolder,
   onDropRoot,
   onOpenMenu,
-  onCreateProject,
   onCreateProjectSession,
   onOpenProjectMenu,
   onOpenFolderMenu,
@@ -967,7 +1010,6 @@ function ProjectSessionView({
   onDropFolder: (event: React.DragEvent, folder: SessionProjectFolderGroup) => void;
   onDropRoot: (event: React.DragEvent) => void;
   onOpenMenu: (position: { x: number; y: number }) => void;
-  onCreateProject: () => void;
   onCreateProjectSession: (project: SessionProjectGroup) => void;
   onOpenProjectMenu: (position: { x: number; y: number }, project: SessionProjectGroup) => void;
   onOpenFolderMenu: (position: { x: number; y: number }, folder: SessionProjectFolderGroup) => void;
@@ -985,15 +1027,6 @@ function ProjectSessionView({
       <SectionTitle
         actions={(
           <>
-            <button
-              type="button"
-              className={styles.sectionIconButton}
-              aria-label={t('sidebar.projects.create')}
-              title={t('sidebar.projects.create')}
-              onClick={onCreateProject}
-            >
-              <ProjectPlusIcon />
-            </button>
             <button
               type="button"
               className={styles.sectionIconButton}
@@ -1138,7 +1171,7 @@ function ProjectBlock({
         onDrop={(event) => onDropProject(event, project)}
       >
         <FolderIcon className={styles.projectIcon} size={16} open={!collapsed} />
-        <span className={styles.projectName}>{project.name}</span>
+        <span className={styles.projectName} title={cwdFromAutoProjectId(project.id)||undefined}>{project.name}</span>
         <button
           type="button"
           className={styles.projectNewSessionButton}
