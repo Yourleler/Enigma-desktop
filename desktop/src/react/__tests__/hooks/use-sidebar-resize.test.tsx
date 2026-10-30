@@ -54,7 +54,7 @@ describe('useSidebarResize', () => {
   it('binds a preview handle that mounts after the shell restores an open document', async () => {
     installResizeDom();
     document.getElementById('previewResizeHandle')!.remove();
-    useStore.setState({previewOpen:true,sidebarOpen:false,jianOpen:false,currentTab:'chat'});
+    useStore.setState({previewOpen:true,sidebarOpen:false,jianOpen:true,currentTab:'chat'});
     Object.defineProperty(window,'innerWidth',{configurable:true,value:1600});
     const {unmount}=render(<Harness/>);
     const handle=document.createElement('div');handle.id='previewResizeHandle';
@@ -67,14 +67,16 @@ describe('useSidebarResize', () => {
   });
   it('keeps chat space after native window shrinking and restores the preferred panel width',()=>{
     installResizeDom();
-    useStore.setState({previewOpen:true,sidebarOpen:false,jianOpen:false,currentTab:'chat'});
+    useStore.setState({previewOpen:true,sidebarOpen:false,jianOpen:true,currentTab:'chat'});
     document.documentElement.style.setProperty('--preview-panel-width','580px');
     Object.defineProperty(window,'innerWidth',{configurable:true,value:1200});
     const {unmount}=render(<Harness/>);
     Object.defineProperty(window,'innerWidth',{configurable:true,value:740});
     fireEvent(window,new Event('resize'));
-    expect(useStore.getState().previewExpanded).toBe(true);
-    expect(document.documentElement.style.getPropertyValue('--preview-panel-width')).toBe('740px');
+    expect(useStore.getState().previewExpanded).toBe(false);
+    expect(useStore.getState().jianOpen).toBe(false);
+    expect(useStore.getState().layoutDrawer).toBeNull();
+    expect(document.documentElement.style.getPropertyValue('--right-dock-width')).toBe('580px');
     Object.defineProperty(window,'innerWidth',{configurable:true,value:1200});
     fireEvent(window,new Event('resize'));
     expect(document.documentElement.style.getPropertyValue('--preview-panel-width')).toBe('580px');

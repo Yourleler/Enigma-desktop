@@ -65,7 +65,7 @@ export function RepositoryChangesCard() {
   </section>;
 }
 
-export function RepositoryChangesPanel() {
+export function RepositoryChangesPanel({embedded=false}:{embedded?:boolean}={}) {
   const session = useStore(s => s.currentSessionPath);
   const connection = useStore(s => s.activeServerConnectionId || 'local');
   const [kind, setKind] = useState<'working'|'staged'>('working');
@@ -102,7 +102,7 @@ export function RepositoryChangesPanel() {
     } catch (err) { if (current === generation.current) setError(err instanceof Error ? err.message : '无法读取当前源码'); }
   };
   return <section className={`enigma-panel ${styles.panel}`} aria-label="变更与阅读" data-liquid="sidebar">
-    <header className={styles.header}><button onClick={() => useChangesPanel.setState({ open: false })}><AppIcon name="chevronLeft" size={16}/>返回工作台</button><strong>变更与阅读</strong></header>
+    {!embedded&&<header className={styles.header}><button onClick={() => useChangesPanel.setState({ open: false })}><AppIcon name="chevronLeft" size={16}/>返回工作台</button><strong>变更与阅读</strong></header>}
     <div className={styles.source}><label>变更来源 <select value={kind} onChange={event => setKind(event.target.value as 'working'|'staged')}><option value="working">工作区 · 相对 HEAD</option><option value="staged">暂存区 · 相对 HEAD</option></select></label><small>包含当前仓库的全部改动，不只属于这个对话。</small></div>
     {loading && <p className={styles.progress} role="status">正在保存同一版本的差异并分析源码关系…<button onClick={() => { generation.current++; requestController.current?.abort(); setLoading(false); }}>取消</button></p>}
     {error && <div className={styles.error} role="alert">{error}<button onClick={() => void load()}>重试</button></div>}

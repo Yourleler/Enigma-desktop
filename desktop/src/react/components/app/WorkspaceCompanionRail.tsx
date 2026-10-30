@@ -1,29 +1,25 @@
 import { usePanelExit } from '../../hooks/use-panel-exit';
-import { useChangesPanel } from '../../stores/changes-panel-store';
 import { useStore } from '../../stores';
 import { RegionalErrorBoundary } from '../RegionalErrorBoundary';
-import { RightWorkspacePanel } from '../right-workspace/RightWorkspacePanel';
+import { RightDock } from '../right-workspace/RightDock';
 import { WorkspaceFileChangeBridge } from './WorkspaceFileChangeBridge';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useEngineering,rememberEngineeringView } from '../../engineering/state';
+import { useEngineering } from '../../engineering/state';
 import { updateLayout } from '../SidebarLayout';
 
 export function WorkspaceCompanionRail() {
   const jianOpen = useStore(s => s.jianOpen);
-  const currentSession = useStore(s => s.currentSessionPath);
-  const currentConnection = useStore(s => s.activeServerConnectionId || 'local');
-  const changesOpen = useChangesPanel(s => s.open && s.session === currentSession && s.connection === currentConnection);
   const engineeringConnected = useEngineering(s => !!s.snapshot?.connected && s.paneOpen && !!s.active);
-  const engineering = engineeringConnected || changesOpen;
+  const engineering = engineeringConnected;
   const layoutDrawer=useStore(s=>s.layoutDrawer);
   const autoCollapsed=useStore(s=>s.jianAutoCollapsed);
   const [narrow,setNarrow]=useState(()=>window.innerWidth<=860);
   const rail=useRef<HTMLElement>(null);
-  const drawer=(layoutDrawer==='workspace'||narrow&&engineering)&&jianOpen;
+  const drawer=layoutDrawer==='workspace'&&jianOpen;
   const {floating,entering} = usePanelExit(drawer);
-  const close=()=>{useChangesPanel.setState({open:false});useEngineering.setState({paneOpen:false});rememberEngineeringView();useStore.setState({jianOpen:false,jianAutoCollapsed:false,layoutDrawer:null});};
-  useEffect(() => { document.body.classList.toggle('enigma-changes-open', changesOpen); updateLayout(); return () => document.body.classList.remove('enigma-changes-open'); }, [changesOpen]);
+  const close=()=>{useStore.setState({jianOpen:false,jianAutoCollapsed:false,layoutDrawer:null});};
+
   useEffect(()=>{
     if(engineering)updateLayout();
   },[engineering,jianOpen,narrow]);
@@ -36,7 +32,7 @@ export function WorkspaceCompanionRail() {
     const previous=document.activeElement as HTMLElement|null;
     // The catalogue may open both this drawer and an operation dialog in the
     // same render. The dialog owns focus until it is dismissed.
-    if(!document.querySelector('.enigma-modal-backdrop'))rail.current?.querySelector<HTMLElement>('.enigma-drawer-close,.enigma-close-pane')?.focus();
+    if(!document.querySelector('.enigma-modal-backdrop'))rail.current?.querySelector<HTMLElement>('.enigma-dock-actions button[aria-label="收起工作面板"]')?.focus();
     const regions=[...document.querySelectorAll<HTMLElement>('.main-content:not([data-layout-managed]),.sidebar:not([data-layout-managed]),#previewPanel:not([data-layout-managed])')],inert=regions.map(region=>region.inert);
     regions.forEach(region=>{region.inert=true;});
     const key=(event:KeyboardEvent)=>{
@@ -57,12 +53,11 @@ export function WorkspaceCompanionRail() {
     <>
       <WorkspaceFileChangeBridge />
       {drawer&&createPortal(<button className="enigma-drawer-scrim" aria-label="关闭内容面板遮罩" tabIndex={-1} onClick={close}/>,document.body)}
-      <aside ref={rail} className={`jian-sidebar${jianOpen ? '' : ' collapsed'}${drawer?' enigma-drawer':''}`} id="jianSidebar" data-floating={floating || undefined} data-panel-entering={entering || undefined} data-layout-managed="" data-auto-collapsed={autoCollapsed || undefined} inert={!jianOpen || layoutDrawer === 'sidebar'} aria-hidden={!jianOpen} role={drawer?'dialog':undefined} aria-modal={drawer||undefined} aria-label={drawer?(engineering?'工程内容面板':'文件与变更'):undefined}>
+      <aside ref={rail} className={`jian-sidebar${jianOpen ? '' : ' collapsed'}${drawer?' enigma-drawer':''}`} id="jianSidebar" data-floating={floating || undefined} data-panel-entering={entering || undefined} data-layout-managed="" data-auto-collapsed={autoCollapsed || undefined} inert={!jianOpen || layoutDrawer === 'sidebar'} aria-hidden={!jianOpen} role={drawer?'dialog':undefined} aria-modal={drawer||undefined} aria-label={drawer?'工作面板':undefined}>
         <div className="resize-handle resize-handle-left" id="jianResizeHandle"></div>
         <div className="jian-sidebar-inner">
-          {drawer && <button className="enigma-drawer-close" onClick={close}>关闭文件侧栏</button>}
           <RegionalErrorBoundary region="right-workspace">
-            <RightWorkspacePanel />
+            <RightDock />
           </RegionalErrorBoundary>
         </div>
       </aside>

@@ -1,3 +1,4 @@
+import {dockScope,dockView,selectDockTab,useRightDock} from '../stores/right-dock-store';
 import { useChangesPanel } from '../stores/changes-panel-store';
 /** Shared desktop layout arbitration: preserve useful reading widths and user intent. */
 import { useLayoutEffect } from 'react';
@@ -21,32 +22,37 @@ export function updateLayout(intent?: LayoutIntent): void {
   if (resolving) return;
   resolving = true;
   try {
-    const s = useStore.getState(), eng = useEngineering.getState();
+    const s = useStore.getState();
     const width = document.querySelector('.app')?.clientWidth || window.innerWidth;
-    const changes = useChangesPanel.getState();
-    const changesOpen = changes.open && changes.session === s.currentSessionPath && changes.connection === (s.activeServerConnectionId || 'local');
-    const engineering = (!!eng.snapshot?.connected && eng.paneOpen && !!eng.active) || changesOpen;
+    const view=dockView(dockScope(s));
+    const expanded=s.jianOpen&&view.expanded;
+    document.body.classList.toggle('enigma-dock-expanded',expanded);
+    const saved=parseFloat(document.documentElement.style.getPropertyValue('--right-dock-preferred-width'))||Number(localStorage.getItem('enigma-dock-width'))||580;
+    const preferredDockWidth=Math.min(900,Math.max(380,saved));
+    const dockWidth=width>860?Math.min(preferredDockWidth,Math.max(380,width-480)):preferredDockWidth;
+    document.documentElement.style.setProperty('--right-dock-width',`${dockWidth}px`);
     const preferred = parseFloat(document.documentElement.style.getPropertyValue('--preview-preferred-width'))
       || Number(localStorage.getItem('hana-preview-width')) || 580;
     const result = resolveWorkspaceLayout({
       width,
       sidebarWidth: panelWidth('--sidebar-width', '.sidebar-inner', 250),
-      workspaceWidth: panelWidth('--jian-sidebar-width', '.jian-sidebar-inner', 260),
+      workspaceWidth: expanded?width:dockWidth,
       previewWidth: preferred,
       inspectorWidth: s.currentTab === 'channels' && s.currentChannel ? panelWidth('--channel-inspector-width', '#channelInspector', 280) : 0,
-      sidebarWanted: !String(s.currentTab).startsWith('plugin:') && (s.sidebarOpen || s.sidebarAutoCollapsed),
+      sidebarWanted: !expanded&&!String(s.currentTab).startsWith('plugin:') && (s.sidebarOpen || s.sidebarAutoCollapsed),
       workspaceWanted: s.jianOpen || s.jianAutoCollapsed,
       sidebarAutoCollapsed: s.sidebarAutoCollapsed,
       workspaceAutoCollapsed: s.jianAutoCollapsed,
-      previewOpen: s.currentTab === 'chat' && s.previewOpen,
-      engineeringDrawer: width <= 860 && engineering,
+      previewOpen:false,
+      engineeringDrawer:false,
       drawer: s.layoutDrawer,
-      intent,
+      intent:intent==='preview'?'workspace':intent,
     });
     const { previewWidth, ...state } = result;
+    if(expanded){state.jianOpen=true;state.jianAutoCollapsed=false;state.layoutDrawer=null;state.sidebarOpen=false;state.sidebarAutoCollapsed=s.sidebarOpen||s.sidebarAutoCollapsed;state.previewExpanded=false;}
     const root = document.documentElement;
     root.style.setProperty('--layout-sidebar-space', `${state.sidebarOpen && state.layoutDrawer !== 'sidebar' ? panelWidth('--sidebar-width', '.sidebar-inner', 250) : 0}px`);
-    root.style.setProperty('--layout-workspace-space', `${state.jianOpen && state.layoutDrawer !== 'workspace' ? panelWidth('--jian-sidebar-width', '.jian-sidebar-inner', 260) : 0}px`);
+    root.style.setProperty('--layout-workspace-space', `${state.jianOpen && state.layoutDrawer !== 'workspace' ? dockWidth : 0}px`);
     if (previewWidth) {
       const px = `${previewWidth}px`;
       document.documentElement.style.setProperty('--preview-panel-width', px);
@@ -78,10 +84,11 @@ export function SidebarLayout({ restorePreference = true }: { restorePreference?
     });
     const unsubscribeEngineering = useEngineering.subscribe((s, previous) => {
       if (s.sessionPath !== previous.sessionPath || s.connectionId !== previous.connectionId) { schedule(); return; }
-      if (s.paneOpen && s.active && (s.paneOpen !== previous.paneOpen || s.active !== previous.active)) { useChangesPanel.setState({open:false}); updateLayout('workspace'); }
+      if (s.paneOpen && s.active && (s.paneOpen !== previous.paneOpen || s.active !== previous.active)) { useChangesPanel.setState({open:false});selectDockTab(dockScope(useStore.getState()),'tools');useStore.setState({jianOpen:true,jianAutoCollapsed:false}); updateLayout('workspace'); }
       else if (s.paneOpen !== previous.paneOpen || s.active !== previous.active || !!s.snapshot?.connected !== !!previous.snapshot?.connected) schedule();
     });
-    const unsubscribeChanges = useChangesPanel.subscribe((s) => { document.body.classList.toggle('enigma-changes-open', s.open); updateLayout(s.open ? 'workspace' : undefined); });
+    const unsubscribeChanges = useChangesPanel.subscribe((s,previous) => { if(s.open&&(s.open!==previous.open||s.session!==previous.session)){selectDockTab(dockScope(useStore.getState()),'changes');useStore.setState({jianOpen:true,jianAutoCollapsed:false});updateLayout('workspace');} });
+    const unsubscribeDock=useRightDock.subscribe(()=>schedule());
     const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(schedule);
     for (const el of document.querySelectorAll('.app,.sidebar-inner,.jian-sidebar-inner')) observer?.observe(el);
     window.addEventListener('resize', schedule);
@@ -93,7 +100,7 @@ export function SidebarLayout({ restorePreference = true }: { restorePreference?
       if (e.key === 'Escape' && !useStore.getState().layoutDrawer && !document.querySelector('[role="dialog"],[role="menu"],.cm-panels') && useStore.getState().previewOpen) closePreview();
     };
     document.addEventListener('keydown', onKeydown);
-    return () => { cancelAnimationFrame(frame); observer?.disconnect(); unsubscribe(); unsubscribeEngineering(); unsubscribeChanges(); window.removeEventListener('resize', schedule); document.removeEventListener('keydown', onKeydown); };
+    return () => { cancelAnimationFrame(frame); observer?.disconnect(); unsubscribe(); unsubscribeEngineering(); unsubscribeChanges(); unsubscribeDock(); window.removeEventListener('resize', schedule); document.removeEventListener('keydown', onKeydown); };
   }, [restorePreference]);
 
   useLayoutEffect(() => {

@@ -34,7 +34,6 @@ const MOBILE_UPDATE_AVAILABLE_EVENT = 'hana-mobile-update-available';
 const MOBILE_APPLY_UPDATE_EVENT = 'hana-mobile-apply-update';
 const DEFAULT_MOBILE_AUTH_LOCALE = 'zh-CN';
 
-const LazyPreviewPanel = lazy(() => import('../components/PreviewPanel').then(module => ({ default: module.PreviewPanel })));
 const LazyMediaViewer = lazy(() => import('../components/shared/MediaViewer/MediaViewer').then(module => ({ default: module.MediaViewer })));
 const LazyWorkspaceCompanionRail = lazy(() => import('../components/app/WorkspaceCompanionRail').then(module => ({ default: module.WorkspaceCompanionRail })));
 const LazySettingsModalShell = lazy(() => import('../components/SettingsModalShell').then(module => ({ default: module.SettingsModalShell })));
@@ -364,8 +363,7 @@ function MobileDesktopShell({
         <MainContent>
           <ChatPage inputSurface="mobile" regionPrefix="mobile-" />
         </MainContent>
-        <Suspense fallback={null}><LazyPreviewPanel /></Suspense>
-        {(!isNarrow || jianOpen) && (
+        {(
           <Suspense fallback={<WorkspaceCompanionRailFallback open={jianOpen} />}>
             <LazyWorkspaceCompanionRail />
           </Suspense>

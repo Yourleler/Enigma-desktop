@@ -74,27 +74,15 @@ export function AppTitlebar({
         {showChannelTabs && <div className="enigma-window-modes"><ChannelTabBar /></div>}
         {showWidgetButtons && <WidgetButtons />}
         <AppearanceMenu compact/>
-        {showPreviewToggle && onTogglePreview && (
-          <button
-            className={`tb-toggle tb-toggle-preview${previewOpen ? ' active' : ''}`}
-            id="tbTogglePreview"
-            title={t('preview.toggle')}
-            aria-label={t('preview.toggle')}
-            data-tooltip={previewOpen ? '收起文件预览' : '打开文件与产物预览'}
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={onTogglePreview}
-          >
-            <AppIcon name="file" size={17}/>
-          </button>
-        )}
+
         <button
           className={`tb-toggle tb-toggle-right${jianOpen ? ' active' : ''}`}
           id="tbToggleRight"
-          title={t('sidebar.jian')}
-          aria-label={t('sidebar.jian')}
+          title="工作面板"
+          aria-label="工作面板"
           aria-expanded={jianOpen}
           aria-controls="jianSidebar"
-          data-tooltip={jianOpen ? '收起文件与变更' : '打开目录文件、对话附件和代码变更'}
+          data-tooltip={jianOpen ? '收起工作面板，保留已打开的标签' : '打开文件、变更、浏览器与任务'}
           onMouseDown={(e) => e.preventDefault()}
           onClick={onToggleJian}
         >

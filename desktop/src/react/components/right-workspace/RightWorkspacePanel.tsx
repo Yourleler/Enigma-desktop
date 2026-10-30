@@ -97,7 +97,7 @@ function WorkspaceHeader() {
             <summary>{t('desk.fullPath')}</summary>
             <code>{titlePath}</code>
           </details>}
-          <button type="button" className={styles.directoryNotes} aria-label="目录巡检说明" aria-expanded={notesOpen} data-tooltip="给自动巡检填写处理要求；不会自动作为每轮聊天的共享背景" onClick={()=>useStore.getState().setJianDrawerOpen(!notesOpen)}><AppIcon name="file" size={14}/>巡检说明</button>
+          <button type="button" className={styles.directoryNotes} aria-label="自动整理说明" aria-expanded={notesOpen} data-tooltip="给自动巡检填写处理要求；不会自动作为每轮聊天的共享背景" onClick={()=>useStore.getState().setJianDrawerOpen(!notesOpen)}><AppIcon name="file" size={14}/>自动整理</button>
           <DeskCwdSkillsButton inline />
         </div>
       </div>
@@ -106,7 +106,7 @@ function WorkspaceHeader() {
   );
 }
 
-export function RightWorkspacePanel({ compact = false }: { compact?: boolean }) {
+export function RightWorkspacePanel({ compact = false, filesOnly = false }: { compact?: boolean;filesOnly?:boolean }) {
   const session = useStore(s => s.currentSessionPath);
   const connection = useStore(s => s.activeServerConnectionId || 'local');
   const changesOpen = useChangesPanel(s => s.open && s.session === session && s.connection === connection);
@@ -117,11 +117,11 @@ export function RightWorkspacePanel({ compact = false }: { compact?: boolean }) 
   const jianDrawerOpen = useStore(s => s.jianDrawerOpen);
   const t = window.t ?? ((p: string) => p);
 
-  if (changesOpen) return <RepositoryChangesPanel />;
+  if (!filesOnly&&changesOpen) return <RepositoryChangesPanel />;
 
-  if (engineeringVisible) return <EngineeringPanel />;
+  if (!filesOnly&&engineeringVisible) return <EngineeringPanel />;
 
-  if (jianView.startsWith('widget:')) {
+  if (!filesOnly&&jianView.startsWith('widget:')) {
     return (
       <div className={styles.shell}>
         <PluginWidgetView pluginId={jianView.slice(7)} />
@@ -135,7 +135,7 @@ export function RightWorkspacePanel({ compact = false }: { compact?: boolean }) 
 
   return (
     <div className={`${styles.shell} enigma-workspace-shell`} data-liquid="sidebar">
-      {!compact && <SessionTodoCard />}
+      {!compact&&!filesOnly && <SessionTodoCard />}
       <div
         className={`universal-card ${styles.workspaceCard}`}
         data-right-workspace-card=""
@@ -143,7 +143,7 @@ export function RightWorkspacePanel({ compact = false }: { compact?: boolean }) 
       >
         <WorkspaceHeader />
         <JianDrawer />
-        <RepositoryChangesCard />
+        {!filesOnly&&<RepositoryChangesCard/>}
         <div className={styles.tabs} role="tablist" aria-label={t('rightWorkspace.tabs.label')} data-glass-segmented="">
           <GlassSelection selection={activeTab}/>
           {BASE_TABS.map(tab => {
@@ -167,7 +167,7 @@ export function RightWorkspacePanel({ compact = false }: { compact?: boolean }) 
           <TabContent activeTab={activeTab} />
         </div>
       </div>
-      {!compact && (
+      {!compact&&!filesOnly && (
         <>
           <WorkflowCard />
           <AgentActivityCard />

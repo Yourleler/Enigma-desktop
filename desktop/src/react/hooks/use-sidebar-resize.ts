@@ -42,7 +42,7 @@ export function useSidebarResize(): void {
     const previewPanel = document.getElementById('previewPanel');
 
     const LEFT_MIN = 180, LEFT_MAX = 400;
-    const RIGHT_MIN = 200, RIGHT_MAX = 600;
+    const RIGHT_MIN = 380, RIGHT_MAX = 900;
     const CHANNEL_INSPECTOR_MIN = 220, CHANNEL_INSPECTOR_MAX = 620;
     const PREVIEW_MIN = PREVIEW_MIN_WIDTH;
 
@@ -89,6 +89,9 @@ export function useSidebarResize(): void {
     function applyJianWidth(w: number): void {
       const px = w + 'px';
       root.style.setProperty('--jian-sidebar-width', px);
+      root.style.setProperty('--right-dock-width',px);
+      root.style.setProperty('--right-dock-preferred-width',px);
+      localStorage.setItem('enigma-dock-width',String(w));
       if (rightInner) { rightInner.style.width = px; rightInner.style.minWidth = px; }
       updateJianColumns(w);
     }
@@ -111,7 +114,7 @@ export function useSidebarResize(): void {
 
     // 恢复保存的宽度
     const savedLeft = localStorage.getItem('hana-sidebar-width');
-    const savedRight = localStorage.getItem('hana-jian-width');
+    const savedRight = localStorage.getItem('enigma-dock-width');
     const savedChannelInspector = localStorage.getItem('hana-channel-inspector-width');
     const savedPreview = localStorage.getItem('hana-preview-width');
     if (savedLeft) applySidebarWidth(Number(savedLeft));

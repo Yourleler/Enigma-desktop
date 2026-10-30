@@ -50,6 +50,8 @@ describe('AppTitlebar', () => {
   });
 
   it('keeps the sidebar shortcut working after StrictMode effect cleanup', () => {
+    Object.defineProperty(window,'innerWidth',{configurable:true,value:1600});
+    useStore.setState({jianOpen:true,jianAutoCollapsed:false,layoutDrawer:null});
     render(<React.StrictMode><SidebarLayout /></React.StrictMode>);
     expect(useStore.getState().sidebarOpen).toBe(true);
     fireEvent.keyDown(document, { key: 's', ctrlKey: true, shiftKey: true });
@@ -67,7 +69,7 @@ describe('AppTitlebar', () => {
     );
 
     expect(screen.queryByTitle('preview.toggle')).not.toBeInTheDocument();
-    expect(screen.getByTitle('sidebar.jian')).toBeInTheDocument();
+    expect(screen.getByTitle('工作面板')).toBeInTheDocument();
   });
 
   it('retains the same right-side page switcher when the conversation title disappears', () => {
@@ -82,43 +84,9 @@ describe('AppTitlebar', () => {
     expect(screen.getByTestId('channel-tabs')).toBe(tabs);
   });
 
-  it('renders a file preview toggle next to the right workspace toggle when enabled', () => {
-    const onTogglePreview = vi.fn();
-
-    render(
-      <AppTitlebar
-        sidebarOpen={false}
-        jianOpen={false}
-        previewOpen={false}
-        showPreviewToggle
-        onToggleSidebar={vi.fn()}
-        onToggleJian={vi.fn()}
-        onTogglePreview={onTogglePreview}
-      />,
-    );
-
-    const previewToggle = screen.getByTitle('preview.toggle');
-    const rightToggle = screen.getByTitle('sidebar.jian');
-    expect(previewToggle.compareDocumentPosition(rightToggle) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(previewToggle).not.toHaveClass('active');
-
-    fireEvent.click(previewToggle);
-    expect(onTogglePreview).toHaveBeenCalledTimes(1);
-  });
-
-  it('marks the file preview toggle active while the preview panel is open', () => {
-    render(
-      <AppTitlebar
-        sidebarOpen={false}
-        jianOpen={false}
-        previewOpen={true}
-        showPreviewToggle
-        onToggleSidebar={vi.fn()}
-        onToggleJian={vi.fn()}
-        onTogglePreview={vi.fn()}
-      />,
-    );
-
-    expect(screen.getByTitle('preview.toggle')).toHaveClass('active');
+  it('uses one right-side entry for files, previews, changes and browser',()=>{
+    const toggle=vi.fn();render(<AppTitlebar sidebarOpen={false} jianOpen={true} previewOpen showPreviewToggle onToggleSidebar={vi.fn()} onToggleJian={toggle} onTogglePreview={vi.fn()}/>);
+    expect(screen.queryByTitle('preview.toggle')).not.toBeInTheDocument();
+    const button=screen.getByRole('button',{name:'工作面板'});expect(button).toHaveAttribute('aria-expanded','true');fireEvent.click(button);expect(toggle).toHaveBeenCalledTimes(1);
   });
 });

@@ -902,10 +902,10 @@ describe('RightWorkspacePanel', () => {
 
     expect(drawer).toHaveAttribute('data-open', 'false');
     expect(drawer).not.toBeVisible();
-    expect(screen.getByRole('button', {name:'目录巡检说明'})).toHaveAttribute('aria-expanded','false');
+    expect(screen.getByRole('button', {name:'自动整理说明'})).toHaveAttribute('aria-expanded','false');
     expect(screen.getByPlaceholderText('写点什么...').closest('[inert]')).not.toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: '目录巡检说明' }));
+    fireEvent.click(screen.getByRole('button', { name: '自动整理说明' }));
 
     expect(drawer).toHaveAttribute('data-open', 'true');
     expect(screen.getByRole('button', { name: '收起文件夹说明' })).toHaveAttribute('aria-expanded', 'true');

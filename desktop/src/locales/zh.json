@@ -145,11 +145,11 @@
     "collapse": "收起侧边栏",
     "expand": "展开对话列表",
     "empty": "还没有对话哦 ✿",
-    "activity": "助手活动",
+    "activity": "运行记录",
     "jian": "文件与变更",
     "bridge": "社交平台",
     "toggle": "侧边栏",
-    "bridgeShort": "社交平台",
+    "bridgeShort": "消息连接",
     "pinned": "置顶",
     "searchPlaceholder": "搜索聊天记录",
     "searchClear": "清空搜索",
@@ -188,7 +188,8 @@
       "showMore": "展开显示",
       "loading": "正在载入项目…",
       "empty": "还没有项目"
-    }
+    },
+    "automation": "定时任务"
   },
   "titlebar": {
     "currentChatTitle": "当前对话标题"
@@ -2717,9 +2718,9 @@
       "addAuthorizedFolder": "添加授权目录"
     },
     "tabs": {
-      "label": "右侧工作台",
-      "sessionFiles": "对话文件",
-      "workspace": "目录文件"
+      "label": "文件来源",
+      "sessionFiles": "对话附件",
+      "workspace": "项目文件"
     },
     "sessionFiles": {
       "title": "对话文件",
@@ -2753,8 +2754,8 @@
       }
     },
     "jian": {
-      "collapse": "收起目录巡检说明",
-      "expand": "展开目录巡检说明"
+      "collapse": "收起自动整理说明",
+      "expand": "展开自动整理说明"
     }
   },
   "desk": {
@@ -2771,7 +2772,7 @@
     "cwdSkillShadowed": "已被覆盖",
     "deleteSkill": "删除技能",
     "openInFinder": "打开文件夹",
-    "jianLabel": "目录巡检说明",
+    "jianLabel": "自动整理说明",
     "fullPath": "查看完整路径",
     "jianHint": "给自动巡检填写这个目录的处理要求。内容自动保存；只有开启目录巡检后才会定期处理。普通聊天的共享背景在项目设置中填写。",
     "cwdSkillsHelp": "查看当前目录可用的技能及其用途",

@@ -12,6 +12,7 @@ import { MarkdownContent } from "../components/chat/MarkdownContent";
 import {
   groups,
   featureSections,
+  toolSections,
   useEngineering,
   refreshEngineering,
   restoreTabs,
@@ -120,14 +121,14 @@ export function EngineeringToolbar({compact=false}:{compact?:boolean}={}) {
   const busy =
     operation?.state === "running" || snapshot?.state?.idle === false;
   if (compact) return <div className="enigma-compact-tools" data-testid="engineering-toolbar" data-session-id={nativeSessionId||undefined} data-connection-id={connection||'local'}>
-    <SurfaceMenu label="工程工具" hint="仓库、任务、时光机、运行诊断与模型分工" icon={<><AppIcon name="skill" size={16}/><span>工程工具</span></>}>
+    <SurfaceMenu label="项目工具" hint="仓库、任务、时光机、运行诊断与模型分工" icon={<><AppIcon name="skill" size={16}/><span>工具</span></>}>
       {snapshot?.connected ? <>
-        {groups.filter(group=>snapshot.kind==='manager'||group.id!=='conductor').map(group=><button key={group.id} onClick={()=>openGroup(group.id)}>{group.label}<small>{featureHint(group.id)||featureSections.flatMap(s=>s.items).find(item=>item.id===group.id)?.description}</small></button>)}
-        <button onClick={()=>setCatalogOpen(true)}>全部工程操作<small>搜索操作和说明</small></button>
-        <button onClick={()=>void engineeringRequest('/conductor/new',sessionPath,{}).then(result=>switchSession(result.sessionPath)).catch(error=>useEngineering.setState({error:String(error)}))}>新建任务编排管家</button>
-      </> : <button onClick={()=>useEngineering.setState({connectOpen:true})}>连接工程目录<small>启用多仓库、任务计划、时光机等工程能力</small></button>}
+        {toolSections.map(section=><div className="enigma-feature-section" key={section.label}><div className="enigma-menu-section-title">{section.label}</div>{section.ids.filter(id=>snapshot.kind==='manager'||id!=='conductor').map(id=><button key={id} onClick={()=>openGroup(id)}>{groups.find(g=>g.id===id)?.label}<small>{featureHint(id)}</small></button>)}</div>)}
+        <button onClick={()=>setCatalogOpen(true)}>全部操作<small>搜索操作和说明</small></button>
+        <button onClick={()=>void engineeringRequest('/conductor/new',sessionPath,{}).then(result=>switchSession(result.sessionPath)).catch(error=>useEngineering.setState({error:String(error)}))}>新建任务管家</button>
+      </> : <button onClick={()=>useEngineering.setState({connectOpen:true})}>选择项目目录<small>启用多仓库、任务计划、时光机等工程能力</small></button>}
       <button onClick={()=>setModelsOpen(true)}>模型分工<small>规划、执行、复核使用的模型</small></button>
-      {snapshot?.connected&&<button onClick={()=>useEngineering.setState({connectOpen:true})}>切换工程目录<small>{snapshot.root}</small></button>}
+      {snapshot?.connected&&<button onClick={()=>useEngineering.setState({connectOpen:true})}>切换项目目录<small>{snapshot.root}</small></button>}
     </SurfaceMenu>
     {snapshot?.connected&&(busy||operation?.state==='failed'||snapshot.overview?.blockers?.length>0)&&<button className="enigma-compact-status" onClick={()=>openGroup('observer')} data-tooltip="查看当前阶段、等待原因和旁路诊断"><span className={busy?'enigma-live':''}>●</span>{busy?'运行中':'待核对'}</button>}
     <ConnectDialog/><ActionDialog/><ApprovalDialog/>
@@ -195,7 +196,7 @@ export function EngineeringToolbar({compact=false}:{compact?:boolean}={}) {
               {busy ? "运行中" : "运行状态"}
             </button>
             <SurfaceMenu label="更多功能">
-              <button onClick={()=>setCatalogOpen(true)}>全部工程操作<small>搜索完整功能目录，查看用途与入口</small></button>
+              <button onClick={()=>setCatalogOpen(true)}>全部操作<small>搜索完整功能目录，查看用途与入口</small></button>
                 {featureSections.map(section=><div className="enigma-feature-section" key={section.label}><div className="enigma-menu-section-title">{section.label}</div>{section.items.map(({id,description}) => (
                   <button
                     key={id}
@@ -214,7 +215,7 @@ export function EngineeringToolbar({compact=false}:{compact?:boolean}={}) {
                 <div className="enigma-feature-section"><div className="enigma-menu-section-title">对话设置</div>
                   <button data-tooltip="为新任务或当前对话设置规划、执行与复核模型" onClick={() => setModelsOpen(true)}>模型分工<small>按阶段选择模型与请求预算</small></button>
                   <button data-tooltip="为当前对话重新选择工程目录" onClick={() => useEngineering.setState({ connectOpen: true })}>切换工程工作区<small>选择本地目录与工程记忆设置</small></button>
-                  <button data-tooltip="创建独立的管家对话，用于安排与监控多个工作任务" onClick={() => void engineeringRequest('/conductor/new', sessionPath, {}).then(result => switchSession(result.sessionPath)).catch(error => useEngineering.setState({ error: String(error) }))}>新建任务编排管家<small>安排多个对话、模型与依赖</small></button>
+                  <button data-tooltip="创建独立的管家对话，用于安排与监控多个工作任务" onClick={() => void engineeringRequest('/conductor/new', sessionPath, {}).then(result => switchSession(result.sessionPath)).catch(error => useEngineering.setState({ error: String(error) }))}>新建任务管家<small>安排多个对话、模型与依赖</small></button>
                 </div>
             </SurfaceMenu>
           </>

@@ -76,22 +76,27 @@ export const useEngineering = create<EngineeringState>(() => ({
 }));
 
 export const groups = [
-  { id: "conductor", label: "任务群" },
-  { id: "project", label: "项目与仓库" },
-  { id: "plan", label: "任务计划" },
+  { id: "conductor", label: "任务管家" },
+  { id: "project", label: "项目" },
+  { id: "plan", label: "计划" },
   { id: "collaboration", label: "协作" },
   { id: "timeline", label: "时光机" },
   { id: "observer", label: "运行状态" },
-  { id: "reading", label: "变更与阅读" },
+  { id: "reading", label: "变更" },
   { id: "materials", label: "资料" },
   { id: "artifacts", label: "成果" },
   { id: "environment", label: "环境" },
   { id: "review", label: "审查" },
   { id: "memory", label: "记忆" },
-  { id: "skills", label: "技能与配方" },
-  { id: "handoff", label: "背景交接" },
-  { id: "documents", label: "文档维护" },
-  { id: "acceptance", label: "要求与验收" },
+  { id: "skills", label: "技能" },
+  { id: "handoff", label: "交接" },
+  { id: "documents", label: "文档" },
+  { id: "acceptance", label: "检查结果" },
+];
+export const toolSections = [
+  {label:'项目与执行',ids:['project','plan','conductor','collaboration','environment']},
+  {label:'阅读与交付',ids:['reading','review','acceptance','artifacts','documents','materials']},
+  {label:'恢复与知识',ids:['timeline','observer','memory','skills','handoff']},
 ];
 export const featureSections=[
   {label:'任务与协作',items:[{id:'acceptance',description:'核对原要求、有效证据与未完成项'},{id:'collaboration',description:'查看独立工作对话和方案比较'},{id:'handoff',description:'沿用背景，或将任务交给其他 Agent'}]},

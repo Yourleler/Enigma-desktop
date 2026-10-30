@@ -4,7 +4,6 @@ import { ActivityPanel } from '../ActivityPanel';
 import { AutomationPanel } from '../AutomationPanel';
 import { BridgePanel } from '../BridgePanel';
 import { SkillsPanel } from '../SkillsPanel';
-import { PreviewPanel } from '../PreviewPanel';
 import { PluginPageView } from '../plugin/PluginPageView';
 import { ChannelMessages, ChannelMembers, ChannelInput, ChannelReadonly, ChannelAgentActivityPanel, ChannelAgentSettingsPanel, ChannelExportPanel } from '../ChannelsPanel';
 import { ChannelHeader } from '../channels/ChannelHeader';
@@ -143,7 +142,6 @@ export function AppPages() {
         <BridgePanel />
       </MainContent>
 
-      {currentTab === 'chat' && <PreviewPanel />}
       <WorkspaceCompanionRail />
     </>
   );

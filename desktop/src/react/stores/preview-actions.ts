@@ -1,3 +1,4 @@
+import {dockScope,selectDockTab} from './right-dock-store';
 /**
  * preview-actions.ts — PreviewItem 预览管理
  *
@@ -113,6 +114,8 @@ export function openTab(id: string): void {
     const tabs = prev.openTabs.includes(id) ? prev.openTabs : [...prev.openTabs, id];
     return { openTabs: tabs, activeTabId: id };
   });
+  const current=useStore.getState(),item=current.previewItems.find(item=>item.id===id);
+  if(item)selectDockTab(dockScope(current),item.type==='browser'?'browser':`preview:${id}`,item.type==='browser'?{browserSession:item.browserSessionPath??null}:{});
   schedulePersistCurrentWorkspaceUiState();
 }
 
@@ -144,6 +147,8 @@ export function closeTab(id: string): void {
 export function setActiveTab(id: string): void {
   previewOpenEpoch++;
   updatePreview(() => ({ activeTabId: id }));
+  const current=useStore.getState(),item=current.previewItems.find(item=>item.id===id);
+  if(item)selectDockTab(dockScope(current),item.type==='browser'?'browser':`preview:${id}`,item.type==='browser'?{browserSession:item.browserSessionPath??null}:{});
   schedulePersistCurrentWorkspaceUiState();
 }
 
@@ -214,7 +219,7 @@ export function updatePreviewReadingPosition(
 export function openPreview(previewItem: PreviewItem, options?: {anchor?:string}): void {
   upsertPreviewItem(previewItem);
   openTab(previewItem.id);
-  useStore.getState().setPreviewOpen(true);
+  useStore.setState({previewOpen:true,jianOpen:true,jianAutoCollapsed:false});
   if (options?.anchor && previewItem.type === 'markdown') {
     useStore.getState().setMarkdownPreviewActive(previewItem.id,true);
     useStore.setState(s=>({previewAnchorRequests:{...s.previewAnchorRequests,[previewItem.id]:{token:crypto.randomUUID(),anchor:options.anchor!}}}));
@@ -236,7 +241,9 @@ export function togglePreviewPanel(forceOpen?: boolean): void {
   if (!open && s.quoteCandidate?.sourceKind === 'preview') s.clearQuoteCandidate();
   if (!open) previewOpenEpoch++;
   s.setPreviewOpen(open);
-  updateLayout(open ? 'preview' : undefined);
+  if(open){useStore.setState({jianOpen:true,jianAutoCollapsed:false});const item=s.previewItems.find(item=>item.id===s.activeTabId);selectDockTab(dockScope(s),item?item.type==='browser'?'browser':`preview:${item.id}`:'files');}
+  else selectDockTab(dockScope(s),'files');
+  updateLayout(open ? 'workspace' : undefined);
   schedulePersistCurrentWorkspaceUiState();
 }
 

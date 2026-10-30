@@ -110,11 +110,12 @@ function escapeCssId(id: string): string {
 }
 
 
-export function PreviewPanel() {
+export function PreviewPanel({embedded=false,visible=true,itemId}:{embedded?:boolean;visible?:boolean;itemId?:string|null}={}) {
   const previewOpen = useStore(s => s.previewOpen);
   const previewExpanded = useStore(s => s.previewExpanded);
   const layoutDrawer = useStore(s => s.layoutDrawer);
-  const activeTabId = useStore(selectActiveTabId);
+  const storedActiveTabId = useStore(selectActiveTabId);
+  const activeTabId = embedded ? itemId : storedActiveTabId;
   const previewItems = useStore(selectPreviewItems);
   const markdownPreviewIds = useStore(selectMarkdownPreviewIds);
   const previewReadingPositions = useStore(selectPreviewReadingPositions);
@@ -138,6 +139,7 @@ export function PreviewPanel() {
   const previewFindMarksRef = useRef<HTMLElement[]>([]);
   const nativeFindRef=useRef<{ranges:Range[];highlight:NonNullable<ReturnType<typeof createDocumentHighlights>>}|null>(null);
 
+  useEffect(()=>{if(embedded&&!visible)previewBodyRef.current?.querySelectorAll<HTMLMediaElement>('video,audio').forEach(media=>media.pause());},[embedded,visible]);
   const [csvSource,setCsvSource]=useState(false);
   useEffect(()=>setCsvSource(false),[activeTabId]);
   const previewItem = previewItems.find(a => a.id === activeTabId) ?? null;
@@ -351,7 +353,7 @@ export function PreviewPanel() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (!previewOpen || !['markdown','code','text','html'].includes(previewItem?.type || '') || !(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== 'f') return;
+      if (!visible || !previewOpen || !['markdown','code','text','html'].includes(previewItem?.type || '') || !(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== 'f') return;
       const panel=previewBodyRef.current?.closest('#previewPanel');
       if(!panel?.contains(event.target as Node)||editable)return;
       event.preventDefault();
@@ -416,15 +418,17 @@ export function PreviewPanel() {
       className={`${previewStyles.previewPanel}${previewOpen ? '' : ` ${previewStyles.previewPanelCollapsed}`}`}
       id="previewPanel"
       data-layout-managed=""
-      inert={!previewOpen || !!layoutDrawer}
-      aria-hidden={!previewOpen}
+      inert={!previewOpen || (embedded ? !visible || layoutDrawer==='sidebar' : !!layoutDrawer)}
+      hidden={embedded&&!visible}
+      data-dock-preview={embedded||undefined}
+      aria-hidden={!previewOpen || embedded&&!visible}
       data-preview-open={previewOpen ? 'true' : 'false'}
     >
       <OpenPreviewDocumentWatchBridge />
-      <div className="resize-handle resize-handle-left" id="previewResizeHandle"></div>
+      {!embedded&&<div className="resize-handle resize-handle-left" id="previewResizeHandle"></div>}
       <div className={previewStyles.previewPanelInner} data-preview-panel-inner="">
-        {previewExpanded && <button className="enigma-preview-return" onClick={() => closePreview()}><AppIcon name="chevronLeft" size={16}/>返回对话<span>已打开的文件会保留</span></button>}
-        <TabBar />
+        {!embedded&&previewExpanded && <button className="enigma-preview-return" onClick={() => closePreview()}><AppIcon name="chevronLeft" size={16}/>返回对话<span>已打开的文件会保留</span></button>}
+        {!embedded&&<TabBar />}
         {previewItem?.type==='csv'&&isEditable(previewItem)&&<div className="enigma-csv-mode" role="group" aria-label="CSV 显示方式"><button aria-pressed={!csvSource} onClick={()=>setCsvSource(false)}>表格预览</button><button aria-pressed={csvSource} onClick={()=>setCsvSource(true)}>编辑 CSV</button></div>}
         {previewOpen&&previewItem&&['markdown','code','text','html'].includes(previewItem.type)&&!['missing','unavailable'].includes(previewItem.status||'')&&<DocumentNavigation
           documentId={previewItem.id} headings={markdownHeadings} activeHeadingId={activeHeadingId} editable={editable} wrapLines={wrapLines}
