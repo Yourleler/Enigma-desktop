@@ -64,7 +64,7 @@ type PendingModel = {
   provider: string;
   id: string;
   revision: number;
-  state: "pending" | "applied" | "failed";
+  state: "pending" | "applied" | "failed" | "cancelled";
   error?: string;
 };
 type Binding = {
@@ -721,6 +721,14 @@ export class EngineeringHost {
       await this.saveBinding(sessionPath, current);
     }
     this.publish(sessionPath, "model_selection", selection);
+  }
+  async cancelRequestedModel(sessionPath:string){
+    const binding=await this.binding(sessionPath);
+    if(binding?.pendingModel?.state==='pending'){
+      binding.pendingModel={...binding.pendingModel,revision:binding.pendingModel.revision+1,state:'cancelled'};
+      await this.saveBinding(sessionPath,binding);this.publish(sessionPath,'model_selection',binding.pendingModel);
+    }
+    return {selection:binding?.pendingModel||null};
   }
   async assertManagedModel(sessionPath: string, provider: string, id: string) {
     const grant = (await this.binding(sessionPath))?.managedGrant;
@@ -1468,6 +1476,7 @@ export class EngineeringHost {
     }
   }
   publish(sessionPath: string, type: string, data: unknown) {
+    if(type==='model_selection')this.engine.emitBoundSessionEvent({type:'session_metadata_updated',metadata:{modelSelection:data}},sessionPath);
     this.engine.emitBoundSessionEvent(
       { type: "enigma_event", sessionPath, event: type, data },
       sessionPath,

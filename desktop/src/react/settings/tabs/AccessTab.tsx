@@ -45,7 +45,6 @@ interface AccessSummary {
     userId: string;
     username: string;
     displayName: string;
-    passwordSet: boolean;
   };
   devices: Array<{
     deviceId: string;

@@ -48,7 +48,7 @@ export const ProcessFoldBlock = memo(function ProcessFoldBlock({
   registerMessageElement,
   onForkCreated,
 }: Props) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(group.stats.unsuccessfulCount > 0);
   const panelId = useId();
   const t = window.t ?? ((p: string) => p);
 

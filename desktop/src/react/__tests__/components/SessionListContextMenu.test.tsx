@@ -568,6 +568,8 @@ describe('SessionList context menu', () => {
     const dot = row.querySelector('[data-session-status-dot]');
     expect(dot).toBeInTheDocument();
     expect(dot).toHaveAttribute('data-state', 'running');
+    expect(dot?.querySelector('svg')).toBeTruthy();
+    expect(row.querySelector('img')).toBeNull();
   });
 
   it('marks the pending switch row immediately without changing the committed session path', () => {

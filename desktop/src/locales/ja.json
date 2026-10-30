@@ -672,7 +672,7 @@
     "running": "{n} 個のツール実行中"
   },
   "processFold": {
-    "summary": "✨ {name} がしばらく動き回りました",
+    "summary": "作業の詳細",
     "tools": "{n} 個のツール",
     "thinking": "{n} 回の思考",
     "unsuccessful": "{n} 回の試行が未成功"
@@ -1480,7 +1480,7 @@
       "remoteServerConnected": "LAN サーバーに接続しました",
       "remoteServerFailed": "接続に失敗しました",
       "remoteConnection": "リモート Hana に接続中",
-      "remoteConnectionDesc": "アクセスとデバイス内のローカルアカウント、パスワード、LAN スイッチ、アクセスキーはローカル Hana だけに属します。",
+      "remoteConnectionDesc": "アクセスとデバイス内のローカルプロフィール、LAN スイッチ、アクセスキーはローカル Hana だけに属します。",
       "remoteConnectionName": "接続名",
       "remoteConnectionKind": "接続タイプ",
       "remoteConnectionUrl": "サーバー URL",
@@ -1502,15 +1502,6 @@
       "displayName": "表示名",
       "saveAccount": "アカウントを保存",
       "accountSaved": "アカウントを保存しました",
-      "password": "パスワード",
-      "passwordSet": "パスワード設定済み",
-      "passwordNotSet": "パスワード未設定",
-      "passwordHint": "今後の安全なリモートログイン用です。LAN HTTP ではモバイルアクセスキーを優先します",
-      "newPassword": "新しいパスワード",
-      "savePassword": "パスワードを保存",
-      "passwordSaved": "パスワードを保存しました",
-      "clearPassword": "パスワードを消去",
-      "passwordCleared": "パスワードを消去しました",
       "copy": "コピー",
       "copied": "コピーしました",
       "saved": "保存しました",
@@ -3617,18 +3608,13 @@
   "mobile": {
     "startupFailed": "HanaAgent の起動に失敗しました",
     "auth": {
-      "scopeError": "このログイン権限は期限切れです。ユーザー名とパスワードでもう一度サインインしてください。",
+      "scopeError": "ワークスペースのアクセス権限が不足しています。デバイスのアクセスキーを再入力してください。",
       "loginFailed": "ログインに失敗しました",
       "title": "Hana モバイルアクセス",
       "deviceHelp": "旧アクセスキーでのサインインです。古いデータとの互換性のためだけに残されています。",
-      "passwordHelp": "デスクトップアプリで設定したローカルアカウントとパスワードでサインインしてください。",
       "tabLabel": "ログイン方法",
       "deviceTab": "旧アクセスキー",
-      "passwordTab": "ユーザー名とパスワード",
       "deviceField": "旧アクセスキー",
-      "usernameField": "ユーザー名",
-      "passwordField": "パスワード",
-      "plaintextWarning": "アカウントとパスワードはログインのみに使われ、ログイン後は HttpOnly セッションに引き継がれます。",
       "submit": "ログイン"
     },
     "loading": "Hana に接続しています...",

@@ -258,7 +258,7 @@ export function buildTranscriptRenderItems(
 
 function fallbackTranslate(key: string, vars?: Record<string, string | number>): string {
   const table: Record<string, string> = {
-    'processFold.summary': '✨ {name}忙活了一阵子',
+    'processFold.summary': '执行过程',
     'processFold.tools': '{n} 个工具',
     'processFold.thinking': '{n} 次思考',
     'processFold.unsuccessful': '{n} 次尝试未成功',
@@ -277,7 +277,7 @@ export function buildProcessFoldSummary(
 ): string {
   const parts = [translate('processFold.summary', { name: agentName })];
   if (stats.toolCount > 0) parts.push(translate('processFold.tools', { n: stats.toolCount }));
-  if (stats.thinkingCount > 0) parts.push(translate('processFold.thinking', { n: stats.thinkingCount }));
+
   if (stats.unsuccessfulCount > 0) parts.push(translate('processFold.unsuccessful', { n: stats.unsuccessfulCount }));
   return parts.join(' · ');
 }

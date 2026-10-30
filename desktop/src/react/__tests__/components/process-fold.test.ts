@@ -300,7 +300,7 @@ describe('process fold grouping', () => {
       '小花',
       (key, vars) => {
         const table: Record<string, string> = {
-          'processFold.summary': '✨ {name}忙活了一阵子',
+          'processFold.summary': '执行过程',
           'processFold.tools': '{n} 个工具',
           'processFold.thinking': '{n} 次思考',
           'processFold.unsuccessful': '{n} 次尝试未成功',
@@ -309,6 +309,6 @@ describe('process fold grouping', () => {
       },
     );
 
-    expect(text).toBe('✨ 小花忙活了一阵子 · 13 个工具 · 5 次思考 · 1 次尝试未成功');
+    expect(text).toBe('执行过程 · 13 个工具 · 1 次尝试未成功');
   });
 });

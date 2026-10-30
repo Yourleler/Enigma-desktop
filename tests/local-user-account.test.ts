@@ -57,7 +57,6 @@ describe("local user account store", () => {
       userId: "user_owner",
       username: "hana-owner",
       displayName: "Hana Owner",
-      passwordSet: false,
     });
     const stored = JSON.parse(fs.readFileSync(path.join(tmpDir, "users.json"), "utf-8"));
     expect(stored.users[0]).toMatchObject({
@@ -69,37 +68,16 @@ describe("local user account store", () => {
     });
   });
 
-  it("stores only a password hash and verifies the local account password", async () => {
+  it("ignores obsolete password storage when reading and updating the profile", async () => {
     tmpDir = makeTmpDir();
     writeUsers(tmpDir);
-    const {
-      setLocalAccountPassword,
-      verifyLocalAccountPassword,
-      getLocalAccountSummary,
-    } = await import("../core/local-user-account.ts");
-
-    setLocalAccountPassword(tmpDir, {
-      password: "correct horse battery staple",
-      now: "2026-05-16T01:00:00.000Z",
-    });
-
-    const raw = fs.readFileSync(path.join(tmpDir, "local-user-auth.json"), "utf-8");
-    expect(raw).not.toContain("correct horse battery staple");
-    expect(JSON.parse(raw).credentials[0]).toMatchObject({
-      userId: "user_owner",
-      algorithm: "scrypt-sha256",
-      passwordHash: expect.any(String),
-      passwordSalt: expect.any(String),
-      updatedAt: "2026-05-16T01:00:00.000Z",
-    });
-    expect(getLocalAccountSummary(tmpDir)).toMatchObject({ passwordSet: true });
-    expect(verifyLocalAccountPassword(tmpDir, {
-      username: "Owner",
-      password: "correct horse battery staple",
-    })).toMatchObject({ ok: true, userId: "user_owner" });
-    expect(verifyLocalAccountPassword(tmpDir, {
-      username: "Owner",
-      password: "wrong password",
-    })).toEqual({ ok: false, reason: "invalid_credentials" });
+    const legacyPath = path.join(tmpDir, "local-user-auth.json");
+    // Even corrupt retired credential data must not block local settings.
+    fs.writeFileSync(legacyPath, "obsolete invalid credential data");
+    const { getLocalAccountSummary, updateLocalAccountProfile } = await import("../core/local-user-account.ts");
+    expect(getLocalAccountSummary(tmpDir)).toMatchObject({ userId: "user_owner", displayName: "Owner" });
+    expect(getLocalAccountSummary(tmpDir)).not.toHaveProperty("passwordSet");
+    expect(updateLocalAccountProfile(tmpDir, { displayName: "Updated owner" })).toMatchObject({ displayName: "Updated owner" });
+    expect(fs.readFileSync(legacyPath, "utf-8")).toBe("obsolete invalid credential data");
   });
 });

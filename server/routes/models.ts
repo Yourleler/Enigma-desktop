@@ -299,11 +299,9 @@ export function createModelsRoute(engine) {
       if (!modelId) return c.json({ error: t("error.missingParam", { param: "modelId" }) }, 400);
       if (!provider) return c.json({ error: t("error.missingParam", { param: "provider" }) }, 400);
 
-      if (engine.isSessionStreaming(sessionPath)) {
-        return c.json({ error: "cannot switch model while streaming", code: "MODEL_SWITCH_CONFLICT" }, 409);
-      }
-
-      const result = await engine.switchSessionModel(sessionPath, modelId, provider);
+      const result = typeof engine.requestSessionModelSwitch==='function'
+        ? await engine.requestSessionModelSwitch(sessionPath,modelId,provider)
+        : await engine.switchSessionModel(sessionPath, modelId, provider);
 
       // Build model info for response
       const session = engine.getSessionByPath(sessionPath);
@@ -311,11 +309,19 @@ export function createModelsRoute(engine) {
       const overrides = engine.config?.models?.overrides;
       const modelInfo = serializeModelInfo(sessionModel, { overrides });
 
-      return c.json({ ok: true, model: modelInfo, adaptations: result.adaptations, thinkingLevel: result.thinkingLevel });
+      return c.json({ ok: true, model: modelInfo, adaptations: result.adaptations, thinkingLevel: result.thinkingLevel,selection:result.selection,effectiveAt:result.effectiveAt });
     } catch (err) {
       const classified = classifyModelSwitchError(err);
       return c.json({ error: classified.message, code: classified.code }, classified.status as any);
     }
+  });
+  route.get('/models/selection',async c=>{
+    const sessionPath=c.req.query('sessionPath');if(!sessionPath)return c.json({error:'sessionPath required'},400);
+    return c.json({selection:await engine.getSessionModelSelection(sessionPath)});
+  });
+  route.post('/models/selection/cancel',async c=>{
+    const body=await safeJson(c);if(!body.sessionPath)return c.json({error:'sessionPath required'},400);
+    return c.json(await engine.cancelSessionModelSelection(body.sessionPath));
   });
 
   return route;

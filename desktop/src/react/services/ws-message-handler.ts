@@ -38,6 +38,7 @@ import {
 import { TODO_TOOL_NAMES, type TodoToolName } from '../utils/todo-constants';
 import { applyTodoLifecycle, migrateLegacyTodos } from '../utils/todo-compat';
 import { useTokenMeterStore } from '../components/input/token-meter-store';
+import {receiveModelSelection} from '../stores/model-selection-store';
 import { renderMarkdown } from '../utils/markdown';
 import { bumpMessageLiveVersion } from '../stores/message-live-version';
 
@@ -913,6 +914,8 @@ export function handleServerMessage(msg: any): void {
       const sid = typeof msg.sessionId === 'string' && msg.sessionId.trim() ? msg.sessionId.trim() : null;
       const metadata = msg.metadata && typeof msg.metadata === 'object' ? msg.metadata : {};
       if (!sp) { console.warn('[ws] event missing sessionPath:', msg.type); break; }
+      if(Object.prototype.hasOwnProperty.call(metadata,'modelSelection'))receiveModelSelection(useStore.getState().activeServerConnectionId,sp,metadata.modelSelection);
+      if(metadata.model?.id&&metadata.model?.provider)useStore.getState().updateSessionModel(sp,{...metadata.model,available:true,unavailableReason:null});
       const hasPinnedAt = Object.prototype.hasOwnProperty.call(metadata, 'pinnedAt');
       const hasPinOrder = Object.prototype.hasOwnProperty.call(metadata, 'pinOrder');
       const hasProjectId = Object.prototype.hasOwnProperty.call(metadata, 'projectId');

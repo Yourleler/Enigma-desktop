@@ -57,7 +57,7 @@ test('contextual forms omit unrelated fields and run the saved procedure with it
         await page.goto(endpoint.url); await page.getByRole('heading', { name: chat.title, exact: true }).waitFor();
         await open('技能与配方', '创建 / 编辑配方');
         const form = page.locator('#action-fields');
-        await form.getByLabel('记录 ID', { exact: true }).first().fill('contextual');
+        await form.getByLabel('配方编号', { exact: true }).fill('contextual');
         await form.getByLabel('名称', { exact: true }).fill('Contextual original acceptance');
         const rows = form.locator('[data-field-wrap="steps"] > div > .nested-fields'), command = rows.first();
         assert.equal(await command.getByLabel('步骤类型', { exact: true }).inputValue(), 'verify');
@@ -65,12 +65,12 @@ test('contextual forms omit unrelated fields and run the saved procedure with it
         await command.getByLabel('步骤类型', { exact: true }).selectOption('command');
         assert.equal(await command.getByLabel('仓库', { exact: true }).isVisible(), true);
         assert.equal(await command.getByLabel('服务', { exact: true }).isVisible(), false);
-        await command.getByLabel('记录 ID', { exact: true }).fill('write');
+        await command.getByLabel('步骤编号', { exact: true }).fill('write');
         await command.getByLabel('仓库', { exact: true }).selectOption('library');
         await command.getByLabel('命令与参数', { exact: true }).fill([process.execPath, '-e', 'require("fs").writeFileSync("contextual.txt","FORM_OK")'].join('\n'));
         await form.locator('[data-field-wrap="steps"]').getByRole('button', { name: '＋ 添加', exact: true }).click();
         const acceptance = rows.last();
-        await acceptance.getByLabel('记录 ID', { exact: true }).fill('acceptance');
+        await acceptance.getByLabel('步骤编号', { exact: true }).fill('acceptance');
         await acceptance.getByLabel('步骤类型', { exact: true }).selectOption('verify');
         const saved = await submit();
         assert.deepEqual(saved.steps[1], { id: 'acceptance', kind: 'verify' });
@@ -98,13 +98,13 @@ test('contextual forms omit unrelated fields and run the saved procedure with it
         assert((await new BackgroundRuns(workspace).drain(background.spec.id)).drained);
         await open('环境与验证', '等待结果并接续');
         await form.getByLabel('名称', { exact: true }).fill('Contextual background wait');
-        assert.equal(await form.getByLabel('子任务 ID', { exact: true }).isVisible(), false);
+        assert.equal(await form.getByLabel('选择子任务', { exact: true }).isVisible(), false);
         await form.getByLabel('来源', { exact: true }).selectOption('service');
         assert.equal(await form.getByLabel('服务状态', { exact: true }).isVisible(), true);
-        await form.getByLabel('服务 ID', { exact: true }).fill('unused-service');
+        await form.getByLabel('选择项目服务', { exact: true }).selectOption('contextual-service');
         await form.getByLabel('来源', { exact: true }).selectOption('background');
         assert.equal(await form.getByLabel('服务状态', { exact: true }).isVisible(), false);
-        await form.getByLabel('后台 ID 或 GitHub run 编号', { exact: true }).fill(background.spec.id);
+        await form.getByLabel('选择后台运行', { exact: true }).selectOption(background.spec.id);
         const waited = await submit();
         assert.deepEqual(waited.condition, { kind: 'background', run: background.spec.id });
         waitId = (await api('')).operation.result.id;
@@ -325,7 +325,10 @@ test('browser forms use real task, material, memory and service operations, keep
         const ready = await operation('service-start', { id: 'ui-server' });
         assert(ready.ready, JSON.stringify(ready));
         await operation('browser-add', { id: 'ui-flow', label: 'Actual browser flow', service: 'ui-server', steps: [{ action: 'expect', selector: '#value', includes: 'UI_SERVICE_OK' }] });
-        assert.equal((await operation('browser-run', { id: 'ui-flow' })).status, 'passed');
+        const browserResult=await operation('browser-run', { id: 'ui-flow' });
+        assert.equal(browserResult.report.status, 'passed');
+        assert.equal(browserResult.configurationCurrent,true);assert.equal(browserResult.serviceCurrent,true);
+        assert.equal(browserResult.report.errors.length,0);
         await operation('service-stop', { id: 'ui-server' });
         for (const group of [...new Set(uiActions.map(a => a.group))].filter(g => !['project', 'materials', 'artifacts'].includes(g))) {
             const result = await api('/chats/' + id + '/data/' + group);
@@ -348,7 +351,9 @@ test('browser forms use real task, material, memory and service operations, keep
         assert((await readFile(join(root, 'handoff', 'handoff.md'), 'utf8')).includes('Read common background'));
         const packaged = await operation('package-export', { goal: 'Reproduce original source', entries: [request.id] });
         assert(packaged.directory);
-        const reproduced = await operation('package-restore', { directory: packaged.directory, destination: join(root, 'reproduction'), writeRepos: ['library', 'sdk', 'app'], activateRuntime: true });
+        const inspected = await operation('package-inspect', { directory: packaged.directory });
+        assert(inspected.manifestHash);
+        const reproduced = await operation('package-restore', { directory: packaged.directory, expectedManifest: inspected.manifestHash, destination: join(root, 'reproduction'), writeRepos: ['library', 'sdk', 'app'], activateRuntime: true });
         assert(reproduced.workspace);
         await api('/chats/' + id + '/actions', { action: 'new-context', args: { goal: 'A separate task using common background', entries: [request.id] } });
         const until = Date.now() + 15000;

@@ -57,7 +57,6 @@ const baseSummary = {
     userId: 'user_owner',
     username: 'Owner',
     displayName: 'Owner',
-    passwordSet: false,
   },
   devices: [],
   credentials: [],
@@ -188,18 +187,6 @@ describe('AccessTab', () => {
         return Promise.resolve(jsonResponse({
           ok: true,
           account: { ...baseSummary.account, username: 'hana-owner', displayName: 'Hana Owner' },
-        }));
-      }
-      if (url === '/api/access/account/password' && options?.method === 'PUT') {
-        return Promise.resolve(jsonResponse({
-          ok: true,
-          account: { ...baseSummary.account, passwordSet: true },
-        }));
-      }
-      if (url === '/api/access/account/password' && options?.method === 'DELETE') {
-        return Promise.resolve(jsonResponse({
-          ok: true,
-          account: { ...baseSummary.account, passwordSet: false },
         }));
       }
       if (url === '/api/devices/credentials/cred_1/revoke' && options?.method === 'POST') {

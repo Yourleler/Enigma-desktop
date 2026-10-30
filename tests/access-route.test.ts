@@ -132,7 +132,6 @@ describe("access route", () => {
       account: {
         userId: "user_owner",
         displayName: "Owner",
-        passwordSet: false,
       },
       devices: [],
       credentials: [],
@@ -315,7 +314,6 @@ describe("access route", () => {
       account: {
         username: "hana-owner",
         displayName: "Hana Owner",
-        passwordSet: false,
       },
     });
 

@@ -444,7 +444,7 @@ class StreamBufferManager {
                 details: msg.details,
               };
               const allDone = tools.every(t => t.done);
-              blocks[i] = { ...tg, tools, collapsed: allDone && tools.length > 1 };
+              blocks[i] = { ...tg, tools, collapsed: allDone && tools.length > 1 && tools.every(tool=>tool.status==='succeeded'||(!tool.status&&tool.success)) };
               return { ...m, blocks };
             }
           }

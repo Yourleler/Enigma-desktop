@@ -27,7 +27,7 @@ function t(key: string, vars?: Record<string, string | number>): string {
     'toolGroup.running': '{n} 个工具运行中',
     'tool._fallback.done': '小花 忙完了',
     'tool._fallback.running': '小花 忙着',
-    'processFold.summary': '✨ {name}忙活了一阵子',
+    'processFold.summary': '执行过程',
     'processFold.tools': '{n} 个工具',
     'processFold.thinking': '{n} 次思考',
     'processFold.unsuccessful': '{n} 次尝试未成功',
@@ -122,7 +122,7 @@ describe('ProcessFoldBlock', () => {
       assistant('a2', [
         thinking('第二段思考'),
         textBlock('<p>第二步：继续读文件。</p>', '第二步：继续读文件。'),
-        toolGroup([tool('read'), tool('write', false)]),
+        toolGroup([tool('read'), tool('write')]),
       ]),
       assistant('a3', [
         thinking('第三段思考'),
@@ -145,7 +145,7 @@ describe('ProcessFoldBlock', () => {
     );
 
     const summary = screen.getByRole('button', {
-      name: '✨ 小花忙活了一阵子 · 4 个工具 · 3 次思考 · 1 次尝试未成功',
+      name: '执行过程 · 4 个工具',
     });
     expect(summary).toBeInTheDocument();
     expect(summary).toHaveAttribute('aria-expanded', 'false');

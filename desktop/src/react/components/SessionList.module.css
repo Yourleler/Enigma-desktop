@@ -399,11 +399,12 @@
     flex-shrink: 0;
 }
 
-/* Static state cue only — continuous opacity animation kept the compositor
-   busy under software rendering (esp. WARP). Do not restore infinite pulse. */
-.sessionStreamingDot[data-state="running"] {
-    opacity: 1;
-}
+.sessionRunningIndicator {display:inline-flex;width:14px;height:14px;flex:0 0 14px;color:var(--accent);}
+.sessionRunningIndicator svg {width:100%;height:100%;animation:session-running-turn 1.5s linear infinite;}
+.sessionRunningIndicator circle {fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-dasharray:30 14;}
+@keyframes session-running-turn {to{transform:rotate(360deg)}}
+:global(body.enigma-motion-off) .sessionRunningIndicator svg {animation:none;}
+@media(prefers-reduced-motion:reduce){.sessionRunningIndicator svg{animation:none;}}
 
 @media (prefers-reduced-motion: reduce) {
     .sessionStreamingDot {

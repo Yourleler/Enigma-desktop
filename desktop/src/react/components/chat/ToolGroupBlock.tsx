@@ -120,7 +120,7 @@ const ToolIndicator = memo(function ToolIndicator({ tool, agentName }: { tool: T
   return (
     <>
       <div className={styles.toolIndicator} data-tool={tool.name} data-done={String(tool.done)} data-status={status}>
-        <AppIcon name={presentation.icon} size={15}/><span className={styles.toolDesc}>{presentation.label}</span>
+        <AppIcon name={presentation.icon} size={15}/><span className={`${styles.toolDesc}${status==='running'?' enigma-work-shimmer':''}`}>{presentation.label}</span>
         {detail.text && (
           sessionTargetPath ? (
             <span

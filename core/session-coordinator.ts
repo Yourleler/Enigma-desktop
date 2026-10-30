@@ -1,4 +1,5 @@
 import { engineeringHost } from '../plugins/enigma/host.ts';
+import {QueuedModelSwitch} from './queued-model-switch.ts';
 import {withProjectTurnContext} from './project-turn-context.ts';
 /**
  * SessionCoordinator — Session 生命周期管理
@@ -2539,6 +2540,24 @@ export class SessionCoordinator {
     const old = this._sessions.get(mapKey);
     if (old) old.unsub();
     this._sessions.set(mapKey, sessionEntry);
+    if(sessionPath){
+      const queue=new QueuedModelSwitch({
+        initial:this._readSessionMetaEntrySync(sessionPath)?.modelSelection,
+        resolve:async(provider,id)=>{
+          const resolved=await this._d.getEngine?.()?.resolveModelWithCredentialsFresh({provider,id});
+          if(!resolved?.model)throw new Error('所选模型不可用，请检查供应商配置');
+          return resolved.model;
+        },
+        apply:model=>this.switchSessionModel(sessionPath,model),
+        save:async selection=>{await this.writeSessionMeta(sessionPath,{modelSelection:selection});this._emitSessionMetadataUpdated(sessionPath,{modelSelection:selection});},
+        idle:()=>!this.isSessionStreaming(sessionPath)&&!session.isCompacting&&!isDirectCompactionInProgress(session),
+      });
+      (sessionEntry as any).modelSwitchQueue=queue;
+      if(session.agent){
+        const prepare=session.agent.prepareRequest;
+        session.agent.prepareRequest=async(request,signal)=>{signal?.throwIfAborted();await queue.atBoundary();signal?.throwIfAborted();return (await prepare?.(request,signal))||{};};
+      }
+    }
     if (sessionPath && mapKey !== sessionPath) this._sessions.delete(sessionPath);
     this._deleteRuntimeValueForPath(this._hibernatedSessionMeta, sessionPath);
 
@@ -5313,6 +5332,8 @@ export class SessionCoordinator {
       this._renewCachePrefixContract(sessionPath, entry, "model_switch");
       this._emitSessionMetadataUpdated(sessionPath, {
         modelAvailability: { ...entry.modelAvailability },
+        model: {id:newModel.id,provider:newModel.provider,name:newModel.name,contextWindow:newModel.contextWindow},
+        thinkingLevel: nextThinkingLevel,
       });
 
       return { adaptations, thinkingLevel: nextThinkingLevel };
@@ -5320,6 +5341,14 @@ export class SessionCoordinator {
       entry._switching = false;
     }
   }
+
+  async requestSessionModelSwitch(sessionPath:string,provider:string,id:string){
+    await this.ensureSessionLoaded(sessionPath);
+    if(!this.getSessionByPath(sessionPath)?.agent?.prepareRequest)throw new Error('当前会话运行时不支持请求边界切换，请更新应用');
+    return this._getSessionEntryByPath(sessionPath).modelSwitchQueue.request(provider,id);
+  }
+  getSessionModelSelection(sessionPath:string){this._assertActiveDesktopSessionPath(sessionPath,'getSessionModelSelection');return this._getSessionEntryByPath(sessionPath)?.modelSwitchQueue?.selection||this._readSessionMetaEntrySync(sessionPath)?.modelSelection||null;}
+  async cancelSessionModelSelection(sessionPath:string){await this.ensureSessionLoaded(sessionPath);return this._getSessionEntryByPath(sessionPath).modelSwitchQueue.cancel();}
 
   /**
    * Usage attribution for a compaction that fires between turns of a running

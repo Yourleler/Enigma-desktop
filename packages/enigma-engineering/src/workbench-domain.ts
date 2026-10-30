@@ -426,6 +426,10 @@ export async function domainAction(controller: DomainController, action: string,
 export async function domainData(controller: DomainController, group: string, query = '',options:{offset?:number}={}) {
     const w = controller.options.workspace, task = controller.chat.session;
     const access = { session: task, entries: controller.runtime.session.sessionManager.getBranch().map(e => e.id) };
+    if(group==='documents'){
+        const documents=new DocumentationStore(w);
+        return {items:await documents.list(),consistency:await documents.consistency()};
+    }
     if (group === 'plan')
         return await new PlanStore(w, await planScope(controller)).view() ?? null;
     if(group==='maps')return new TaskReadingStore(w).list(task);

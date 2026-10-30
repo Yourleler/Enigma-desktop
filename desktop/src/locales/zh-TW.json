@@ -672,7 +672,7 @@
     "running": "{n} 個工具運行中"
   },
   "processFold": {
-    "summary": "✨ {name}忙活了一陣子",
+    "summary": "執行過程",
     "tools": "{n} 個工具",
     "thinking": "{n} 次思考",
     "unsuccessful": "{n} 次嘗試未成功"
@@ -1480,7 +1480,7 @@
       "remoteServerConnected": "已連線區域網路伺服器",
       "remoteServerFailed": "連線失敗",
       "remoteConnection": "目前連線的是遠端 Hana",
-      "remoteConnectionDesc": "存取與裝置中的本機帳號、密碼、區域網路開關和密鑰產生只屬於本機 Hana。",
+      "remoteConnectionDesc": "存取與裝置中的本機資料、區域網路開關和密鑰產生只屬於本機 Hana。",
       "remoteConnectionName": "連線名稱",
       "remoteConnectionKind": "連線類型",
       "remoteConnectionUrl": "伺服器位址",
@@ -1502,15 +1502,6 @@
       "displayName": "顯示名稱",
       "saveAccount": "儲存帳號",
       "accountSaved": "帳號已儲存",
-      "password": "密碼",
-      "passwordSet": "已設定密碼",
-      "passwordNotSet": "尚未設定密碼",
-      "passwordHint": "用於後續安全遠端登入；區域網路 HTTP 仍優先使用手機存取密鑰",
-      "newPassword": "新密碼",
-      "savePassword": "儲存密碼",
-      "passwordSaved": "密碼已儲存",
-      "clearPassword": "清空密碼",
-      "passwordCleared": "密碼已清空",
       "copy": "複製",
       "copied": "已複製",
       "saved": "已儲存",
@@ -3617,18 +3608,13 @@
   "mobile": {
     "startupFailed": "HanaAgent 启动失败",
     "auth": {
-      "scopeError": "目前登入權限已過期，請用帳號密碼重新登入。",
+      "scopeError": "目前連線缺少工作台權限，請重新輸入裝置存取密鑰。",
       "loginFailed": "登入失敗",
       "title": "手機訪問 Hana",
       "deviceHelp": "舊版存取金鑰登入，僅用於相容舊資料。",
-      "passwordHelp": "使用桌面端設定裡的本機帳號與密碼登入。",
       "tabLabel": "登入方式",
       "deviceTab": "舊版金鑰",
-      "passwordTab": "帳號密碼",
       "deviceField": "舊版金鑰",
-      "usernameField": "使用者名稱",
-      "passwordField": "密碼",
-      "plaintextWarning": "帳號密碼只用於登入，登入後由 HttpOnly 會話接管。",
       "submit": "登入"
     },
     "loading": "正在連線 Hana...",

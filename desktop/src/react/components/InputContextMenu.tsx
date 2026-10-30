@@ -268,6 +268,7 @@ export function InputContextMenu() {
       },
     });
   }
+  if(target.closest('#inputBox'))items.push({divider:true},{label:'草稿恢复',action:()=>window.dispatchEvent(new Event('enigma-draft-recovery'))});
 
   return (
     <ContextMenu

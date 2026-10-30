@@ -1640,6 +1640,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
     slashDismissedTextRef.current = null;
     const slashText = editor?.getText().trim() || inputText.trim();
     if (item.type === 'builtin') {
+      if(item.name==='draft')setSlashMenuOpen(false);
       item.execute(slashText);
       return;
     }

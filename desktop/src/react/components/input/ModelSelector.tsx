@@ -7,8 +7,8 @@ import type { Model } from '../../types';
 import type { SessionModel } from '../../stores/chat-types';
 import { SelectWidget, ProviderIcon, ProviderGroupHeader, selectWidgetStyles, type SelectOption } from '@/ui';
 import styles from './InputArea.module.css';
-import { useEngineering, engineeringRequest, refreshEngineering } from '../../engineering/state';
-import {useSideAction} from '../../engineering/useSideAction';
+import {modelSelectionKey,receiveModelSelection,useModelSelectionStore} from '../../stores/model-selection-store';
+import {AppIcon} from '../../ui/app-icons';
 
 export function ModelSelector({ models, sessionModel, isStreaming = false }: {
   models: Model[];
@@ -17,9 +17,15 @@ export function ModelSelector({ models, sessionModel, isStreaming = false }: {
 }) {
   const { t } = useI18n();
   const [switching, setLoading] = useState(false);
-  const path=useStore(s=>s.currentSessionPath)||'',engineeringSwitch=useSideAction(path);
-  const loading=switching||!!engineeringSwitch.busy;
-  useEffect(()=>{if(engineeringSwitch.error)useStore.getState().addToast(engineeringSwitch.error,'error');},[engineeringSwitch.error]);
+  const path=useStore(s=>s.currentSessionPath)||'',connection=useStore(s=>s.activeServerConnectionId);
+  const selection=useModelSelectionStore(s=>s.items[modelSelectionKey(connection,path)]);
+  const loading=switching;
+  useEffect(()=>{
+    if(!path)return;let active=true;
+    const read=()=>hanaFetch(`/api/models/selection?sessionPath=${encodeURIComponent(path)}`).then(r=>r.json()).then(data=>{if(active)receiveModelSelection(connection,path,data.selection||null);}).catch(()=>{});
+    void read();const timer=isStreaming?setInterval(()=>{if(!document.hidden)void read();},1500):null;
+    return()=>{active=false;if(timer)clearInterval(timer);};
+  },[path,connection,isStreaming]);
 
   const matchedSessionModel = sessionModel
     ? models.find(m => m.id === sessionModel.id && m.provider === sessionModel.provider)
@@ -35,7 +41,7 @@ export function ModelSelector({ models, sessionModel, isStreaming = false }: {
   );
   const sessionModelUnavailable = sessionModel?.available === false || inferredUnavailable;
   const label = (() => {
-    if (loading) return '...';
+
     if (sessionModelUnavailable) {
       if (sessionModel?.unavailableReason === 'model_removed') return t('model.removed') || '...';
       if (sessionModel?.unavailableReason === 'provider_not_configured') {
@@ -52,16 +58,9 @@ export function ModelSelector({ models, sessionModel, isStreaming = false }: {
     try {
       const state = useStore.getState();
       const { currentSessionPath, pendingNewSession, chatSessions, sessionModelsByPath } = state;
-      if (currentSessionPath && useEngineering.getState().snapshot?.connected && useEngineering.getState().sessionPath === currentSessionPath) {
-        await engineeringSwitch.run('model',()=>engineeringRequest('/model', currentSessionPath, { modelId, provider }),async result=>{
-          await refreshEngineering(currentSessionPath);
-          if(useStore.getState().currentSessionPath===currentSessionPath&&useStore.getState().activeServerConnectionId===state.activeServerConnectionId)useStore.getState().addToast(result.effectiveAt === 'now' ? '已切换模型' : '已记录选择，当前请求结束后生效', 'info');
-        });
-        return;
-      }
       const sessionHasMessages = !!(currentSessionPath && sessionScopedValue(state, chatSessions, currentSessionPath)?.items?.length);
 
-      if (sessionHasMessages && currentSessionPath) {
+      if (currentSessionPath && !pendingNewSession) {
         // Same-model guard：严格复合键比较。sm 缺 provider 时视为不可比，走 global 当前。
         const sm = sessionScopedValue(state, sessionModelsByPath, currentSessionPath);
         const useSession = !!(sm?.id && sm?.provider);
@@ -69,7 +68,7 @@ export function ModelSelector({ models, sessionModel, isStreaming = false }: {
         // A blocked historical model must be explicitly re-selected after its
         // provider/model becomes usable again. Do not let the same-model guard
         // turn that recovery action into a no-op.
-        if (cur && modelId === cur.id && provider === cur.provider && sm?.available !== false) return;
+        if (cur && modelId === cur.id && provider === cur.provider && sm?.available !== false && selection?.state!=='pending') return;
 
         // Per-session switch
         setLoading(true);
@@ -83,6 +82,7 @@ export function ModelSelector({ models, sessionModel, isStreaming = false }: {
         const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data.error || 'switch failed');
 
+        receiveModelSelection(state.activeServerConnectionId,currentSessionPath,data.selection||null);
         if (data.model) {
           useStore.getState().updateSessionModel(currentSessionPath, {
             ...data.model,
@@ -127,18 +127,14 @@ export function ModelSelector({ models, sessionModel, isStreaming = false }: {
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      if (message.includes('cannot switch model while streaming')) {
-        useStore.getState().addToast(t('model.switchWhileStreaming'), 'warning', 4000, {
-          dedupeKey: 'model-switch-streaming',
-        });
-      } else {
+      {
         console.error('[model] switch failed:', err);
         useStore.getState().addToast(message || t('model.switchFailed'), 'error');
       }
       setLoading(false);
       useStore.getState().setModelSwitching(false);
     }
-  }, [models, t,engineeringSwitch.run]);
+  }, [models, t,selection?.state]);
 
   // 按 provider 分组
   const grouped = useMemo(() => {
@@ -184,7 +180,7 @@ export function ModelSelector({ models, sessionModel, isStreaming = false }: {
   }, [grouped, groupKeys, switchModel]);
 
   return (
-    <SelectWidget
+    <div className={styles['model-choice']}><SelectWidget
       className={styles['model-selector']}
       options={options}
       value={currentValue}
@@ -196,25 +192,19 @@ export function ModelSelector({ models, sessionModel, isStreaming = false }: {
       popupMinWidth={180}
       popupClassName={selectWidgetStyles.providerInset}
       triggerBare
-      onAttemptOpen={() => {
-        if (isStreaming && !useEngineering.getState().snapshot?.connected) {
-          useStore.getState().addToast(t('model.switchWhileStreaming'), 'warning', 4000, {
-            dedupeKey: 'model-switch-streaming',
-          });
-          return false;
-        }
-        return true;
-      }}
       triggerClassName={`${styles['model-pill']}${loading ? ` ${styles['model-pill-disabled']}` : ''}`}
       renderTrigger={() => (
         <>
           {current?.provider && (
             <ProviderIcon provider={current.provider} className={styles['model-provider-icon']} />
           )}
-          <span className={styles['model-pill-label']}>{label}</span>
+          <span className={styles['model-pill-label']}>{label}</span>{loading&&<span className="enigma-model-loading" aria-label="正在记录模型选择"/>}
         </>
       )}
       renderGroupHeader={(g) => <ProviderGroupHeader provider={g} />}
     />
+    {selection?.state==='pending'&&<span className={styles['model-selection-note']} role="status"><AppIcon name="arrowEnter" size={13}/>下一请求：{models.find(m=>m.id===selection.id&&m.provider===selection.provider)?.name||selection.id}<button type="button" aria-label="取消待切换模型" onClick={()=>void hanaFetch('/api/models/selection/cancel',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionPath:path})}).then(r=>r.json()).then(data=>receiveModelSelection(connection,path,data.selection))}>×</button></span>}
+    {selection?.state==='failed'&&<span className={styles['model-selection-note']} role="alert" title={selection.error}>模型未切换：{selection.error||'请重新选择'}</span>}
+    </div>
   );
 }

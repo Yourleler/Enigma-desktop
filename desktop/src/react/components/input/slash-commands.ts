@@ -237,6 +237,7 @@ export function buildSlashCommands(
   executeCompactFn: () => Promise<void>,
 ): SlashItem[] {
   const list: SlashItem[] = [
+    {name:'draft',aliases:['草稿','恢复'],label:'/draft',description:'草稿恢复',busyLabel:'',icon:appIconSvg('clock'),type:'builtin',execute:()=>{window.dispatchEvent(new Event('enigma-draft-recovery'));}},
     {
       name: 'diary',
       label: '/diary',

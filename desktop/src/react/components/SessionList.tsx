@@ -18,7 +18,6 @@ import { setBrowserStateForPath } from '../stores/browser-slice';
 import { closePreview } from '../stores/preview-actions';
 import { sessionScopedListIncludes } from '../stores/session-slice';
 import type { Session, Agent } from '../types';
-import { AgentAvatar, resolveAgentDisplayInfo } from '../utils/agent-display';
 import {
   autoProjectIdForCwd,
   buildSessionProjectView,
@@ -1534,9 +1533,6 @@ export const SessionSearchItem = memo(function SessionSearchItem({
       onClick={handleClick}
     >
       <div className={styles.sessionItemHeader}>
-        {result.agentId && (
-          <AgentBadge agentId={result.agentId} agentName={result.agentName} agents={agents} />
-        )}
         <div className={styles.sessionItemTitle}>
           {result.title || result.firstMessage || t('session.untitled')}
         </div>
@@ -1646,7 +1642,7 @@ const SessionItem = memo(function SessionItem({ session: s, isActive, isPending,
   const hasStatusSlot = !!browserUrl;
   // 状态点只表达「这个会话自己有动静」——正在输出，或后台跑完还没看。
   // 切换加载不属于会话状态，本地切换又快，画上去只会一闪而过。
-  const showStatusDot = isStreaming || hasUnreadOutput;
+  const showStatusDot = isStreaming || (!isActive && hasUnreadOutput);
   const statusDotState = isStreaming ? 'running' : 'unread';
   const isSingleLine = rowMode === 'single-line';
   const displayTitle = s.title || s.firstMessage || t('session.untitled');
@@ -1708,16 +1704,14 @@ const SessionItem = memo(function SessionItem({ session: s, isActive, isPending,
         onDragEnd={draggable && !isDeletedAgentSession ? onDragEnd : undefined}
       >
         <div className={styles.sessionItemHeader}>
-          {s.agentId && (
-            <AgentBadge agentId={s.agentId} agentName={s.agentName} agents={agents} />
-          )}
           {showStatusDot && (
             <span
-              className={styles.sessionStreamingDot}
+              className={isStreaming?styles.sessionRunningIndicator:styles.sessionStreamingDot}
               data-session-status-dot=""
               data-state={statusDotState}
-              aria-hidden="true"
-            />
+              role="img"
+              aria-label={isStreaming?'正在运行':'有未读回复'}
+            >{isStreaming&&<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7"/></svg>}</span>
           )}
           {editing ? (
             <input
@@ -2027,25 +2021,3 @@ function formatRcPlatform(platform: string, t: (key: string) => string) {
   if (lower === 'qq') return t('bridge.platform.qq');
   return platform || t('bridge.platform.bridge');
 }
-
-// ── Agent Avatar Badge ──
-
-const AgentBadge = memo(function AgentBadge({ agentId, agentName, agents }: {
-  agentId: string;
-  agentName: string | null;
-  agents: Agent[];
-}) {
-  const info = resolveAgentDisplayInfo({
-    id: agentId,
-    agents,
-    fallbackAgentName: agentName || agentId,
-  });
-
-  return (
-    <AgentAvatar
-      info={info}
-      className={styles.sessionAgentBadge}
-      title={agentName || agentId}
-    />
-  );
-});

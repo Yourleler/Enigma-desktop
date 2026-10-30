@@ -1985,6 +1985,16 @@ export class HanaEngine {
     if (!model) throw new Error(t("error.modelNotFound", { id: `${provider}/${modelId}` }));
     return this._sessionCoord.switchSessionModel(sessionPath, model);
   }
+  async requestSessionModelSwitch(sessionPath,modelId,provider){
+    const host=engineeringHost(this),binding=await host.binding(sessionPath);
+    if(binding)return host.requestModel(sessionPath,provider,modelId);
+    return this._sessionCoord.requestSessionModelSwitch(sessionPath,provider,modelId);
+  }
+  async getSessionModelSelection(sessionPath){return (await engineeringHost(this).binding(sessionPath))?.pendingModel||this._sessionCoord.getSessionModelSelection(sessionPath);}
+  async cancelSessionModelSelection(sessionPath){
+    const host=engineeringHost(this);if(await host.binding(sessionPath))return host.cancelRequestedModel(sessionPath);
+    return this._sessionCoord.cancelSessionModelSelection(sessionPath);
+  }
   async setDefaultModel(id, provider, opts) { return this._configCoord.setDefaultModel(id, provider, opts); }
   getThinkingLevel() { return this._configCoord.getThinkingLevel(); }
   setThinkingLevel(l) { return this._configCoord.setThinkingLevel(l); }

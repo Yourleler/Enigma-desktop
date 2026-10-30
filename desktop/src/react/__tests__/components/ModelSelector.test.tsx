@@ -3,6 +3,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { hanaFetch } from '../../hooks/use-hana-fetch';
+import {useModelSelectionStore} from '../../stores/model-selection-store';
 import { ModelSelector } from '../../components/input/ModelSelector';
 
 const addToast = vi.fn();
@@ -46,6 +47,9 @@ function jsonResponse(body: unknown, ok = true): Response {
 describe('ModelSelector', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(hanaFetch).mockReset();
+    vi.mocked(hanaFetch).mockResolvedValue(jsonResponse({selection:null}));
+    useModelSelectionStore.setState({items:{}});
     storeState.currentSessionPath = null;
     storeState.pendingNewSession = true;
     storeState.chatSessions = {};
@@ -76,16 +80,11 @@ describe('ModelSelector', () => {
     expect(container.textContent).toContain('GLM-5.2');
   });
 
-  it('does not open the model menu while the session is streaming', () => {
-    render(<ModelSelector models={[{ ...models[0], isCurrent: true }]} isStreaming />);
-
-    fireEvent.click(screen.getByRole('button', { name: /DeepSeek V4 Flash/ }));
-
-    expect(addToast).toHaveBeenCalledWith('model.switchWhileStreaming', 'warning', 4000, {
-      dedupeKey: 'model-switch-streaming',
-    });
-    expect(screen.queryByText('mimo')).toBeNull();
-    expect(hanaFetch).not.toHaveBeenCalled();
+  it('opens the model menu while a response is streaming', () => {
+    render(<ModelSelector models={[{...models[0],isCurrent:true},models[1]]} isStreaming/>);
+    fireEvent.click(screen.getByRole('button',{name:/DeepSeek V4 Flash/}));
+    expect(screen.getByRole('option',{name:/MiMo V2 Omni/})).toBeTruthy();
+    expect(addToast).not.toHaveBeenCalled();
   });
 
   it('marks the session model unavailable when its provider/id is no longer in the model list', () => {
@@ -118,10 +117,7 @@ describe('ModelSelector', () => {
     storeState.sessionModelsByPath = {
       '/sessions/a.jsonl': blockedModel,
     };
-    vi.mocked(hanaFetch).mockResolvedValueOnce(jsonResponse({
-      ok: true,
-      model: { ...models[0], available: true, unavailableReason: null },
-    }));
+    vi.mocked(hanaFetch).mockImplementation(async(url)=>String(url).startsWith('/api/models/selection?')?jsonResponse({selection:null}):jsonResponse({ok:true,model:{...models[0],available:true,unavailableReason:null}}));
 
     render(<ModelSelector models={models} sessionModel={blockedModel} />);
 
@@ -144,35 +140,16 @@ describe('ModelSelector', () => {
     );
   });
 
-  it('maps a server streaming-switch rejection to the same explicit warning', async () => {
-    storeState.currentSessionPath = '/sessions/a.jsonl';
-    storeState.pendingNewSession = false;
-    storeState.chatSessions = {
-      '/sessions/a.jsonl': { items: [{ type: 'message' }] },
-    };
-    storeState.sessionModelsByPath = {
-      '/sessions/a.jsonl': {
-        id: 'deepseek-v4-flash',
-        name: 'DeepSeek V4 Flash',
-        provider: 'deepseek',
-      },
-    };
-    vi.mocked(hanaFetch).mockResolvedValueOnce(jsonResponse({
-      error: 'cannot switch model while streaming',
-    }, false));
-
-    render(<ModelSelector models={models} sessionModel={storeState.sessionModelsByPath['/sessions/a.jsonl'] as any} />);
-    fireEvent.click(screen.getByRole('button', { name: /DeepSeek V4 Flash/ }));
-    fireEvent.click(screen.getByRole('option', { name: /MiMo V2 Omni/ }));
-
-    await waitFor(() => {
-      expect(addToast).toHaveBeenCalledWith('model.switchWhileStreaming', 'warning', 4000, {
-        dedupeKey: 'model-switch-streaming',
-      });
-    });
-    expect(hanaFetch).toHaveBeenCalledWith('/api/models/switch', expect.objectContaining({
-      throwOnHttpError: false,
-    }));
+  it('shows a pending selection without replacing the current response model', async () => {
+    storeState.currentSessionPath='/sessions/a.jsonl';storeState.pendingNewSession=false;
+    storeState.sessionModelsByPath={'/sessions/a.jsonl':models[0]};
+    vi.mocked(hanaFetch).mockImplementation(async(url)=>String(url).startsWith('/api/models/selection?')?jsonResponse({selection:null}):jsonResponse({ok:true,model:models[0],selection:{id:models[1].id,provider:models[1].provider,revision:1,state:'pending'},effectiveAt:'next-request'}));
+    render(<ModelSelector models={models} sessionModel={models[0]} isStreaming/>);
+    fireEvent.click(screen.getByRole('button',{name:/DeepSeek V4 Flash/}));fireEvent.click(screen.getByRole('option',{name:/MiMo V2 Omni/}));
+    await screen.findByText(/下一请求：MiMo/);
+    expect(screen.getByRole('button',{name:/DeepSeek V4 Flash/})).toBeTruthy();
+    expect(screen.getByRole('button',{name:'取消待切换模型'})).toBeTruthy();
+    expect(addToast).not.toHaveBeenCalled();
   });
 
   it('applies the selected model thinking default while preparing a new session', async () => {
@@ -207,10 +184,7 @@ describe('ModelSelector', () => {
         provider: 'deepseek',
       },
     };
-    vi.mocked(hanaFetch).mockResolvedValueOnce(jsonResponse({
-      code: 'MODEL_NOT_FOUND',
-      error: 'Model not found: minimax-token-plan/MiniMax-M2.7',
-    }, false));
+    vi.mocked(hanaFetch).mockImplementation(async(url)=>String(url).startsWith('/api/models/selection?')?jsonResponse({selection:null}):jsonResponse({code:'MODEL_NOT_FOUND',error:'Model not found: minimax-token-plan/MiniMax-M2.7'},false));
 
     render(
       <ModelSelector
