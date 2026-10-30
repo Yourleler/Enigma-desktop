@@ -91,112 +91,34 @@ describe("web auth route", () => {
     });
   });
 
-  it("allows local account password login only over local or secure transport", async () => {
-    tmpDir = makeTmpDir();
-    const { setLocalAccountPassword } = await import("../core/local-user-account.ts");
-    const { createServerAuthService } = await import("../core/server-auth.ts");
-    const { createWebAuthRoute } = await import("../server/routes/web-auth.ts");
-    fs.writeFileSync(path.join(tmpDir, "users.json"), JSON.stringify({
-      schemaVersion: 1,
-      defaultUserId: "user_local",
-      users: [{
-        userId: "user_local",
-        kind: "legacy_owner",
-        username: "hana-owner",
-        displayName: "Hana Owner",
-        createdAt: "2026-05-16T00:00:00.000Z",
-        updatedAt: "2026-05-16T00:00:00.000Z",
-      }],
-      createdAt: "2026-05-16T00:00:00.000Z",
-      updatedAt: "2026-05-16T00:00:00.000Z",
-    }), "utf-8");
-    setLocalAccountPassword(tmpDir, {
-      password: "correct horse battery staple",
-      now: "2026-05-16T00:00:00.000Z",
-    });
-    const authService = createServerAuthService({
-      hanakoHome: tmpDir,
-      loopbackToken: "local-secret",
-      runtimeContext,
-    });
-    const app = new Hono();
-    let connectionKind = "lan";
-    app.route("/api", createWebAuthRoute({
-      hanakoHome: tmpDir,
-      authService,
-      getConnectionKind: () => connectionKind,
-      getRuntimeContext: runtimeContext,
-      secureCookies: false,
-      now: () => "2026-05-16T00:00:01.000Z",
-    }));
+  it("does not accept the removed password login", async () => {
+    tmpDir=makeTmpDir();
+    const {createServerAuthService}=await import('../core/server-auth');
+    const {createWebAuthRoute}=await import('../server/routes/web-auth');
+    const app=new Hono();app.route('/api',createWebAuthRoute({hanakoHome:tmpDir,authService:createServerAuthService({hanakoHome:tmpDir,loopbackToken:'local-secret',runtimeContext}),getConnectionKind:()=> 'local'}));
+    const response=await app.request('http://localhost/api/web-auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:'owner',password:'not-used'})});
+    expect(response.status).toBe(400);expect(await response.json()).toMatchObject({error:'password_login_removed'});
+  });
 
-    const insecure = await app.request("/api/web-auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: "hana-owner", password: "correct horse battery staple" }),
-    });
-    expect(insecure.status).toBe(400);
-    expect(await insecure.json()).toMatchObject({ error: "password_login_requires_secure_context" });
-
-    const spoofedHeader = await app.request("/api/web-auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Forwarded-Proto": "https" },
-      body: JSON.stringify({ username: "hana-owner", password: "correct horse battery staple" }),
-    });
-    expect(spoofedHeader.status).toBe(400);
-
-    const secure = await app.request("https://hana.example.test/api/web-auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: "hana-owner", password: "correct horse battery staple" }),
-    });
-    expect(secure.status).toBe(200);
-    expect(secure.headers.get("set-cookie")).toContain("hana_session=");
-    expect(await secure.json()).toMatchObject({
-      principal: {
-        kind: "account_user",
-        credentialKind: "user_session",
-        userId: "user_local",
-        scopes: ["chat", "resources.read", "files.read", "files.write"],
-      },
-    });
-
-    const desktop = await app.request("https://hana.example.test/api/web-auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        username: "hana-owner",
-        password: "correct horse battery staple",
-        clientKind: "desktop",
-      }),
-    });
-    expect(desktop.status).toBe(200);
-    expect(await desktop.json()).toMatchObject({
-      principal: {
-        kind: "account_user",
-        credentialKind: "user_session",
-        userId: "user_local",
-        scopes: [
-          "chat",
-          "resources.read",
-          "files.read",
-          "files.write",
-          "studio.owner",
-          "settings.read",
-          "settings.write",
-          "providers.manage",
-          "secrets.write",
-          "bridge.manage",
-        ],
-      },
-    });
-
-    connectionKind = "local";
-    const local = await app.request("/api/web-auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: "hana-owner", password: "correct horse battery staple" }),
-    });
-    expect(local.status).toBe(200);
+  it("opens the local browser without exposing a token and rejects remote, cross-origin and missing-proof requests",async()=>{
+    tmpDir=makeTmpDir();
+    const {createServerAuthService}=await import('../core/server-auth');
+    const {createWebAuthRoute}=await import('../server/routes/web-auth');
+    let connectionKind='local';
+    const authService=createServerAuthService({hanakoHome:tmpDir,loopbackToken:'local-secret',runtimeContext});
+    const app=new Hono();app.route('/api',createWebAuthRoute({hanakoHome:tmpDir,authService,getConnectionKind:()=>connectionKind}));
+    const url='http://127.0.0.1:3000/api/web-auth/local-session';
+    const headers={'Origin':'http://127.0.0.1:3000','Sec-Fetch-Site':'same-origin','X-Enigma-Local-Open':'1'};
+    const env={incoming:{socket:{remoteAddress:'127.0.0.1'}}};
+    const opened=await app.request(url,{method:'POST',headers},env);
+    expect(opened.status).toBe(200);const cookie=opened.headers.get('set-cookie')!;
+    expect(cookie).toContain('HttpOnly');expect(cookie).toContain('SameSite=Strict');expect(await opened.text()).not.toContain('local-secret');
+    const principal=authService.authenticateRequest({cookieHeader:cookie,connectionKind:'local'});expect(principal?.kind).toBe('local_user');
+    expect(authService.authenticateRequest({cookieHeader:cookie,connectionKind:'lan'})).toBeNull();
+    const hostile=[{...headers,Origin:'https://example.com'},{...headers,Origin:'null'},{...headers,'Sec-Fetch-Site':'cross-site'},{...headers,'X-Enigma-Local-Open':''},{...headers,Origin:'http://127.0.0.1:3001'}];
+    for(const bad of hostile)expect((await app.request(url,{method:'POST',headers:bad},env)).status).toBe(403);
+    expect((await app.request(url,{method:'POST',headers})).status).toBe(403);
+    expect((await app.request(url,{method:'POST',headers},{incoming:{socket:{remoteAddress:'192.168.1.2'}}})).status).toBe(403);
+    connectionKind='lan';expect((await app.request(url,{method:'POST',headers},env)).status).toBe(403);
   });
 });

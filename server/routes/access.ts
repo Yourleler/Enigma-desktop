@@ -7,9 +7,7 @@ import {
   saveServerNetworkConfig,
 } from "../../core/server-network-config.ts";
 import {
-  clearLocalAccountPassword,
   getLocalAccountSummary,
-  setLocalAccountPassword,
   updateLocalAccountProfile,
 } from "../../core/local-user-account.ts";
 import { readAuthPrincipal } from "../http/capability-guard.ts";
@@ -174,41 +172,6 @@ export function createAccessRoute({
       } as any);
       recordSecurityAuditEvent(c, engine, {
         action: "access.account.profile.update",
-        target: account.userId,
-      } as any);
-      return c.json({ ok: true, account });
-    } catch (err) {
-      return c.json({ error: err.message }, 400);
-    }
-  });
-
-  route.put("/access/account/password", async (c) => {
-    const denied = requireLocalOwner(c);
-    if (denied) return denied;
-    try {
-      const body = await safeJson(c);
-      const account = setLocalAccountPassword(engine.hanakoHome, {
-        password: body?.password,
-        now: now(),
-      } as any);
-      recordSecurityAuditEvent(c, engine, {
-        action: "access.account.password.update",
-        target: account.userId,
-        secretFields: ["password"],
-      } as any);
-      return c.json({ ok: true, account });
-    } catch (err) {
-      return c.json({ error: err.message }, 400);
-    }
-  });
-
-  route.delete("/access/account/password", async (c) => {
-    const denied = requireLocalOwner(c);
-    if (denied) return denied;
-    try {
-      const account = clearLocalAccountPassword(engine.hanakoHome, { now: now() });
-      recordSecurityAuditEvent(c, engine, {
-        action: "access.account.password.clear",
         target: account.userId,
       } as any);
       return c.json({ ok: true, account });

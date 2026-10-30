@@ -94,7 +94,6 @@ export function AccessTab() {
   const [loadingSummary, setLoadingSummary] = useState(true);
   const [savingNetwork, setSavingNetwork] = useState(false);
   const [accountDraft, setAccountDraft] = useState({ username: '', displayName: '' });
-  const [passwordDraft, setPasswordDraft] = useState('');
 
   useEffect(() => {
     if (!snapshotAccess) return;
@@ -315,34 +314,6 @@ export function AccessTab() {
       showToast(`${t('settings.saveFailed')}: ${err.message}`, 'error');
     }
   }, [accountDraft, showToast]);
-
-  const savePassword = useCallback(async () => {
-    try {
-      const res = await hanaFetch('/api/access/account/password', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: passwordDraft }),
-      });
-      const data = await res.json();
-      setSummary(prev => prev ? { ...prev, account: data.account } : prev);
-      setPasswordDraft('');
-      showToast(t('settings.access.passwordSaved'), 'success');
-    } catch (err: any) {
-      showToast(`${t('settings.saveFailed')}: ${err.message}`, 'error');
-    }
-  }, [passwordDraft, showToast]);
-
-  const clearPassword = useCallback(async () => {
-    try {
-      const res = await hanaFetch('/api/access/account/password', { method: 'DELETE' });
-      const data = await res.json();
-      setSummary(prev => prev ? { ...prev, account: data.account } : prev);
-      setPasswordDraft('');
-      showToast(t('settings.access.passwordCleared'), 'success');
-    } catch (err: any) {
-      showToast(`${t('settings.saveFailed')}: ${err.message}`, 'error');
-    }
-  }, [showToast]);
 
   const revokeDevice = useCallback(async (deviceId: string) => {
     try {
@@ -695,35 +666,7 @@ export function AccessTab() {
         </SettingsSection.Footer>
       </SettingsSection>
 
-      <SettingsSection title={t('settings.access.password')}>
-        <SettingsRow
-          label={summary?.account.passwordSet ? t('settings.access.passwordSet') : t('settings.access.passwordNotSet')}
-          hint={t('settings.access.passwordHint')}
-          layout="stacked"
-          control={
-            <label className={styles['access-field']}>
-              <span>{t('settings.access.newPassword')}</span>
-              <input
-                aria-label={t('settings.access.newPassword')}
-                className={styles['settings-input']}
-                type="password"
-                value={passwordDraft}
-                onChange={(event) => setPasswordDraft(event.target.value)}
-              />
-            </label>
-          }
-        />
-        <SettingsSection.Footer>
-          {summary?.account.passwordSet && (
-            <button className={styles['settings-btn-secondary']} type="button" onClick={clearPassword}>
-              {t('settings.access.clearPassword')}
-            </button>
-          )}
-          <button className={styles['settings-btn-primary']} type="button" onClick={savePassword} disabled={!passwordDraft}>
-            {t('settings.access.savePassword')}
-          </button>
-        </SettingsSection.Footer>
-      </SettingsSection>
+
     </div>
   );
 }

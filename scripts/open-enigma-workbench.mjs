@@ -15,7 +15,7 @@ const check = await fetch(base + '/api/server/identity', {
   headers: { Authorization: `Bearer ${info.token}` }, signal: AbortSignal.timeout(5000),
 });
 if (!check.ok) throw new Error('工作台尚未就绪或登录已过期，请重启 npm run enigma:web。');
-const url = base + '/desktop/#enigma-local-key=' + encodeURIComponent(info.token);
+const url = base + '/desktop/';
 const command = process.platform === 'darwin' ? ['open', url]
   : process.platform === 'win32' ? ['explorer.exe', url] : ['xdg-open', url];
 await new Promise((resolve, reject) => {

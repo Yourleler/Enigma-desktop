@@ -165,6 +165,7 @@ function buildHtmlPreviewCsp(assetBaseUrl = null) {
   }
 
   return [
+    "sandbox allow-scripts allow-downloads allow-popups allow-modals",
     "default-src 'none'",
     `base-uri ${baseSources.join(" ")}`,
     "form-action 'none'",

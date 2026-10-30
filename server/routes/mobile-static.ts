@@ -124,6 +124,11 @@ function serveWebClientFile(c, distDir, requestPath, entryFile) {
   const stat = fs.statSync(safePath);
   if (!stat.isFile()) return c.body(null, 404);
   c.header("Content-Type", guessMime(safePath));
+  if(relative===entryFile){
+    c.header('Content-Security-Policy',"frame-ancestors 'none'");
+    c.header('X-Frame-Options','DENY');
+    c.header('Referrer-Policy','same-origin');
+  }
   // Only content-hashed chunks and versioned viewer directories are immutable.
   // Theme scripts, language packs, icons and the service worker keep stable
   // URLs across upgrades and must revalidate instead of retaining year-old UI.

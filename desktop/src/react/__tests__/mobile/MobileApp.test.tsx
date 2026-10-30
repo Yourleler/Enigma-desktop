@@ -153,50 +153,25 @@ describe('MobileApp', () => {
     vi.restoreAllMocks();
   });
 
-  it('loads locale before showing the access-key login when no browser session exists', async () => {
-    fetchMock.mockResolvedValueOnce(jsonResponse({ authenticated: false, principal: null }));
-
-    render(<MobileApp />);
-
-    expect(await screen.findByText('手机访问 Hana')).toBeInTheDocument();
-    expect(window.i18n.load).toHaveBeenCalledWith('zh-CN');
-    expect(screen.getByLabelText('访问密钥')).toBeInTheDocument();
-    expect(screen.queryByText('mobile.auth.title')).not.toBeInTheDocument();
+  it('shows a retry action instead of credentials when the local service cannot initialize', async () => {
+    fetchMock.mockImplementation(async(input:RequestInfo|URL)=>String(input).includes('/api/web-auth/session')?jsonResponse({authenticated:false,principal:null}):{...jsonResponse({error:'offline'}),ok:false,status:503,statusText:'Unavailable'});
+    render(<MobileApp/>);
+    expect(await screen.findByText('连接本机工作台')).toBeInTheDocument();
+    expect(screen.getByRole('button',{name:'重新连接'})).toBeInTheDocument();
+    expect(screen.queryByLabelText('密码')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('访问密钥')).not.toBeInTheDocument();
   });
 
-  it('can submit a username and password login without sending a device credential', async () => {
-    let sessionCalls = 0;
-    fetchMock.mockImplementation((input: RequestInfo | URL, options?: RequestInit) => {
-      const url = String(input);
-      if (url.includes('/api/web-auth/session')) {
-        sessionCalls += 1;
-        return Promise.resolve(jsonResponse(sessionCalls === 1
-          ? { authenticated: false, principal: null }
-          : { authenticated: true, principal: principal(['chat', 'resources.read', 'files.read', 'files.write'], 'password') }));
-      }
-      if (url.includes('/api/web-auth/login')) return Promise.resolve(jsonResponse({ ok: true }));
-      return Promise.resolve(jsonResponse(jsonResponseForMobile(url, options)));
+  it('opens a fresh local browser session automatically without asking for a credential', async () => {
+    let opened=false;
+    fetchMock.mockImplementation(async(input:RequestInfo|URL,options?:RequestInit)=>{
+      const url=String(input);
+      if(url.includes('/api/web-auth/local-session')){opened=true;expect(new Headers(options?.headers).get('X-Enigma-Local-Open')).toBe('1');return jsonResponse({ok:true});}
+      if(url.includes('/api/web-auth/session'))return jsonResponse(opened?{authenticated:true,principal:principal(['chat','resources.read','files.read','files.write'])}:{authenticated:false,principal:null});
+      return jsonResponse(jsonResponseForMobile(url,options));
     });
-
-    render(<MobileApp />);
-
-    fireEvent.click(await screen.findByRole('tab', { name: '用户名密码' }));
-    fireEvent.change(screen.getByLabelText('用户名'), { target: { value: 'hana-owner' } });
-    fireEvent.change(screen.getByLabelText('密码'), { target: { value: 'secret-password' } });
-    fireEvent.click(screen.getByRole('button', { name: '登录' }));
-
-    await waitFor(() => {
-      const loginCall = fetchMock.mock.calls.find(([input]) => String(input).includes('/api/web-auth/login'));
-      expect(loginCall).toBeTruthy();
-      const body = JSON.parse(String(loginCall?.[1]?.body));
-      expect(body).toEqual({ username: 'hana-owner', password: 'secret-password' });
-      expect(body).not.toHaveProperty('credential');
-    });
-
-    // 等登录后的整条 bootstrap 链在本用例内跑完：login() → bootstrap() →
-    // initializeMobileRuntime() → connectWebSocket() 无人 await，不等到 shell
-    // 就绪就结束用例，会把 setState / fetch / WS onopen 泄漏给后续用例。
-    await waitForMobileChatReady();
+    render(<MobileApp/>);await waitForMobileChatReady();
+    expect(opened).toBe(true);expect(screen.queryByLabelText('密码')).not.toBeInTheDocument();
   });
 
   it('returns stale browser sessions without file scopes to login', async () => {
@@ -213,8 +188,8 @@ describe('MobileApp', () => {
 
     render(<MobileApp />);
 
-    expect(await screen.findByText('手机访问 Hana')).toBeInTheDocument();
-    expect(screen.getByText('当前登录缺少工作台权限，请重新输入访问密钥。')).toBeInTheDocument();
+    expect(await screen.findByText('连接本机工作台')).toBeInTheDocument();
+    expect(screen.queryByLabelText('密码')).not.toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith('/api/web-auth/logout', expect.objectContaining({
       method: 'POST',
     }));
@@ -234,8 +209,8 @@ describe('MobileApp', () => {
 
     render(<MobileApp />);
 
-    expect(await screen.findByText('手机访问 Hana')).toBeInTheDocument();
-    expect(screen.getByText('当前登录缺少工作台权限，请重新输入访问密钥。')).toBeInTheDocument();
+    expect(await screen.findByText('连接本机工作台')).toBeInTheDocument();
+    expect(screen.queryByLabelText('密码')).not.toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith('/api/web-auth/logout', expect.objectContaining({
       method: 'POST',
     }));

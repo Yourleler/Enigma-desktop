@@ -307,6 +307,7 @@ function isWebClientStaticRoute(routePath, prefix) {
 
 function isWebAuthBootstrapRoute(verb, routePath) {
   if (routePath === "/api/web-auth/login") return verb === "POST";
+  if (routePath === "/api/web-auth/local-session") return verb === "POST";
   if (routePath === "/api/web-auth/session") return verb === "GET";
   if (routePath === "/api/web-auth/logout") return verb === "POST";
   return false;

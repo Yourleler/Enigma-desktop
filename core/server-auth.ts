@@ -43,6 +43,7 @@ export function createServerAuthService({
     const parsed = parseCredential({ authorization, queryToken, allowQueryToken, connectionKind });
     if (!parsed) {
       const webPrincipal = authenticateWebSession(hanakoHome, cookieHeader, { now });
+      if(webPrincipal?.authMethod==='password')return denyAuth('password_login_removed',{connectionKind});
       if (!webPrincipal) {
         return denyAuth("missing_credential", { connectionKind });
       }
@@ -100,6 +101,7 @@ export function createServerAuthService({
     authenticateRequest,
     authenticateRequestDetailed,
     authenticateToken,
+    createLocalBrowserPrincipal: () => createLocalPrincipal(resolveRuntimeContext()),
   });
 }
 

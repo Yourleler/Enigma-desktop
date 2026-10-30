@@ -300,7 +300,7 @@ describe("access route", () => {
     expect(JSON.stringify(data)).not.toContain("secretHash");
   });
 
-  it("updates the local account profile and password through owner-only routes", async () => {
+  it("updates the profile while the removed password route stays unavailable", async () => {
     tmpDir = makeTmpDir();
     writeIdentity(tmpDir);
     const app = await makeApp(tmpDir);
@@ -324,15 +324,6 @@ describe("access route", () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ password: "correct horse battery staple" }),
     });
-    expect(password.status).toBe(200);
-    expect(await password.json()).toMatchObject({
-      account: {
-        username: "hana-owner",
-        displayName: "Hana Owner",
-        passwordSet: true,
-      },
-    });
-    expect(fs.readFileSync(path.join(tmpDir, "local-user-auth.json"), "utf-8"))
-      .not.toContain("correct horse battery staple");
+    expect(password.status).toBe(404);
   });
 });

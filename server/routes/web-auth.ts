@@ -1,12 +1,11 @@
 import { Hono } from "hono";
 import { safeJson } from "../hono-helpers.ts";
-import { verifyLocalAccountPassword } from "../../core/local-user-account.ts";
+import {isLocalBrowserSessionRequest} from '../http/local-browser-session.ts';
 import {
   WEB_SESSION_COOKIE_NAME,
   createWebSession,
   revokeWebSession,
 } from "../../core/web-session-store.ts";
-import { normalizeAccessProfile, scopesForAccessProfile } from "../../shared/access-scope-profiles.ts";
 
 const DEFAULT_SESSION_TTL_MS = 14 * 24 * 60 * 60 * 1000;
 
@@ -29,6 +28,16 @@ export function createWebAuthRoute({
   if (!authService) throw new Error("authService required");
   const route = new Hono();
 
+  route.post('/web-auth/local-session',c=>{
+    const connectionKind=resolveConnectionKind(c,getConnectionKind);
+    if(!isLocalBrowserSessionRequest({url:c.req.url,origin:c.req.header('origin'),fetchSite:c.req.header('sec-fetch-site'),marker:c.req.header('x-enigma-local-open'),remoteAddress:(c.env as any)?.incoming?.socket?.remoteAddress,connectionKind}))return c.json({error:'local_browser_required'},403);
+    const principal=authService.createLocalBrowserPrincipal();
+    const issued=createWebSession(hanakoHome,{principal,userAgent:c.req.header('user-agent'),now:now(),ttlMs:DEFAULT_SESSION_TTL_MS});
+    c.header('Cache-Control','no-store');
+    c.header('Set-Cookie',createSessionCookie(issued.secret,{maxAgeSeconds:Math.floor(DEFAULT_SESSION_TTL_MS/1000),secure:secureCookies===true}));
+    return c.json({ok:true,principal:sanitizePrincipal(principal)});
+  });
+
   route.post("/web-auth/login", async (c) => {
     const body = await safeJson(c);
     const credential = typeof body.credential === "string"
@@ -41,12 +50,7 @@ export function createWebAuthRoute({
         connectionKind,
         now: now(),
       })
-      : authenticatePasswordLogin(c, {
-        hanakoHome,
-        body,
-        connectionKind,
-        getRuntimeContext,
-      });
+      : {error:body?.password||body?.username?'password_login_removed':'credential_required',status:400};
     if (principal?.error) return c.json({ error: principal.error }, principal.status || 400);
     if (!principal) return c.json({ error: "forbidden" }, 403);
 
@@ -90,46 +94,6 @@ export function createWebAuthRoute({
   });
 
   return route;
-}
-
-function authenticatePasswordLogin(c, {
-  hanakoHome,
-  body,
-  connectionKind,
-  getRuntimeContext,
-}) {
-  const username = typeof body?.username === "string" ? body.username : "";
-  const password = typeof body?.password === "string" ? body.password : "";
-  if (!username && !password) return { error: "credential_required", status: 400 };
-  if (!username || !password) return null;
-  if (connectionKind !== "local" && !isSecureRequest(c)) {
-    return { error: "password_login_requires_secure_context", status: 400 };
-  }
-  const verified = verifyLocalAccountPassword(hanakoHome, { username, password });
-  if (!verified.ok) return null;
-  const runtimeContext = typeof getRuntimeContext === "function" ? getRuntimeContext() : {};
-  return {
-    kind: "account_user",
-    credentialKind: "user_session",
-    authMethod: "password",
-    connectionKind,
-    trustState: connectionKind === "custom_remote" ? "tunnel" : connectionKind,
-    serverId: runtimeContext?.serverId ?? null,
-    serverNodeId: runtimeContext?.serverNodeId ?? runtimeContext?.serverId ?? null,
-    userId: verified.userId,
-    studioId: runtimeContext?.studioId ?? null,
-    platformAccountId: runtimeContext?.platformAccountId ?? null,
-    officialServiceKind: runtimeContext?.officialServiceKind ?? null,
-    scopes: scopesForAccessProfile(normalizeAccessProfile(body?.clientKind, "mobile")),
-  };
-}
-
-function isSecureRequest(c) {
-  try {
-    return new URL(c.req.url).protocol === "https:";
-  } catch {
-    return false;
-  }
 }
 
 function resolveConnectionKind(c, getConnectionKind) {

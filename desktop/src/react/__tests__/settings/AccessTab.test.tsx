@@ -453,7 +453,7 @@ describe('AccessTab', () => {
     expect(window.hana.reloadMainWindow).toHaveBeenCalledTimes(1);
   });
 
-  it('saves the local owner profile and password from the account section', async () => {
+  it('saves the local owner profile without a password section', async () => {
     const { AccessTab } = await import('../../settings/tabs/AccessTab');
 
     render(<AccessTab />);
@@ -473,17 +473,7 @@ describe('AccessTab', () => {
       }));
     });
 
-    fireEvent.change(screen.getByLabelText('settings.access.newPassword'), {
-      target: { value: 'correct horse battery staple' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'settings.access.savePassword' }));
-
-    await waitFor(() => {
-      expect(mockHanaFetch).toHaveBeenCalledWith('/api/access/account/password', expect.objectContaining({
-        method: 'PUT',
-        body: JSON.stringify({ password: 'correct horse battery staple' }),
-      }));
-    });
+    expect(screen.queryByLabelText('settings.access.newPassword')).not.toBeInTheDocument();
   });
 
   it('revokes individual credentials without requiring whole-device revocation', async () => {
@@ -506,30 +496,11 @@ describe('AccessTab', () => {
     });
   });
 
-  it('clears the local password from the password section', async () => {
-    mockHanaFetch.mockImplementation((url: string, options?: RequestInit) => {
-      if (url === '/api/access/summary') {
-        return Promise.resolve(jsonResponse({
-          ...baseSummary,
-          account: { ...baseSummary.account, passwordSet: true },
-        }));
-      }
-      if (url === '/api/access/account/password' && options?.method === 'DELETE') {
-        return Promise.resolve(jsonResponse({
-          ok: true,
-          account: { ...baseSummary.account, passwordSet: false },
-        }));
-      }
-      throw new Error(`unexpected request: ${url}`);
-    });
-    const { AccessTab } = await import('../../settings/tabs/AccessTab');
-
-    render(<AccessTab />);
-
-    fireEvent.click(await screen.findByRole('button', { name: 'settings.access.clearPassword' }));
-
-    await waitFor(() => {
-      expect(mockHanaFetch).toHaveBeenCalledWith('/api/access/account/password', { method: 'DELETE' });
-    });
+  it('does not show password management for an older profile with a stored password',async()=>{
+    mockHanaFetch.mockResolvedValue(jsonResponse({...baseSummary,account:{...baseSummary.account,passwordSet:true}}));
+    const {AccessTab}=await import('../../settings/tabs/AccessTab');render(<AccessTab/>);
+    await screen.findByLabelText('settings.access.username');
+    expect(screen.queryByRole('button',{name:'settings.access.clearPassword'})).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('settings.access.newPassword')).not.toBeInTheDocument();
   });
 });

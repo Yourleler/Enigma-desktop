@@ -25,7 +25,6 @@ import {
 } from './mobile-init';
 
 type AuthState = 'checking' | 'login' | 'ready';
-type LoginMode = 'device' | 'password';
 const MOBILE_REQUIRED_SCOPES = Object.freeze(['chat', 'resources.read', 'files.read', 'files.write']);
 const MOBILE_EDGE_GESTURE_WIDTH = 28;
 const MOBILE_EDGE_GESTURE_MIN_DISTANCE = 56;
@@ -55,17 +54,18 @@ type MobileEdgeGesture = {
 export function MobileApp(): React.ReactElement {
   const [authState, setAuthState] = useState<AuthState>('checking');
   const [principal, setPrincipal] = useState<MobilePrincipal | null>(null);
-  const [loginMode, setLoginMode] = useState<LoginMode>('device');
   const [loginSecret, setLoginSecret] = useState('');
-  const [loginUsername, setLoginUsername] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState<string | null>(null);
   const [mobileUpdateAvailable, setMobileUpdateAvailable] = useState(() => window.__hanaMobileUpdateAvailable === true);
 
   const bootstrap = useCallback(async () => {
-    await exchangeLocalWorkbenchCredential();
+    try{await exchangeLocalWorkbenchCredential();}catch(error){if(!isLocalWorkbenchUrl())throw error;}
     await ensureMobileAuthLocale();
-    const session = await readMobileAuthSession();
+    let session = await readMobileAuthSession();
+    if ((!session.authenticated || !session.principal) && isLocalWorkbenchUrl()) {
+      await apiJson('/api/web-auth/local-session',{method:'POST',headers:{'X-Enigma-Local-Open':'1'}});
+      session=await readMobileAuthSession();
+    }
     if (!session.authenticated || !session.principal) {
       setAuthState('login');
       return;
@@ -111,15 +111,12 @@ export function MobileApp(): React.ReactElement {
     event.preventDefault();
     setLoginError(null);
     try {
-      const body = loginMode === 'device'
-        ? { credential: loginSecret.trim() }
-        : { username: loginUsername.trim(), password: loginPassword };
+      const body = { credential: loginSecret.trim() };
       await apiJson('/api/web-auth/login', {
         method: 'POST',
         body: JSON.stringify(body),
       });
       setLoginSecret('');
-      setLoginPassword('');
       await bootstrap();
     } catch (err) {
       setLoginError(err instanceof Error ? err.message : (window.t ?? ((p: string) => p))('mobile.auth.loginFailed'));
@@ -131,17 +128,12 @@ export function MobileApp(): React.ReactElement {
   }
 
   if (authState === 'login') {
+    if(isLocalWorkbenchUrl())return <main className="onboarding"><section className="onboarding-step active"><img className="onboarding-avatar" src={enigmaAvatar} alt=""/><h1 className="onboarding-title">连接本机工作台</h1><p className="onboarding-subtitle">本机服务暂时未连接，请确认 Enigma 已启动后重试。</p><button className="ob-btn ob-btn-primary" onClick={()=>{setAuthState('checking');void bootstrap().catch(()=>setAuthState('login'));}}>重新连接</button></section></main>;
     return (
       <MobileLoginScreen
-        mode={loginMode}
         secret={loginSecret}
-        username={loginUsername}
-        password={loginPassword}
         error={loginError}
-        onModeChange={(mode) => { setLoginMode(mode); setLoginError(null); }}
         onSecretChange={setLoginSecret}
-        onUsernameChange={setLoginUsername}
-        onPasswordChange={setLoginPassword}
         onSubmit={login}
       />
     );
@@ -416,78 +408,17 @@ function MobileLoadingScreen() {
   );
 }
 
-function MobileLoginScreen({
-  mode,
-  secret,
-  username,
-  password,
-  error,
-  onModeChange,
-  onSecretChange,
-  onUsernameChange,
-  onPasswordChange,
-  onSubmit,
-}: {
-  mode: LoginMode;
-  secret: string;
-  username: string;
-  password: string;
-  error: string | null;
-  onModeChange: (mode: LoginMode) => void;
-  onSecretChange: (value: string) => void;
-  onUsernameChange: (value: string) => void;
-  onPasswordChange: (value: string) => void;
-  onSubmit: (event: React.FormEvent) => void;
-}) {
-  const t = window.t ?? ((p: string) => p);
-  const loginDisabled = mode === 'device'
-    ? !secret.trim()
-    : !username.trim() || !password;
+function isLocalWorkbenchUrl(){return ['127.0.0.1','localhost','[::1]'].includes(window.location.hostname);}
 
-  return (
-    <main className="onboarding">
-      <form className="onboarding-step active" onSubmit={onSubmit}>
-        <img className="onboarding-avatar" src="./icon.png" alt="" />
-        <h1 className="onboarding-title">{window.location.pathname.startsWith('/desktop') ? '登录 Enigma 工作台' : t('mobile.auth.title')}</h1>
-        <p className="onboarding-subtitle">{mode === 'device'
-          ? window.location.pathname.startsWith('/desktop') ? '本机使用无需设置密码。在项目目录运行 npm run enigma:open 自动登录；其他设备使用已配对的访问密钥。' : t('mobile.auth.deviceHelp')
-          : t('mobile.auth.passwordHelp')}</p>
-
-        <div className="provider-grid" role="tablist" aria-label={t('mobile.auth.tabLabel')}>
-          <button type="button" role="tab" aria-selected={mode === 'device'} className={`provider-card${mode === 'device' ? ' selected' : ''}`} onClick={() => onModeChange('device')}>
-            {t('mobile.auth.deviceTab')}
-          </button>
-          <button type="button" role="tab" aria-selected={mode === 'password'} className={`provider-card${mode === 'password' ? ' selected' : ''}`} onClick={() => onModeChange('password')}>
-            {t('mobile.auth.passwordTab')}
-          </button>
-        </div>
-
-        {mode === 'device' ? (
-          <label className="custom-field">
-            <span className="ob-field-label">{t('mobile.auth.deviceField')}</span>
-            <input className="ob-input" value={secret} onChange={(event) => onSecretChange(event.target.value)} autoComplete="one-time-code" spellCheck={false} />
-          </label>
-        ) : (
-          <>
-            <label className="custom-field">
-              <span className="ob-field-label">{t('mobile.auth.usernameField')}</span>
-              <input className="ob-input" value={username} onChange={(event) => onUsernameChange(event.target.value)} autoComplete="username" spellCheck={false} />
-            </label>
-            <label className="custom-field">
-              <span className="ob-field-label">{t('mobile.auth.passwordField')}</span>
-              <input className="ob-input" value={password} onChange={(event) => onPasswordChange(event.target.value)} type="password" autoComplete="current-password" />
-            </label>
-            <p className="onboarding-subtitle">{t('mobile.auth.plaintextWarning')}</p>
-          </>
-        )}
-
-        {error && <div className="ob-status error">{error}</div>}
-        <div className="onboarding-actions">
-          <button className="ob-btn ob-btn-primary" type="submit" disabled={loginDisabled}>{t('mobile.auth.submit')}</button>
-        </div>
-      </form>
-    </main>
-  );
+function MobileLoginScreen({secret,error,onSecretChange,onSubmit}:{secret:string;error:string|null;onSecretChange:(value:string)=>void;onSubmit:(event:React.FormEvent)=>void}){
+  return <main className="onboarding"><form className="onboarding-step active" onSubmit={onSubmit}>
+    <img className="onboarding-avatar" src={enigmaAvatar} alt=""/>
+    <h1 className="onboarding-title">连接 Enigma</h1>
+    <p className="onboarding-subtitle">这是另一台电脑上的工作台。请使用该电脑在“访问与设备”中生成的配对密钥。</p>
+    <label className="custom-field"><span className="ob-field-label">配对密钥</span><input className="ob-input" value={secret} onChange={event=>onSecretChange(event.target.value)} autoComplete="one-time-code" spellCheck={false}/></label>
+    {error&&<div className="ob-status error" role="alert">{error}</div>}
+    <div className="onboarding-actions"><button className="ob-btn ob-btn-primary" type="submit" disabled={!secret.trim()}>连接工作台</button></div>
+  </form></main>;
 }
 
 function closeMobileDrawers() {

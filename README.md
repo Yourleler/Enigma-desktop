@@ -1,5 +1,7 @@
 # Enigma-desktop：完整目标、期望效果与交接现状
 
+**本机直接进入（2026-10-30）**：0.452.136 已删除工作台密码登录和密码设置，本机普通URL自动进入，远端继续配对。98项相关回归与实际Web操作通过，完整应用、服务与Web资源已安装为 **0.452.136**，普通本机URL直接进入已实测通过。[行为与验证](docs/local-workbench-without-password-2026-10-30.md)。
+
 **本轮交付（2026-10-30）**：0.452.135 补齐真实运行阶段与工具准备提示、平滑 token 数字、项目归属选择与实际注入模型请求的共享背景，以及正文内联图片/文件和重载后的顺序恢复。385项相关测试、另152项会话协调器回归及三套类型检查通过，Web与Mac原生已实操；完整应用、服务与Web资源已安装为 **0.452.135**；安装后10个受保护文件哈希一致。[实现与验收记录](docs/conversation-project-input-2026-10-30.md)。
 
 **此前项目与布局交付（2026-10-30）**：界面 **0.452.133**，宿主/服务 **0.452.127**。项目与布局修复已交付：侧栏常驻“项目 / 新建项目”，可系统选择代码文件夹并继承到项目新对话；空项目可见，项目内新对话按钮常驻可点。导航与工作台按空间让位，窄窗预览可返回对话，草稿和文件保留。原生与 Web 实操、相关回归及类型检查通过；安装前完整备份，8个受保护文件一致。见[项目验收](docs/project-entry-2026-10-30.md)、[布局验收](docs/responsive-workspace-layout-2026-10-30.md)。
@@ -97,7 +99,7 @@
 - 开发分支：`codex/engineering-migration`；已交付运行时基线：`3047b0a0`。
 - **当前实现已提交并推送；继续工作前仍应检查实际工作区，保留用户及其他 Agent 的后续修改。**
 - 私有仓库：[Yourleler/Enigma-desktop](https://github.com/Yourleler/Enigma-desktop)。[草稿 PR #1](https://github.com/Yourleler/Enigma-desktop/pull/1)未合并；最新功能在开发分支，当前状态以 Git 记录为准。
-- 底层使用 **Pi 1.4.0**；桌面/Web 宿主来自 OpenHanako/Hana **0.450.0** 基线，当前 Enigma 外壳/服务与已安装界面资源 **0.452.135**。Pi、外壳与界面资源版本分别记录。
+- 底层使用 **Pi 1.4.0**；桌面/Web 宿主来自 OpenHanako/Hana **0.450.0** 基线，当前 Enigma 外壳/服务与已安装界面资源 **0.452.136**。Pi、外壳与界面资源版本分别记录。
 - 工程领域模块：`packages/enigma-engineering`；Pi 扩展/宿主适配：`plugins/enigma`；界面：`desktop/src/react/engineering`。
 - 原 [Enigma](https://github.com/Yourleler/Enigma) 为 Python 历史版，[Enigma-next](https://github.com/Yourleler/Enigma-next) 为此前的 Pi 工程版；两者均保留，当前任务不修改旧仓库。
 
@@ -373,7 +375,7 @@ npm run enigma:web
 npm run enigma:open
 ```
 
-开发数据默认 `~/.enigma-desktop-dev`，`ENIGMA_DESKTOP_DATA`可指定隔离目录。`node scripts/launch-enigma.mjs server --models /path/to/models.json`显式导入兼容配置。本机登录自动换HttpOnly cookie，不在聊天发密码/密钥；远端仍走配对。
+开发数据默认 `~/.enigma-desktop-dev`，`ENIGMA_DESKTOP_DATA`可指定隔离目录。`node scripts/launch-enigma.mjs server --models /path/to/models.json`显式导入兼容配置。本机工作台URL直接进入，自动建立HttpOnly会话；远端走配对。
 
 `npm run enigma:release-check`检查发行身份，`npm run enigma:pack`本地打包。本次测试密钥在仓库外 `~/.enigma-local-build-keys/`，仅本地验证，不提交/贴聊天/当生产密钥。签名校验不能绕过。
 
