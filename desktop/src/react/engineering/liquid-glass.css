@@ -18,7 +18,8 @@ body.enigma-surface {
   --eg-shadow: 0 14px 40px rgb(64 39 99 / 11%);
   --eg-scrim: rgb(65 39 98 / 14%);
   --accent-rgb: 113,73,190;
-  --glass-fill: rgb(255 255 255 / 5%);
+  --glass-clear-fill: rgb(255 255 255 / 5%);
+  --glass-fill: var(--glass-clear-fill);
   --glass-overlay: rgb(255 255 255 / 18%);
   --glass-edge: rgb(255 255 255 / 96%);
   --glass-edge-low: rgb(91 85 117 / 20%);
@@ -50,7 +51,8 @@ body.enigma-surface[data-enigma-tone="dark"] {
   --eg-stroke: rgb(179 212 227 / 13%);
   --eg-stroke-strong: rgb(180 220 228 / 27%);
   --accent-rgb: 141,219,197;
-  --glass-fill: rgb(12 18 27 / 10%);
+  --glass-clear-fill: rgb(12 18 27 / 10%);
+  --glass-fill: var(--glass-clear-fill);
   --glass-overlay: rgb(213 241 244 / 5%);
   --glass-edge: rgb(234 253 255 / 73%);
   --glass-edge-low: rgb(173 186 210 / 18%);
@@ -196,6 +198,15 @@ body.enigma-surface [data-liquid="sidebar"] {
 body.enigma-surface :is(.enigma-toolbar,[data-liquid="composer"]) {
   --glass-fill: color-mix(in srgb,var(--eg-card) var(--glass-control-mix,14%),transparent);
   --glass-blur: var(--glass-control-blur,1.5px);
+}
+/* The live usage pill is a control too. Give it the slider's fill/blur,
+   without changing the transparent endpoint or filtering its text. */
+body.enigma-surface [data-liquid="control"] {
+  --glass-fill: color-mix(in srgb,var(--eg-card) var(--glass-control-cover,10%),var(--glass-clear-fill));
+  --glass-blur: var(--glass-control-blur,1.5px);
+}
+body.enigma-surface :is([data-liquid="control"],.enigma-token-popover)[data-liquid-surface]::after {
+  opacity: var(--glass-control-edge-opacity,1);
 }
 /* More specific than the opaque base input-wrapper rule, independent of CSS
    chunk load order. The slider controls the real composer backdrop and fill. */

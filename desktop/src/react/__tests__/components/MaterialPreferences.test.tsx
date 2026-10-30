@@ -10,3 +10,16 @@ it('extends only the dense end while retaining the original strongest glass and 
  act(()=>saveMaterialPreferences({glass:true,motion:true,tint:50}));expect(document.body.style.getPropertyValue('--glass-composer-mix')).toBe('38%');
  act(()=>saveMaterialPreferences({glass:true,motion:true,tint:100}));expect(document.body.style.getPropertyValue('--glass-composer-mix')).toBe('98%');expect(document.body.style.getPropertyValue('--glass-navigation-mix')).toBe('98%');
 });
+
+it('covers small controls at the dense end while preserving their clear endpoint',()=>{
+ act(()=>saveMaterialPreferences({glass:true,motion:true,tint:0}));
+ expect(document.body.style.getPropertyValue('--glass-control-cover')).toBe('0%');
+ expect(document.body.style.getPropertyValue('--glass-control-edge-opacity')).toBe('1');
+ act(()=>saveMaterialPreferences({glass:true,motion:true,tint:50}));
+ expect(document.body.style.getPropertyValue('--glass-control-cover')).toBe('10%');
+ expect(document.body.style.getPropertyValue('--glass-control-edge-opacity')).toBe('1');
+ act(()=>saveMaterialPreferences({glass:true,motion:true,tint:100}));
+ expect(document.body.style.getPropertyValue('--glass-control-cover')).toBe('96%');
+ expect(Number(document.body.style.getPropertyValue('--glass-control-edge-opacity'))).toBeCloseTo(.14);
+ expect(document.body.style.getPropertyValue('--glass-control-blur')).toBe('20.5px');
+});

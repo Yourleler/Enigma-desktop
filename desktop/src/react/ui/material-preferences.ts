@@ -14,6 +14,10 @@ export function applyMaterialPreferences(value:MaterialPreferences){
  document.body.dataset.lightBackground=value.lightBackground??'ribbon';
  document.body.style.setProperty('--glass-navigation-mix',`${15+tint*.4+43*dense}%`);
  document.body.style.setProperty('--glass-control-mix',`${4+tint*.2+72*dense}%`);
+ // Small controls retain their original clear material at zero, then gain
+ // the same dense cover as the composer instead of staying fully refractive.
+ document.body.style.setProperty('--glass-control-cover',`${tint*.2+76*dense}%`);
+ document.body.style.setProperty('--glass-control-edge-opacity',`${1-.86*dense}`);
  document.body.style.setProperty('--glass-navigation-blur',`${2+tint*.06+20*dense}px`);
  document.body.style.setProperty('--glass-control-blur',`${.5+tint*.02+18*dense}px`);
  document.body.style.setProperty('--glass-composer-mix',`${3+tint*.7+25*dense}%`);
