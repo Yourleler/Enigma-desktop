@@ -1,5 +1,6 @@
 import {InputQueue} from './input/InputQueue';
 import {ExpandedComposer} from './input/ExpandedComposer';
+import {inputHistoryEntries,inputHistoryDocument,moveInputHistory,inputHistoryDirection} from '../utils/input-history';
 import {isSubmittedDraft,withoutSubmittedFiles} from '../utils/submitted-composer';
 import {DraftSaveNotice} from './input/DraftSaveNotice';
 /**
@@ -25,6 +26,7 @@ import {
   continueDeletedAgentSession,
   ensureSession,
   loadSessions,
+  loadMoreMessages,
   upsertOptimisticSessionFirstMessage,
   type SessionRef,
 } from '../stores/session-actions';
@@ -263,6 +265,9 @@ interface SlashTriggerRange {
 interface InputKeyEvent {
   key: string;
   shiftKey: boolean;
+  metaKey?: boolean;
+  ctrlKey?: boolean;
+  altKey?: boolean;
   defaultPrevented?: boolean;
   isComposing?: boolean;
   preventDefault: () => void;
@@ -616,6 +621,12 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
   const clearDraft = useStore(s => s.clearDraft);
   // 草稿 key：session 内用 sessionPath（store 内解析为 sessionId）；首页 pending 态用保留键
   const draftKey = currentSessionPath ?? (pendingNewSession ? HOME_DRAFT_KEY : null);
+  const historyConnection = useStore(s => s.activeServerConnectionId);
+  const historyScope = JSON.stringify([historyConnection,draftKey]);
+  const historyCursor = useRef<{scope:string;id:string}|null>(null);
+  const [historyNotice,setHistoryNotice] = useState<{scope:string;text:string}|null>(null);
+  const sentInputs = useMemo(() => inputHistoryEntries(currentSessionItems), [currentSessionItems]);
+  const resetInputHistory = useCallback(() => { historyCursor.current=null; setHistoryNotice(null); }, []);
 
   const attachmentInsertionRef=useRef<ReturnType<typeof captureAttachmentInsertion>|null>(null);
   const attachmentScopeRef=useRef('');
@@ -666,6 +677,8 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
         class: styles['input-box'],
         id: 'inputBox',
         spellcheck: 'false',
+        'aria-label': '消息输入框',
+        'aria-description': 'Command或Ctrl加Z查看上一条输入，加Y查看下一条；暂存草稿在最新位置，修改历史输入会成为新草稿。',
       },
       handlePaste: (_view, event) => pasteHandlerRef.current(event),
       handleKeyDown: (_view, event) => keyDownHandlerRef.current(event),
@@ -1389,6 +1402,9 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
       // Tiptap also emits update for editable-state changes. These are not user
       // edits and must never persist an empty pre-hydration editor as deletion.
       if(event?.transaction?.docChanged === false)return;
+      // Browsing history is never a draft write. The first actual edit forks
+      // the selected input into the latest draft through the normal save path.
+      resetInputHistory();
       const editorJson = editor.getJSON();
       const { text } = serializeEditor(editorJson);
       setInputText(text);
@@ -1423,7 +1439,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
     };
     editor.on('update', handler);
     return () => { editor.off('update', handler); };
-  }, [editor, draftKey, setDraft, slashCommands]);
+  }, [editor, draftKey, setDraft, slashCommands, resetInputHistory]);
 
   // 切换 session / 回到首页 / 草稿 hydrate 完成时恢复草稿
   const draftsHydratedAt = useStore(s => s.draftsHydratedAt);
@@ -1435,6 +1451,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
   ));
   useLayoutEffect(() => {
     if (!editor || !draftKey) return;
+    resetInputHistory();
     const draft = draftText;
     const draftDocValue = draftDoc;
     const currentDoc = editor.getJSON();
@@ -1453,7 +1470,33 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
       // 文档已一致时仍回读一次，修复历史 emitUpdate:false 留下的镜像脱节
       syncComposerMirrorFromEditor(editor, setInputText);
     }
-  }, [editor, draftKey, draftText, draftDoc, draftsHydratedAt]);
+  }, [editor, draftKey, draftText, draftDoc, draftsHydratedAt, historyScope, resetInputHistory]);
+
+  const navigateInputHistory = useCallback((direction:-1|1) => {
+    if (!editor || !draftKey) return;
+    const selected = historyCursor.current?.scope === historyScope ? historyCursor.current.id : null;
+    const next = moveInputHistory(sentInputs,selected,direction);
+    if (direction === -1 && next === selected) {
+      const session = currentSessionPath ? sessionScopedValue(useStore.getState(),useStore.getState().chatSessions,currentSessionPath) : null;
+      if (session?.hasMore) {
+        if (!session.loadingMore) void loadMoreMessages(currentSessionPath!);
+        setHistoryNotice({scope:historyScope,text:'正在加载更早的输入，加载后可继续向前切换'});
+      } else setHistoryNotice({scope:historyScope,text:'已到最早的输入 · 向后可返回暂存草稿'});
+      return;
+    }
+    const entry = sentInputs.find(item => item.id === next);
+    historyCursor.current = entry ? {scope:historyScope,id:entry.id} : null;
+    // Leave the persisted draft untouched, including rich content and files.
+    const state = useStore.getState();
+    const doc = entry ? inputHistoryDocument(entry.message) : sessionScopedValue(state,state.draftDocs,draftKey)
+      || plainTextToEditorDocument(sessionScopedValue(state,state.drafts,draftKey) || '');
+    applyComposerDocument(editor,doc,setInputText);
+    editor.commands.focus('end');
+    setSlashMenuOpen(false); setFileMenuOpen(false);
+    setHistoryNotice({scope:historyScope,text:entry
+      ? `历史输入 ${sentInputs.indexOf(entry)+1}/${sentInputs.length} · 修改后保存为新草稿`
+      : '已回到最新草稿'});
+  },[editor,draftKey,historyScope,sentInputs,currentSessionPath]);
 
   useEffect(()=>{
     if(!editor||editor.isDestroyed||!editor.state?.selection||typeof editor.commands.insertContentAt!=='function'||inputLocked||!draftKey||!attachedFiles.length)return;
@@ -1752,6 +1795,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
     const clickedDoc = currentDoc ? { ...currentDoc } : null;
     const submittedDraftKey=clickedPendingDraftId?HOME_DRAFT_KEY:clickedSessionPath;
     const submittedDraft={text:rawText,doc:editorJson,storedDoc:submittedDraftKey?sessionScopedValue(clickState,clickState.draftDocs,submittedDraftKey):undefined};
+    const submittedHistory = historyCursor.current?.scope === historyScope ? historyCursor.current : null;
     const clickedUiContext = collectUiContext(clickState);
     const connectionIdentity=(state:typeof clickState)=>JSON.stringify([state.activeServerConnectionId,state.activeServerConnection?.serverId,state.activeServerConnection?.studioId,state.activeServerConnection?.userId]);
     const clickedConnection=connectionIdentity(clickState);
@@ -2105,9 +2149,12 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
       const currentDraft={text:sessionScopedValue(current,current.drafts,targetKey),doc:sessionScopedValue(current,current.draftDocs,targetKey)};
       const unchanged=isSubmittedDraft(currentDraft,submittedDraft);
       const liveUnchanged=ownsComposer&&JSON.stringify(editor.getJSON())===JSON.stringify(editorJson)&&(!currentDraft.doc||!submittedDraft.storedDoc||currentDraft.doc===submittedDraft.storedDoc);
-      if(unchanged||liveUnchanged){
+      if(!submittedHistory&&(unchanged||liveUnchanged)){
         clearDraft(targetKey);
         if(ownsComposer)editor.commands.clearContent();
+      }else if(submittedHistory&&ownsComposer&&historyCursor.current===submittedHistory&&JSON.stringify(editor.getJSON())===JSON.stringify(editorJson)){
+        resetInputHistory();
+        applyComposerDocument(editor,currentDraft.doc||plainTextToEditorDocument(currentDraft.text||''),setInputText);
       }
       if(ownsComposer){
         current.setAttachedFiles(withoutSubmittedFiles(current.attachedFiles,clickedAttachedFiles));
@@ -2122,7 +2169,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
     } catch(error){addToast(error instanceof Error?error.message:'消息未发送，输入已保留','error');} finally {
       setSending(false);
     }
-  }, [addToast, editor, inputLocked, attachedFiles, docContextAttached, connected, isStreaming, sending, currentDoc, clearDraft, setDocContextAttached, slashCommands, slashSelected, handleSlashSelect, supportsVision, currentModelInfo, loadVisionAuxiliaryConfig, modelSwitching, t]);
+  }, [historyScope, resetInputHistory, addToast, editor, inputLocked, attachedFiles, docContextAttached, connected, isStreaming, sending, currentDoc, clearDraft, setDocContextAttached, slashCommands, slashSelected, handleSlashSelect, supportsVision, currentModelInfo, loadVisionAuxiliaryConfig, modelSwitching, t]);
 
   const handleSend = useCallback(async () => {
     await submitEditorMessage('prompt');
@@ -2153,6 +2200,12 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
       return true;
     }
     if (e.defaultPrevented) return false;
+    const historyDirection = isComposing.current ? null : inputHistoryDirection(e);
+    if (historyDirection !== null) {
+      e.preventDefault();
+      navigateInputHistory(historyDirection);
+      return true;
+    }
     if(expandedComposer)return false;
     if (fileMenuOpen) {
       if ((e.key === 'ArrowRight' || e.key === 'ArrowLeft')) {
@@ -2209,6 +2262,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
     return false;
   }, [
     expandedComposer,
+    navigateInputHistory,
     dismissSlashMenu,
     editor,
     fileMentionBusy,
@@ -2230,6 +2284,11 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
 
   keyDownHandlerRef.current = handleEditorKeyDown as (event: KeyboardEvent) => boolean;
   beforeInputHandlerRef.current = (event: InputEvent): boolean => {
+    if (!inputLocked && !event.isComposing && !event.defaultPrevented && ['historyUndo','historyRedo'].includes(event.inputType)) {
+      event.preventDefault();
+      navigateInputHistory(event.inputType==='historyUndo'?-1:1);
+      return true;
+    }
     if (surface !== 'mobile') return false;
     if (event.defaultPrevented) return false;
     if (event.inputType !== 'insertParagraph') return false;
@@ -2319,6 +2378,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
       <InputQueue editor={editor}/>
       <TokenMeterPill />
       <DraftSaveNotice draftKey={draftKey ? (sessionScopedKey(useStore.getState(),draftKey)||draftKey) : null}/>
+      {historyNotice?.scope===historyScope&&<div className={styles['input-history-notice']} role="status"><span>{historyNotice.text}</span><button type="button" onClick={()=>navigateInputHistory(1)} data-tooltip="Command+Y 向后；Command+Z 向前。只切换输入，不发送消息">向后</button>{historyCursor.current&&<button type="button" onClick={()=>{historyCursor.current=null;navigateInputHistory(1);}}>返回草稿</button>}</div>}
       {pendingSessionSwitchPath&&<p role="status" className={styles['session-switch-hint']}>{locale?.startsWith('zh')?'正在打开目标对话，草稿就绪后即可输入…':'Opening the selected chat; input resumes when its draft is ready…'}</p>}
       <div className={styles['input-stack']}>
         {visibleSessionConfirmation && (

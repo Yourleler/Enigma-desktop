@@ -3,8 +3,9 @@ import '@testing-library/jest-dom/vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChatTimelineNavigator } from '../../components/chat/ChatTimelineNavigator';
-import { ConversationRail, sampleConversationAnchors } from '../../components/chat/ConversationRail';
+import { ConversationRail } from '../../components/chat/ConversationRail';
 import type { TimelineAnchor } from '../../components/chat/timeline-anchors';
+import { buildTimelineAnchors } from '../../components/chat/timeline-anchors';
 
 const anchors: TimelineAnchor[] = ['检查多仓库接口契约与消费方', '修复超时并补充验证说明'].map((text, i) => ({ messageId: `u${i}`, timestamp: null, label: text.slice(0, 10), preview: text, role: 'user', markerWidthEm: 1 }));
 function renderNavigator(active = true) {
@@ -84,11 +85,24 @@ describe('Conversation navigation', () => {
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.queryByRole('tooltip')).toBeNull();
   });
-  it('keeps endpoints and the current turn when sampling long conversations', () => {
+  it('keeps every loaded turn reachable in the scrollable rail', () => {
     const many = Array.from({ length: 500 }, (_, i) => ({ ...anchors[0], messageId: `m${i}` }));
-    const selected = sampleConversationAnchors(many, 'm247');
-    expect(selected.length).toBeLessThanOrEqual(64);
-    expect(selected[0].messageId).toBe('m0'); expect(selected.at(-1)?.messageId).toBe('m499');
-    expect(selected.some(a => a.messageId === 'm247')).toBe(true);
+    render(<ConversationRail anchors={many} activeId="m247" onJump={vi.fn()}/>);
+    expect(screen.getAllByRole('button',{name:/^第 \d+ 轮：/})).toHaveLength(500);
+    expect(screen.getByRole('button',{name:/^第 248 轮：/})).toHaveAttribute('aria-current','step');
+  });
+  it('previews time, the input and the visible assistant response', () => {
+    render(<ConversationRail anchors={[{...anchors[0],timestamp:Date.now(),replyPreview:'已完成检查'}]} activeId="u0" onJump={vi.fn()}/>);
+    fireEvent.mouseEnter(screen.getByRole('button',{name:/^第 1 轮/}));
+    expect(screen.getByRole('tooltip')).toHaveTextContent('正在阅读');
+    expect(screen.getByRole('tooltip')).toHaveTextContent('已完成检查');
+    expect(screen.getByRole('tooltip').textContent).toMatch(/\d{2}:\d{2}/);
+  });
+  it('recovers visible reply text from older rendered messages without showing thinking', () => {
+    const result=buildTimelineAnchors([
+      {type:'message',data:{id:'u',role:'user',text:'input'}},
+      {type:'message',data:{id:'a',role:'assistant',blocks:[{type:'thinking',content:'hidden',sealed:true},{type:'text',html:'<p>Visible <strong>answer</strong></p>'}]}},
+    ]);
+    expect(result[0].replyPreview).toBe('Visible answer');
   });
 });

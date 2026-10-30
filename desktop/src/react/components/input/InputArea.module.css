@@ -1870,3 +1870,7 @@
 .model-selection-note button{border:0;background:none;color:inherit;cursor:pointer;padding:0 3px;font-size:15px;}
 :global(.enigma-model-loading){width:10px;height:10px;border:1.5px solid currentColor;border-right-color:transparent;border-radius:50%;animation:input-model-loading .8s linear infinite;}
 @keyframes input-model-loading{to{transform:rotate(360deg)}}
+.input-history-notice { display: flex; align-items: center; gap: 8px; padding: 3px 12px; font-size: 11px; line-height: 1.5; color: var(--text-light); }
+.input-history-notice span { flex: 1; min-width: 0; }
+.input-history-notice button { border: 0; background: transparent; color: var(--accent); padding: 3px 5px; font: inherit; white-space: nowrap; cursor: pointer; border-radius: 6px; }
+.input-history-notice button:hover { background: color-mix(in srgb,var(--accent) 10%,transparent); }

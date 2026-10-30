@@ -8,6 +8,7 @@ import { InputArea } from '../../components/InputArea';
 import { useStore } from '../../stores';
 
 const mocks = vi.hoisted(() => ({
+  keyDown: null as null | ((view: unknown,event:KeyboardEvent)=>boolean),
   editorJson: {type:'doc',content:[]} as any,
   socketAvailable:true,
   socketState:1,
@@ -19,7 +20,9 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@tiptap/react', () => ({
-  useEditor: () => {
+  useEditor: (options:any) => {
+    mocks.keyDown=options.editorProps.handleKeyDown;
+    return React.useMemo(()=>{
     const chain: Record<string, unknown> = {};
     chain.clearContent = vi.fn(() => chain);
     chain.deleteRange = vi.fn(() => chain);
@@ -31,7 +34,7 @@ vi.mock('@tiptap/react', () => ({
         focus: vi.fn(),
         clearContent: mocks.clearContent,
         scrollIntoView: vi.fn(),
-        setContent: vi.fn(),
+        setContent: vi.fn((doc:any)=>{if(mocks.keyDown&&doc&&typeof doc==='object')mocks.editorJson=doc;}),
         insertContent: vi.fn(),
       },
       chain: () => chain,
@@ -42,6 +45,7 @@ vi.mock('@tiptap/react', () => ({
       on: vi.fn(),
       off: vi.fn(),
     };
+    },[]);
   },
   EditorContent: () => React.createElement('div', { 'data-testid': 'editor' }),
 }));
@@ -311,6 +315,19 @@ describe('InputArea media send', () => {
     if(failure==='missing')mocks.socketAvailable=false;if(failure==='closed')mocks.socketState=3;if(failure==='throws')mocks.wsSend.mockImplementation(()=>{throw Error('socket failed')});
     render(<InputArea/>);fireEvent.click(screen.getByTestId('send'));await waitFor(()=>expect(useStore.getState().chatSessions.sess_media?.items.some(item=>item.type==='message'&&item.data.sendStatus==='failed')).toBe(true));
     expect(mocks.clearContent).not.toHaveBeenCalled();expect(useStore.getState().drafts.sess_media).toBe('keep on failure');expect(useStore.getState().attachedFiles).toHaveLength(1);
+  });
+
+  it('sending a recalled input preserves and restores the newer unsent draft',async()=>{
+    const doc={type:'doc',content:[{type:'paragraph',content:[{type:'text',text:'keep newest draft'}]}]};
+    useStore.setState({attachedFiles:[],attachedFilesBySession:{},drafts:{sess_media:'keep newest draft'},draftDocs:{sess_media:doc},chatSessions:{sess_media:{items:[{type:'message',data:{id:'old',role:'user',text:'old input'}}],hasMore:false}}} as never);
+    render(<InputArea/>);
+    act(()=>mocks.keyDown?.(null,new KeyboardEvent('keydown',{key:'z',metaKey:true,cancelable:true})));
+    expect(JSON.stringify(mocks.editorJson)).toContain('old input');
+    fireEvent.click(screen.getByTestId('send'));
+    await waitFor(()=>expect(mocks.wsSend).toHaveBeenCalled());
+    expect(useStore.getState().drafts.sess_media).toBe('keep newest draft');
+    expect(mocks.editorJson).toEqual(doc);
+    expect(mocks.clearContent).not.toHaveBeenCalled();
   });
 
   it('sends pasted image bytes through the platform API when window.hana is unavailable', async () => {

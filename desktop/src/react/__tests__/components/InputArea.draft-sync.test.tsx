@@ -14,11 +14,14 @@ const editorMocks = vi.hoisted(() => ({
   setContent: vi.fn(),
   clearContent: vi.fn(),
   setEditable:vi.fn(),
+  keyDown: null as null | ((view: unknown, event: KeyboardEvent) => boolean),
   updates:new Set<(event?:any)=>void>(),
 }));
 
 vi.mock('@tiptap/react', () => ({
-  useEditor: () => {
+  useEditor: (options: any) => {
+    editorMocks.keyDown = options.editorProps.handleKeyDown;
+    return React.useMemo(() => {
     const chain: Record<string, unknown> = {};
     chain.clearContent = vi.fn(() => chain);
     chain.deleteRange = vi.fn(() => chain);
@@ -61,6 +64,7 @@ vi.mock('@tiptap/react', () => ({
       on: vi.fn((event:string,handler:(event?:any)=>void)=>{if(event==='update')editorMocks.updates.add(handler);}),
       off: vi.fn((event:string,handler:(event?:any)=>void)=>{if(event==='update')editorMocks.updates.delete(handler);}),
     };
+    }, []);
   },
   EditorContent: () => React.createElement('div', { 'data-testid': 'editor' }),
 }));
@@ -516,4 +520,42 @@ it('does not let non-content editor updates erase a hydrated draft',async()=>{
  editorState.doc=paragraphDoc('');
  act(()=>editorMocks.updates.forEach(handler=>handler({transaction:{docChanged:false}})));
  expect(useStore.getState().drafts.__home__).toBe('keep me');
+});
+
+function historyKey(key: string) {
+  act(() => editorMocks.keyDown?.(null, new KeyboardEvent('keydown', {key,metaKey:true,cancelable:true})));
+}
+function seedHistory() {
+  seedSessionComposer('latest draft');
+  useStore.setState({chatSessions:{sess_draft_sync:{items:[
+    {type:'message',data:{id:'u1',role:'user',text:'first input'}},
+    {type:'message',data:{id:'a1',role:'assistant',text:'reply'}},
+    {type:'message',data:{id:'u2',role:'user',text:'second input'}},
+  ],hasMore:false}}} as never);
+}
+it('browses sent inputs and returns to the rich draft without persisting the preview',()=>{
+  seedHistory();const doc=paragraphDoc('latest draft');render(React.createElement(InputArea));
+  historyKey('z');expect(editorState.doc).toEqual(paragraphDoc('second input'));
+  historyKey('z');expect(editorState.doc).toEqual(paragraphDoc('first input'));
+  expect(useStore.getState().drafts.sess_draft_sync).toBe('latest draft');
+  expect(useStore.getState().draftDocs.sess_draft_sync).toEqual(doc);
+  historyKey('y');expect(editorState.doc).toEqual(paragraphDoc('second input'));
+  historyKey('y');expect(editorState.doc).toEqual(doc);
+});
+it('editing recalled input creates the newest draft, retaining the original sent history',()=>{
+  seedHistory();render(React.createElement(InputArea));historyKey('z');historyKey('z');
+  editorState.doc=paragraphDoc('first input revised');
+  act(()=>editorMocks.updates.forEach(handler=>handler({transaction:{docChanged:true}})));
+  expect(useStore.getState().drafts.sess_draft_sync).toBe('first input revised');
+  historyKey('z');expect(editorState.doc).toEqual(paragraphDoc('second input'));
+  historyKey('y');expect(editorState.doc).toEqual(paragraphDoc('first input revised'));
+});
+it('restores the actual saved draft after leaving history and returning to the chat',()=>{
+  seedHistory();const view=render(React.createElement(InputArea));historyKey('z');view.unmount();
+  render(React.createElement(InputArea));expect(editorState.doc).toEqual(paragraphDoc('latest draft'));
+});
+it('does not browse input history during composition',()=>{
+  seedHistory();render(React.createElement(InputArea));
+  act(()=>editorMocks.keyDown?.(null,new KeyboardEvent('keydown',{key:'z',metaKey:true,isComposing:true})));
+  expect(editorState.doc).toEqual(paragraphDoc('latest draft'));
 });

@@ -1,12 +1,14 @@
 import type { ChatListItem, ChatMessage } from '../../stores/chat-types';
 export { measureTimelineMarkerWidthEm } from '../shared/timeline-marker-width';
 import { measureTimelineMarkerWidthEm } from '../shared/timeline-marker-width';
+import { extractTextBlockPlainText } from '../../utils/message-text';
 
 export interface TimelineAnchor {
   messageId: string;
   timestamp: number | null;
   label: string;
   preview?: string;
+  replyPreview?: string;
   role: ChatMessage['role'];
   markerWidthEm: number;
 }
@@ -119,6 +121,14 @@ export function buildTimelineAnchors(
 
   const userTurns = messages.filter(message => message.role === 'user');
   const source = userTurns.length > 0 ? userTurns : messages;
+  const replies = new Map<string, string>();
+  let turnId: string | undefined;
+  for (const message of messages) {
+    if (message.role === 'user') { turnId = message.id; continue; }
+    if (!turnId || (replies.get(turnId)?.length ?? 0) >= 260) continue;
+    const text = message.text || extractTextBlockPlainText(message.blocks || []);
+    if (text.trim()) replies.set(turnId, formatTimelinePromptPreview([replies.get(turnId), text].filter(Boolean).join(' '), 260));
+  }
 
   return source.map((message) => {
     const previewSource = normalizedPreviewSource(message);
@@ -128,7 +138,8 @@ export function buildTimelineAnchors(
       timestamp: parseTimestamp(message.timestamp),
       role: message.role,
       label: formatTimelinePromptPreview(previewSource),
-      preview: formatTimelinePromptPreview(previewSource, 320),
+      preview: formatTimelinePromptPreview(previewSource, 600),
+      ...(replies.has(message.id) ? { replyPreview: replies.get(message.id) } : {}),
       markerWidthEm: measureTimelineMarkerWidthEm(previewLength),
     };
   });
