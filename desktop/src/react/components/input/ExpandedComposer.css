@@ -5,6 +5,15 @@
 .enigma-compose-dialog small { display:block; color:var(--text-muted); font:12px/1.6 var(--font-ui); }
 .enigma-compose-dialog header button { border:0; border-radius:var(--radius-sm); padding:var(--space-6) var(--space-12); font:13px/1.6 var(--font-ui); background:var(--accent-light); color:var(--accent); cursor:pointer; }
 .enigma-compose-dialog > div { flex:1; min-height:0; overflow:auto; }
+.enigma-compose-actions { display:flex;flex-shrink:0;gap:8px; }
+.enigma-composer-editor-host { min-width:0; }
+.enigma-compose-editor-slot > .enigma-composer-editor-host { min-height:100%; }
+.enigma-compose-dialog[data-attachment-preview-open] .enigma-compose-editor-slot { padding-right:376px;box-sizing:border-box; }
+@media(max-width:667px) {
+  .enigma-compose-dialog[data-attachment-preview-open] .enigma-compose-editor-slot { padding-right:0;padding-top:180px; }
+  .enigma-compose-actions { gap:4px; }
+  .enigma-compose-dialog header { flex-wrap:wrap; }
+}
 .enigma-compose-dialog .tiptap { min-height:100%; max-height:none!important; outline:none; font:14px/1.8 var(--font-ui); padding:var(--space-16) 0; white-space:pre-wrap; overflow-wrap:anywhere; }
 .enigma-compose-dialog .tiptap p { margin:0; }
 .enigma-expand-composer { position:absolute; top:8px; right:8px; display:grid; place-items:center; width:26px; height:26px; border:0; border-radius:var(--radius-sm); color:var(--text-muted); background:var(--overlay-light); cursor:pointer; z-index:3; }

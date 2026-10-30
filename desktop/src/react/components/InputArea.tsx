@@ -1,5 +1,5 @@
 import {InputQueue} from './input/InputQueue';
-import {ExpandedComposer} from './input/ExpandedComposer';
+import {ComposerEditor} from './input/ComposerEditor';
 import {inputHistoryEntries,inputHistoryDocument,moveInputHistory,inputHistoryDirection} from '../utils/input-history';
 import {isSubmittedDraft,withoutSubmittedFiles} from '../utils/submitted-composer';
 import {DraftSaveNotice} from './input/DraftSaveNotice';
@@ -11,7 +11,7 @@ import {DraftSaveNotice} from './input/DraftSaveNotice';
  */
 
 import { useState, useEffect,useLayoutEffect, useRef, useCallback, useMemo, type ChangeEvent } from 'react';
-import { useEditor, EditorContent } from '@tiptap/react';
+import { useEditor } from '@tiptap/react';
 import type { Editor, JSONContent } from '@tiptap/core';
 import { useStore } from '../stores';
 import { HOME_DRAFT_KEY } from '../../../../shared/input-drafts.ts';
@@ -530,6 +530,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
 
   const isComposing = useRef(false);
   const pasteHandlerRef = useRef<(event: ClipboardEvent) => boolean>(() => false);
+  const dropHandlerRef = useRef<(event: DragEvent) => boolean>(() => false);
   const keyDownHandlerRef = useRef<(event: KeyboardEvent) => boolean>(() => false);
   const beforeInputHandlerRef = useRef<(event: InputEvent) => boolean>(() => false);
   const slashMenuRef = useRef<HTMLDivElement>(null);
@@ -681,6 +682,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
         'aria-description': 'Command或Ctrl加Z查看上一条输入，加Y查看下一条；暂存草稿在最新位置，修改历史输入会成为新草稿。',
       },
       handlePaste: (_view, event) => pasteHandlerRef.current(event),
+      handleDrop: (_view, event, _slice, moved) => moved ? false : dropHandlerRef.current(event),
       handleKeyDown: (_view, event) => keyDownHandlerRef.current(event),
       handleDOMEvents: {
         beforeinput: (_view, event) => beforeInputHandlerRef.current(event as InputEvent),
@@ -699,12 +701,13 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
   const restoreEditorFocus = useCallback(() => {
     if (!editor || editor.isDestroyed) return;
     if (inputLocked) return;
-    if (!shouldAllowInputFocus({ inputRoot: inputSurfaceRef.current })) return;
+    const focusRoot=editor.view?.dom?.closest<HTMLElement>('.enigma-compose-dialog')||inputSurfaceRef.current;
+    if (!shouldAllowInputFocus({ inputRoot: focusRoot })) return;
 
     const run = () => {
       focusFrameRef.current = null;
       if (!editor || editor.isDestroyed) return;
-      if (!shouldAllowInputFocus({ inputRoot: inputSurfaceRef.current })) return;
+      if (!shouldAllowInputFocus({ inputRoot: editor.view?.dom?.closest<HTMLElement>('.enigma-compose-dialog')||inputSurfaceRef.current })) return;
       editor.commands.focus();
     };
 
@@ -990,15 +993,10 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
     else { editor?.commands.focus?.(); openSlashMenu(); }
   }, [slashMenuOpen, dismissSlashMenu, openSlashMenu,editor]);
 
-  const handleBrowserFileInputChange = useCallback(async (event: ChangeEvent<HTMLInputElement>) => {
-    if (inputLocked) {
-      event.currentTarget.value = '';
-      return;
-    }
+  const uploadBrowserFiles = useCallback(async (files: File[]) => {
+    if (inputLocked) return;
     const uploadScope=JSON.stringify([useStore.getState().activeServerConnectionId,useStore.getState().currentSessionPath,useStore.getState().pendingDraftId]);
     const uploadSessionPath=useStore.getState().currentSessionPath;
-    const files = Array.from(event.currentTarget.files || []);
-    event.currentTarget.value = '';
     try {
       if (files.length === 0) return;
       if (useStore.getState().attachedFiles.length >= 9) return;
@@ -1065,6 +1063,30 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
       restoreEditorFocus();
     }
   }, [addAttachedFile, inputLocked, restoreEditorFocus, t]);
+
+  const handleBrowserFileInputChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+    const files=Array.from(event.currentTarget.files||[]);
+    event.currentTarget.value='';
+    return uploadBrowserFiles(files);
+  },[uploadBrowserFiles]);
+
+  dropHandlerRef.current=(event:DragEvent)=>{
+    const files=Array.from(event.dataTransfer?.files||[]);
+    if(!files.length)return false;
+    event.preventDefault();event.stopPropagation();
+    if(inputLocked||!editor)return true;
+    const position=editor.view.posAtCoords({left:event.clientX,top:event.clientY});
+    if(position)editor.commands.setTextSelection(position.pos);
+    captureAttachmentPosition();
+    void (async()=>{
+      for(const file of files){
+        const path=window.platform?.getFilePath?.(file);
+        if(path)await attachFilesFromPaths([path],{[path]:file.name});
+        else await uploadBrowserFiles([file]);
+      }
+    })().catch(()=>useStore.getState().addToast(t('error.uploadFailed'),'error'));
+    return true;
+  };
 
   const handleAttach = useCallback(async () => {
     if (inputLocked) return;
@@ -1632,7 +1654,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
             const upload = data?.uploads?.[0];
             if(pasteScope!==JSON.stringify([useStore.getState().activeServerConnectionId,useStore.getState().currentSessionPath,useStore.getState().pendingDraftId]))return;
             if (upload?.dest) {
-              addAttachedFile({ fileId: upload.fileId, path: upload.dest, name: upload.name || uploadPayload.name, isDirectory: false });
+              addAttachedFile({ fileId: upload.fileId, path: upload.dest, name: upload.name || uploadPayload.name, isDirectory: false, mimeType: uploadPayload.mimeType });
             } else {
               notifyPasteUploadFailure(t, upload?.error);
               console.warn('[paste] upload-blob failed', upload?.error || data);
@@ -2404,7 +2426,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
             onCompositionStart={() => { isComposing.current = true; }}
             onCompositionEnd={() => { isComposing.current = false; }}
           >
-            {expandedComposer&&editor?<ExpandedComposer editor={editor} onClose={closeExpandedComposer}/>:<EditorContent editor={editor}/>}
+            <ComposerEditor editor={editor} expanded={expandedComposer} onClose={closeExpandedComposer} onAttach={handleAttach} scope={historyScope} locked={inputLocked}/>
           </div>
           <InputControlBar
             t={t}

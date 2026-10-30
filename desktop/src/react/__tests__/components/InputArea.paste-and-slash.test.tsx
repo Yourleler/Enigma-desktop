@@ -138,7 +138,7 @@ vi.mock('@tiptap/react', () => ({
       get state() {
         return mocks.editorState ?? { tr: { setMeta: vi.fn(() => ({})) } };
       },
-      view: { dispatch: vi.fn() },
+      view: { dispatch: vi.fn(), posAtCoords: vi.fn(()=>null) },
       on: vi.fn((event: string, handler: () => void) => {
         if (event === 'update') mocks.updateHandler = handler;
       }),
@@ -762,6 +762,7 @@ describe('InputArea paste and slash menu behavior', () => {
         path: '/hana/session-files/pasted.png',
         name: 'pasted.png',
         isDirectory: false,
+        mimeType: 'image/png',
       }]);
     });
     expect(useStore.getState().attachedFiles[0]).not.toHaveProperty('base64Data');
@@ -898,6 +899,26 @@ describe('InputArea paste and slash menu behavior', () => {
       text: '马上显示这条消息',
       sendStatus: 'pending',
     });
+  });
+
+  it('uploads dropped browser files through the same attachment path and prevents duplicate outer drops',async()=>{
+    mocks.hanaFetch.mockImplementation(async(path:string)=>new Response(JSON.stringify(path==='/api/upload-blob'?{uploads:[{fileId:'dropped',dest:'/fixtures/drop.png',name:'drop.png'}]}:{}),{status:200}));
+    window.platform={getFilePath:()=>null} as never;
+    render(<InputArea/>);
+    const props=mocks.editorOptions?.editorProps as any;
+    const preventDefault=vi.fn(),stopPropagation=vi.fn();
+    const file=new File([new Uint8Array([1,2,3])],'drop.png',{type:'image/png'});
+    expect(props.handleDrop(null,{preventDefault,stopPropagation,dataTransfer:{files:[file]},clientX:10,clientY:10},null,false)).toBe(true);
+    await waitFor(()=>expect(useStore.getState().attachedFiles[0]).toMatchObject({fileId:'dropped',mimeType:'image/png'}));
+    expect(preventDefault).toHaveBeenCalledOnce();expect(stopPropagation).toHaveBeenCalledOnce();
+    expect(mocks.hanaFetch.mock.calls.filter(([path])=>path==='/api/upload-blob')).toHaveLength(1);
+  });
+  it('leaves editor-internal drags and text drops to the editor',()=>{
+    render(<InputArea/>);const props=mocks.editorOptions?.editorProps as any;
+    const preventDefault=vi.fn();
+    expect(props.handleDrop(null,{preventDefault,dataTransfer:{files:[]}},null,false)).toBe(false);
+    expect(props.handleDrop(null,{preventDefault},null,true)).toBe(false);
+    expect(preventDefault).not.toHaveBeenCalled();
   });
 
   it('uploads mobile file-picker attachments through browser File API', async () => {

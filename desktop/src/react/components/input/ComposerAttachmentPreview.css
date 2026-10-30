@@ -1,0 +1,11 @@
+.enigma-composer-attachment-preview { position:fixed;z-index:11020;display:flex;flex-direction:column;width:min(360px,calc(100vw - 24px));box-sizing:border-box;overflow:hidden;border:1px solid var(--border);border-radius:16px;background:var(--bg-card);color:var(--text);box-shadow:0 12px 36px var(--shade-black-20);--glass-fill:color-mix(in srgb,var(--eg-card) var(--glass-menu-mix,75%),transparent);--glass-blur:10px;-webkit-app-region:no-drag; }
+.enigma-composer-attachment-preview header { flex:none;display:flex;align-items:center;gap:8px;padding:8px 10px;font:12px/1.4 var(--font-ui); }
+.enigma-composer-attachment-preview header button { flex:none;display:grid;place-items:center;width:26px;height:26px;border:0;border-radius:8px;background:transparent;color:var(--text-muted);cursor:pointer; }
+.enigma-composer-attachment-preview header button:hover { background:var(--overlay-light);color:var(--text); }
+.enigma-composer-attachment-preview header span { min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+.enigma-composer-attachment-preview header small { flex:none;color:var(--text-muted);font-size:10px; }
+.enigma-composer-attachment-image { display:flex;min-height:0;flex:1;padding:0 10px 10px;justify-content:center;overflow:hidden; }
+.enigma-composer-attachment-image img { display:block;max-width:100%;min-height:0;max-height:290px;object-fit:contain;border-radius:8px; }
+.enigma-composer-attachment-image p { padding:24px 12px;font:12px/1.5 var(--font-ui);color:var(--text-muted); }
+.enigma-composer-attachment-preview button:focus-visible { outline:2px solid var(--accent);outline-offset:1px; }
+@media(max-width:667px){.enigma-composer-attachment-preview[data-expanded="true"]{width:calc(100vw - 88px);}}
