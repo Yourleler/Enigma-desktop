@@ -1,25 +1,23 @@
 # Enigma-desktop：完整目标、期望效果与交接现状
 
-**当前 Goal（2026-10-30，原生验收受阻）**：继续打磨浏览器、各类预览与数据持久性。用户要求离线期间自行推进，不再发起输入请求；每轮验收后提交并推送，不开启 Actions、不发布、不合并。当前独立可做的修复与验证已收尾，Mac 连续锁屏阻止最终原生检查；恢复条件和步骤见 [原生余项](docs/native-acceptance-remaining-2026-10-30.md)。
+**当前升级已交付（2026-10-30）**：浏览器与文件预览采用成熟开源组件，补齐草稿恢复、发送保护、模型导入及打包缓存问题。原生验收已完成并安装到原位置，正式宿主、服务与界面均为 **0.452.127**。
 
-**正式应用**：界面 **0.452.91**，外壳/服务 **0.452.81**。**最新候选**：完整宿主/服务与配套界面 **0.452.127**，包含以下变更，尚未替换正式应用。Mac 锁屏阻止后续原生点击；Web、自动回归或候选启动通过，不等同所有桌面交互通过。
+**数据保留**：正式重启后 Ferry 模型、原会话和草稿 `da` 均在；供应商、凭证、草稿、偏好、助手配置和会话共7个受保护文件哈希与安装前一致。完整备份及旧应用留在仓库外，电脑控制全局开关保持用户原选择。
 
-**全量回归已通过（2026-10-30）**：11,799 项通过、7 项跳过，0 失败和未处理异常；完整候选构建、签名与启动通过。原生组合验收及正式安装仍未完成。修复依据与实测见 [回归收尾记录](docs/full-regression-followup-2026-10-30.md)。独立服务包漏预览模块/Worker、升级后旧缓存问题已补并实际验证，见 [打包资源验收](docs/packaged-preview-resources-2026-10-30.md)。
+**验证**：全量11,799项通过、7项跳过，0失败/未处理异常；三套类型检查与签名构建通过。解锁后完成原生 PDF 打印、Word版式与下载、表格与CSV保存、Markdown搜索、图片拖动、视频全屏/画中画、浏览器往返/查找/下载、设置遮挡以及退出草稿恢复。实际范围与边界见 [原生验收与正式安装](docs/native-installation-2026-10-30.md)。
 
-| 范围 | 当前实现与证据 | 未完成验收 |
-| --- | --- | --- |
-| PDF | Mozilla 完整阅读器：目录、缩略图、附件、查找、多种阅读布局。Web 实测通过。[来源与范围](docs/pdf-reader-notice.md) | 完整阅读器原生打印/交互 |
-| Word | docx-preview：版式、页眉页脚、脚注、表格图片、搜索和位置恢复。Web 实测通过。[记录](docs/docx-preview-adoption-2026-10-29.md) | 原生加载/下载/菜单 |
-| 浏览器 | 侧栏/独立窗口共用控件，Chromium 查找/缩放、快捷键和下载联动；真实引擎、签名构建与启动验证通过。[记录](docs/browser-chrome-unification-2026-10-29.md) | 网页焦点、遮挡及完整原生往返 |
-| 表格 | Univer + 本地 ExcelJS/PapaParse：多表、样式、选区、查找、公式缓存和下载；保留 CSV 编辑并修复空行/保存精度。Web 实测和 80 项定向回归通过。[记录](docs/spreadsheet-preview-adoption-2026-10-29.md) | 原生选择/复制与正式安装 |
-| 图片 | PhotoSwipe 共用侧栏/画廊，原图缩放、拖动、同目录切换、下载和视频释放通过 Web 实测。[记录](docs/photoswipe-preview-adoption-2026-10-29.md) | 原生鼠标/触控板与安装 |
-| 音视频 | Video.js 完整控件共用侧栏/画廊，本机字幕、倍速、播放恢复与关闭释放通过 Web 和 41 项回归。[记录](docs/videojs-preview-adoption-2026-10-29.md) | 原生全屏/画中画与安装 |
-| Markdown / 代码 | 常驻目录与工具、CodeMirror 查找替换/正则/跳行/语法折叠、跨格式正文高亮；保存保留撤销，阅读模式恢复。167 项相关回归与真实 Web 通过。[记录](docs/document-reading-tools-2026-10-29.md) | 原生组合验收 |
-| 草稿 | 修复 Web 启动遗漏；本机恢复、自动重试和版本冲突保护。即时刷新、断线关页、双页面冲突及会话隔离通过真实 Web 验证，发送准备期间的新输入/附件保护也通过受控页面实测。[恢复](docs/draft-durability-2026-10-29.md)、[发送保护](docs/send-draft-protection-2026-10-30.md) | 原生退出/恢复与完整安装；历史丢失事件未精确归因 |
+| 范围 | 当前能力与记录 |
+| --- | --- |
+| PDF | Mozilla 完整阅读器，大纲、附件、搜索、阅读布局与系统打印。[说明](docs/pdf-reader-notice.md) |
+| Word | docx-preview版式、文本回退、搜索、页码、下载；缺失纸张参数的显示回退。[记录](docs/word-paper-search-boundaries-2026-10-30.md) |
+| 浏览器 | 侧栏与独立窗口共用Chromium导航、查找、缩放、下载和状态；往返保留表单。[记录](docs/browser-chrome-unification-2026-10-29.md) |
+| 表格 | Univer多表、查找、选区、公式缓存和下载，保留CSV编辑保存。[记录](docs/spreadsheet-preview-adoption-2026-10-29.md) |
+| 图片与音视频 | PhotoSwipe共用画廊；Video.js完整控件、本机字幕、倍速、全屏、画中画与关闭释放。[图片](docs/photoswipe-preview-adoption-2026-10-29.md)、[音视频](docs/videojs-preview-adoption-2026-10-29.md) |
+| Markdown / 代码 | 常驻目录，CodeMirror查找替换、正则、跳行、语法与折叠；阅读模式恢复。[记录](docs/document-reading-tools-2026-10-29.md) |
+| 草稿 | 本机副本、重连重试、版本冲突保护；发送准备期间保留新输入与附件。[恢复](docs/draft-durability-2026-10-29.md)、[发送保护](docs/send-draft-protection-2026-10-30.md) |
+| 打包与升级 | 独立服务包含嵌套预览/Worker，稳定资源重新校验，启动主题带版本。[记录](docs/packaged-preview-resources-2026-10-30.md) |
 
-各类预览/浏览器的原生收尾与草稿专项继续按 [开源复用计划](docs/open-source-preview-adoption-2026-10-29.md) 和 [逐轮验收](docs/maturity-iteration-2026-10-29.md) 推进。电脑控制入口为 **设置 → 插件**；全局开关保留用户原先的关闭状态。
-
-此前电脑/浏览器模型任务、取消/接管和文件预览的已测范围见 [阶段交付](docs/computer-browser-preview-delivery-2026-10-29.md)，不能由该阶段通过推出最新候选已完成全部验收。
+没有发布、合并或开启Actions。电脑与浏览器插件此前的真实模型、接管和取消测试见 [阶段交付](docs/computer-browser-preview-delivery-2026-10-29.md)，此次原生/安装证据优先于下方历史状态。
 
 以下记录为阶段历史，不代表当前安装版本。
 
@@ -90,10 +88,10 @@
 **最终要做的是个人能日常使用的 coding agent，重点强化多仓库联动改造、代码智能阅读和可靠任务接续，进一步发展代码与文档共同维护的专精能力。** 用户举的场景是建议，不应把产品限制成两仓协作、单一压缩救援或固定 Plan/Code 流水线。管家应根据实际目标组合能力，完成其他有价值的工作。
 
 - 当前工作区：`$HOME/code/Enigma-desktop`。
-- 开发分支：`codex/engineering-migration`；最新已提交并推送基线：`83a7d963`。
-- **当前还有大量未提交、未推送的功能补全及发行改动。直接检查并接续，不重置、不覆盖、不重新迁移一遍。**
-- 私有仓库：[Yourleler/Enigma-desktop](https://github.com/Yourleler/Enigma-desktop)。[草稿 PR #1](https://github.com/Yourleler/Enigma-desktop/pull/1)未合并，远端不包含全部最新本地改动。
-- 底层使用 **Pi 1.4.0**；桌面/Web 宿主来自 OpenHanako/Hana **0.450.0** 基线，当前 Enigma 外壳/服务与已安装界面资源 **0.452.81**。Pi、外壳与界面资源版本分别记录。
+- 开发分支：`codex/engineering-migration`；已交付运行时基线：`3047b0a0`。
+- **当前实现已提交并推送；继续工作前仍应检查实际工作区，保留用户及其他 Agent 的后续修改。**
+- 私有仓库：[Yourleler/Enigma-desktop](https://github.com/Yourleler/Enigma-desktop)。[草稿 PR #1](https://github.com/Yourleler/Enigma-desktop/pull/1)未合并；最新功能在开发分支，当前状态以 Git 记录为准。
+- 底层使用 **Pi 1.4.0**；桌面/Web 宿主来自 OpenHanako/Hana **0.450.0** 基线，当前 Enigma 外壳/服务与已安装界面资源 **0.452.127**。Pi、外壳与界面资源版本分别记录。
 - 工程领域模块：`packages/enigma-engineering`；Pi 扩展/宿主适配：`plugins/enigma`；界面：`desktop/src/react/engineering`。
 - 原 [Enigma](https://github.com/Yourleler/Enigma) 为 Python 历史版，[Enigma-next](https://github.com/Yourleler/Enigma-next) 为此前的 Pi 工程版；两者均保留，当前任务不修改旧仓库。
 
