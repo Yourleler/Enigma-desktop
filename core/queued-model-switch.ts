@@ -7,6 +7,7 @@ export class QueuedModelSwitch {
   selection:ModelSelection|null;
   private revision:number;
   private applying:Promise<void>|null=null;
+  private committing:ModelSelection|null=null;
   private options:SwitchOptions;
   constructor(options:SwitchOptions){
     this.options=options;
@@ -22,6 +23,7 @@ export class QueuedModelSwitch {
   }
   async cancel(){
     if(this.selection?.state!=='pending')return this.result();
+    if(this.committing===this.selection)throw new Error('模型已进入切换阶段，无法再取消；完成后可重新选择');
     this.selection={...this.selection,revision:++this.revision,state:'cancelled'};
     await this.publish(this.selection);return this.result();
   }
@@ -34,7 +36,8 @@ export class QueuedModelSwitch {
         try{
           const model=await this.options.resolve(selection.provider,selection.id);
           if(this.selection!==selection)continue;
-          await this.options.apply(model);
+          this.committing=selection;
+          try { await this.options.apply(model); } finally { this.committing=null; }
           if(this.selection!==selection)continue;
           selection.state='applied';
         }catch(error){

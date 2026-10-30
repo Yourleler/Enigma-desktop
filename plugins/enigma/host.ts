@@ -61,6 +61,7 @@ import { EngineeringMemory } from "./memory-host.ts";
 import type { GuardianConfig } from "enigma-next";
 
 type PendingModel = {
+  source?: string;
   provider: string;
   id: string;
   revision: number;
@@ -198,6 +199,9 @@ export class EngineeringHost {
   readonly dialogs = new Map<string, { dialog: Dialog; sessionPath: string }>();
   readonly engine: any;
   private bindingWrites: Promise<void> = Promise.resolve();
+  private modelSelectionIntents = new Map<string, number>();
+  private modelSelectionRuns = new Map<string, Promise<void>>();
+  private modelSelectionCommitting = new Map<string, number>();
   private defaultModelPolicy?: ModelPolicy;
   private conductors = new Map<string, ConversationConductor>();
   readonly guardian = new EngineeringGuardian(this);
@@ -378,7 +382,7 @@ export class EngineeringHost {
   }
   async saveBinding(
     sessionPath: string,
-    input: Pick<Binding, "root" | "memory">,
+    input: Partial<Binding>,
   ) {
     const bindings = await this.load(),
       sessionId = this.engine.getSessionIdForPath?.(sessionPath) || undefined;
@@ -425,50 +429,44 @@ export class EngineeringHost {
     await this.bindingWrites;
     return policy;
   }
-  async requestModel(
-    sessionPath: string,
-    provider: string,
-    id: string,
-    source = "manual",
-  ) {
-    const binding = await this.binding(sessionPath);
-    if (!binding) throw new Error("Select an engineering workspace first");
+  private nextModelIntent(sessionPath: string) {
+    const next = (this.modelSelectionIntents.get(sessionPath) || 0) + 1;
+    this.modelSelectionIntents.set(sessionPath, next);
+    return next;
+  }
+  private async modelSelectionResult(sessionPath: string) {
+    const selection = (await this.binding(sessionPath))?.pendingModel;
+    return { selection: selection ? { ...selection } : null, effectiveAt: selection?.state === 'applied' ? 'now' : 'next-request' };
+  }
+  async requestModel(sessionPath: string, provider: string, id: string, source = 'manual') {
+    const intent = this.nextModelIntent(sessionPath);
+    if (!await this.binding(sessionPath)) throw new Error('Select an engineering workspace first');
     await this.assertManagedModel(sessionPath, provider, id);
-    const model = await this.engine.resolveModelWithCredentialsFresh({
-      provider,
-      id,
-    });
-    if (!model)
-      throw new Error(
-        "Selected model is unavailable or has no configured credentials",
-      );
-    const pendingModel: PendingModel = {
-      provider,
-      id,
-      revision: (binding.pendingModel?.revision || 0) + 1,
-      state: "pending",
-    };
-    if (source === "manual" && binding.modelPolicy) {
-      const key =
-        binding.modelPolicy.phase === "planning"
-          ? "planning"
-          : binding.modelPolicy.phase === "review"
-            ? "review"
-            : "execution";
-      binding.modelPolicy[key] = { ...binding.modelPolicy[key], provider, id };
+    if (this.modelSelectionIntents.get(sessionPath) !== intent) return this.modelSelectionResult(sessionPath);
+    const current = (await this.binding(sessionPath))!;
+    const selection: PendingModel = { provider, id, source, revision: (current.pendingModel?.revision || 0) + 1, state: 'pending' };
+    // Publish before potentially slow credential checks so cancellation has a
+    // concrete selection. Only patch model state; do not restore old grants.
+    await this.saveBinding(sessionPath, { pendingModel: selection });
+    this.publish(sessionPath, 'model_selection', selection);
+    try {
+      const model = await this.engine.resolveModelWithCredentialsFresh({ provider, id });
+      if (this.modelSelectionIntents.get(sessionPath) !== intent) return this.modelSelectionResult(sessionPath);
+      if (!model) throw new Error('Selected model is unavailable or has no configured credentials');
+      await this.assertManagedModel(sessionPath, provider, id);
+      if (this.modelSelectionIntents.get(sessionPath) !== intent) return this.modelSelectionResult(sessionPath);
+      const binding = (await this.binding(sessionPath))!;
+      if (binding.pendingModel?.revision !== selection.revision || binding.pendingModel.state !== 'pending') return this.modelSelectionResult(sessionPath);
+      const native = this.engine.getSessionByPath(sessionPath) || await this.engine.ensureSessionLoaded(sessionPath);
+      if (native.isIdle && !native.isCompacting) await this.applyRequestedModel(sessionPath);
+      return this.modelSelectionResult(sessionPath);
+    } catch (error) {
+      if (this.modelSelectionIntents.get(sessionPath) !== intent) return this.modelSelectionResult(sessionPath);
+      const failed: PendingModel = { ...selection, state: 'failed', error: error instanceof Error ? error.message : String(error) };
+      await this.saveBinding(sessionPath, { pendingModel: failed });
+      this.publish(sessionPath, 'model_selection', failed);
+      throw error;
     }
-    binding.pendingModel = pendingModel;
-    await this.saveBinding(sessionPath, binding);
-    const native =
-      this.engine.getSessionByPath(sessionPath) ||
-      (await this.engine.ensureSessionLoaded(sessionPath));
-    if (native.isIdle && !native.isCompacting)
-      await this.applyRequestedModel(sessionPath);
-    this.publish(sessionPath, "model_selection", pendingModel);
-    return {
-      selection: pendingModel,
-      effectiveAt: pendingModel.state === "applied" ? "now" : "next-request",
-    };
   }
   async configureModelPolicy(sessionPath: string, input: unknown) {
     const binding = await this.binding(sessionPath);
@@ -695,40 +693,53 @@ export class EngineeringHost {
       });
     };
   }
-  async applyRequestedModel(sessionPath: string) {
-    const binding = await this.binding(sessionPath),
-      selection = binding?.pendingModel;
-    if (!selection || selection.state !== "pending") return;
-    try {
-      await this.assertManagedModel(
-        sessionPath,
-        selection.provider,
-        selection.id,
-      );
-      await this.engine.switchSessionModel(
-        sessionPath,
-        selection.id,
-        selection.provider,
-      );
-      selection.state = "applied";
-    } catch (error) {
-      selection.state = "failed";
-      selection.error = String(error);
-    }
-    const current = await this.binding(sessionPath);
-    if (current?.pendingModel?.revision === selection.revision) {
-      current.pendingModel = selection;
-      await this.saveBinding(sessionPath, current);
-    }
-    this.publish(sessionPath, "model_selection", selection);
+  async applyRequestedModel(sessionPath: string): Promise<void> {
+    const running = this.modelSelectionRuns.get(sessionPath);
+    if (running) return running;
+    const task = (async () => {
+      for (;;) {
+        const selection = (await this.binding(sessionPath))?.pendingModel;
+        if (!selection || selection.state !== 'pending') return;
+        let terminal: PendingModel;
+        try {
+          await this.assertManagedModel(sessionPath, selection.provider, selection.id);
+          const model = await this.engine.resolveModelWithCredentialsFresh({ provider: selection.provider, id: selection.id });
+          if (!model) throw new Error('Selected model is unavailable or has no configured credentials');
+          await this.assertManagedModel(sessionPath, selection.provider, selection.id);
+          const current = (await this.binding(sessionPath))?.pendingModel;
+          if (current?.revision !== selection.revision || current.state !== 'pending') continue;
+          this.modelSelectionCommitting.set(sessionPath, selection.revision);
+          await this.engine.switchSessionModel(sessionPath, selection.id, selection.provider);
+          terminal = { ...selection, state: 'applied' };
+        } catch (error) {
+          terminal = { ...selection, state: 'failed', error: error instanceof Error ? error.message : String(error) };
+        } finally { this.modelSelectionCommitting.delete(sessionPath); }
+        const binding = await this.binding(sessionPath), current = binding?.pendingModel;
+        if (current?.revision !== selection.revision || current.state !== 'pending') continue;
+        let modelPolicy = binding?.modelPolicy;
+        if (terminal.state === 'applied' && selection.source === 'manual' && modelPolicy) {
+          const key = modelPolicy.phase === 'planning' ? 'planning' : modelPolicy.phase === 'review' ? 'review' : 'execution';
+          modelPolicy = { ...modelPolicy, [key]: { ...modelPolicy[key], provider: selection.provider, id: selection.id } };
+        }
+        await this.saveBinding(sessionPath, { pendingModel: terminal, ...(modelPolicy ? { modelPolicy } : {}) });
+        this.publish(sessionPath, 'model_selection', terminal);
+      }
+    })();
+    this.modelSelectionRuns.set(sessionPath, task);
+    try { await task; } finally { if (this.modelSelectionRuns.get(sessionPath) === task) this.modelSelectionRuns.delete(sessionPath); }
   }
-  async cancelRequestedModel(sessionPath:string){
-    const binding=await this.binding(sessionPath);
-    if(binding?.pendingModel?.state==='pending'){
-      binding.pendingModel={...binding.pendingModel,revision:binding.pendingModel.revision+1,state:'cancelled'};
-      await this.saveBinding(sessionPath,binding);this.publish(sessionPath,'model_selection',binding.pendingModel);
+  async cancelRequestedModel(sessionPath: string) {
+    const binding = await this.binding(sessionPath);
+    if (binding?.pendingModel?.state === 'pending' && this.modelSelectionCommitting.get(sessionPath) === binding.pendingModel.revision) {
+      throw new Error('模型已进入切换阶段，无法再取消；完成后可重新选择');
     }
-    return {selection:binding?.pendingModel||null};
+    this.nextModelIntent(sessionPath);
+    if (binding?.pendingModel?.state === 'pending') {
+      const selection: PendingModel = { ...binding.pendingModel, revision: binding.pendingModel.revision + 1, state: 'cancelled' };
+      await this.saveBinding(sessionPath, { pendingModel: selection });
+      this.publish(sessionPath, 'model_selection', selection);
+    }
+    return this.modelSelectionResult(sessionPath);
   }
   async assertManagedModel(sessionPath: string, provider: string, id: string) {
     const grant = (await this.binding(sessionPath))?.managedGrant;
@@ -747,6 +758,7 @@ export class EngineeringHost {
       binding.managedGrant.managerPath !== managerPath
     )
       throw new Error("Worker manager ownership mismatch");
+    this.nextModelIntent(sessionPath);
     binding.managedGrant = {
       managerPath,
       root: binding.root,

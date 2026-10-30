@@ -18,8 +18,15 @@ export function ModelSelector({ models, sessionModel, isStreaming = false }: {
   const { t } = useI18n();
   const [switching, setLoading] = useState(false);
   const path=useStore(s=>s.currentSessionPath)||'',connection=useStore(s=>s.activeServerConnectionId);
+  const [cancelError,setCancelError]=useState('');
   const selection=useModelSelectionStore(s=>s.items[modelSelectionKey(connection,path)]);
   const loading=switching;
+  useEffect(()=>setCancelError(''),[path,connection,selection?.revision,selection?.state]);
+  const cancelSelection=async()=>{
+    const selectedPath=path,selectedConnection=connection;setCancelError('');
+    try{const response=await hanaFetch('/api/models/selection/cancel',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionPath:selectedPath}),throwOnHttpError:false});const data=await response.json();if(!response.ok)throw new Error(data.error||'取消未成功，请重试');receiveModelSelection(selectedConnection,selectedPath,data.selection);}
+    catch(error){if(useStore.getState().currentSessionPath===selectedPath&&useStore.getState().activeServerConnectionId===selectedConnection)setCancelError(error instanceof Error?error.message:String(error));}
+  };
   useEffect(()=>{
     if(!path)return;let active=true;
     const read=()=>hanaFetch(`/api/models/selection?sessionPath=${encodeURIComponent(path)}`).then(r=>r.json()).then(data=>{if(active)receiveModelSelection(connection,path,data.selection||null);}).catch(()=>{});
@@ -203,7 +210,8 @@ export function ModelSelector({ models, sessionModel, isStreaming = false }: {
       )}
       renderGroupHeader={(g) => <ProviderGroupHeader provider={g} />}
     />
-    {selection?.state==='pending'&&<span className={styles['model-selection-note']} role="status"><AppIcon name="arrowEnter" size={13}/>下一请求：{models.find(m=>m.id===selection.id&&m.provider===selection.provider)?.name||selection.id}<button type="button" aria-label="取消待切换模型" onClick={()=>void hanaFetch('/api/models/selection/cancel',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionPath:path})}).then(r=>r.json()).then(data=>receiveModelSelection(connection,path,data.selection))}>×</button></span>}
+    {selection?.state==='pending'&&<span className={styles['model-selection-note']} role="status"><AppIcon name="arrowEnter" size={13}/>下一请求：{models.find(m=>m.id===selection.id&&m.provider===selection.provider)?.name||selection.id}<button type="button" aria-label="取消待切换模型" onClick={()=>void cancelSelection()}>×</button></span>}
+    {cancelError&&<span className={styles['model-selection-note']} role="alert">{cancelError}</span>}
     {selection?.state==='failed'&&<span className={styles['model-selection-note']} role="alert" title={selection.error}>模型未切换：{selection.error||'请重新选择'}</span>}
     </div>
   );

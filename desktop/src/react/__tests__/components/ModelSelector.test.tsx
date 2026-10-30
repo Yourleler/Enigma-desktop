@@ -152,6 +152,16 @@ describe('ModelSelector', () => {
     expect(addToast).not.toHaveBeenCalled();
   });
 
+  it('shows a failed cancellation inline and retains the pending selection',async()=>{
+    storeState.currentSessionPath='/sessions/a.jsonl';storeState.pendingNewSession=false;
+    const selection={id:models[1].id,provider:models[1].provider,revision:1,state:'pending'};
+    vi.mocked(hanaFetch).mockImplementation(async url=>String(url).startsWith('/api/models/selection?')?jsonResponse({selection}):jsonResponse({error:'模型已进入切换阶段'},false));
+    render(<ModelSelector models={models} sessionModel={models[0]} isStreaming/>);
+    fireEvent.click(await screen.findByRole('button',{name:'取消待切换模型'}));
+    await waitFor(()=>expect(screen.getByRole('alert').textContent).toContain('模型已进入切换阶段'));
+    expect(screen.getByRole('status').textContent).toContain('下一请求');
+  });
+
   it('applies the selected model thinking default while preparing a new session', async () => {
     vi.mocked(hanaFetch)
       .mockResolvedValueOnce(jsonResponse({ ok: true, thinkingLevel: 'high' }))

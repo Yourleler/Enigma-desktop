@@ -21,3 +21,10 @@ it('restores a pending selection and revalidates it at the next request',async()
  const apply=vi.fn(async()=>{});const queue=new QueuedModelSwitch({initial:{provider:'p',id:'saved',revision:8,state:'pending'},resolve:async(provider,id)=>({provider,id}),apply,save:async()=>{},idle:()=>false});
  await queue.atBoundary();expect(apply).toHaveBeenCalledWith({provider:'p',id:'saved'});expect(queue.selection?.state).toBe('applied');
 });
+it('rejects a late cancellation after committing the model has started',async()=>{
+ let release!:()=>void,entered!:()=>void;const waiting=new Promise<void>(r=>entered=r),gate=new Promise<void>(r=>release=r);
+ const queue=new QueuedModelSwitch({resolve:async()=>({id:'b'}),apply:async()=>{entered();await gate;},save:async()=>{},idle:()=>false});
+ await queue.request('p','b');const boundary=queue.atBoundary();await waiting;
+ await expect(queue.cancel()).rejects.toThrow('已进入切换阶段');release();await boundary;
+ expect(queue.selection?.state).toBe('applied');
+});
