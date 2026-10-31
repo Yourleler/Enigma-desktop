@@ -46,10 +46,10 @@ export function SessionClock({compact=false,inline=false}:{compact?:boolean;inli
   const label=clock?.kind==='goal'?'Goal 循环':clock?.kind==='conductor'?'管家协作':'本轮对话';
   const state=stale?'状态待同步':clock?.state==='running'?'运行中':clock?.state==='paused'?'已暂停':clock?.state==='done'?'已结束':clock?.state==='stopped'?'已停止':'状态待核对';
   if(inline){
+    if(!clock)return null;
     const started=data?.value.createdAt;
     const detail=`对话开始 ${data?formatClockTime(started??null):error?'未获取':'读取中…'}${clock?`\n${label} · ${state} · ${elapsedClock(elapsed)}\n开始 ${formatClockTime(clock.startedAt)}`:''}`;
     return <div className={styles.inlineBar} data-testid="session-clock" aria-label="对话时间" data-tooltip={detail}>
-      <span>开始 <time>{started?new Date(started).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',hour12:false}):'—'}</time></span>
       {clock&&<span className={styles.run} data-active={clock.state==='running'&&!stale}>{state} <strong>{elapsedClock(elapsed)}</strong></span>}
     </div>;
   }

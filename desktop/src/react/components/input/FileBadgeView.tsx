@@ -24,6 +24,7 @@ export function FileBadgeView({ node, deleteNode }: NodeViewProps) {
   useEffect(()=>()=>preview.dismiss(imageId),[preview.dismiss,imageId]);
   const src=(!urlFailed&&thumbnailUrl)||fallback||null;
   useEffect(()=>preview.update({id:imageId,name,src,failed:readFailed}),[imageId,name,src,readFailed,preview.update]);
+  useEffect(()=>{if(image&&node.attrs.inlineAttachment&&trigger.current)return preview.register({id:imageId,name,src,failed:readFailed},trigger.current);},[image,imageId,node.attrs.inlineAttachment,preview.register]);
   const open=(pinned=false)=>{if(trigger.current)preview.show({id:imageId,name,src,failed:readFailed},trigger.current,pinned);};
 
   if(image&&node.attrs.inlineAttachment)return <NodeViewWrapper as="span" className={styles.imageAttachment} contentEditable={false} data-input-image="">

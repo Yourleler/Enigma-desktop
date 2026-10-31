@@ -1,3 +1,4 @@
+import {SessionClock} from '../chat/SessionClock';
 import {motion,useReducedMotion} from 'motion/react';
 import {ChangeWorkbench} from '../../engineering/ChangeWorkbench';
 import {SubagentPanel} from './SubagentPanel';
@@ -150,7 +151,7 @@ export function RightDock(){
       {hasVisited('changes')&&<section key={`changes:${scope}`} hidden={!show('changes')} inert={!show('changes')} aria-hidden={!show('changes')} className="enigma-dock-section">{session?<ChangeWorkbench/>:<div className="enigma-dock-empty">开始项目对话后，在这里查看代码变更。</div>}</section>}
       {hasVisited('browser')&&<section key={`browser:${scope}`} hidden={!show('browser')} inert={!show('browser')} aria-hidden={!show('browser')} className="enigma-dock-section"><SidebarBrowser sessionPath={view?.browserSession===undefined?session:view.browserSession}/></section>}
       {hasVisited('agents')&&<section hidden={!show('agents')} inert={!show('agents')} aria-hidden={!show('agents')} className="enigma-dock-section"><SubagentPanel/></section>}
-      {hasVisited('tasks')&&<section hidden={!show('tasks')} inert={!show('tasks')} aria-hidden={!show('tasks')} className="enigma-dock-section enigma-dock-task-list"><div className="enigma-dock-task-intro"><h3>任务概览</h3><p>当前对话的计划、协作和运行信息。</p>{engineering?.connected&&<div><button onClick={()=>openGroup('plan')}>计划</button><button onClick={()=>openGroup('acceptance')}>检查结果</button><button onClick={()=>openGroup('observer')}>运行诊断</button></div>}</div><SessionTodoCard/><WorkflowCard/><AgentActivityCard/><SessionStatusCard/></section>}
+      {hasVisited('tasks')&&<section hidden={!show('tasks')} inert={!show('tasks')} aria-hidden={!show('tasks')} className="enigma-dock-section enigma-dock-task-list"><div className="enigma-dock-task-intro"><h3>任务概览</h3><p>当前对话的计划、协作和运行信息。</p>{engineering?.connected&&<div><button onClick={()=>openGroup('plan')}>计划</button><button onClick={()=>openGroup('acceptance')}>检查结果</button><button onClick={()=>openGroup('observer')}>运行诊断</button></div>}</div><SessionClock compact/><SessionTodoCard/><WorkflowCard/><AgentActivityCard/><SessionStatusCard/></section>}
       {(resolved==='tools'||resolved?.startsWith('tool:'))&&<section className="enigma-dock-section">{engineering?.connected?<EngineeringPanel embedded/>:<div className="enigma-dock-empty"><h3>打开项目工具</h3><p>沿用当前对话的目录。没有目录的项目也可以管理任务；代码功能需要在“仓库”中关联代码目录。</p><button onClick={()=>void openProjectTool(resolved?.startsWith('tool:')?resolved.slice(5):'project')}>打开工具</button></div>}</section>}
       {!(show('files')&&inlineItem?.id===fileId)&&<PreviewPanel embedded watchDocuments={false} visible={previewShown} itemId={fileId||null}/>}
       {!resolved&&<div className="enigma-dock-empty"><h3>添加工作面板</h3><p>点击上方＋，选择文件、浏览器、变更或其他工具。</p></div>}

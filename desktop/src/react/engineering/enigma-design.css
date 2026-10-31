@@ -125,7 +125,7 @@ body.enigma-surface[data-enigma-tone="dark"] {
   --tooltip-border: #48494d;
   color-scheme: dark;
 }
-:root:has(body.enigma-surface) { --chat-column-width: 820px; --sidebar-width: 250px; --chat-message-font-size: 16px; }
+:root:has(body.enigma-surface) { --chat-column-width: 760px; --sidebar-width: 250px; --chat-message-font-size: 15px; --chat-input-column-width:760px; }
 :root:has(body.enigma-engineering) { --jian-sidebar-width: clamp(320px, 28vw, 420px); }
 body.enigma-surface :is(.main-content,.chat-area,.app-container,.chat-area.has-panels) { background: var(--eg-page); }
 body.enigma-surface .titlebar { background: var(--eg-sidebar); border-bottom: 1px solid var(--eg-stroke); backdrop-filter: none; }

@@ -1,11 +1,34 @@
-.enigma-composer-attachment-preview { position:fixed;z-index:11020;display:flex;flex-direction:column;width:min(360px,calc(100vw - 24px));box-sizing:border-box;overflow:hidden;border:1px solid var(--border);border-radius:16px;background:var(--bg-card);color:var(--text);box-shadow:0 12px 36px var(--shade-black-20);--glass-fill:color-mix(in srgb,var(--eg-card) var(--glass-menu-mix,75%),transparent);--glass-blur:10px;-webkit-app-region:no-drag; }
-.enigma-composer-attachment-preview header { flex:none;display:flex;align-items:center;gap:8px;padding:8px 10px;font:12px/1.4 var(--font-ui); }
-.enigma-composer-attachment-preview header button { flex:none;display:grid;place-items:center;width:26px;height:26px;border:0;border-radius:8px;background:transparent;color:var(--text-muted);cursor:pointer; }
-.enigma-composer-attachment-preview header button:hover { background:var(--overlay-light);color:var(--text); }
-.enigma-composer-attachment-preview header span { min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
-.enigma-composer-attachment-preview header small { flex:none;color:var(--text-muted);font-size:10px; }
-.enigma-composer-attachment-image { display:flex;min-height:0;flex:1;padding:0 10px 10px;justify-content:center;overflow:hidden; }
-.enigma-composer-attachment-image img { display:block;max-width:100%;min-height:0;max-height:290px;object-fit:contain;border-radius:8px; }
-.enigma-composer-attachment-image p { padding:24px 12px;font:12px/1.5 var(--font-ui);color:var(--text-muted); }
-.enigma-composer-attachment-preview button:focus-visible { outline:2px solid var(--accent);outline-offset:1px; }
-@media(max-width:667px){.enigma-composer-attachment-preview[data-expanded="true"]{width:calc(100vw - 88px);}}
+.enigma-composer-surface-mount,.enigma-composer-surface-host {min-width:0;}
+.enigma-composer-focus-stage {position:fixed;inset:0;z-index:9000;display:flex;justify-content:center;align-items:flex-end;padding:24px;box-sizing:border-box;pointer-events:none;}
+.enigma-composer-focus-scrim {position:absolute;inset:0;background:rgb(4 6 12 / 54%);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);pointer-events:auto;}
+body.enigma-surface[data-enigma-tone="light"] .enigma-composer-focus-scrim {background:rgb(32 26 45 / 27%);}
+.enigma-composer-focus-slot {position:relative;width:min(860px,100%);max-height:45dvh;min-width:0;pointer-events:auto;}
+.enigma-composer-focus-slot [data-liquid="composer"] {box-shadow:0 20px 65px rgb(0 0 0 / 24%);}
+.enigma-composer-focus-slot [data-liquid="composer"] .tiptap {min-height:56px;max-height:28dvh!important;}
+.enigma-composer-focus-slot [data-testid="token-meter"],.enigma-composer-focus-slot .enigma-expand-composer {opacity:.75;}
+.enigma-composer-attachment-preview {position:fixed;display:flex;flex-direction:column;box-sizing:border-box;color:var(--text);background:transparent;border:0;pointer-events:auto;-webkit-app-region:no-drag;}
+.enigma-composer-attachment-image {position:relative;display:flex;justify-content:center;align-items:center;min-height:0;flex:1;}
+.enigma-composer-attachment-image img {display:block;max-width:100%;max-height:100%;width:100%;height:100%;object-fit:contain;border-radius:9px;filter:drop-shadow(0 12px 28px rgb(0 0 0 / 28%));}
+.enigma-composer-attachment-image p {padding:24px;background:var(--bg-card);border-radius:10px;font:12px/1.6 var(--font-ui);}
+.enigma-image-caption {position:absolute;top:calc(100% + 5px);left:0;right:0;display:flex;justify-content:center;align-items:center;gap:10px;pointer-events:none;font:11px/1.4 var(--font-ui);color:var(--text-muted);}
+.enigma-image-caption span {max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.enigma-image-caption small {font-size:10px;white-space:nowrap;}
+.enigma-composer-attachment-preview[data-pinned="true"] .enigma-image-caption {opacity:0;transition:opacity 120ms;top:auto;bottom:7px;color:#fff;text-shadow:0 1px 4px #000;}
+.enigma-composer-attachment-preview[data-pinned="true"]:hover .enigma-image-caption {opacity:1;}
+.enigma-composer-attachment-preview button {position:absolute;display:grid;place-items:center;flex:none;width:30px;height:30px;padding:0;border:0;border-radius:50%;color:#fff;background:rgb(20 22 28 / 48%);backdrop-filter:blur(8px);font:24px/1 var(--font-ui);cursor:pointer;transition:opacity 130ms,background 130ms;}
+.enigma-composer-attachment-preview button:hover {background:rgb(20 22 28 / 78%);}
+.enigma-composer-attachment-preview button:disabled {opacity:.2;cursor:default;}
+.enigma-composer-attachment-preview button:focus-visible {opacity:1;outline:2px solid var(--accent);outline-offset:2px;}
+.enigma-composer-attachment-preview .enigma-image-close {top:8px;left:8px;opacity:0;}
+.enigma-composer-attachment-preview:hover .enigma-image-close,.enigma-composer-attachment-preview:focus-within .enigma-image-close {opacity:1;}
+.enigma-image-previous {left:-40px;top:calc(50% - 15px);}.enigma-image-next {right:-40px;top:calc(50% - 15px);}
+.enigma-composer-attachment-preview[data-pinned="false"] {padding:6px;background:var(--bg-card);border-radius:12px;box-shadow:0 10px 28px rgb(0 0 0 / 20%);}
+.enigma-composer-attachment-preview[data-pinned="false"] .enigma-image-caption {background:var(--bg-card);border-radius:6px;padding:4px;}
+@media(any-hover:none) {.enigma-composer-attachment-preview .enigma-image-close{opacity:1;}}
+@media(max-width:600px) {.enigma-composer-focus-stage{padding:12px;}.enigma-composer-focus-slot{width:100%;}.enigma-image-previous{left:-32px;}.enigma-image-next{right:-32px;}}
+@media(prefers-reduced-transparency:reduce),(prefers-contrast:more) {.enigma-composer-focus-scrim{background:var(--eg-page);backdrop-filter:none;-webkit-backdrop-filter:none;}}
+
+.enigma-composer-focus-slot div:has(> [data-testid="token-meter"][data-state="idle"]) {display:none;}
+.enigma-composer-focus-slot::after {content:'Enter 换行 · 点击发送按钮发送 · Esc 退出看图';display:block;text-align:center;font:10px/1.5 var(--font-ui);color:var(--text-muted);margin-top:5px;}
+body.enigma-surface:not(.enigma-motion-off) .enigma-composer-attachment-preview[data-pinned="true"] {transition:width 140ms ease,height 140ms ease,left 140ms ease,top 140ms ease;}
+@media(prefers-reduced-motion:reduce){.enigma-composer-attachment-preview{transition:none!important;}}

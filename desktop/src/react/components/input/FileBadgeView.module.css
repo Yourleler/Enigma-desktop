@@ -81,8 +81,8 @@
 }
 .attachment{max-width:min(240px,100%);gap:var(--enigma-spacing-5);padding:var(--enigma-spacing-2) var(--enigma-spacing-5);border:1px solid var(--border);border-radius:9px;background:color-mix(in srgb,var(--bg-card) 38%,transparent);vertical-align:middle;margin:var(--enigma-spacing-4) var(--enigma-spacing-10);line-height:1.5;color:var(--text);}
 .attachment .thumbnail{width:28px;height:28px;border-radius:5px}.attachment .name{color:var(--text);font-size:12px}.remove{flex-shrink:0;border:0;background:transparent;color:var(--text-muted);padding:0 var(--enigma-spacing-10);font:16px/1.2 var(--font-ui);cursor:pointer}.remove:hover{color:var(--text)}
-.imageAttachment { display:inline-block;position:relative;vertical-align:middle;margin:4px 5px;line-height:0;max-width:100%;user-select:none; }
-.imageButton { display:block;width:56px;height:50px;padding:2px;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:color-mix(in srgb,var(--bg-card) 32%,transparent);color:var(--text-muted);cursor:zoom-in;transition:background 140ms,border-color 140ms,transform 160ms; }
+.imageAttachment { display:inline-block;position:relative;vertical-align:middle;margin:3px 4px;line-height:0;max-width:100%;user-select:none; }
+.imageButton { display:block;width:56px;height:52px;padding:0;border:0;border-radius:10px;overflow:hidden;background:transparent;color:var(--text-muted);cursor:zoom-in;transition:background 140ms,border-color 140ms,transform 160ms; }
 .imageButton img { display:block;width:100%;height:100%;object-fit:cover;border-radius:7px; }
 .imageButton:hover { border-color:var(--accent);background:var(--accent-light);transform:translateY(-1px); }
 .imageButton:focus-visible { outline:2px solid var(--accent);outline-offset:2px; }

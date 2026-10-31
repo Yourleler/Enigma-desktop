@@ -1,4 +1,5 @@
 import {InputQueue} from './input/InputQueue';
+import {ComposerSurface} from './input/ComposerSurface';
 import {ComposerEditor} from './input/ComposerEditor';
 import {inputHistoryEntries,inputHistoryDocument,moveInputHistory,inputHistoryDirection} from '../utils/input-history';
 import {isSubmittedDraft,withoutSubmittedFiles} from '../utils/submitted-composer';
@@ -520,6 +521,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
   const setPermissionMode = useStore(s => s.setSessionPermissionMode);
   const [sending, setSending] = useState(false);
   const [expandedComposer,setExpandedComposer]=useState(false);
+  const [imageFocus,setImageFocus]=useState(false),[previewReset,setPreviewReset]=useState(0);
   const closeExpandedComposer=useCallback(()=>setExpandedComposer(false),[]);
   const [slashMenuOpen, setSlashMenuOpen] = useState(false);
   const [slashSelected, setSlashSelected] = useState(0);
@@ -754,8 +756,8 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
         upperChromeHeight,
       });
 
-      parent.style.setProperty('--input-card-h', `${cardHeight}px`);
-      parent.style.setProperty('--input-card-bottom-inset', `${bottomInset}px`);
+      if(parent.style.getPropertyValue('--input-card-h')!==`${cardHeight}px`)parent.style.setProperty('--input-card-h', `${cardHeight}px`);
+      if(parent.style.getPropertyValue('--input-card-bottom-inset')!==`${bottomInset}px`)parent.style.setProperty('--input-card-bottom-inset', `${bottomInset}px`);
     };
 
     updateMetrics();
@@ -767,13 +769,15 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
       };
     }
 
-    const observer = new ResizeObserver(updateMetrics);
+    let metricsFrame=0;
+    const observer = new ResizeObserver(()=>{if(!metricsFrame)metricsFrame=requestAnimationFrame(()=>{metricsFrame=0;updateMetrics();});});
     observer.observe(surface);
     observer.observe(card);
     observer.observe(editorElement);
 
     return () => {
       observer.disconnect();
+      cancelAnimationFrame(metricsFrame);
       parent.style.removeProperty('--input-card-h');
       parent.style.removeProperty('--input-card-bottom-inset');
     };
@@ -2228,7 +2232,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
       navigateInputHistory(historyDirection);
       return true;
     }
-    if(expandedComposer)return false;
+    if(expandedComposer||imageFocus)return false;
     if (fileMenuOpen) {
       if ((e.key === 'ArrowRight' || e.key === 'ArrowLeft')) {
         e.preventDefault();
@@ -2284,6 +2288,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
     return false;
   }, [
     expandedComposer,
+    imageFocus,
     navigateInputHistory,
     dismissSlashMenu,
     editor,
@@ -2349,6 +2354,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
   }, [continuingDeletedAgentSession, currentSessionPath, t]);
 
   return (
+    <ComposerSurface focused={imageFocus&&!expandedComposer} modalActive={imageFocus||expandedComposer} onDismiss={()=>setPreviewReset(value=>value+1)}>
     <div
       className={`${styles['input-surface']}${surface === 'mobile' ? ` ${styles['input-surface-mobile']}` : ''}`}
       ref={inputSurfaceRef}
@@ -2426,7 +2432,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
             onCompositionStart={() => { isComposing.current = true; }}
             onCompositionEnd={() => { isComposing.current = false; }}
           >
-            <ComposerEditor editor={editor} expanded={expandedComposer} onClose={closeExpandedComposer} onAttach={handleAttach} scope={historyScope} locked={inputLocked}/>
+            <ComposerEditor editor={editor} expanded={expandedComposer} onClose={closeExpandedComposer} onAttach={handleAttach} scope={historyScope} locked={inputLocked} onPinnedChange={setImageFocus} resetPreview={previewReset}/>
           </div>
           <InputControlBar
             t={t}
@@ -2510,5 +2516,6 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
         </div>
       </div>
     </div>
+    </ComposerSurface>
   );
 }
