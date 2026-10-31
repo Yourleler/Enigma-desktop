@@ -27,15 +27,16 @@ async function stop() {
   if (log !== undefined) {fs.closeSync(log);log=undefined;}
 }
 async function start(stage) {
+  const startedAt=Date.now();
   log=fs.openSync(path.join(root,stage+'.log'),'w');
   child=spawn(path.join(app,'Contents/MacOS/Enigma'),[],{env:{...process.env,HANA_HOME:profile,ENIGMA_DESKTOP_DATA:profile,ENIGMA_DESKTOP_PRODUCT:'1'},stdio:['ignore',log,log]});
-  for(let i=0;i<400;i++) {
+  for(let i=0;i<1200;i++) {
     if(child.exitCode!==null)throw new Error('Candidate app exited before startup');
     try {
       const value=JSON.parse(fs.readFileSync(path.join(profile,'server-info.json')));
       if(value.ownerPid===child.pid) {
         const response=await fetch(`http://127.0.0.1:${value.port}/api/server/identity`,{headers:{Authorization:`Bearer ${value.token}`},signal:AbortSignal.timeout(1000)});
-        if(response.ok){info=value;stages.push({stage,pid:child.pid,serverPid:value.pid,identity:await response.json()});return;}
+        if(response.ok){info=value;stages.push({stage,pid:child.pid,serverPid:value.pid,startupMs:Date.now()-startedAt,identity:await response.json()});return;}
       }
     } catch {}
     await new Promise(resolve=>setTimeout(resolve,100));

@@ -5,6 +5,7 @@ import { openSettingsModal } from '../../stores/settings-modal-actions';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {sessionScopedValue} from '../../stores/session-slice';
 import {turnUsageMeter} from '../../utils/turn-usage-meter';
+import {timeMillis} from '../../../../../shared/session-timing';
 import { useStore } from '../../stores';
 import { AnchoredPortal } from '../../ui/AnchoredPortal';
 import { formatElapsed, formatTokenCount, METER_PHASE_LABEL, tokenMeterKey, useTokenMeterStore } from './token-meter-store';
@@ -19,11 +20,16 @@ export function TokenMeterPill() {
   const connected = useStore(s => s.connected);
   const liveMeter = useTokenMeterStore(s => sessionPath ? s.metersBySession[tokenMeterKey(connection, sessionPath)] : null);
   const history = useStore(s=>sessionPath?sessionScopedValue(s,s.chatSessions,sessionPath)?.items:undefined);
-  const historicalMeter=useMemo(()=>{
-    for(let index=(history?.length||0)-1;index>=0;index--){const item=history![index];if(item.type==='message'&&item.data.role==='assistant'&&item.data.turnUsage)return turnUsageMeter(item.data.turnUsage);}
-    return null;
+  const {historicalMeter,latestInputAt}=useMemo(()=>{
+    let meter=null,inputAt=null;
+    for(let index=(history?.length||0)-1;index>=0;index--){const item=history![index];if(item.type!=='message')continue;
+      if(item.data.role==='user'){inputAt=timeMillis(item.data.timestamp);break;}
+      if(!meter&&item.data.role==='assistant'&&item.data.turnUsage)meter=turnUsageMeter(item.data.turnUsage);
+    }
+    return {historicalMeter:meter,latestInputAt:inputAt};
   },[history]);
-  const meter=liveMeter&&(!historicalMeter||liveMeter.state==='running'||liveMeter.startedAt>=historicalMeter.startedAt)?liveMeter:historicalMeter;
+  const currentLive=liveMeter&&(liveMeter.state==='running'||!latestInputAt||(liveMeter.endedAt??liveMeter.startedAt)>=latestInputAt)?liveMeter:null;
+  const meter=currentLive&&(!historicalMeter||currentLive.state==='running'||currentLive.startedAt>=historicalMeter.startedAt)?currentLive:historicalMeter;
   const [open, setOpen] = useState(false), [now, setNow] = useState(Date.now()),[view,setView]=useState<'round'|'session'>('round');
   const anchor = useRef<HTMLButtonElement>(null), panel = useRef<HTMLDivElement>(null);
   useEffect(() => { setOpen(false);setView('round'); }, [sessionPath, connection]);

@@ -691,7 +691,7 @@
     ],
     "version": 3
   },
-  "payloadFingerprint": "sha256:2f9815300e8acce64bfc1d5d07d8357f743e7f0babb659c1ece1ebce1315eb70",
+  "payloadFingerprint": "sha256:96eff56cbfac4df14c1cb63f35ab95efd595bab1065ca1da3f1ba53c8c0d625b",
   "registry": [
     {
       "affectedByEpochMigration": true,
@@ -3441,8 +3441,8 @@
   ],
   "review": {
     "classification": "compatible",
-    "compatibilityReason": "Register additive conversation file versions, input queue and frozen review directories; remove retired password-store writes after password feature removal. Existing messages and source files are unchanged. Recovered sending items remain unknown and paused. Constructor syntax changes preserve runtime fields; no DATA_EPOCH migration is required.",
-    "payloadFingerprint": "sha256:2f9815300e8acce64bfc1d5d07d8357f743e7f0babb659c1ece1ebce1315eb70"
+    "compatibilityReason": "Engineering host approval now supplies existing registered writable repository roots and explicit restore checkpoint choices. Session binding schema, persisted keys, and write sites are unchanged; only the hashed host module behavior changed. Existing data is readable without migration.",
+    "payloadFingerprint": "sha256:96eff56cbfac4df14c1cb63f35ab95efd595bab1065ca1da3f1ba53c8c0d625b"
   },
   "schemas": [
     {
@@ -3702,7 +3702,7 @@
       "contract": "schema 1 native-session/workspace binding, absolute roots, explicit memory flag, validated source identity, manager model grants and bounded guardian configuration/usage",
       "kind": "runtime-contract",
       "module": "plugins/enigma/host.ts",
-      "sourceHash": "sha256:97566e51a6eeede9faaccb851817be51163978a41fec57f81f5ac5dd6979adde",
+      "sourceHash": "sha256:789cd2c2e037b5b3e529ef6f543813d1e774620d0e2129d800cbc40646ef50c0",
       "storeId": "enigma-session-bindings"
     },
     {

@@ -37,6 +37,11 @@ it('restores reported history usage after restart and lets the next live round t
  expect(screen.getByTestId('token-meter')).toHaveTextContent('生成中');
  expect(screen.getByRole('dialog')).not.toHaveTextContent('原始消息');
 });
+it('does not show an earlier completed round as the usage of a newer unanswered message',()=>{
+ useTokenMeterStore.getState().applyTokenMeter('sp',{...meter,state:'done',endedAt:2300},'a');
+ useStore.getState().initSession('sp',[{type:'message',data:{id:'new',role:'user',timestamp:3000,text:'Next request'}}],false);
+ render(<TokenMeterPill/>);expect(screen.getByText('尚无用量')).toBeVisible();
+});
 
 it('labels post-response processing separately and preserves actual token totals',()=>{
  useTokenMeterStore.getState().applyTokenMeter('sp',{...meter,phase:'processing',rate:0},'a');render(<TokenMeterPill/>);expect(screen.getByText('后续处理中')).toBeVisible();fireEvent.click(screen.getByRole('button',{name:'查看本轮模型用量'}));expect(screen.getByRole('dialog')).toHaveTextContent('这次模型响应已结束');expect(screen.getByRole('dialog')).toHaveTextContent('当前没有模型输出');expect(screen.getByRole('dialog')).toHaveTextContent('1,234');

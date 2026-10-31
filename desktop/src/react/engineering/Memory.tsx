@@ -45,7 +45,7 @@ export function MemoryPanel({ value:initial,searchText='' }: { value: any;search
           : "当前对话未启用助手的工程记忆，仍可查阅和手动管理已有记录。"}
       </p>
       <p className="enigma-source-note">这里只展示当前可见范围内的记忆；项目记忆与仅此任务的记忆分别标注。全文和来源会在使用时重新核对。</p>
-      <div className="enigma-inline-actions">{save&&<button disabled={readOnly||mainBusy} onClick={()=>void showAction(save)}>记录一条记忆</button>}{draft&&<button disabled={readOnly||mainBusy} onClick={()=>void showAction(draft)}>从来源记录经验</button>}</div>
+      <div className="enigma-inline-actions"><button disabled={readOnly||mainBusy} onClick={()=>useEngineering.setState({connectOpen:true})}>工程记忆设置</button>{save&&<button disabled={readOnly||mainBusy} onClick={()=>void showAction(save)}>记录一条记忆</button>}{draft&&<button disabled={readOnly||mainBusy} onClick={()=>void showAction(draft)}>从来源记录经验</button>}</div>
       {catalog.error&&<p className="enigma-error">记忆列表暂未更新，以下保留上次结果。<button onClick={()=>void catalog.refresh()}>重新读取记忆</button></p>}
       {!!value.search?.unavailable&&<p className="enigma-source-note">{value.search.unavailable} 份记录暂不可读取，其余结果仍可查看。</p>}
       {!value.search?.items?.length&&<p className="enigma-source-note">{value.search?.query?'没有找到匹配的可见记忆，试试其他关键词。':'当前没有可见记忆。可以保存经验，或从资料和代码中记录有依据的草稿。'}</p>}
