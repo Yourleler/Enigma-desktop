@@ -61,7 +61,7 @@ body.enigma-surface[data-enigma-tone] .app > .enigma-sidebar-rail,body.enigma-su
 body.enigma-surface[data-enigma-tone] .titlebar { height:var(--titlebar-h);box-sizing:border-box;border:0;gap:8px;padding:0 8px 0 12px;z-index:100; }
 body.enigma-surface .titlebar .tb-left-group { display:flex;align-items:center;height:100%;flex:none; }
 body.enigma-surface .titlebar .tb-conversation-group { min-width:0; }
-body.enigma-surface .titlebar .tb-center-title { position:static;transform:none;left:auto;right:auto;top:auto;bottom:auto;flex:1 1 auto;max-width:100%;min-width:0;display:flex;align-items:center;justify-content:flex-start;text-align:left;font:400 13px/20px var(--font-ui);letter-spacing:0;color:var(--text);padding-inline:12px 12px;box-sizing:border-box;height:32px; }
+body.enigma-surface .titlebar .tb-center-title { position:static;transform:none;left:auto;right:auto;top:auto;bottom:auto;flex:1 1 auto;max-width:100%;min-width:0;display:flex;align-items:center;justify-content:flex-start;text-align:left;font:600 14px/20px var(--font-ui);letter-spacing:0;color:var(--text);padding-inline:16px 16px;box-sizing:border-box;height:32px; }
 body.enigma-surface .titlebar .tb-center-title span { min-width:0;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
 body.enigma-surface .titlebar .tb-right-group { margin:0;gap:2px;flex:none; }
 body.enigma-surface #enigma-titlebar-chat-tools { flex:0 1 auto;min-width:0;-webkit-app-region:no-drag;pointer-events:auto; }
@@ -123,8 +123,8 @@ body.enigma-surface .titlebar .tb-toggle:hover { background:color-mix(in srgb,va
 body.enigma-surface .titlebar .tb-toggle:active { background:color-mix(in srgb,var(--text) 9%,transparent); }
 
 
-/* Text and controls share one 32px row, centered inside the titlebar.
-   Grid items previously inherited a top-aligned line box on desktop. */
+/* The conversation title is semibold with more inset than utility tabs,
+   while both share a vertically centered 32px row and 20px line height. */
 body.enigma-surface #enigma-titlebar-chat-tools .enigma-compact-tools > .enigma-menu-trigger {min-height:32px;line-height:20px;padding-block:6px;}
 body.enigma-surface .titlebar #enigma-titlebar-workspace .enigma-dock-actions > button {height:32px;}
 
