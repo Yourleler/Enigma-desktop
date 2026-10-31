@@ -29,6 +29,14 @@ it('supports comma-separated include globs without evaluating regular expression
  expect(changeMatches('repo/src/a.ts','src/**')).toBe(true);expect(changeMatches('repo/docs/a.md','src/**,docs/*.md')).toBe(true);expect(changeMatches('repo/docs/a.md','src/**')).toBe(false);expect(changeMatches('repo/a[1].ts','a[1].ts')).toBe(true);
 });
 
+it('does not overwrite a user-selected source when the initial catalog arrives late',async()=>{
+ let done!:(value:Response)=>void;vi.mocked(hanaFetch).mockImplementationOnce(()=>new Promise(resolve=>{done=resolve;}));
+ render(<ChangeWorkbench/>);
+ fireEvent.change(screen.getByRole('combobox',{name:'变更来源'}),{target:{value:'staged'}});
+ await act(async()=>done(new Response(JSON.stringify({turns:[{id:'turn',onBranch:true,startedAt:'2026-10-31',prompt:'A'}],repositories:[],jobs:[]}))));
+ expect(screen.getByRole('combobox',{name:'变更来源'})).toHaveValue('staged');
+});
+
 it('retains existing results and explains an uncertain timeout without retrying writes',async()=>{
  render(<ChangeWorkbench/>);fireEvent.click(await screen.findByRole('button',{name:'查看变更'}));await screen.findByText('2 个文件 · 版本 version');
  vi.mocked(hanaFetch).mockImplementation(async(url,options)=>{if(options?.method==='POST')throw new DOMException('signal is aborted without reason','AbortError');return new Response(JSON.stringify({turns:[],repositories:[],jobs:[]}));});

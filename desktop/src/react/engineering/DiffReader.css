@@ -4,6 +4,9 @@
 .enigma-diff-controls > div { display:flex;align-items:center;gap:var(--space-4, 4px);flex-wrap:wrap; }
 .enigma-diff-controls button { background:transparent;color:var(--text-muted);font:11px/1.5 var(--font-ui);padding:var(--space-4, 4px) var(--space-6, 6px);border:0;border-radius:5px;cursor:pointer; }
 .enigma-diff-controls button:hover,.enigma-diff-controls button[aria-pressed=true] { background:var(--accent-light);color:var(--accent); }
+.enigma-diff-controls button:disabled { opacity:.4; cursor:default; background:transparent; color:var(--text-muted); }
+.enigma-diff-omitted { padding:var(--space-12,12px); color:var(--text-muted); font:var(--fs-caption)/1.6 var(--font-ui); }
+.enigma-diff-attribution { margin:0; padding:6px 12px; color:var(--text-muted); font:11px/1.5 var(--font-ui); }
 .enigma-diff-side-labels { display:flex;color:var(--text-muted);font:10px/1.5 var(--font-ui);padding:var(--space-5, 5px) var(--space-12, 12px);border-bottom:1px solid var(--border); }
 .enigma-diff-side-labels > span { flex:1; }
 .enigma-diff-editor { flex:1;min-height:180px;min-width:0;overflow:hidden; }
