@@ -83,3 +83,11 @@ describe('SettingsNav search', () => {
     expect(screen.getByRole('button', { name: '助手' })).toBeTruthy();
   });
 });
+
+it('consumes Escape only while clearing a search query',()=>{
+ window.t=((key:string)=>translations[key]||key) as typeof window.t;
+ const parentKey=vi.fn();const view=render(<div onKeyDown={parentKey}><SettingsNav/></div>);
+ const input=screen.getByPlaceholderText('搜索设置');fireEvent.change(input,{target:{value:'theme'}});
+ fireEvent.keyDown(input,{key:'Escape'});expect((input as HTMLInputElement).value).toBe('');expect(parentKey).not.toHaveBeenCalled();
+ fireEvent.keyDown(input,{key:'Escape'});expect(parentKey).toHaveBeenCalledOnce();view.unmount();
+});

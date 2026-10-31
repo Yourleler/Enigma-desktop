@@ -123,3 +123,10 @@ body.enigma-surface [data-dock-preview] [data-preview-panel-body][data-preview-k
  background:transparent;border:0;border-radius:10px;box-shadow:none;overflow:hidden;isolation:isolate;
 }
 body.enigma-surface [data-dock-preview] [data-preview-kind="html"] .preview-html-frame {border-radius:0;}
+/* Keep small glyphs with reliable pointer and keyboard targets. */
+.enigma-dock-tab .enigma-dock-tab-close {width:24px;min-width:24px;min-height:24px;align-self:center;justify-content:center;}
+.enigma-dock-tab {will-change:auto;}
+.enigma-dock-tabs[data-reordering] .enigma-dock-tab {will-change:transform;}
+@media (hover:none),(pointer:coarse) {
+ .enigma-dock-tab .enigma-dock-tab-close {opacity:1;min-width:36px;min-height:36px;}
+}

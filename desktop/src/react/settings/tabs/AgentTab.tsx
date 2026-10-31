@@ -369,6 +369,7 @@ export function AgentTab() {
           <textarea
             className={styles['settings-textarea']}
             rows={3}
+            aria-label={t('settings.agent.identity')}
             spellCheck={false}
             value={identity}
             onChange={(e) => setIdentity(e.target.value)}
@@ -380,6 +381,7 @@ export function AgentTab() {
           <textarea
             className={styles['settings-textarea']}
             rows={10}
+            aria-label={t('settings.agent.agentsMd')}
             spellCheck={false}
             value={agentsMd}
             onChange={(e) => setAgentsMd(e.target.value)}

@@ -1,6 +1,7 @@
 import React, { useId } from 'react';
 import styles from './settings-components.module.css';
 import { SettingsSurface } from './SettingsPrimitives';
+import {ControlLabelContext} from '../../ui/control-label';
 
 type Variant = 'default' | 'hero' | 'double-column' | 'list';
 type Surface = 'card' | 'plain';
@@ -92,13 +93,13 @@ function SettingsSectionBase({
       {hasHeader && (
         <div className={headerClass}>
           {title && <h2 id={titleId} className={styles.sectionTitle}>{title}</h2>}
-          {context && <div className={styles.sectionContext}>{context}</div>}
+          {context && <ControlLabelContext.Provider value={{labelId:titleId,descriptionId}}><div className={styles.sectionContext}>{context}</div></ControlLabelContext.Provider>}
         </div>
       )}
       {description && <div id={descriptionId} className={styles.sectionDescription}>{description}</div>}
-      <SettingsSurface variant={effectiveSurface} className={styles.sectionBody}>
+      <ControlLabelContext.Provider value={{labelId:titleId,descriptionId}}><SettingsSurface variant={effectiveSurface} className={styles.sectionBody}>
         {children}
-      </SettingsSurface>
+      </SettingsSurface></ControlLabelContext.Provider>
     </section>
   );
 }

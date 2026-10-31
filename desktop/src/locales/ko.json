@@ -1365,7 +1365,8 @@
       "generatingPreview": "미리보기 생성 중",
       "exportAgent": "Agent 내보내기",
       "generatingCardPreview": "캐릭터 카드 미리보기 생성 중",
-      "exportedTo": "{path}(으)로 내보냈어요"
+      "exportedTo": "{path}(으)로 내보냈어요",
+      "enigmaStyle": "코딩 및 프로젝트 협업"
     },
     "about": {
       "title": "소개",

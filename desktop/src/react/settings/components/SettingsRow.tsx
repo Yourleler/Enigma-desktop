@@ -1,4 +1,5 @@
-import React from 'react';
+import React, {useId} from 'react';
+import {ControlLabelContext} from '../../ui/control-label';
 import styles from './settings-components.module.css';
 
 type HintVariant = 'default' | 'warn';
@@ -22,6 +23,7 @@ export function SettingsRow({
   className,
   ...rootProps
 }: SettingsRowProps) {
+  const id=useId(),labelId=`${id}-label`,descriptionId=hint?`${id}-hint`:undefined;
   const rootClass = [
     styles.row,
     layout === 'inline' ? styles.rowInline : styles.rowStacked,
@@ -36,10 +38,10 @@ export function SettingsRow({
   return (
     <div {...rootProps} className={rootClass}>
       <div className={styles.rowText}>
-        <div className={styles.rowLabel}>{label}</div>
-        {hint && <div className={hintClass}>{hint}</div>}
+        <div id={labelId} className={styles.rowLabel}>{label}</div>
+        {hint && <div id={descriptionId} className={hintClass}>{hint}</div>}
       </div>
-      <div className={styles.rowControl}>{control}</div>
+      <ControlLabelContext.Provider value={{labelId,descriptionId}}><div className={styles.rowControl}>{control}</div></ControlLabelContext.Provider>
     </div>
   );
 }

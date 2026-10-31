@@ -27,3 +27,9 @@
 .enigma-diff-editor .cm-search button {font:10px/1.5 var(--font-ui);background:transparent;background-image:none;color:var(--text-muted);border:0;border-radius:4px;padding:var(--space-3, 3px);}
 .enigma-diff-editor .cm-search button:hover {background:var(--accent-light);color:var(--accent);}
 .enigma-diff-editor .cm-gutters .cm-activeLineGutter {background:var(--accent-light);color:var(--text);}
+.enigma-diff-controls > div {min-width:0;max-width:100%;}
+@container (max-width:540px) {
+ .enigma-diff-controls > span {flex-basis:100%;}
+ .enigma-diff-controls > div {flex:1;}
+ .enigma-diff-controls small {white-space:nowrap;}
+}

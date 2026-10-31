@@ -396,6 +396,7 @@ export function AccessTab() {
           control={
             <input
               className={`${styles['settings-input']} ${styles['settings-port-input']}`}
+              aria-label={t('settings.access.port')}
               value={port}
               inputMode="numeric"
               disabled={loadingSummary || !summary}
@@ -445,7 +446,7 @@ export function AccessTab() {
           layout="stacked"
           control={
             <div className={styles['access-url-row']}>
-              <input className={styles['settings-input']} value={mobileUrl} readOnly />
+              <input className={styles['settings-input']} aria-label={t('settings.access.mobileUrl')} value={mobileUrl} readOnly />
               <button
                 className={styles['settings-btn-secondary']}
                 type="button"
@@ -480,7 +481,7 @@ export function AccessTab() {
             layout="stacked"
             control={
               <div className={styles['access-url-row']}>
-                <input className={styles['settings-input']} value={mobileKey} readOnly />
+                <input className={styles['settings-input']} aria-label={t('settings.access.mobileKey')} value={mobileKey} readOnly />
                 <button className={styles['settings-btn-secondary']} type="button" onClick={() => copyText(mobileKey)}>
                   {t('settings.access.copy')}
                 </button>
@@ -497,7 +498,7 @@ export function AccessTab() {
           layout="stacked"
           control={
             <div className={styles['access-url-row']}>
-              <input className={styles['settings-input']} value={desktopUrl} readOnly />
+              <input className={styles['settings-input']} aria-label={t('settings.access.desktopUrl')} value={desktopUrl} readOnly />
               <button
                 className={styles['settings-btn-secondary']}
                 type="button"
@@ -525,7 +526,7 @@ export function AccessTab() {
             layout="stacked"
             control={
               <div className={styles['access-url-row']}>
-                <input className={styles['settings-input']} value={desktopKey} readOnly />
+                <input className={styles['settings-input']} aria-label={t('settings.access.desktopKey')} value={desktopKey} readOnly />
                 <button className={styles['settings-btn-secondary']} type="button" onClick={() => copyText(desktopKey)}>
                   {t('settings.access.copy')}
                 </button>

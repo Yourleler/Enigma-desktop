@@ -1365,7 +1365,8 @@
       "generatingPreview": "プレビューを生成中",
       "exportAgent": "Agent をエクスポート",
       "generatingCardPreview": "キャラクターカードのプレビューを生成中",
-      "exportedTo": "{path} にエクスポートしました"
+      "exportedTo": "{path} にエクスポートしました",
+      "enigmaStyle": "コーディングとプロジェクト協業"
     },
     "about": {
       "title": "このアプリについて",

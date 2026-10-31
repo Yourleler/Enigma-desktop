@@ -1093,3 +1093,18 @@ body.enigma-surface .enigma-modal { background: var(--lg-panel-strong); border: 
 .enigma-multi-choice label span { overflow-wrap: anywhere; }
 .enigma-multi-choice input[type=checkbox] { margin-top: var(--space-4); }
 .enigma-multi-choice input[type=search] { width: 100%; box-sizing: border-box; padding: var(--space-7) var(--space-10); border: 1px solid var(--border); border-radius: 7px; background: var(--bg); color: var(--text); }
+
+/* Operate surfaces: one heading, compact facts, predictable controls. */
+.enigma-conductor-summary {display:flex;flex-wrap:wrap;gap:var(--space-16);margin:var(--space-12) 0 var(--space-16);padding:var(--space-12) 0;border-block:1px solid var(--border);}
+.enigma-conductor-summary > div {display:flex;align-items:baseline;gap:var(--space-8);min-width:0;}
+.enigma-conductor-summary dt {font-size:12px;color:var(--text-muted);}
+.enigma-conductor-summary dd {margin:0;font-size:16px;font-weight:600;font-variant-numeric:tabular-nums;}
+.enigma-refresh-status {font-size:11px;}
+.enigma-task-goal {margin:var(--space-8) 0;}
+.enigma-task-goal > summary {cursor:pointer;color:var(--text-muted);font-size:12px;}
+.enigma-task-goal[open] > summary {color:var(--text);}
+.enigma-task-goal p {margin:var(--space-8) 0;}
+.enigma-step > .enigma-worker-status {display:inline-flex;flex:none;align-items:center;justify-content:center;width:20px;height:24px;opacity:1;color:var(--accent);}
+body.enigma-surface .enigma-panel-head h2 {margin:0;font-size:17px;line-height:1.4;}
+.enigma-panel-head > button {display:inline-flex;align-items:center;justify-content:center;flex:none;min-width:32px;min-height:32px;}
+.enigma-panel-head .enigma-source-path {display:block;margin-top:var(--space-6);overflow-wrap:anywhere;}

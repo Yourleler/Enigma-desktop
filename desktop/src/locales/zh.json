@@ -1407,7 +1407,8 @@
       "generatingPreview": "正在生成预览",
       "exportAgent": "导出助手",
       "generatingCardPreview": "正在生成角色卡预览",
-      "exportedTo": "已导出到 {path}"
+      "exportedTo": "已导出到 {path}",
+      "enigmaStyle": "面向编程与项目协作"
     },
     "general": {
       "title": "通用",

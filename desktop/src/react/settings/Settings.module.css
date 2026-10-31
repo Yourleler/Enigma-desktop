@@ -7913,3 +7913,31 @@ a.about-link:hover {
 }
 
 .theme-card[data-design-theme]::after { display: none; }
+
+/* Task settings remain readable when hosted in a narrow desktop window. */
+.settings-compact-navigation { display:none; }
+:global(body.enigma-surface) .settings-panel-modal .settings-main::before { display:none; }
+.settings-main { container:settings-pane / inline-size; }
+.theme-card[data-design-theme] { background:transparent; }
+@media (max-width:900px) {
+ .settings-panel-modal { --settings-main-x-padding:var(--space-24); }
+}
+@media (max-width:640px) {
+ .settings-panel-modal { --settings-main-x-padding:var(--space-16); }
+ .settings-header-modal { display:flex;justify-content:space-between;padding:var(--space-8) var(--space-16); }
+ .settings-title-group { padding-left:0; }
+ .settings-body { flex-direction:column; }
+ .settings-nav { width:auto;flex:none;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:var(--space-8);padding:var(--space-8) var(--space-16);border-right:0;border-bottom:1px solid var(--border);overflow:visible; }
+ .settings-nav > .settings-nav-item,.settings-nav > :global(.enigma-glass-selection) { display:none; }
+ .settings-compact-navigation { display:block;width:100%;min-width:0;height:36px;border:1px solid var(--border);border-radius:8px;background:var(--overlay-subtle);color:var(--text);font:inherit;padding:0 var(--space-8); }
+ .settings-search-shell { margin:0;min-width:0; }
+ .settings-search-results { grid-column:1/-1;max-height:200px;overflow:auto; }
+ .settings-main { padding:var(--space-16); }
+}
+@container settings-pane (max-width:380px) {
+ .settings-main .theme-options { grid-template-columns:minmax(0,1fr); }
+ .theme-card[data-design-theme] { display:grid;grid-template-columns:80px minmax(0,1fr);min-height:80px;column-gap:var(--space-12);row-gap:var(--space-4); }
+ .theme-card[data-design-theme] .design-theme-preview { grid-row:1/3;width:80px;height:54px; }
+ .theme-card[data-design-theme] .theme-card-name { align-self:end; }
+ .theme-card[data-design-theme] .theme-card-mode { align-self:start; }
+}

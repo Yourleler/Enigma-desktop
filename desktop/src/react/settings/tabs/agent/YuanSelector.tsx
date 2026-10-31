@@ -2,7 +2,7 @@ import React from 'react';
 import { t } from '../../helpers';
 import {yuanAvatarAsset} from '../../../../../../shared/yuan-visuals';
 
-import kongBannerUrl from '../../../../assets/kong-banner.jpg';
+import './YuanSelector.css';
 
 export function YuanSelector({ currentYuan, onChange }: { currentYuan: string; onChange: (key: string) => void }) {
   const types = t('yuan.types') || {};
@@ -24,6 +24,7 @@ export function YuanSelector({ currentYuan, onChange }: { currentYuan: string; o
           return (
             <button
               key={key}
+              data-yuan={key}
               className={`yuan-chip${key === currentYuan ? ' selected' : ''}`}
               type="button"
               aria-pressed={key === currentYuan}
@@ -31,12 +32,13 @@ export function YuanSelector({ currentYuan, onChange }: { currentYuan: string; o
             >
               <img
                 className="yuan-chip-avatar"
+                width={32} height={32} alt=""
                 src={`assets/${yuanAvatarAsset(key,meta.avatar)}`}
                 draggable={false}
               />
               <div className="yuan-chip-info">
-                <span className="yuan-chip-name">{key}</span>
-                <span className="yuan-chip-desc">{meta.label || ''}</span>
+                <span className="yuan-chip-name">{key==='enigma'?'Enigma':meta.label||key}</span>
+                {key==='enigma'&&<span className="yuan-chip-desc">{t('settings.agent.enigmaStyle')}</span>}
               </div>
             </button>
           );
@@ -46,7 +48,7 @@ export function YuanSelector({ currentYuan, onChange }: { currentYuan: string; o
         <button
           className={`yuan-kong-banner${currentYuan === 'kong' ? ' selected' : ''}`}
           type="button"
-          style={{ backgroundImage: `url(${kongBannerUrl})` }}
+          aria-pressed={currentYuan === 'kong'}
           onClick={() => { if (currentYuan !== 'kong') onChange('kong'); }}
         >
           <span className="yuan-kong-name">{t('yuan.simpleMode')}</span>

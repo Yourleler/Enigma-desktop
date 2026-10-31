@@ -25,3 +25,10 @@ body.enigma-surface .enigma-background-option small { font-size:11px;line-height
 .is-compact .enigma-background-option { padding:var(--space-7); }
 .is-compact .enigma-background-option small { display:none; }
 @media (max-width:480px) { .enigma-background-heading > span { font-size:10px; }.enigma-background-options { gap:var(--space-6); } }
+@container settings-pane (max-width:380px) {
+ .enigma-background-options { grid-template-columns:1fr; }
+ body.enigma-surface .enigma-background-option { display:grid;grid-template-columns:80px minmax(0,1fr);column-gap:var(--space-12);row-gap:var(--space-4); }
+ .enigma-background-swatch {grid-row:1/3;width:80px;height:54px;}
+ .enigma-background-name {align-self:end;}
+ body.enigma-surface .enigma-background-option small {align-self:start;}
+}

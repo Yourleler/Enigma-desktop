@@ -70,6 +70,7 @@
   opacity: 1;
   transform: scale(1);
   pointer-events: auto;
+  will-change: auto;
 }
 
 .card.closing {
@@ -99,6 +100,7 @@
 
   .card {
     width: calc(100vw - var(--space-8) - var(--space-8));
+    max-width: calc(100vw - var(--space-8) - var(--space-8));
     height: calc(100vh - var(--space-8) - var(--space-8));
     min-height: 0;
   }

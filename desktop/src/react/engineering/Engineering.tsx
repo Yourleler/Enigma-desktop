@@ -391,14 +391,8 @@ export function EngineeringPanel({embedded=false}:{embedded?:boolean}={}) {
       {embedded&&state.tabs.filter(t=>t.group===active.group).length>1&&<SurfaceMenu label="相关页面">{state.tabs.filter(t=>t.group===active.group).map(tab=><button key={tab.id} onClick={()=>switchTab(tab)}>{tab.title}</button>)}</SurfaceMenu>}
       <div className="enigma-panel-head">
         <div>
-          <small>
-            {active.file
-              ? `${active.repo} / ${active.file}`
-              : state.snapshot.kind === "manager"
-                ? "管家任务群"
-                : "项目工作区"}
-          </small>
           <h2>{active.title}</h2>
+          {active.file&&<small className="enigma-source-path">{active.repo} / {active.file}</small>}
         </div>
         <button
           aria-label="刷新当前内容"
@@ -406,7 +400,7 @@ export function EngineeringPanel({embedded=false}:{embedded?:boolean}={}) {
           disabled={state.loading}
           onClick={() => void loadEngineeringTab(active, query)}
         >
-          ↻
+          <AppIcon name="refresh" size={17}/>
         </button>
       </div>
       {!active.file &&

@@ -40,7 +40,7 @@ describe('Toggle', () => {
     expect(btn?.classList.contains('loading')).toBe(true);
     expect(btn?.classList.contains('on')).toBe(false);
     expect(btn?.getAttribute('aria-busy')).toBe('true');
-    expect(btn?.getAttribute('aria-checked')).toBe('mixed');
+    expect(btn?.getAttribute('aria-checked')).toBe('false'); // aria-busy carries loading; switch does not support mixed.
     expect((btn as HTMLButtonElement)?.disabled).toBe(true);
   });
 

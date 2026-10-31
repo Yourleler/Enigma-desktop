@@ -1406,7 +1406,8 @@
       "generatingPreview": "Generating preview",
       "exportAgent": "Export Agent",
       "generatingCardPreview": "Generating character card preview",
-      "exportedTo": "Exported to {path}"
+      "exportedTo": "Exported to {path}",
+      "enigmaStyle": "Coding and project collaboration"
     },
     "general": {
       "title": "General",

@@ -33,7 +33,7 @@ function renderSelector(currentYuan = "hanako") {
 
 function chipFor(container: HTMLElement, yuan: string): HTMLElement {
   const chips = Array.from(container.querySelectorAll<HTMLElement>(".yuan-chip"));
-  const chip = chips.find((el) => el.querySelector(".yuan-chip-name")?.textContent === yuan);
+  const chip = chips.find((el) => el.dataset.yuan === yuan);
   if (!chip) throw new Error(`no chip rendered for yuan "${yuan}"`);
   return chip;
 }
@@ -43,7 +43,7 @@ describe("YuanSelector", () => {
   it.each(['hanako', 'butter', 'ming'])('explains %s without internal thinking-block codes', yuan => {
     const { container } = renderSelector();
     const chip = chipFor(container, yuan);
-    expect(chip.querySelector('.yuan-chip-desc')?.textContent).toBeTruthy();
+    expect(chip.querySelector('.yuan-chip-name')?.textContent).toBeTruthy();
     expect(chip.querySelector('.yuan-chip-tag')).toBeNull();
   });
 
@@ -62,8 +62,8 @@ describe("YuanSelector", () => {
 
   it("keeps kong out of the chip row", () => {
     const { container } = renderSelector();
-    const names = Array.from(container.querySelectorAll(".yuan-chip-name")).map(
-      (el) => el.textContent,
+    const names = Array.from(container.querySelectorAll<HTMLElement>(".yuan-chip")).map(
+      (el) => el.dataset.yuan,
     );
     expect(names).not.toContain("kong");
     expect(names).toEqual(["enigma", "hanako", "butter", "ming"]);

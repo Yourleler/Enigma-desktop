@@ -1365,7 +1365,8 @@
       "generatingPreview": "正在生成预览",
       "exportAgent": "导出助手",
       "generatingCardPreview": "正在生成角色卡预览",
-      "exportedTo": "已导出到 {path}"
+      "exportedTo": "已导出到 {path}",
+      "enigmaStyle": "程式開發與專案協作"
     },
     "about": {
       "title": "關於 Ta",

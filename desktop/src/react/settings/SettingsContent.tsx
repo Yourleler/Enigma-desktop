@@ -239,7 +239,7 @@ export function SettingsContent({
                       <path d="M15 18l-6-6 6-6" />
                     </svg>
                   </button>
-                  <h1 className={styles['settings-title']}>{t('settings.title')}</h1>
+                  <span className={styles['settings-title']}>{t('settings.title')}</span>
                 </div>
                 <h1 className={styles['settings-header-tab-title']}>{activeTabTitle}</h1>
               </>

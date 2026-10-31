@@ -1,5 +1,6 @@
 import React from 'react';
 import styles from './Toggle.module.css';
+import {useControlLabel} from './control-label';
 
 export interface ToggleProps {
   on: boolean | undefined;
@@ -11,6 +12,7 @@ export interface ToggleProps {
 }
 
 export function Toggle({ on, onChange, label, ariaLabel, title, disabled = false }: ToggleProps) {
+  const field=useControlLabel();
   const loading = on === undefined;
   const visualOn = on === true;
   const effectiveDisabled = disabled || loading;
@@ -26,11 +28,13 @@ export function Toggle({ on, onChange, label, ariaLabel, title, disabled = false
         type="button"
         disabled={effectiveDisabled}
         aria-label={ariaLabel || label}
+        aria-labelledby={ariaLabel||label?undefined:field.labelId}
+        aria-describedby={field.descriptionId}
         title={title}
         aria-busy={loading || undefined}
         role="switch"
         data-glass-interactive=""
-        aria-checked={loading ? 'mixed' : visualOn}
+        aria-checked={visualOn}
         onClick={(e) => {
           e.stopPropagation();
           if (loading) return;

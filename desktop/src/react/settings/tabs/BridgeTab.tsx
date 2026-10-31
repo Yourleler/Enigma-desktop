@@ -352,6 +352,7 @@ export function BridgeTab() {
           <textarea
             className={styles['settings-textarea']}
             rows={6}
+            aria-label={t('settings.agent.publicAgentsMd')}
             spellCheck={false}
             value={b.publicAgentsMd}
             onChange={(e) => b.setPublicAgentsMd(e.target.value)}

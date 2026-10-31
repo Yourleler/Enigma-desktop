@@ -1,5 +1,6 @@
 import React from 'react';
 import styles from './settings-components.module.css';
+import {useControlLabel} from '../../ui/control-label';
 
 interface NumberInputProps {
   value: number;
@@ -24,6 +25,7 @@ export function NumberInput({
   fieldWidth = 'default',
   disabled,
 }: NumberInputProps) {
+  const field=useControlLabel();
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const raw = event.target.value;
     const next = precision === 'float' ? parseFloat(raw) : parseInt(raw, 10);
@@ -40,6 +42,8 @@ export function NumberInput({
     <div className={styles.numberInput}>
       <input
         type="number"
+        aria-labelledby={field.labelId}
+        aria-describedby={field.descriptionId}
         className={inputClassName}
         value={value}
         min={min}

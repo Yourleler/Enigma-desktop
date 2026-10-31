@@ -64,6 +64,9 @@ export function SettingsNav({ onTabChange }: SettingsNavProps) {
 
   return (
     <nav className={styles['settings-nav']} data-glass-segmented="" data-settings-navigation="">
+      <select className={styles['settings-compact-navigation']} aria-label={t('settings.title')} value={activeNavTab} onChange={event=>openTab(event.target.value)}>
+        {navItems.map(item=><option key={item.id} value={item.id}>{item.label}</option>)}
+      </select>
       <GlassSelection selection={`${activeNavTab}:${query}`} selector="button[aria-current='page']"/>
       <div className={styles['settings-search-shell']}>
         <svg className={styles['settings-search-icon']} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -77,7 +80,9 @@ export function SettingsNav({ onTabChange }: SettingsNavProps) {
           placeholder={t('settings.settingsSearch.placeholder')}
           onChange={(event) => setQuery(event.currentTarget.value)}
           onKeyDown={(event) => {
-            if (event.key === 'Escape') setQuery('');
+            if (event.key === 'Escape' && query) {
+              event.preventDefault();event.stopPropagation();setQuery('');
+            }
           }}
         />
         {query && (

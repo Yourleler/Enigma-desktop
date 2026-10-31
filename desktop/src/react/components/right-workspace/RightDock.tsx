@@ -6,7 +6,7 @@ import {HeaderSlot} from '../app/HeaderSlot';
 import {createPortal} from 'react-dom';
 import {FileSplitPane} from './FileSplitPane';
 import {OpenPreviewDocumentWatchBridge} from '../app/OpenPreviewDocumentWatchBridge';
-import {useEffect,useLayoutEffect,useRef,useState} from 'react';
+import {useCallback,useEffect,useLayoutEffect,useRef,useState} from 'react';
 import {useStore} from '../../stores';
 import {dockScope,dockView,expandDock,hideDockTab,moveDockTab,reorderDockTabs,orderedDockTabs,patchDockView,selectDockTab,useRightDock,type DockTab} from '../../stores/right-dock-store';
 import {openPreview,setActiveTab} from '../../stores/preview-actions';
@@ -67,14 +67,18 @@ export function RightDock(){
   useLayoutEffect(()=>{
     const previous=last.current;if(body.current){positions.current[`${previous.scope}:${previous.active}`]=body.current.scrollTop;body.current.scrollTop=positions.current[`${scope}:${resolved}`]||0;}
     last.current={scope,active:resolved||'files'};
-    const list=strip.current,tab=list?.querySelector<HTMLElement>('[aria-selected="true"]');
+    const list=strip.current,tab=list?.querySelector<HTMLElement>('.enigma-dock-tab.active');
     if(list&&tab){const a=list.getBoundingClientRect(),b=tab.getBoundingClientRect();if(b.right>a.right)list.scrollLeft+=b.right-a.right+8;else if(b.left<a.left)list.scrollLeft-=a.left-b.left+8;}
   },[scope,resolved,tabs.length]);
-  useEffect(()=>{
-    const list=strip.current;if(!list||typeof ResizeObserver==='undefined')return;
-    const align=()=>{const active=list.querySelector<HTMLElement>('[aria-selected="true"]');if(!active)return;const a=list.getBoundingClientRect(),b=active.getBoundingClientRect();if(!a.width)return;if(b.right>a.right)list.scrollLeft+=b.right-a.right+4;else if(b.left<a.left)list.scrollLeft-=a.left-b.left+4;};
-    const observer=new ResizeObserver(align);observer.observe(list);return()=>observer.disconnect();
+  const stripObserver=useRef<ResizeObserver|null>(null);
+  const bindStrip=useCallback((list:HTMLDivElement|null)=>{
+    stripObserver.current?.disconnect();stripObserver.current=null;strip.current=list;
+    if(!list)return;
+    const align=()=>{const active=list.querySelector<HTMLElement>('.enigma-dock-tab.active');if(!active)return;const a=list.getBoundingClientRect(),b=active.getBoundingClientRect();if(!a.width)return;if(b.right>a.right)list.scrollLeft+=b.right-a.right+4;else if(b.left<a.left)list.scrollLeft-=a.left-b.left+4;};
+    align();
+    if(typeof ResizeObserver!=='undefined'){stripObserver.current=new ResizeObserver(align);stripObserver.current.observe(list);}
   },[]);
+  useEffect(()=>()=>stripObserver.current?.disconnect(),[]);
   const choose=(tab:DockTab)=>{
     if(tab.startsWith('preview:')){useStore.getState().setPreviewOpen(true);setActiveTab(tab.slice(8));}
     selectDockTab(scope,tab,tab==='browser'&&view?.browserSession===undefined?{browserSession:session}:{});
@@ -116,14 +120,14 @@ export function RightDock(){
     {dragGhost&&createPortal(<div className="enigma-dock-drag-ghost" style={{left:dragGhost.x,top:dragGhost.y,width:dragGhost.width}} aria-hidden="true"><DockIcon name={dragGhost.tab.icon}/><span>{dragGhost.tab.label}</span></div>,document.body)}
     <OpenPreviewDocumentWatchBridge/>
     <HeaderSlot id="enigma-titlebar-workspace"><header className="enigma-dock-header">
-      <div className="enigma-dock-tabs" data-reordering={!!draftOrder||undefined} role="tablist" aria-label="工作面板" ref={strip} data-glass-segmented="" onWheel={event=>{if(strip.current&&strip.current.scrollWidth>strip.current.clientWidth)strip.current.scrollLeft+=Math.abs(event.deltaX)>Math.abs(event.deltaY)?event.deltaX:event.deltaY;}}>
+      <div className="enigma-dock-tabs" data-reordering={!!draftOrder||undefined} role="tablist" aria-label="工作面板" ref={bindStrip} data-glass-segmented="" onWheel={event=>{if(strip.current&&strip.current.scrollWidth>strip.current.clientWidth)strip.current.scrollLeft+=Math.abs(event.deltaX)>Math.abs(event.deltaY)?event.deltaX:event.deltaY;}}>
         <GlassSelection selection={`${resolved}:${ordered.join(',')}`} selector=".enigma-dock-tab.active" layoutCoordinates/>
         {tabs.map((tab,index)=><motion.div layout="position" key={tab.id} transition={{layout:{duration:reduceMotion?0:0.18}}} className={`enigma-dock-tab${resolved===tab.id?' active':''}`} data-dock-tab-id={tab.id} data-drag-placeholder={dragGhost?.tab.id===tab.id||undefined} onPointerDown={event=>startDrag(tab,event)} onDragStartCapture={event=>event.preventDefault()}>
           <button role="tab" id={`dock-tab-${index}`} aria-selected={resolved===tab.id} aria-controls="enigma-dock-body" tabIndex={resolved===tab.id?0:-1} data-tooltip={`${tab.hint}\n拖动调整顺序`} onClick={()=>choose(tab.id)} onKeyDown={event=>{
             if(event.altKey&&['ArrowLeft','ArrowRight'].includes(event.key)){event.preventDefault();const offset=event.key==='ArrowRight'?1:-1;if(index+offset>=0&&index+offset<tabs.length)moveDockTab(scope,tab.id,tabs[index+(offset===1?2:-1)]?.id,availableIds);return;}
             if(['ArrowLeft','ArrowRight','Home','End'].includes(event.key)){event.preventDefault();const i=event.key==='Home'?0:event.key==='End'?tabs.length-1:(index+(event.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;choose(tabs[i].id);strip.current?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[i]?.focus();}
           }}><DockIcon name={tab.icon}/><span>{tab.label}</span></button>
-          <button className="enigma-dock-tab-close" onPointerDown={event=>event.stopPropagation()} aria-label={`关闭${tab.id.startsWith('preview:')?'文件':'面板'} ${tab.label}`} data-tooltip="关闭标签；可通过＋重新添加" onClick={()=>hideDockTab(scope,tab.id,availableIds)}>×</button>
+          <button className="enigma-dock-tab-close" onPointerDown={event=>event.stopPropagation()} aria-label={`关闭${tab.id.startsWith('preview:')?'文件':'面板'} ${tab.label}`} data-tooltip="关闭标签；可通过＋重新添加" onClick={()=>hideDockTab(scope,tab.id,availableIds)}><AppIcon name="close" size={13}/></button>
         </motion.div>)}
       </div>
       <div className="enigma-dock-actions">

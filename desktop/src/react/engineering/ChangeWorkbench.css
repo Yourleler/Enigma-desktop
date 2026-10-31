@@ -41,3 +41,16 @@
  .enigma-reading-diff-layout nav button {display:inline-flex;width:auto;max-width:100%;margin:var(--space-2, 2px);}
  .enigma-reading-diff-layout nav small {display:none;}
 }
+/* Review controls share the workspace rhythm and semantic error color. */
+.enigma-change-workbench :is(button,select,input:not([type=checkbox])) {min-height:32px;box-sizing:border-box;}
+.enigma-reading-error,.enigma-review-finding [data-severity=P0],.enigma-review-finding [data-severity=P1] {color:var(--danger);}
+.enigma-review-finding header {flex-wrap:wrap;}
+.enigma-reading-reviews {line-height:1.7;}
+.enigma-reading-summary strong {font-weight:500;color:var(--danger);}
+.enigma-reading-analysis,.enigma-reading-tabs {row-gap:var(--space-8);}
+@container (max-width:420px) {
+ .enigma-reading-source-controls {flex:1 0 100%;}
+ .enigma-reading-source-controls select {flex:1;}
+ .enigma-reading-analysis select {flex:1 0 100%;max-width:none;}
+ .enigma-reading-tabs {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));}
+}

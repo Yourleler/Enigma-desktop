@@ -62,7 +62,7 @@ function ToolModelTestBtn({ modelRef }: { modelRef: unknown }) {
   if (!hasRef) return null;
 
   return (
-    <button className={`${styles['pv-tool-test-btn']} ${styles[status] || ''}`} onClick={test} disabled={status === 'testing'}>
+    <button className={`${styles['pv-tool-test-btn']} ${styles[status] || ''}`} onClick={test} disabled={status === 'testing'} aria-label={`${t('settings.providers.verify')} ${ref.id}`} title={`${t('settings.providers.verify')} ${ref.id}`}>
       {status === 'testing' ? (
         <svg className={styles['spinning']} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="23 4 23 10 17 10" /><polyline points="1 20 1 14 7 14" />
