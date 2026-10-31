@@ -5,7 +5,6 @@
  * parser, removes page chrome, chooses the most likely content root, then emits
  * Markdown so the model does not have to reason over raw navigation/footer DOM.
  */
-import { JSDOM } from "jsdom";
 
 const CHROME_SELECTOR = [
   "script",
@@ -195,6 +194,8 @@ function normalizeMarkdown(markdown) {
 }
 
 export async function htmlToMarkdownDocument(html, url) {
+  // HTML parsing is only needed for fetched pages, not server startup or chat.
+  const { JSDOM } = await import("jsdom");
   const dom = new JSDOM(String(html || ""), { url });
   try {
     const { document } = dom.window;

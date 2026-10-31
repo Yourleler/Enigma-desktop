@@ -1,6 +1,12 @@
 import path from "path";
 import { pathToFileURL } from "url";
 import { Worker } from "worker_threads";
+import { enableCompileCache, flushCompileCache } from "node:module";
+
+// Node keys its bytecode cache by engine version and source contents. This is
+// disposable acceleration only: a cache miss still loads the verified source.
+// Use Node's default directory and respect NODE_DISABLE_COMPILE_CACHE.
+enableCompileCache();
 
 function log(line) {
   try {
@@ -61,6 +67,8 @@ try {
   log("[server-bootstrap] importing server entry");
   await import(pathToFileURL(serverEntry).href);
   log("[server-bootstrap] server entry import completed");
+  const flush = setTimeout(() => flushCompileCache(), 1000);
+  flush.unref?.();
 } catch (err) {
   logError(`[server-bootstrap] failed to import server entry: ${err?.stack || err?.message || String(err)}`);
   process.exitCode = 1;

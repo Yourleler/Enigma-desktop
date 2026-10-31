@@ -30,6 +30,8 @@ export class AuthStorage {
   private modelsPath?: string | null;
   private operations: Promise<void> = Promise.resolve();
   private readonly runtimeKeys = new Map<string,string>();
+  private readonly appliedRuntimeKeys = new Map<string,string>();
+  private readonly uncertainRuntimeKeys = new Set<string>();
   private readonly oauthDeclarations = new Map<string,NonNullable<ProviderConfigInput['oauth']>>();
   constructor(backend: AuthStorageBackend | string = new InMemoryAuthStorageBackend()) {
     this.backend=backend;
@@ -52,7 +54,10 @@ export class AuthStorage {
       this.modelsPath=modelsPath;
       this.runtimePromise=ModelRuntime.create({credentials:this.store,modelsPath,refreshOnCreate:false}).then(async runtime=>{
         serializeModelRuntimeRefresh(runtime);
-        for (const [provider,key] of this.runtimeKeys) await runtime.setRuntimeApiKey(provider,key);
+        for (const [provider,key] of this.runtimeKeys) {
+          await runtime.setRuntimeApiKey(provider,key);
+          this.appliedRuntimeKeys.set(provider,key);
+        }
         this.runtimeValue=runtime;return runtime;
       });
       void this.runtimePromise.catch(()=>{});
@@ -86,11 +91,23 @@ export class AuthStorage {
     this.runtimeKeys.set(provider,key);
     // Called during Hana's synchronous configuration phase before a model
     // catalog is attached. The keys are applied once the runtime is created.
-    if(this.runtimePromise)return this.queue(runtime=>runtime.setRuntimeApiKey(provider,key));
+    if(this.runtimePromise)return this.queue(async runtime=>{
+      if(!this.uncertainRuntimeKeys.has(provider)&&this.appliedRuntimeKeys.get(provider)===key)return;
+      this.uncertainRuntimeKeys.add(provider);
+      await runtime.setRuntimeApiKey(provider,key);
+      this.appliedRuntimeKeys.set(provider,key);
+      this.uncertainRuntimeKeys.delete(provider);
+    });
   }
   removeRuntimeApiKey(provider:string) {
     this.runtimeKeys.delete(provider);
-    if(this.runtimePromise)return this.queue(runtime=>runtime.removeRuntimeApiKey(provider));
+    if(this.runtimePromise)return this.queue(async runtime=>{
+      if(!this.uncertainRuntimeKeys.has(provider)&&!this.appliedRuntimeKeys.has(provider))return;
+      this.uncertainRuntimeKeys.add(provider);
+      await runtime.removeRuntimeApiKey(provider);
+      this.appliedRuntimeKeys.delete(provider);
+      this.uncertainRuntimeKeys.delete(provider);
+    });
   }
   getOAuthProviders() {
     const providers = (this.runtimeValue?.getProviders()||[]).flatMap(provider=>{
@@ -152,7 +169,7 @@ export class HanaModelRegistry {
   getAll() { return this.registry?.getAll()||[]; }
   find(provider:string,model:string) { return this.registry?.find(provider,model); }
   private providers() {const config=this.modelsJsonPath&&fs.existsSync(this.modelsJsonPath)?JSON.parse(fs.readFileSync(this.modelsJsonPath,'utf8')):{};const current=new Set([...Object.keys(config.providers||{}),...this.registeredProviders]);const affected=new Set([...this.previousProviders,...current]);this.previousProviders=current;return [...affected];}
-  async getAvailable() { const runtime=await this.ready();await this.refresh();return runtime.getAvailableSnapshot(); }
+  async getAvailable({refresh=true}:{refresh?:boolean}={}) { const runtime=await this.ready();if(refresh)await this.refresh();return runtime.getAvailableSnapshot(); }
   async refresh() { const runtime=await this.ready();const result=await runtime.refresh({allowNetwork:false,providers:this.providers()});if(runtime.getError())throw new Error(runtime.getError());return result; }
   getError() { return this.registry?.getError(); }
   getApiKeyAndHeaders(model:any) { return this.ready().then(()=>this.registry!.getApiKeyAndHeaders(model)); }

@@ -404,6 +404,7 @@ app.on("gpu-info-update", () => {
 
 let splashWindow = null;
 let mainWindow = null;
+const mainWindowReadyTimers = new WeakMap();
 let onboardingWindow = null;
 let quickChatWindow = null;
 let quickChatMode = "compact";
@@ -2860,6 +2861,9 @@ function createMainWindow() {
       mainWindow.show();
     }
   }, 30000);
+  mainWindowReadyTimers.set(mainWindow.webContents, initTimeout);
+  const windowContents = mainWindow.webContents;
+  mainWindow.once('closed', () => { clearTimeout(initTimeout); mainWindowReadyTimers.delete(windowContents); });
   mainWindow.webContents.once("did-finish-load", () => {
     // did-finish-load 只是 HTML 加载完成，JS init 可能还在跑
     console.log("[desktop] 主窗口 HTML 加载完成，等待前端 init...");
@@ -6025,6 +6029,8 @@ wrapIpcHandler("window-is-maximized", (event) => {
 
 // 前端初始化完成后调用，关闭 splash / onboarding，显示主窗口
 wrapIpcBestEffortHandler("app-ready", (event) => {
+  clearTimeout(mainWindowReadyTimers.get(event.sender));
+  mainWindowReadyTimers.delete(event.sender);
   writeDesktopLaunchDiagnostic("app-ready", {
     label: "main",
     senderUrl: event?.sender?.getURL?.() || "",

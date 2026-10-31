@@ -35,3 +35,14 @@ it('retains existing results and explains an uncertain timeout without retrying 
  fireEvent.click(screen.getByRole('button',{name:'查看变更'}));await screen.findByRole('alert');
  expect(screen.getByRole('alert')).toHaveTextContent('分析可能仍在后台运行');expect(screen.getByText('2 个文件 · 版本 version')).toBeVisible();
 });
+
+it('pauses source polling in hidden panels and refreshes when shown again',async()=>{
+ const view=render(<ChangeWorkbench/>);fireEvent.click(await screen.findByRole('button',{name:'查看变更'}));await screen.findByText('2 个文件 · 版本 version');
+ vi.useFakeTimers();
+ try{
+  view.rerender(<ChangeWorkbench active={false}/>);vi.mocked(hanaFetch).mockClear();await act(async()=>{await vi.advanceTimersByTimeAsync(31_000);});
+  expect(hanaFetch).not.toHaveBeenCalled();expect(screen.getByText('2 个文件 · 版本 version')).toBeVisible();
+  view.rerender(<ChangeWorkbench active/>);await act(async()=>{});
+  expect(hanaFetch).toHaveBeenCalledWith(expect.stringContaining('/source?id=source'),expect.anything());
+ }finally{vi.useRealTimers();}
+});

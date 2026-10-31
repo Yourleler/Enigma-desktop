@@ -12,15 +12,16 @@ function setup(reducedMotion=false) {
   vi.stubGlobal('cancelAnimationFrame',(key:number)=>pending.delete(key));
   const media=new EventTarget();Object.assign(media,{matches:reducedMotion});vi.stubGlobal('matchMedia',()=>media);
   vi.spyOn(document,'hidden','get').mockReturnValue(false);
+  vi.spyOn(document,'hasFocus').mockReturnValue(true);
   document.body.dataset.enigmaTone='dark';
   const host=document.createElement('div');dispose=installAnimatedBackground(host);
   const step=(at:number)=>{const callbacks=[...pending.values()];pending.clear();callbacks.forEach(callback=>callback(at));};
   return {host,pending,step};
 }
-it('bounds GPU cadence and pauses without clearing the last visible frame',()=>{
+it('bounds GPU cadence and pauses without clearing the last visible frame',async()=>{
   const {host,step,pending}=setup();step(100);const count=mock.draw.mock.calls.length;
   step(108);step(116);expect(mock.draw).toHaveBeenCalledTimes(count);
-  step(150);expect(mock.draw).toHaveBeenCalledTimes(count+1);
+  await vi.advanceTimersByTimeAsync(100);step(200);expect(mock.draw).toHaveBeenCalledTimes(count+1);
   vi.spyOn(document,'hidden','get').mockReturnValue(true);document.dispatchEvent(new Event('visibilitychange'));
   expect(pending.size).toBe(0);expect(host.dataset.backgroundState).toBe('paused');
   expect(host.querySelector<HTMLElement>('.enigma-background-layer')!.style.opacity).toBe('1');
@@ -59,4 +60,14 @@ it('holds the scene when motion is disabled and keeps fallback visible without W
   const next=document.createElement('div');dispose=installAnimatedBackground(next);step(150);
   expect(next.querySelector<HTMLElement>('.enigma-background-layer')!.dataset.rendering).toBe('fallback');
   expect(document.body.dataset.backgroundReady).toBe('managed');expect(pending.size).toBe(0);
+});
+
+it('keeps full foreground cadence and reduces only inactive-window wakeups',async()=>{
+ const {host,step,pending}=setup();step(100);let count=mock.draw.mock.calls.length;
+ await vi.advanceTimersByTimeAsync(42);step(150);expect(mock.draw).toHaveBeenCalledTimes(count+1);
+ vi.spyOn(document,'hasFocus').mockReturnValue(false);window.dispatchEvent(new Event('blur'));step(200);count=mock.draw.mock.calls.length;
+ await vi.advanceTimersByTimeAsync(45);expect(pending.size).toBe(0);expect(mock.draw).toHaveBeenCalledTimes(count);
+ await vi.advanceTimersByTimeAsync(45);step(300);expect(mock.draw).toHaveBeenCalledTimes(count+1);
+ expect(host.dataset.backgroundScene).toBe('aurora');
+ vi.spyOn(document,'hidden','get').mockReturnValue(true);document.dispatchEvent(new Event('visibilitychange'));await vi.advanceTimersByTimeAsync(500);expect(pending.size).toBe(0);
 });

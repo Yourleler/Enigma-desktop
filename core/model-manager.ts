@@ -228,8 +228,8 @@ export class ModelManager {
   }
 
   /** 刷新可用模型列表，用 Provider Catalog v2 过滤 */
-  async refreshAvailable() {
-    const allModels = await this._modelRegistry.getAvailable();
+  async refreshAvailable({refresh=true}:{refresh?:boolean}={}) {
+    const allModels = await this._modelRegistry.getAvailable({refresh});
     const capabilityRecords = this.capabilityObservations.read();
     const plans = this.providerRegistry.getChatProjectionPlans();
     const effectiveModelSets = new Map();
@@ -277,7 +277,7 @@ export class ModelManager {
     if (changed) {
       await this._modelRegistry.refresh();
     }
-    await this.refreshAvailable();
+    await this.refreshAvailable({refresh:!changed});
     this._rebindDefaultModel();
     return changed;
   }

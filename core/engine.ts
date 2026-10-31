@@ -2661,8 +2661,10 @@ export class HanaEngine {
 
     // 4. 模型发现
     log(`[init] 4/5 发现可用模型...`);
-    try { await this.syncModelsAndRefresh(); } catch (err) { moduleLog.warn(`[init] syncModelsAndRefresh failed: ${err?.message}`); }
-    await this._models.refreshAvailable();
+    try { await this.syncModelsAndRefresh(); } catch (err) {
+      moduleLog.warn(`[init] syncModelsAndRefresh failed: ${err?.message}`);
+      await this._models.refreshAvailable();
+    }
     this._configCoord.normalizeUtilityApiPreferences(log);
     const availableModels = this._models.availableModels;
     log(`[init] 4/5 找到 ${availableModels.length} 个模型: ${availableModels.map(m => `${m.provider}/${m.id}`).join(", ")}`);
@@ -2845,13 +2847,20 @@ export class HanaEngine {
     this._pluginManager.scan();
     await this._pluginManager.loadAll();
 
+    const previousChatProviders = JSON.stringify({plans:this._models.providerRegistry.getChatProjectionPlans(),sdk:this._models.providerRegistry.getSdkProviderRegistrations()});
     let providerContributionsChanged = false;
+    let hasChatProviderContribution = false;
     for (const provider of this._pluginManager.getProviderPlugins()) {
       this._models.providerRegistry.registerProviderContribution(provider);
       providerContributionsChanged = true;
+      hasChatProviderContribution ||= !!provider.sdkProvider || provider.capabilities?.chat?.projection !== 'none';
     }
     if (providerContributionsChanged) {
-      await this._models.reloadAndSync();
+      this._models.providerRegistry.reload();
+      const nextChatProviders = JSON.stringify({plans:this._models.providerRegistry.getChatProjectionPlans(),sdk:this._models.providerRegistry.getSdkProviderRegistrations()});
+      // Media-only provider plugins do not require another full chat catalog
+      // refresh. Their media registrations remain loaded in ProviderRegistry.
+      if (hasChatProviderContribution || previousChatProviders !== nextChatProviders) await this._models.reloadAndSync();
     }
 
     if (this._skills) {

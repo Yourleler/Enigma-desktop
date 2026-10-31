@@ -691,7 +691,7 @@
     ],
     "version": 3
   },
-  "payloadFingerprint": "sha256:c4be987a30d86a6a7913c89619c7132ac12cba9a9d327605cac00f5c8fdf6ebf",
+  "payloadFingerprint": "sha256:289930b6d9e58e9c20eafe9afdd348692b2e9e6fa2f05e99bace6ce415b889b6",
   "registry": [
     {
       "affectedByEpochMigration": true,
@@ -3441,8 +3441,8 @@
   ],
   "review": {
     "classification": "compatible",
-    "compatibilityReason": "Manager creation preserves source project membership and phase status reports an unconfigured model without mutation. Review progress polling and on-demand source analysis preserve persisted fields, versions, and write sites. No data migration is required.",
-    "payloadFingerprint": "sha256:c4be987a30d86a6a7913c89619c7132ac12cba9a9d327605cac00f5c8fdf6ebf"
+    "compatibilityReason": "Desktop readiness timer ownership changes only ephemeral timeout cleanup. Runtime credential deduplication, lazy HTML parsing and visibility-aware refresh preserve persisted fields, schema versions and write sites; no migration is required.",
+    "payloadFingerprint": "sha256:289930b6d9e58e9c20eafe9afdd348692b2e9e6fa2f05e99bace6ce415b889b6"
   },
   "schemas": [
     {
@@ -3667,7 +3667,7 @@
       "contract": "desktop window bounds, release announcement bookmark, and update cache version marker readers",
       "kind": "directory-contract",
       "module": "desktop/main.cjs",
-      "sourceHash": "sha256:a5ba02bf8aa8ec121ce8ed4c2e8e1af09dd73a0eacace94af2d37c4d8a7d37c9",
+      "sourceHash": "sha256:1ff8604582c24da4da1e1d444f6951e893ce6daf10259ba30ac45a621fb52a32",
       "storeId": "desktop-window-version-state"
     },
     {

@@ -4,6 +4,23 @@ import {fauxProvider}from '@earendil-works/pi-ai';
 import {normalizePiSdkThinkingLevel,normalizeThinkingLevelForModel,getModelThinkingLevels}from '../core/session-thinking-level.ts';
 
 describe('Pi 1.4 model/runtime recovery',()=>{
+  it('avoids reapplying unchanged runtime keys and removing absent keys, but retries failed changes',async()=>{
+    const auth=AuthStorage.inMemory(),runtime=await auth.ready();
+    const set=vi.spyOn(runtime,'setRuntimeApiKey').mockResolvedValue(undefined);
+    const remove=vi.spyOn(runtime,'removeRuntimeApiKey').mockResolvedValue(undefined);
+    try{
+      await auth.setRuntimeApiKey('fixture','first');await auth.setRuntimeApiKey('fixture','first');await auth.removeRuntimeApiKey('absent');
+      expect(set).toHaveBeenCalledTimes(1);expect(remove).not.toHaveBeenCalled();
+      set.mockRejectedValueOnce(new Error('retryable'));
+      await expect(auth.setRuntimeApiKey('fixture','second')).rejects.toThrow('retryable');
+      await auth.setRuntimeApiKey('fixture','second');expect(set).toHaveBeenCalledTimes(3);
+      await auth.removeRuntimeApiKey('fixture');await auth.removeRuntimeApiKey('fixture');expect(remove).toHaveBeenCalledTimes(1);
+      await auth.setRuntimeApiKey('fixture','second');expect(set).toHaveBeenCalledTimes(4);
+      remove.mockRejectedValueOnce(new Error('already removed but refresh failed'));
+      await expect(auth.removeRuntimeApiKey('fixture')).rejects.toThrow('refresh failed');
+      await auth.setRuntimeApiKey('fixture','second');expect(set).toHaveBeenCalledTimes(5);
+    }finally{set.mockRestore();remove.mockRestore();}
+  });
   it('uses native max on an actual SDK session whose model supports that level',async()=>{
     const models=await ModelRuntime.create({credentials:AuthStorage.inMemory().store,modelsPath:null,refreshOnCreate:false});
     const faux=fauxProvider({models:[{id:'native-max',reasoning:true,contextWindow:10000,maxTokens:1000}]});
