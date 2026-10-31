@@ -56,8 +56,16 @@ describe('SessionSearchItem click routing', () => {
 
     fireEvent.click(screen.getByText('Result title').closest('button')!);
 
-    expect(locateSearchHitMock).toHaveBeenCalledWith(result.path, '排查');
+    expect(locateSearchHitMock).toHaveBeenCalledWith(result.path, '排查', undefined);
     expect(switchSessionMock).not.toHaveBeenCalled();
+  });
+
+  it('preserves advanced content filters when opening a result', () => {
+    const result = makeResult({matchKind:'content'});
+    const filters={roles:['user'],mode:'phrase'};
+    render(<SessionSearchItem result={result as never} isActive={false} agents={[]} query="原要求" filters={filters as never}/>);
+    fireEvent.click(screen.getByText('Result title').closest('button')!);
+    expect(locateSearchHitMock).toHaveBeenCalledWith(result.path,'原要求',filters);
   });
 
   it('routes title match hits through switchSession, not locateSearchHit', () => {

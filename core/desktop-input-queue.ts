@@ -10,7 +10,9 @@ export function desktopInputQueue(engine:any){let service=services.get(engine);i
 /** Pending user input remains editable until claimed for delivery; never replay an uncertain send. */
 export class DesktopInputQueue{
  private queues=new Map<string,Queue>();private locks=new Map<string,Promise<unknown>>();private active=new Set<string>();
- constructor(private engine:any){
+ private engine:any;
+ constructor(engine:any){
+  this.engine=engine;
   engine.subscribe?.((event:any,sessionPath:string)=>{if(event.type==='turn_end'&&event.aborted&&this.queues.has(sessionPath))void this.change(sessionPath,queue=>{queue.paused=true;});});
   const timer=setInterval(()=>{for(const sessionPath of this.queues.keys())void this.flush(sessionPath).catch(()=>{});},1000);timer.unref?.();
  }

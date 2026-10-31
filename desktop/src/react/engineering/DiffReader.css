@@ -1,10 +1,10 @@
 .enigma-diff-reader { display:flex;flex-direction:column;min-width:0;min-height:200px;height:100%;color:var(--text); }
-.enigma-diff-controls { display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--border); }
+.enigma-diff-controls { display:flex;flex-wrap:wrap;gap:var(--space-8, 8px);align-items:center;padding:var(--space-10, 10px) var(--space-12, 12px);border-bottom:1px solid var(--border); }
 .enigma-diff-controls > span { flex:1;min-width:120px;overflow-wrap:anywhere;font:12px/1.5 var(--font-mono); }
-.enigma-diff-controls > div { display:flex;align-items:center;gap:4px;flex-wrap:wrap; }
-.enigma-diff-controls button { background:transparent;color:var(--text-muted);font:11px/1.5 var(--font-ui);padding:4px 6px;border:0;border-radius:5px;cursor:pointer; }
+.enigma-diff-controls > div { display:flex;align-items:center;gap:var(--space-4, 4px);flex-wrap:wrap; }
+.enigma-diff-controls button { background:transparent;color:var(--text-muted);font:11px/1.5 var(--font-ui);padding:var(--space-4, 4px) var(--space-6, 6px);border:0;border-radius:5px;cursor:pointer; }
 .enigma-diff-controls button:hover,.enigma-diff-controls button[aria-pressed=true] { background:var(--accent-light);color:var(--accent); }
-.enigma-diff-side-labels { display:flex;color:var(--text-muted);font:10px/1.5 var(--font-ui);padding:5px 12px;border-bottom:1px solid var(--border); }
+.enigma-diff-side-labels { display:flex;color:var(--text-muted);font:10px/1.5 var(--font-ui);padding:var(--space-5, 5px) var(--space-12, 12px);border-bottom:1px solid var(--border); }
 .enigma-diff-side-labels > span { flex:1; }
 .enigma-diff-editor { flex:1;min-height:180px;min-width:0;overflow:hidden; }
 .enigma-diff-editor .cm-mergeView { height:100%;background:transparent; }
@@ -12,18 +12,18 @@
 .enigma-diff-editor .cm-mergeViewEditor { min-width:0;overflow:hidden; }
 .enigma-diff-editor .cm-editor { color:var(--text); }
 .enigma-diff-editor .cm-gutters { background:color-mix(in srgb,var(--eg-card) 45%,transparent);color:var(--text-muted);border-color:var(--border); }
-.enigma-diff-editor .cm-merge-a .cm-changedLine,.enigma-diff-editor .cm-deletedChunk { background:color-mix(in srgb,#cc526c 15%,transparent); }
-.enigma-diff-editor .cm-merge-b .cm-changedLine { background:color-mix(in srgb,#39a67b 16%,transparent); }
+.enigma-diff-editor .cm-merge-a .cm-changedLine,.enigma-diff-editor .cm-deletedChunk { background:color-mix(in srgb,var(--diff-deleted-color) 15%,transparent); }
+.enigma-diff-editor .cm-merge-b .cm-changedLine { background:color-mix(in srgb,var(--diff-added-color) 16%,transparent); }
 .enigma-diff-editor .cm-changedText { background:color-mix(in srgb,var(--accent) 20%,transparent); }
-.enigma-diff-editor .cm-searchMatch { background:#ffe270;color:#211700; }
-.enigma-diff-editor .cm-searchMatch-selected { background:#ffb54a;color:#211700;outline:1px solid #ad6818; }
+.enigma-diff-editor .cm-searchMatch { background:var(--diff-match-background);color:var(--diff-match-text); }
+.enigma-diff-editor .cm-searchMatch-selected { background:var(--diff-current-match-background);color:var(--diff-match-text);outline:1px solid var(--diff-current-match-border); }
 
 .enigma-diff-document > .enigma-diff-reader {height:min(65vh,700px);}
 
 .enigma-diff-editor .cm-panels {background:color-mix(in srgb,var(--eg-card) 60%,transparent);color:var(--text);border-color:var(--border);}
-.enigma-diff-editor .cm-search {display:flex;align-items:center;flex-wrap:wrap;gap:4px;padding:7px 24px 7px 7px;font:10px/1.5 var(--font-ui);}
-.enigma-diff-editor .cm-search label {display:inline-flex;align-items:center;gap:2px;}
-.enigma-diff-editor .cm-search .cm-textfield {width:100%;min-width:40px;flex:1 1 70px;background:var(--overlay-subtle);border:1px solid var(--border);color:var(--text);font:11px var(--font-ui);border-radius:6px;padding:4px 6px;}
-.enigma-diff-editor .cm-search button {font:10px/1.5 var(--font-ui);background:transparent;background-image:none;color:var(--text-muted);border:0;border-radius:4px;padding:3px;}
+.enigma-diff-editor .cm-search {display:flex;align-items:center;flex-wrap:wrap;gap:var(--space-4, 4px);padding:var(--space-7, 7px) var(--space-24, 24px) var(--space-7, 7px) var(--space-7, 7px);font:10px/1.5 var(--font-ui);}
+.enigma-diff-editor .cm-search label {display:inline-flex;align-items:center;gap:var(--space-2, 2px);}
+.enigma-diff-editor .cm-search .cm-textfield {width:100%;min-width:40px;flex:1 1 70px;background:var(--overlay-subtle);border:1px solid var(--border);color:var(--text);font:11px var(--font-ui);border-radius:6px;padding:var(--space-4, 4px) var(--space-6, 6px);}
+.enigma-diff-editor .cm-search button {font:10px/1.5 var(--font-ui);background:transparent;background-image:none;color:var(--text-muted);border:0;border-radius:4px;padding:var(--space-3, 3px);}
 .enigma-diff-editor .cm-search button:hover {background:var(--accent-light);color:var(--accent);}
 .enigma-diff-editor .cm-gutters .cm-activeLineGutter {background:var(--accent-light);color:var(--text);}

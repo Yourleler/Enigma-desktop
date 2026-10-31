@@ -19,7 +19,7 @@ describe('SessionList streaming dot animation', () => {
   it('does not use infinite pulse on the running dot', () => {
     const css = readCss();
 
-    const running = cssBlock(css, '.sessionStreamingDot[data-state="running"]');
+    const running = cssBlock(css, '.sessionStreamingDot');
 
     expect(running.length).toBeGreaterThan(0);
     expect(running).not.toMatch(/\binfinite\b/);

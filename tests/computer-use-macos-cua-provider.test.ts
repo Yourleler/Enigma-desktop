@@ -34,13 +34,13 @@ describe("macos Cua provider", () => {
     const provider=createMacosCuaProvider({platform:'darwin',command:'/tmp/cua-driver',runner});
     await expect(provider.listApps()).rejects.toMatchObject({code:COMPUTER_USE_ERRORS.TARGET_NOT_FOUND});
   });
-  it('reports release failure instead of hiding it behind the original cancellation',async()=>{
+  it.each(['drag','double_click'])('reports release failure after %s instead of hiding it behind cancellation',async(type)=>{
     const {runner}=makeRunner((_command,args,options)=>{
-      if(args[0]==='drag_foreground')options.onStderr('ENIGMA_FOREGROUND_POINTER_DOWN\n');
+      if(['drag_foreground','click_foreground'].includes(args[0]))options.onStderr('ENIGMA_FOREGROUND_POINTER_DOWN\n');
       return {stdout:'',stderr:'native command failed',exitCode:1};
     });
     const provider=createMacosCuaProvider({platform:'darwin',command:'/tmp/hana-computer-use-helper',runner,autoStartDaemon:false,cursorStyle:null});
-    await expect(provider.performAction({}, {providerState:{pid:42,windowId:24}}, {type:'drag',foreground:true,fromX:10,fromY:10,toX:20,toY:30,snapshotDisplay:{width:100,height:100}})).rejects.toMatchObject({code:COMPUTER_USE_ERRORS.INPUT_RELEASE_FAILED});
+    await expect(provider.performAction({}, {providerState:{pid:42,windowId:24}}, {type,foreground:true,x:10,y:10,fromX:10,fromY:10,toX:20,toY:30,snapshotDisplay:{width:100,height:100}})).rejects.toMatchObject({code:COMPUTER_USE_ERRORS.INPUT_RELEASE_FAILED});
   });
   it('releases only input owned by a crashed foreground helper before returning failure',async()=>{
     for(const owned of [false,true]) {
@@ -702,7 +702,7 @@ describe("macos Cua provider", () => {
       toY: 120,
       snapshotDisplay,
     });
-    await provider.performAction({}, lease, { type: "double_click", elementId: "14" });
+    await provider.performAction({}, lease, { type: "double_click", elementId: "14",snapshotElement:{actions:["AXOpen"]} });
 
     const helperCalls = calls.filter((c) => c.command === "/tmp/cua-driver");
     expect(helperCalls.map(call=>call.args[0])).toEqual(['click','drag','double_click']);
@@ -711,6 +711,17 @@ describe("macos Cua provider", () => {
     await expect(provider.performAction({},lease,{type:'click_point',x:1001,y:2,snapshotDisplay})).rejects.toMatchObject({code:COMPUTER_USE_ERRORS.TARGET_NOT_FOUND});
     await expect(provider.performAction({},lease,{type:'click_point',x:1,y:2})).rejects.toMatchObject({code:COMPUTER_USE_ERRORS.STALE_SNAPSHOT});
     expect(calls).toHaveLength(3);
+  });
+
+  it('refuses ambiguous background double-click without dispatch and routes explicit foreground input',async()=>{
+    const {runner,calls}=makeRunner(()=>rawResult({ok:true}));
+    const provider=createMacosCuaProvider({platform:'darwin',command:'/tmp/hana-computer-use-helper',runner,autoStartDaemon:false,cursorStyle:null});
+    const lease={providerState:{pid:42,windowId:24}};
+    await expect(provider.performAction({},lease,{type:'double_click',elementId:'7',snapshotElement:{actions:[]}})).rejects.toMatchObject({code:COMPUTER_USE_ERRORS.ACTION_REQUIRES_FOREGROUND});
+    expect(calls).toHaveLength(0);
+    const signal=new AbortController().signal;
+    await provider.performAction({signal},lease,{type:'double_click',foreground:true,x:120,y:210,snapshotDisplay:{width:900,height:1200}});
+    expect(calls.at(-1).args[0]).toBe('click_foreground');expect(JSON.parse(calls.at(-1).args[1])).toMatchObject({pid:42,window_id:24,from_x:120,from_y:210,click_count:2,screenshot_width:900,screenshot_height:1200});expect(calls.at(-1).options.signal).toBe(signal);
   });
 
   it('preserves key modifiers and the explicitly observed target window/control',async()=>{
@@ -768,8 +779,8 @@ describe("macos Cua provider", () => {
         arc_size: 0.08,
         arc_flow: 0,
         spring: 1,
-        glide_duration_ms: 520,
-        dwell_after_click_ms: 160,
+        glide_duration_ms: 180,
+        dwell_after_click_ms: 35,
         idle_hide_ms: 2600,
       },
     });

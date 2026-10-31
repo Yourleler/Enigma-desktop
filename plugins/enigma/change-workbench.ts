@@ -20,7 +20,9 @@ export class ChangeWorkbench {
   private activeSessions=new Set<string>();
   private writing=new Map<string,Promise<unknown>>();
   readonly git:SessionChanges;
-  constructor(readonly engine:any,readonly host:any){this.git=new SessionChanges(engine,host);}
+  readonly engine:any;
+  readonly host:any;
+  constructor(engine:any,host:any){this.engine=engine;this.host=host;this.git=new SessionChanges(engine,host);}
   private directory(session:string){return path.join(this.engine.hanakoHome,'change-workbench',hash(session));}
   private async save(file:string,value:unknown){await fs.mkdir(path.dirname(file),{recursive:true});const temp=file+'.'+randomUUID()+'.tmp';await fs.writeFile(temp,JSON.stringify(value),{mode:0o600});await fs.rename(temp,file);}
   private branch(session:string){return SessionManager.open(session).getBranch();}

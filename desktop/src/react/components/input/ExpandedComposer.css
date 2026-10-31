@@ -5,32 +5,32 @@
 .enigma-compose-dialog small { display:block; color:var(--text-muted); font:12px/1.6 var(--font-ui); }
 .enigma-compose-dialog header button { border:0; border-radius:var(--radius-sm); padding:var(--space-6) var(--space-12); font:13px/1.6 var(--font-ui); background:var(--accent-light); color:var(--accent); cursor:pointer; }
 .enigma-compose-dialog > div { flex:1; min-height:0; overflow:auto; }
-.enigma-compose-actions { display:flex;flex-shrink:0;gap:8px; }
+.enigma-compose-actions { display:flex;flex-shrink:0;gap:var(--space-8, 8px); }
 .enigma-composer-editor-host { min-width:0; }
 .enigma-compose-editor-slot > .enigma-composer-editor-host { min-height:100%; }
 /* Pinned imagery stays above the editor, never in a reserved side column. */
-.enigma-compose-backdrop:has([data-attachment-preview-open]) {align-items:end;padding-bottom:24px;background:rgb(4 6 12 / 54%);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);}
-.enigma-compose-dialog[data-attachment-preview-open] {height:auto;max-height:45dvh;width:min(860px,100%);padding:14px 18px;}
+.enigma-compose-backdrop:has([data-attachment-preview-open]) {align-items:end;padding-bottom:var(--space-24, 24px);background:var(--composer-focus-scrim);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);}
+.enigma-compose-dialog[data-attachment-preview-open] {height:auto;max-height:45dvh;width:min(860px,100%);padding:var(--space-14, 14px) var(--space-18, 18px);}
 .enigma-compose-dialog[data-attachment-preview-open] .enigma-compose-editor-slot {max-height:32dvh;flex:none;}
 .enigma-compose-dialog[data-attachment-preview-open] .enigma-compose-editor-slot > .enigma-composer-editor-host {min-height:0;}
 .enigma-compose-dialog[data-attachment-preview-open] .tiptap {min-height:50px;max-height:30dvh!important;}
-@media(max-width:667px){.enigma-compose-actions{gap:4px;}.enigma-compose-dialog header{flex-wrap:wrap;}}
+@media(max-width:667px){.enigma-compose-actions{gap:var(--space-4, 4px);}.enigma-compose-dialog header{flex-wrap:wrap;}}
 .enigma-compose-dialog .tiptap { min-height:100%; max-height:none!important; outline:none; font:14px/1.8 var(--font-ui); padding:var(--space-16) 0; white-space:pre-wrap; overflow-wrap:anywhere; }
 .enigma-compose-dialog .tiptap p { margin:0; }
 .enigma-expand-composer { position:absolute; top:8px; right:8px; display:grid; place-items:center; width:26px; height:26px; border:0; border-radius:var(--radius-sm); color:var(--text-muted); background:transparent; cursor:pointer; z-index:3; box-shadow:none; }
 @media (any-hover:hover) { .enigma-expand-composer { opacity:0; } [data-liquid="composer"]:hover .enigma-expand-composer,[data-liquid="composer"]:focus-within .enigma-expand-composer { opacity:1; } }
 body.enigma-surface [data-liquid="composer"] .tiptap { font-size:14px; line-height:1.65; }
 
-body.enigma-surface .enigma-expand-composer {border:0!important;background:transparent!important;box-shadow:none!important;border-radius:0;color:var(--text-muted);transition:opacity 140ms,color 140ms;}
+body.enigma-surface .enigma-expand-composer {border:0!important;background:transparent!important;box-shadow:none!important;border-radius:0;color:var(--text-muted);transition:opacity var(--duration-140ms, 140ms),color var(--duration-140ms, 140ms);}
 body.enigma-surface .enigma-expand-composer:hover {color:var(--text);}
 body.enigma-surface .enigma-expand-composer:focus-visible {outline:2px solid var(--accent);outline-offset:1px;border-radius:4px;}
 
 /* Compact idle composer, with enough room for a short thought and clear
    separation from the lower controls. Longer drafts grow up to a scroll cap. */
-body.enigma-surface [data-liquid="composer"] {padding:14px 16px 10px;gap:10px;border-radius:20px;}
-body.enigma-surface [data-liquid="composer"] .tiptap {font:14px/1.65 var(--font-ui);min-height:42px;max-height:180px;padding-right:22px;box-sizing:border-box;}
-body.enigma-surface .input-area {padding:0 20px 18px;}
+body.enigma-surface [data-liquid="composer"] {padding:var(--space-14, 14px) var(--space-16, 16px) var(--space-10, 10px);gap:var(--space-10, 10px);border-radius:20px;}
+body.enigma-surface [data-liquid="composer"] .tiptap {font:14px/1.65 var(--font-ui);min-height:42px;max-height:180px;padding-right:var(--space-22, 22px);box-sizing:border-box;}
+body.enigma-surface .input-area {padding:0 var(--space-20, 20px) var(--space-18, 18px);}
 body.enigma-surface .input-area > .enigma-composer-surface-mount {max-width:760px;}
-@media(max-width:700px){body.enigma-surface .input-area{padding:0 12px 12px;}body.enigma-surface [data-liquid="composer"]{padding:12px 13px 9px;gap:8px;}body.enigma-surface [data-liquid="composer"] .tiptap {min-height:38px;}}
+@media(max-width:700px){body.enigma-surface .input-area{padding:0 var(--space-12, 12px) var(--space-12, 12px);}body.enigma-surface [data-liquid="composer"]{padding:var(--space-12, 12px) var(--space-13, 13px) var(--space-9, 9px);gap:var(--space-8, 8px);}body.enigma-surface [data-liquid="composer"] .tiptap {min-height:38px;}}
 
-body.enigma-surface[data-enigma-tone="light"] .enigma-compose-backdrop:has([data-attachment-preview-open]){background:rgb(32 26 45 / 27%);}
+body.enigma-surface[data-enigma-tone="light"] .enigma-compose-backdrop:has([data-attachment-preview-open]){background:var(--composer-focus-scrim-light);}

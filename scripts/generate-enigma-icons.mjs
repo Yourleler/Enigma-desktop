@@ -9,6 +9,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const sharp = (await import(process.env.ENIGMA_SHARP_PATH || 'sharp')).default;
 const assets = path.join(root, 'desktop/src/assets/enigma');
 const mark = fs.readFileSync(path.join(assets, 'avatar.svg'), 'utf8');
+await sharp(Buffer.from(mark)).png().toFile(path.join(assets, 'avatar.png'));
 // Keep the Dock silhouette optically aligned with neighboring macOS icons.
 const appSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024"><svg x="80" y="80" width="864" height="864" viewBox="0 0 512 512">${mark.replace(/<svg[^>]*>/, '').replace(/<\/svg>\s*$/, '')}</svg></svg>`;
 fs.writeFileSync(path.join(assets, 'app-icon.svg'), appSvg);

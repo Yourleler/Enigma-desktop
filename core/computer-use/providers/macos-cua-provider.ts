@@ -19,8 +19,8 @@ const HANA_CURSOR_MOTION = Object.freeze({
   arc_size: 0.08,
   arc_flow: 0,
   spring: 1,
-  glide_duration_ms: 520,
-  dwell_after_click_ms: 160,
+  glide_duration_ms: 180,
+  dwell_after_click_ms: 35,
   idle_hide_ms: 2600,
 });
 const MACOS_CUA_ALLOWED_ACTIONS = [
@@ -676,6 +676,19 @@ export function createMacosCuaProvider({
     return runRaw(args, options);
   }
 
+  async function foregroundInput(name:string,payload:any,signal?:AbortSignal) {
+    let trace='';
+    try {
+      const result=await runTool(name,payload,{signal,onStderr:(chunk:string)=>{trace=(trace+chunk).slice(-8192);}});
+      return {ok:true,mode:'foreground-input',message:getText(result)};
+    }finally{
+      if(trace.lastIndexOf('ENIGMA_FOREGROUND_POINTER_DOWN')>trace.lastIndexOf('ENIGMA_FOREGROUND_POINTER_UP')) {
+        try{await runTool('release_foreground_input',{}, {timeoutMs:3000});}
+        catch(error){throw computerUseError(COMPUTER_USE_ERRORS.INPUT_RELEASE_FAILED,'Foreground input stopped, but pointer release could not be verified. Release the mouse button before continuing.',{cause:error.message});}
+      }
+    }
+  }
+
   async function isDaemonRunning() {
     try {
       const result: any = await runner.run(command, ["status", "--socket", socketPath], {
@@ -1019,6 +1032,17 @@ export function createMacosCuaProvider({
         throw computerUseError(COMPUTER_USE_ERRORS.TARGET_NOT_FOUND, "Cua lease is missing native pid/windowId.", { leaseId: lease.leaseId });
       }
       _ctx?.signal?.throwIfAborted();
+      if (['click_point','double_click'].includes(action.type) && action.foreground === true) {
+        if(!bundledHanaHelper)throw computerUseError(COMPUTER_USE_ERRORS.CAPABILITY_UNSUPPORTED,'Foreground click requires the Enigma helper.');
+        if(action.elementId)throw computerUseError(COMPUTER_USE_ERRORS.ACTION_REQUIRES_FOREGROUND,'Use current screenshot x/y coordinates for foreground click; omit elementId.');
+        const point=requireScreenshotPoint(action,action.x,action.y);
+        return foregroundInput('click_foreground',{pid,window_id:windowId,from_x:point.x,from_y:point.y,to_x:point.x,to_y:point.y,
+          screenshot_width:action.snapshotDisplay.width,screenshot_height:action.snapshotDisplay.height,duration_ms:100,
+          click_count:action.type==='double_click'?2:1,modifier:action.modifiers||[]},_ctx?.signal);
+      }
+      if(action.type==='double_click'&&!(action.snapshotElement?.actions||[]).some((name:string)=>['AXOpen','open'].includes(name))) {
+        throw computerUseError(COMPUTER_USE_ERRORS.ACTION_REQUIRES_FOREGROUND,'This target has no AXOpen action. Background double-click may be ignored. Read a fresh state, then use double_click with foreground:true and screenshot x/y coordinates. No click was dispatched.');
+      }
       if (action.type === 'click_point' || action.type === 'double_click') {
         const payload:any={pid,window_id:windowId};
         if(action.type==='double_click'&&action.elementId)payload.element_index=requireElementIndex(action);
@@ -1030,19 +1054,9 @@ export function createMacosCuaProvider({
         const from=requireScreenshotPoint(action,action.fromX,action.fromY),to=requireScreenshotPoint(action,action.toX,action.toY);
         if(action.foreground === true) {
           if(!bundledHanaHelper)throw computerUseError(COMPUTER_USE_ERRORS.CAPABILITY_UNSUPPORTED,'Foreground drag requires the Enigma computer helper.');
-          let inputTrace='';
-          try {
-            const result=await runTool('drag_foreground',{pid,window_id:windowId,from_x:from.x,from_y:from.y,to_x:to.x,to_y:to.y,
-              screenshot_width:action.snapshotDisplay.width,screenshot_height:action.snapshotDisplay.height,
-              duration_ms:Math.max(100,Math.min(2000,Number(action.durationMs)||500)),modifier:action.modifiers||[]},
-              {signal:_ctx?.signal,onStderr:(chunk:string)=>{inputTrace=(inputTrace+chunk).slice(-8192);}});
-            return {ok:true,mode:'foreground-input',message:getText(result)};
-          } finally {
-            if(inputTrace.lastIndexOf('ENIGMA_FOREGROUND_POINTER_DOWN')>inputTrace.lastIndexOf('ENIGMA_FOREGROUND_POINTER_UP')) {
-              try { await runTool('release_foreground_input',{}, {timeoutMs:3000}); }
-              catch(error) { throw computerUseError(COMPUTER_USE_ERRORS.INPUT_RELEASE_FAILED,'Foreground input stopped, but pointer release could not be verified. Release the mouse button before continuing.',{cause:error.message}); }
-            }
-          }
+          return foregroundInput('drag_foreground',{pid,window_id:windowId,from_x:from.x,from_y:from.y,to_x:to.x,to_y:to.y,
+            screenshot_width:action.snapshotDisplay.width,screenshot_height:action.snapshotDisplay.height,
+            duration_ms:Math.max(100,Math.min(2000,Number(action.durationMs)||500)),modifier:action.modifiers||[]},_ctx?.signal);
         }
         return getStructured(await runTool('drag',{pid,window_id:windowId,from_x:from.x,from_y:from.y,to_x:to.x,to_y:to.y,
           duration_ms:Math.max(100,Math.min(2000,Number(action.durationMs)||500)),...(action.modifiers?.length?{modifier:action.modifiers}:{})})) || {ok:true};

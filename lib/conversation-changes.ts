@@ -24,7 +24,12 @@ export class ConversationChanges {
   private active=new Map<string,ConversationTurn>();
   private finishes=new Map<string,{promise:Promise<void>;resolve:()=>void}>();
   private storedBytes:number|undefined;
-  constructor(readonly directory:string,readonly resolveRoots:(session:string)=>Promise<ChangeRoot[]>,readonly canRead:(session:string,file:string)=>boolean=()=>true){}
+  readonly directory:string;
+  readonly resolveRoots:(session:string)=>Promise<ChangeRoot[]>;
+  readonly canRead:(session:string,file:string)=>boolean;
+  constructor(directory:string,resolveRoots:(session:string)=>Promise<ChangeRoot[]>,canRead:(session:string,file:string)=>boolean=()=>true){
+    this.directory=directory;this.resolveRoots=resolveRoots;this.canRead=canRead;
+  }
   private sessionDir(session:string){return path.join(this.directory,digest(session));}
   private async json(file:string,value:unknown){await fs.mkdir(path.dirname(file),{recursive:true});const temp=file+'.'+randomUUID()+'.tmp';await fs.writeFile(temp,JSON.stringify(value),{mode:0o600});await fs.rename(temp,file);}
   private async blob(bytes:Buffer){

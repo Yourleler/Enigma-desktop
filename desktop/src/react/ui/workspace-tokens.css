@@ -14,7 +14,6 @@
     --enigma-spacing-12: 7px;
     --enigma-spacing-13: 18px;
     --enigma-spacing-14: 14px;
-    --enigma-color-15: rgba(, 0.12);
     --enigma-color-16: rgba(var(--accent-rgb), 0.08);
     --enigma-color-17: rgba(40, 36, 34, 0.08);
     --enigma-color-18: rgba(0, 0, 0, 0.14);
@@ -27,11 +26,28 @@
     --enigma-color-25: rgb(0 0 0 / 20%);
     --enigma-duration-26: 1.8s;
     --enigma-duration-27: 2.1s;
-    --enigma-color-28: rgba(, 0.18);
-    --enigma-color-29: rgba(, 0.1);
     --enigma-color-30: #177d52;
     --enigma-color-31: #73d6ad;
     --enigma-color-32: #b63354;
     --enigma-color-33: #f2a0ad;
     --enigma-spacing-34: 24px;
+}
+
+/* Shared overlays and diff contrast; fixed colours are defined once. */
+:root {
+    --composer-focus-scrim: rgb(4 6 12 / 54%);
+    --composer-focus-scrim-light: rgb(32 26 45 / 27%);
+    --composer-focus-shadow: rgb(0 0 0 / 24%);
+    --image-floating-shadow: rgb(0 0 0 / 28%);
+    --image-overlay-text: #fff;
+    --image-overlay-shadow: #000;
+    --image-control-fill: rgb(20 22 28 / 48%);
+    --image-control-hover: rgb(20 22 28 / 78%);
+    --image-preview-shadow: rgb(0 0 0 / 20%);
+    --diff-deleted-color: #cc526c;
+    --diff-added-color: #39a67b;
+    --diff-match-background: #ffe270;
+    --diff-match-text: #211700;
+    --diff-current-match-background: #ffb54a;
+    --diff-current-match-border: #ad6818;
 }

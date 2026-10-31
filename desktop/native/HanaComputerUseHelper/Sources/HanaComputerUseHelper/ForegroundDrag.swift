@@ -14,6 +14,7 @@ struct ForegroundDragRequest: Decodable {
     let screenshot_height: Double
     let duration_ms: Int
     let modifier: [String]?
+    let click_count: Int?
 }
 
 private final class DragCancellation: @unchecked Sendable {
@@ -30,6 +31,7 @@ enum ForegroundDrag {
 
     @MainActor
     static func run(_ request: ForegroundDragRequest) async throws {
+        if let count=request.click_count, ![1,2].contains(count) { throw failure("CAPABILITY_UNSUPPORTED: Click count must be 1 or 2.") }
         let values = [request.from_x, request.from_y, request.to_x, request.to_y, request.screenshot_width, request.screenshot_height]
         guard request.pid > 0, request.window_id > 0, values.allSatisfy({ $0.isFinite }),
               request.screenshot_width > 0, request.screenshot_height > 0,
@@ -96,18 +98,38 @@ enum ForegroundDrag {
             }
         }
         let source = CGEventSource(stateID: .hidSystemState)
-        func post(_ type: CGEventType, _ location: CGPoint) throws {
+        func post(_ type: CGEventType, _ location: CGPoint, clickCount:Int=1) throws {
             guard let event = CGEvent(mouseEventSource: source, mouseType: type, mouseCursorPosition: location, mouseButton: .left) else {
                 throw failure("PROVIDER_CRASHED: Cannot create drag input.")
             }
             event.flags = flags
-            event.setIntegerValueField(.mouseEventClickState, value: 1)
+            event.setIntegerValueField(.mouseEventClickState, value: Int64(clickCount))
             event.post(tap: .cghidEventTap)
         }
         var last = start
         try post(.mouseMoved, start)
         try await Task.sleep(for: .milliseconds(40))
         guard stillTarget() else { throw failure("COMPUTER_OPERATION_CANCELLED: Target changed before mouse down.") }
+        if let count=request.click_count {
+            var held=false
+            defer {
+                if held { try? post(.leftMouseUp, CGEvent(source:nil)?.location ?? start) }
+                usleep(30_000)
+                if !CGEventSource.buttonState(.combinedSessionState,button:.left) { fputs("ENIGMA_FOREGROUND_POINTER_UP\n",stderr);fflush(stderr) }
+            }
+            for index in 1...count {
+                guard stillTarget() else { throw failure("COMPUTER_OPERATION_CANCELLED: Click target changed.") }
+                if let cursor=CGEvent(source:nil)?.location, hypot(cursor.x-start.x,cursor.y-start.y)>18 { throw failure("COMPUTER_OPERATION_CANCELLED: User moved the pointer.") }
+                try post(.leftMouseDown,start,clickCount:index);held=true
+                fputs("ENIGMA_FOREGROUND_POINTER_DOWN\n",stderr);fflush(stderr)
+                try await Task.sleep(for:.milliseconds(20))
+                try post(.leftMouseUp,start,clickCount:index);held=false
+                try await Task.sleep(for:.milliseconds(20))
+                if !CGEventSource.buttonState(.combinedSessionState,button:.left) { fputs("ENIGMA_FOREGROUND_POINTER_UP\n",stderr);fflush(stderr) }
+                if index<count {try await Task.sleep(for:.milliseconds(80))}
+            }
+            return
+        }
         try post(.leftMouseDown, start)
         fputs("ENIGMA_FOREGROUND_POINTER_DOWN\n", stderr)
         fflush(stderr)

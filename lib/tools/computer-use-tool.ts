@@ -564,7 +564,7 @@ export function createComputerUseTool(options: Record<string, any> = {}) {
       toX: Type.Optional(Type.Number()),
       toY: Type.Optional(Type.Number()),
       durationMs: Type.Optional(Type.Number({minimum:100,maximum:2000})),
-      foreground: Type.Optional(Type.Boolean({description:'For drag only: raise the approved target window and use the real pointer. Native drag-and-drop often needs this. Stops on Escape, pointer takeover or focus change. Omit for background input.'})),
+      foreground: Type.Optional(Type.Boolean({description:'For drag, double_click or click_point: raise only the approved window and use the real pointer with current screenshot coordinates. Native drag/drop and double-click without AXOpen require this; do not pass elementId. Stops on Escape, pointer takeover or focus change. Omit for background input.'})),
       modifiers: Type.Optional(Type.Array(StringEnum(['cmd','shift','ctrl','option']))),
       value: Type.Optional(Type.String()),
       query: Type.Optional(Type.String({description:'For get_app_state: filter element labels/roles.'})),
@@ -665,7 +665,7 @@ export function createComputerUseTool(options: Record<string, any> = {}) {
             const leaseParams = resolveCurrentLeaseParams(host, toolCtx, params);
             if(!leaseParams.leaseId)throw computerUseError(COMPUTER_USE_ERRORS.LEASE_NOT_FOUND,'Start an approved app lease before interacting.',{action:params.action});
             if(!leaseParams.snapshotId)throw computerUseError(COMPUTER_USE_ERRORS.STALE_SNAPSHOT,'Read get_app_state before interacting.',{action:params.action});
-            const presentation = params.action === 'drag' && params.foreground === true
+            const presentation = ['drag','double_click','click_point'].includes(params.action) && params.foreground === true
               ? {...(host.getActionPresentation?.(toolCtx, leaseParams.leaseId, params.action) || {}),inputMode:'foreground-input',requiresForeground:true,interruptKey:'Escape'}
               : host.getActionPresentation?.(toolCtx, leaseParams.leaseId, params.action) || {};
             const result = await withActionOverlay(options, toolCtx, {

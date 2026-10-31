@@ -459,6 +459,19 @@ export function applyCuaDriverSourcePatches({ scratchPath } = {}) {
     patchedAny = true;
   }
 
+  const cursorPath=path.join(scratchPath,'checkouts','cua','libs','cua-driver','Sources','CuaDriverCore','Cursor','AgentCursor.swift');
+  let cursor=fs.readFileSync(cursorPath,'utf8');
+  if(!cursor.includes('// Enigma: decorative pointer motion has a bounded latency')) {
+    cursor=replaceRequired(cursor,'        await AgentCursorRenderer.shared.waitForArrival()',
+      `        // Enigma: decorative pointer motion has a bounded latency.
+        // The AppKit action is independent of this overlay. Finish its visual
+        // position after a short glide instead of waiting for GPU spring arrival.
+        try? await Task.sleep(nanoseconds: UInt64(max(0, min(duration, 0.18)) * 1_000_000_000))
+        AgentCursorRenderer.shared.setInitialPosition(point)`, 'bounded cursor arrival');
+    cursor=replaceRequired(cursor,'public func playClickPress(duration: CFTimeInterval = 0.65)', 'public func playClickPress(duration: CFTimeInterval = 0.09)', 'short visual press');
+    fs.chmodSync(cursorPath,0o644);fs.writeFileSync(cursorPath,cursor);patchedAny=true;
+  }
+
   const scrollSource = fs.readFileSync(scrollToolPath, 'utf8');
   const patchedScroll = patchCuaDriverScrollToolSource(scrollSource);
   if (patchedScroll !== scrollSource) {

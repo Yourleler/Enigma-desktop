@@ -381,6 +381,114 @@
       "exemption": null
     },
     {
+      "id": "conversation-file-versions",
+      "ownerModule": "lib/conversation-changes.ts",
+      "pathPattern": "conversation-changes/**",
+      "pathPatterns": [
+        "conversation-changes/**"
+      ],
+      "pathExclusions": [],
+      "pathKind": "tree",
+      "format": "json",
+      "schemaSource": {
+        "kind": "directory-contract",
+        "module": "lib/conversation-changes.ts",
+        "contract": "schema 1 immutable per-input captures and SHA-256 text blobs"
+      },
+      "schemaContract": {
+        "kind": "protocol",
+        "source": "lib/conversation-changes.ts",
+        "compatibility": "Additive history directory; existing sessions without captured versions continue unchanged."
+      },
+      "openEntry": [
+        "ConversationChanges"
+      ],
+      "migrationEntry": [],
+      "protocolModules": [],
+      "firstPossibleOpenPhase": "runtime_ready",
+      "firstPossibleWritePhase": "runtime_ready",
+      "epochPolicy": "epoch-managed",
+      "checkpointPolicy": "Preserve immutable turn metadata and blobs together; do not copy or rewind source directories.",
+      "restorePolicy": "Restore only the history store, never replay captured tool operations.",
+      "affectedByEpochMigration": true,
+      "bootstrapSafety": null,
+      "preCoordinatorReadProjection": null,
+      "identityContract": "Session locator digest plus immutable turn ID; directory IDs and file hashes retain origin. No pre-capture history is fabricated.",
+      "exemption": null
+    },
+    {
+      "id": "conversation-input-queue",
+      "ownerModule": "core/desktop-input-queue.ts",
+      "pathPattern": "input-queue/**",
+      "pathPatterns": [
+        "input-queue/**"
+      ],
+      "pathExclusions": [],
+      "pathKind": "tree",
+      "format": "json",
+      "schemaSource": {
+        "kind": "runtime-contract",
+        "module": "core/desktop-input-queue.ts",
+        "contract": "session queue revision and queued/sending/failed/unknown item reader"
+      },
+      "schemaContract": {
+        "kind": "runtime-source",
+        "source": "core/desktop-input-queue.ts",
+        "compatibility": "New optional session queue; no modification to stored conversation messages."
+      },
+      "openEntry": [
+        "desktopInputQueue"
+      ],
+      "migrationEntry": [],
+      "protocolModules": [],
+      "firstPossibleOpenPhase": "runtime_ready",
+      "firstPossibleWritePhase": "runtime_ready",
+      "epochPolicy": "epoch-managed",
+      "checkpointPolicy": "Preserve user input and attachments without including external source files.",
+      "restorePolicy": "Recovered sending items become unknown and remain paused; never automatically replay an uncertain send.",
+      "affectedByEpochMigration": true,
+      "bootstrapSafety": null,
+      "preCoordinatorReadProjection": null,
+      "identityContract": "Queue belongs to one session locator; item UUID and revision track editable intent.",
+      "exemption": null
+    },
+    {
+      "id": "conversation-review-workbench",
+      "ownerModule": "plugins/enigma/change-workbench.ts",
+      "pathPattern": "change-workbench/**",
+      "pathPatterns": [
+        "change-workbench/**"
+      ],
+      "pathExclusions": [],
+      "pathKind": "tree",
+      "format": "json",
+      "schemaSource": {
+        "kind": "directory-contract",
+        "module": "plugins/enigma/change-workbench.ts",
+        "contract": "frozen source publications, analysis jobs, findings and generated read-only workspaces"
+      },
+      "schemaContract": {
+        "kind": "protocol",
+        "source": "plugins/enigma/change-workbench.ts",
+        "compatibility": "New isolated analysis directory; old engineering reports remain available independently."
+      },
+      "openEntry": [
+        "ChangeWorkbench"
+      ],
+      "migrationEntry": [],
+      "protocolModules": [],
+      "firstPossibleOpenPhase": "runtime_ready",
+      "firstPossibleWritePhase": "runtime_ready",
+      "epochPolicy": "epoch-managed",
+      "checkpointPolicy": "Preserve sources and verdicts; running processes are not captured as completed work.",
+      "restorePolicy": "Interrupted jobs remain failed; repair queue and original user repositories are not replayed or restored.",
+      "affectedByEpochMigration": true,
+      "bootstrapSafety": null,
+      "preCoordinatorReadProjection": null,
+      "identityContract": "Session digest, publication UUID and job UUID; source access is revalidated before use.",
+      "exemption": null
+    },
+    {
       "id": "cron-automation",
       "ownerModule": "lib/desk/cron-store.ts",
       "pathPattern": "agents/{agentId}/desk/cron-jobs.json",
@@ -1288,43 +1396,6 @@
       "bootstrapSafety": null,
       "preCoordinatorReadProjection": null,
       "identityContract": "Generated uploadName is a cache locator, not a durable file or session identity.",
-      "exemption": null
-    },
-    {
-      "id": "local-user-auth",
-      "ownerModule": "core/local-user-account.ts",
-      "pathPattern": "local-user-auth.json",
-      "pathPatterns": [
-        "local-user-auth.json"
-      ],
-      "pathExclusions": [],
-      "pathKind": "file",
-      "format": "json",
-      "schemaSource": {
-        "kind": "runtime-contract",
-        "module": "core/local-user-account.ts",
-        "contract": "local authentication secret reader and atomic serializer"
-      },
-      "schemaContract": {
-        "kind": "runtime-source",
-        "source": "core/local-user-account.ts",
-        "compatibility": "The named runtime reader is canonical; this inventory does not imply stricter validation than runtime currently performs."
-      },
-      "openEntry": [
-        "ensureLocalUserAccount",
-        "authenticateLocalUser"
-      ],
-      "migrationEntry": [],
-      "protocolModules": [],
-      "firstPossibleOpenPhase": "identity_seed",
-      "firstPossibleWritePhase": "identity_seed",
-      "epochPolicy": "epoch-managed",
-      "checkpointPolicy": "Checkpoint as permission-preserving secret material with its matching users.json identity.",
-      "restorePolicy": "Restore atomically before local authentication is enabled.",
-      "affectedByEpochMigration": true,
-      "bootstrapSafety": null,
-      "preCoordinatorReadProjection": null,
-      "identityContract": "The credential belongs to the local userId in the same HANA_HOME.",
       "exemption": null
     },
     {
@@ -3164,6 +3235,33 @@
       "ordinal": 0
     },
     {
+      "sourceFile": "core/desktop-input-queue.ts",
+      "kind": "mkdir",
+      "excerpt": "fs.mkdir(path.dirname(file),{recursive:true})",
+      "reason": "Atomically persists a session-owned pending input queue.",
+      "storeId": "conversation-input-queue",
+      "exemptionId": null,
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "core/desktop-input-queue.ts",
+      "kind": "rename",
+      "excerpt": "fs.rename(temp,file)",
+      "reason": "Atomically persists a session-owned pending input queue.",
+      "storeId": "conversation-input-queue",
+      "exemptionId": null,
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "core/desktop-input-queue.ts",
+      "kind": "write-file",
+      "excerpt": "fs.writeFile(temp,JSON.stringify(queue),{mode:0o600})",
+      "reason": "Atomically persists a session-owned pending input queue.",
+      "storeId": "conversation-input-queue",
+      "exemptionId": null,
+      "ordinal": 0
+    },
+    {
       "sourceFile": "core/device-registry.ts",
       "kind": "mkdir",
       "excerpt": "fs.mkdirSync(path.dirname(filePath), { recursive: true })",
@@ -3644,7 +3742,7 @@
       "sourceFile": "core/local-user-account.ts",
       "kind": "mkdir",
       "excerpt": "fs.mkdirSync(path.dirname(filePath), { recursive: true })",
-      "reason": "The file-local atomic helper receives paths only from the separately registered users.json and local-user-auth.json call sites.",
+      "reason": "The file-local atomic helper receives paths only from the separately registered users.json profile call sites; retired password records are neither read nor written.",
       "storeId": null,
       "exemptionId": "local-user-account-atomic-helper",
       "ordinal": 0
@@ -3653,28 +3751,10 @@
       "sourceFile": "core/local-user-account.ts",
       "kind": "secret-write",
       "excerpt": "writeSecretFileSync(filePath, JSON.stringify(data, null, 2) + \"\\n\")",
-      "reason": "The file-local atomic helper receives paths only from the separately registered users.json and local-user-auth.json call sites.",
+      "reason": "The file-local atomic helper receives paths only from the separately registered users.json profile call sites; retired password records are neither read nor written.",
       "storeId": null,
       "exemptionId": "local-user-account-atomic-helper",
       "ordinal": 0
-    },
-    {
-      "sourceFile": "core/local-user-account.ts",
-      "kind": "secret-write",
-      "excerpt": "writeSecretJson(path.join(hanakoHome, LOCAL_USER_AUTH_FILE), auth)",
-      "reason": "Writes the local user authentication record.",
-      "storeId": "local-user-auth",
-      "exemptionId": null,
-      "ordinal": 0
-    },
-    {
-      "sourceFile": "core/local-user-account.ts",
-      "kind": "secret-write",
-      "excerpt": "writeSecretJson(path.join(hanakoHome, LOCAL_USER_AUTH_FILE), auth)",
-      "reason": "Writes the local user authentication record.",
-      "storeId": "local-user-auth",
-      "exemptionId": null,
-      "ordinal": 1
     },
     {
       "sourceFile": "core/local-user-account.ts",
@@ -6332,6 +6412,51 @@
       "ordinal": 0
     },
     {
+      "sourceFile": "lib/conversation-changes.ts",
+      "kind": "mkdir",
+      "excerpt": "fs.mkdir(folder,{recursive:true})",
+      "reason": "Writes immutable conversation file capture metadata and content-addressed blobs.",
+      "storeId": "conversation-file-versions",
+      "exemptionId": null,
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "lib/conversation-changes.ts",
+      "kind": "mkdir",
+      "excerpt": "fs.mkdir(path.dirname(file),{recursive:true})",
+      "reason": "Writes immutable conversation file capture metadata and content-addressed blobs.",
+      "storeId": "conversation-file-versions",
+      "exemptionId": null,
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "lib/conversation-changes.ts",
+      "kind": "rename",
+      "excerpt": "fs.rename(temp,file)",
+      "reason": "Writes immutable conversation file capture metadata and content-addressed blobs.",
+      "storeId": "conversation-file-versions",
+      "exemptionId": null,
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "lib/conversation-changes.ts",
+      "kind": "write-file",
+      "excerpt": "fs.writeFile(file,bytes,{mode:0o600,flag:'wx'})",
+      "reason": "Writes immutable conversation file capture metadata and content-addressed blobs.",
+      "storeId": "conversation-file-versions",
+      "exemptionId": null,
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "lib/conversation-changes.ts",
+      "kind": "write-file",
+      "excerpt": "fs.writeFile(temp,JSON.stringify(value),{mode:0o600})",
+      "reason": "Writes immutable conversation file capture metadata and content-addressed blobs.",
+      "storeId": "conversation-file-versions",
+      "exemptionId": null,
+      "ordinal": 0
+    },
+    {
       "sourceFile": "lib/conversations/agent-phone-projection.ts",
       "kind": "mkdir",
       "excerpt": "fsp.mkdir(path.dirname(filePath), { recursive: true })",
@@ -8501,6 +8626,123 @@
       "ordinal": 0
     },
     {
+      "sourceFile": "plugins/enigma/change-workbench.ts",
+      "kind": "mkdir",
+      "excerpt": "fs.mkdir(dir,{recursive:true})",
+      "reason": "Writes session-bound analysis state and private generated source copies.",
+      "storeId": "conversation-review-workbench",
+      "exemptionId": null,
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "plugins/enigma/change-workbench.ts",
+      "kind": "mkdir",
+      "excerpt": "fs.mkdir(path.dirname(destination),{recursive:true})",
+      "reason": "Writes session-bound analysis state and private generated source copies.",
+      "storeId": "conversation-review-workbench",
+      "exemptionId": null,
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "plugins/enigma/change-workbench.ts",
+      "kind": "mkdir",
+      "excerpt": "fs.mkdir(path.dirname(destination),{recursive:true})",
+      "reason": "Writes session-bound analysis state and private generated source copies.",
+      "storeId": "conversation-review-workbench",
+      "exemptionId": null,
+      "ordinal": 1
+    },
+    {
+      "sourceFile": "plugins/enigma/change-workbench.ts",
+      "kind": "mkdir",
+      "excerpt": "fs.mkdir(path.dirname(file),{recursive:true})",
+      "reason": "Writes session-bound analysis state and private generated source copies.",
+      "storeId": "conversation-review-workbench",
+      "exemptionId": null,
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "plugins/enigma/change-workbench.ts",
+      "kind": "mkdir",
+      "excerpt": "fs.mkdir(path.dirname(file),{recursive:true})",
+      "reason": "Writes session-bound analysis state and private generated source copies.",
+      "storeId": "conversation-review-workbench",
+      "exemptionId": null,
+      "ordinal": 1
+    },
+    {
+      "sourceFile": "plugins/enigma/change-workbench.ts",
+      "kind": "mkdir",
+      "excerpt": "fs.mkdir(root,{recursive:true})",
+      "reason": "Writes session-bound analysis state and private generated source copies.",
+      "storeId": "conversation-review-workbench",
+      "exemptionId": null,
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "plugins/enigma/change-workbench.ts",
+      "kind": "remove-path",
+      "excerpt": "fs.unlink(file)",
+      "reason": "Writes session-bound analysis state and private generated source copies.",
+      "storeId": "conversation-review-workbench",
+      "exemptionId": null,
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "plugins/enigma/change-workbench.ts",
+      "kind": "remove-path",
+      "excerpt": "fs.unlink(remove)",
+      "reason": "Writes session-bound analysis state and private generated source copies.",
+      "storeId": "conversation-review-workbench",
+      "exemptionId": null,
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "plugins/enigma/change-workbench.ts",
+      "kind": "rename",
+      "excerpt": "fs.rename(temp,file)",
+      "reason": "Writes session-bound analysis state and private generated source copies.",
+      "storeId": "conversation-review-workbench",
+      "exemptionId": null,
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "plugins/enigma/change-workbench.ts",
+      "kind": "write-file",
+      "excerpt": "fs.writeFile(destination,redact(await fs.readFile(original,'utf8'),workspace.secrets))",
+      "reason": "Writes session-bound analysis state and private generated source copies.",
+      "storeId": "conversation-review-workbench",
+      "exemptionId": null,
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "plugins/enigma/change-workbench.ts",
+      "kind": "write-file",
+      "excerpt": "fs.writeFile(destination,redact(content,workspace.secrets))",
+      "reason": "Writes session-bound analysis state and private generated source copies.",
+      "storeId": "conversation-review-workbench",
+      "exemptionId": null,
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "plugins/enigma/change-workbench.ts",
+      "kind": "write-file",
+      "excerpt": "fs.writeFile(file,redact(version.content,workspace.secrets))",
+      "reason": "Writes session-bound analysis state and private generated source copies.",
+      "storeId": "conversation-review-workbench",
+      "exemptionId": null,
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "plugins/enigma/change-workbench.ts",
+      "kind": "write-file",
+      "excerpt": "fs.writeFile(temp,JSON.stringify(value),{mode:0o600})",
+      "reason": "Writes session-bound analysis state and private generated source copies.",
+      "storeId": "conversation-review-workbench",
+      "exemptionId": null,
+      "ordinal": 0
+    },
+    {
       "sourceFile": "plugins/enigma/conductor.ts",
       "kind": "atomic-write",
       "excerpt": "writeJson(this.file, value)",
@@ -8655,10 +8897,28 @@
     },
     {
       "sourceFile": "plugins/enigma/host.ts",
+      "kind": "mkdir",
+      "excerpt": "fs.mkdir(root, {recursive: true})",
+      "reason": "Creates local metadata for a project without an external folder.",
+      "storeId": "plugin-runtime-data",
+      "exemptionId": null,
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "plugins/enigma/host.ts",
       "kind": "write-file",
       "excerpt": "fs.writeFile(targetPath,await fs.readFile(start.sessionFile),{flag:'wx',mode:0o600})",
       "reason": "Copies a restored Pi session into its owning native session directory with exclusive creation and verified identity; preserves the native Pi schema.",
       "storeId": "session-jsonl",
+      "exemptionId": null,
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "plugins/enigma/session-changes.ts",
+      "kind": "mkdir",
+      "excerpt": "fs.mkdir(root, { recursive: true })",
+      "reason": "Creates profile-owned frozen Git change previews.",
+      "storeId": "plugin-runtime-data",
       "exemptionId": null,
       "ordinal": 0
     },
@@ -10539,7 +10799,7 @@
       "id": "local-user-account-atomic-helper",
       "ownerModule": "core/local-user-account.ts",
       "sourceFile": "core/local-user-account.ts",
-      "reason": "The file-local atomic helper receives paths only from the separately registered users.json and local-user-auth.json call sites.",
+      "reason": "The file-local atomic helper receives paths only from the separately registered users.json profile call sites; retired password records are neither read nor written.",
       "expiresOn": "2026-10-31",
       "kinds": [
         "mkdir",

@@ -92,7 +92,7 @@ struct HanaComputerUseHelper {
 
     private static func callTool(_ name: String, args: [String], raw: Bool, compact: Bool, socketPath: String) async throws {
         let arguments = try decodeArguments(args.first)
-        guard ["drag_foreground", "release_foreground_input"].contains(name) || ToolRegistry.default.handlers[name] != nil else {
+        guard ["drag_foreground", "click_foreground", "release_foreground_input"].contains(name) || ToolRegistry.default.handlers[name] != nil else {
             throw HelperError(code: ExitCode.usage, message: "Unknown tool: \(name)")
         }
 
@@ -126,7 +126,7 @@ struct HanaComputerUseHelper {
             }
         }
 
-        if name == "drag_foreground" {
+        if name == "drag_foreground" || name == "click_foreground" {
             do {
                 let request = try JSONDecoder().decode(ForegroundDragRequest.self, from: Data((args.first ?? "{}").utf8))
                 try await ForegroundDrag.run(request)

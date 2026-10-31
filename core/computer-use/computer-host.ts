@@ -224,7 +224,7 @@ export class ComputerHost {
   }
 
   performAction(ctx, leaseId, action) {
-    return this._exclusive(ctx,()=>this._performAction(ctx,leaseId,action),action?.type==='drag'&&action?.foreground===true);
+    return this._exclusive(ctx,()=>this._performAction(ctx,leaseId,action),['drag','double_click','click_point'].includes(action?.type)&&action?.foreground===true);
   }
   async _performAction(ctx, leaseId, action) {
     this._assertRuntimeAllowed(ctx);

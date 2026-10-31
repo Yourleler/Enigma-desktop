@@ -284,6 +284,7 @@ body.enigma-surface [data-glass-frame="settings"] .settings-panel { background:t
 /* Compact, feathered light with monochrome dither. The noise is part of
    the material background, so it neither covers text nor intercepts input. */
 body.enigma-surface [data-glass-frame="settings"] {
+  --glass-aura-clear:rgb(var(--glass-aura-rgb) / 0);
   --glass-spot-width:110px;--glass-spot-height:74px;--glass-spot-strength:.14;
   background:
     url('../../assets/enigma/material-dither.svg') 0 0 / 128px 128px repeat,
@@ -293,7 +294,7 @@ body.enigma-surface [data-glass-frame="settings"] {
       rgb(var(--glass-aura-rgb) / calc(var(--glass-light-opacity,0) * .085)) 34%,
       rgb(var(--glass-aura-rgb) / calc(var(--glass-light-opacity,0) * .037)) 55%,
       rgb(var(--glass-aura-rgb) / calc(var(--glass-light-opacity,0) * .008)) 78%,
-      rgb(var(--glass-aura-rgb) / 0) 100%),
+      var(--glass-aura-clear) 100%),
     color-mix(in srgb,var(--eg-card) var(--glass-frame-mix,57%),transparent);
 }
 body.enigma-surface .settings-panel { --bg-card:color-mix(in srgb,var(--eg-card) 32%,transparent); }

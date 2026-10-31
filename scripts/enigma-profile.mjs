@@ -9,6 +9,7 @@ import {validateProviderModels} from '../shared/provider-model-validation.ts';
 import {writeSecretFileSync} from '../shared/secret-fs.ts';
 
 const retiredDefaultAvatars = new Set([
+  '66cb0766420a6b09dad1f9c0b4287fbd2794f0ececb4b41b24d8a267246254a3',
   '5f30c4e073c2233d56fbe139de49e42c1d296bad98b7b84ceb0dc41aa2557a35',
   '8c09e15f09c28d5c53030898ea7a2aa4ef1b246fb0170f9351531fda993648da',
 ]);

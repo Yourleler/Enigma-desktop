@@ -234,7 +234,7 @@ try {
    assert(live,'Memory consolidation uses the actual configured Gateway model');
    const store=await MemoryStore.open(workspace),source=await store.save({kind:'contract',scope:{type:'repositories',repos:['alpha','beta','gamma']},title:'跨仓函数消费链',content:'alpha/index.js 的 alphaValue 返回 alpha。beta 导入 alphaValue，返回 beta 前缀；gamma 导入 betaValue，返回 gamma 前缀。迁移上游返回值需要验证 gammaValue 的真实调用，现有 check.cjs 只检查 alpha/value.txt。',appliesWhen:'这些源码与当前版本一致时进行返回值迁移',origin:{kind:'source',reference:'actual-native-source'},sources:[{repo:'alpha',file:'index.js'},{repo:'beta',file:'index.js'},{repo:'gamma',file:'index.js'}]});
    const run=await host.memoryWork.start(created.sessionPath,[source.id],2),deadline=Date.now()+70000;let status;
-   do{await new Promise(resolve=>setTimeout(resolve,250));status=(await host.memoryWork.list(created.sessionPath)).find(item=>item.id===run.id);}while(status?.status==='running'||status?.status==='queued'&&Date.now()<deadline);
+   do{await new Promise(resolve=>setTimeout(resolve,250));status=(await host.memoryWork.list(created.sessionPath)).find(item=>item.id===run.id);}while((status?.status==='running'||status?.status==='queued')&&Date.now()<deadline);
    assert.equal(status.status,'ready',JSON.stringify(status));assert(status.candidates.length>0);
    const published=await host.memoryWork.action(created.sessionPath,run.id,'publish');assert(published.memories.length>0);
    const derived=await store.read(published.memories[0]);assert.equal(derived.freshness,'current');assert.equal(derived.record.status,'candidate');assert.equal(derived.record.derivedFrom[0].id,source.id);assert(derived.record.appliesWhen);

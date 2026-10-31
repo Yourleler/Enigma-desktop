@@ -11,7 +11,7 @@ import {createCommandRunner} from '../core/computer-use/providers/command-runner
 
 /** Real native fixture and shipped plugin. Never reads another app's content,
  * shares a driver socket, or changes the user's saved configuration. */
-export async function createComputerLabRuntime({parent,fixture,helper}) {
+export async function createComputerLabRuntime({parent,fixture,helper,cursorEnabled=false}) {
   fs.mkdirSync(parent,{recursive:true});
   const root=fs.mkdtempSync(path.join(parent,'computer-native-'));
   const socketRoot=fs.mkdtempSync(path.join(os.tmpdir(),'enigma-native-'));
@@ -30,7 +30,7 @@ export async function createComputerLabRuntime({parent,fixture,helper}) {
     if(args[0]==='drag_foreground')fs.appendFileSync(path.join(root,'native-command-results.jsonl'),JSON.stringify({...result,aborted:options.signal?.aborted===true})+'\n');
     return result;
   }};
-  const provider=createMacosCuaProvider({command:helper,socketPath:path.join(socketRoot,'driver.sock'),cursorEnabled:false,runner});
+  const provider=createMacosCuaProvider({command:helper,socketPath:path.join(socketRoot,'driver.sock'),cursorEnabled,runner});
   const providers=new ComputerProviderRegistry();providers.register(provider);
   const host=new ComputerHost({providers,defaultProviderId:provider.providerId,getAccessMode:()=> 'operate',getSettings:()=>({enabled:true,app_approvals:[{providerId:provider.providerId,appId:fixtureInfo.bundleId}]})});
   const tool=computerPlugin({getComputerHost:()=>host,getSessionAccessMode:()=> 'operate'},{createComputerUseTool});
