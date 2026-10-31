@@ -6739,9 +6739,14 @@
           "root": "server-bootstrap",
           "from": "server/routes/chat.ts",
           "kind": "import-statement"
+        },
+        {
+          "root": "server-bootstrap",
+          "from": "server/turn-usage.ts",
+          "kind": "import-statement"
         }
       ],
-      "reason": "Reached via esbuild source module graph, imported by core/llm-client.ts (import-statement); lib/llm/usage-ledger.ts (import-statement); server/routes/chat.ts (import-statement)."
+      "reason": "Reached via esbuild source module graph, imported by core/llm-client.ts (import-statement); lib/llm/usage-ledger.ts (import-statement); server/routes/chat.ts (import-statement); +1 more importer(s)."
     },
     {
       "path": "lib/log-redactor.ts",
@@ -10633,11 +10638,16 @@
         },
         {
           "root": "server-bootstrap",
+          "from": "server/turn-usage.ts",
+          "kind": "import-statement"
+        },
+        {
+          "root": "server-bootstrap",
           "from": "server/routes/sessions.ts",
           "kind": "import-statement"
         }
       ],
-      "reason": "Reached via esbuild source module graph, imported by core/message-utils.ts (import-statement); core/session-turn-actions.ts (import-statement); core/session-coordinator.ts (import-statement); +2 more importer(s)."
+      "reason": "Reached via esbuild source module graph, imported by core/message-utils.ts (import-statement); core/session-turn-actions.ts (import-statement); core/session-coordinator.ts (import-statement); +3 more importer(s)."
     },
     {
       "path": "lib/user-profile-store.ts",
@@ -75395,6 +75405,18 @@
       "reason": "Reached via esbuild source module graph, imported by server/session-token-meter.ts (import-statement)."
     },
     {
+      "path": "server/turn-usage.ts",
+      "inputType": "source-graph",
+      "provenance": [
+        {
+          "root": "server-bootstrap",
+          "from": "server/routes/sessions.ts",
+          "kind": "import-statement"
+        }
+      ],
+      "reason": "Reached via esbuild source module graph, imported by server/routes/sessions.ts (import-statement)."
+    },
+    {
       "path": "server/usage-summary.ts",
       "inputType": "source-graph",
       "provenance": [
@@ -77514,9 +77536,14 @@
           "root": "server-bootstrap",
           "from": "server/routes/chat.ts",
           "kind": "import-statement"
+        },
+        {
+          "root": "server-bootstrap",
+          "from": "server/turn-usage.ts",
+          "kind": "import-statement"
         }
       ],
-      "reason": "Reached via esbuild source module graph, imported by plugins/enigma/conductor.ts (import-statement); server/session-timing.ts (import-statement); server/routes/chat.ts (import-statement)."
+      "reason": "Reached via esbuild source module graph, imported by plugins/enigma/conductor.ts (import-statement); server/session-timing.ts (import-statement); server/routes/chat.ts (import-statement); +1 more importer(s)."
     },
     {
       "path": "shared/sidebar-ui-state.ts",
@@ -77676,11 +77703,16 @@
       "provenance": [
         {
           "root": "server-bootstrap",
+          "from": "server/turn-usage.ts",
+          "kind": "import-statement"
+        },
+        {
+          "root": "server-bootstrap",
           "from": "server/usage-summary.ts",
           "kind": "import-statement"
         }
       ],
-      "reason": "Reached via esbuild source module graph, imported by server/usage-summary.ts (import-statement)."
+      "reason": "Reached via esbuild source module graph, imported by server/turn-usage.ts (import-statement); server/usage-summary.ts (import-statement)."
     },
     {
       "path": "shared/video-mime.ts",
@@ -77877,9 +77909,9 @@
     }
   ],
   "stats": {
-    "totalFiles": 6417,
+    "totalFiles": 6418,
     "byInputType": {
-      "source-graph": 713,
+      "source-graph": 714,
       "runtime-asset": 11,
       "nft-runtime-trace": 5693
     }

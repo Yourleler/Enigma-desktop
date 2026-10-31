@@ -1048,6 +1048,15 @@ export function handleServerMessage(msg: any): void {
       const meter = msg.meter;
       if (!sp || !meter || typeof meter !== 'object') break;
       useTokenMeterStore.getState().applyTokenMeter(sp, meter, useStore.getState().activeServerConnectionId);
+      if(meter.state==='done'||meter.state==='aborted'){
+        const connection=useStore.getState().activeServerConnectionId;
+        // Read persisted per-turn usage after the final stream buffer settles.
+        // A newer queued turn or navigation owns its own refresh.
+        setTimeout(()=>{void import('../stores/session-actions').then(module=>{
+          const current=useStore.getState();
+          if(current.activeServerConnectionId===connection&&current.currentSessionPath===sp&&!sessionScopedListIncludes(current as Record<string,any>,current.streamingSessions||[],sp))void module.loadMessages(sp);
+        });},250);
+      }
       break;
     }
 

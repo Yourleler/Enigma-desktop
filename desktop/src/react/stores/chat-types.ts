@@ -300,6 +300,7 @@ export interface ChatMessage {
   turnInputEntryId?: string;
   /** Persisted input time for this assistant turn, also available on history pages without its input. */
   turnStartedAt?: number;
+  turnUsage?: import('../../../../shared/turn-usage.ts').TurnUsage;
   /** false 表示真实 turn input 只用于模型上下文，不对应可见用户节点。 */
   turnInputVisible?: boolean;
   role: 'user' | 'assistant';

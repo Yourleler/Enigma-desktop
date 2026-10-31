@@ -2904,6 +2904,7 @@ describe("sessions route", () => {
         role: "assistant",
         content: "hi back",
         timestamp: "2026-05-07T05:43:00.000Z",
+        turnUsage:expect.objectContaining({startedAt:Date.parse('2026-05-07T05:42:00.000Z'),endedAt:Date.parse('2026-05-07T05:43:00.000Z'),totals:expect.objectContaining({requests:1,missingRequests:1})}),
       },
     ]);
   });
@@ -3040,6 +3041,7 @@ describe("sessions route", () => {
       role: "assistant",
       content: "",
       thinking: "",
+      turnUsage:expect.objectContaining({startedAt:null,endedAt:null,totals:expect.objectContaining({requests:1,missingRequests:1})}),
     }]);
   });
 

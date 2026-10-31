@@ -2,7 +2,9 @@ import { GlassSelection } from '../../ui/GlassSelection';
 import { UsageAnalytics } from '../usage/UsageAnalytics';
 import { hanaFetch } from '../../hooks/use-hana-fetch';
 import { openSettingsModal } from '../../stores/settings-modal-actions';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import {sessionScopedValue} from '../../stores/session-slice';
+import {turnUsageMeter} from '../../utils/turn-usage-meter';
 import { useStore } from '../../stores';
 import { AnchoredPortal } from '../../ui/AnchoredPortal';
 import { formatElapsed, formatTokenCount, METER_PHASE_LABEL, tokenMeterKey, useTokenMeterStore } from './token-meter-store';
@@ -15,7 +17,13 @@ export function TokenMeterPill() {
   const sessionPath = useStore(s => s.currentSessionPath);
   const connection = useStore(s => s.activeServerConnectionId);
   const connected = useStore(s => s.connected);
-  const meter = useTokenMeterStore(s => sessionPath ? s.metersBySession[tokenMeterKey(connection, sessionPath)] : null);
+  const liveMeter = useTokenMeterStore(s => sessionPath ? s.metersBySession[tokenMeterKey(connection, sessionPath)] : null);
+  const history = useStore(s=>sessionPath?sessionScopedValue(s,s.chatSessions,sessionPath)?.items:undefined);
+  const historicalMeter=useMemo(()=>{
+    for(let index=(history?.length||0)-1;index>=0;index--){const item=history![index];if(item.type==='message'&&item.data.role==='assistant'&&item.data.turnUsage)return turnUsageMeter(item.data.turnUsage);}
+    return null;
+  },[history]);
+  const meter=liveMeter&&(!historicalMeter||liveMeter.state==='running'||liveMeter.startedAt>=historicalMeter.startedAt)?liveMeter:historicalMeter;
   const [open, setOpen] = useState(false), [now, setNow] = useState(Date.now()),[view,setView]=useState<'round'|'session'>('round');
   const anchor = useRef<HTMLButtonElement>(null), panel = useRef<HTMLDivElement>(null);
   useEffect(() => { setOpen(false);setView('round'); }, [sessionPath, connection]);
@@ -32,7 +40,7 @@ export function TokenMeterPill() {
   const running = meter?.state === 'running';
   const stale = running && (!connected || !!meter.sampledAt && now - meter.sampledAt > 5000);
   const phase = !meter ? '尚无用量' : stale ? '用量更新中断' : running ? METER_PHASE_LABEL[meter.phase] : meter.state === 'aborted' ? '已停止' : '本轮结束';
-  const counter = (side: 'up'|'down') => !meter ? '—' : (!meter.requests && meter[side].tokens === 0) ? '待统计' : `${meter[side].estimated ? '≈' : ''}${formatTokenCount(side==='up'?animatedUp:animatedDown)}`;
+  const counter = (side: 'up'|'down') => !meter ? '—' : meter.missingRequests===meter.requests&&meter.requests>0?'未报告':(!meter.requests && meter[side].tokens === 0) ? '待统计' : `${meter[side].estimated ? '≈' : ''}${formatTokenCount(side==='up'?animatedUp:animatedDown)}`;
   const rateVisible = running && !stale && ['thinking','writing'].includes(meter.phase) && meter.rate > 0;
   return <div className={styles.meterRow}>
     <button ref={anchor} type="button" className={styles.meter} data-liquid="control" data-testid="token-meter" data-state={meter?.state || 'idle'} aria-label="查看本轮模型用量" aria-expanded={open} aria-haspopup="dialog" data-tooltip="本次发送的模型用量：输入包含上下文与缓存，输出包含生成内容；点击查看明细" onClick={() => setOpen(v=>!v)}>
@@ -48,8 +56,10 @@ export function TokenMeterPill() {
         <div className={styles.scopeTabs} role="tablist" aria-label="用量范围" data-glass-segmented=""><GlassSelection selection={view}/><button role="tab" aria-selected={view==='round'} onClick={()=>setView('round')}>本轮</button><button role="tab" aria-selected={view==='session'} onClick={()=>setView('session')}>本对话</button><button onClick={()=>{close();openSettingsModal('usage');}}>历史统计 ↗</button></div>
         {view==='session'?<UsageAnalytics fetcher={hanaFetch} connectionKey={connection} sessionPath={sessionPath} compact/>:<>
 
-        {!meter ? <><p>当前没有可用的实时用量记录。从下一次发送开始，这里会显示输入、输出、等待阶段和生成速度。</p><p className={styles.note}>历史消息不会在这里重新统计。token 是模型处理文本的计量单位。</p></> : <>
+        {!meter ? <p>这轮没有保留下来的模型用量。可切换“本对话”查看已记录请求。</p> : <>
           <div className={styles.phaseDetail}><span>{phase}</span><span>{formatElapsed(meter.elapsedMs)} · {meter.requests} 次模型请求</span></div>
+          {meter.historical&&<p className={styles.note}>来自这轮原始消息的已报告用量；分支沿用的旧消息不会重新计入请求账本。</p>}
+          {!!meter.missingRequests&&<p className={styles.note}>{meter.missingRequests} 次请求未保存用量，以下是已记录部分，不表示其余请求免费。</p>}
           {stale && <p className={styles.note}>当前显示最后一次收到的数据。连接恢复后会继续更新，数字停止不代表任务已经结束。</p>}
           {running&&!stale&&meter.phase==='processing'&&<p className={styles.note}>这次模型响应已结束，应用仍在处理后续步骤；可能执行工具、保存记录或准备下一次请求。</p>}
           <dl><div><dt>↑ 输入上下文</dt><dd>{meter.up.tokens.toLocaleString()} <small>{meter.up.estimated ? '估算 token' : '已报告 token'}</small></dd></div>

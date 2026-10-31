@@ -69,6 +69,7 @@ export interface HistoryApiResponse {
     sourceIndex?: number;
     turnInputEntryId?: string;
     turnStartedAt?: number | string | null;
+    turnUsage?: import('../../../../shared/turn-usage.ts').TurnUsage;
     turnInputVisible?: boolean;
     agentReview?: import('../stores/chat-types').AgentReviewContext;
     agentReviewRequest?: import('../stores/chat-types').AgentReviewRequestContext;
@@ -612,6 +613,7 @@ export function buildItemsFromHistory(data: HistoryApiResponse): ChatListItem[] 
         sourceEntryId: m.entryId,
         role: 'assistant',
         blocks,
+        ...(m.turnUsage?{turnUsage:m.turnUsage}:{}),
         ...(m.turnInputEntryId ? { turnInputEntryId: m.turnInputEntryId } : {}),
         ...(normalizeHistoryTimestamp(m.turnStartedAt) !== undefined
           ? { turnStartedAt: normalizeHistoryTimestamp(m.turnStartedAt) } : {}),

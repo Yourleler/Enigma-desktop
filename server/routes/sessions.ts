@@ -1,4 +1,5 @@
 import {normalizedSearchOptions,matchCenteredSnippet} from '../../shared/history-search.ts';
+import {collectTurnUsage} from '../turn-usage.ts';
 import {autoProjectIdForCwd} from '../../shared/session-projects.ts';
 /**
  * Session 管理 REST 路由
@@ -1548,6 +1549,7 @@ export function createSessionsRoute(engine, hub = null) {
         if (normalizedDeliveryId) deferredInterludeDeliveryIds.add(normalizedDeliveryId);
       };
       let displayIdx = 0;
+      const turnUsageBySource=collectTurnUsage(sourceMessages,turnInputByAssistantEntryId);
       let latestTurnInputEntryId: string | null = null;
       let latestTurnInputVisible = false;
 
@@ -1611,6 +1613,7 @@ export function createSessionsRoute(engine, hub = null) {
               ...(m.id ? { entryId: m.id } : {}),
               role: "assistant",
               content,
+              turnUsage:turnUsageBySource.get(sourceIndex),
               ...(turnInputEntryId ? { turnInputEntryId, turnInputVisible } : {}),
               ...(turnInputEntryId ? { turnStartedAt: inputTimestampById.get(turnInputEntryId) } : {}),
               ...(contentHasThinkingBlock(m.content, { stripThink: true }) ? { thinking } : {}),

@@ -19,6 +19,11 @@ export function TurnTiming({ message, input }: { message: ChatMessage; input?: C
       <span>本轮历时 <strong>{elapsed === null ? '未记录' : elapsedClock(elapsed)}</strong></span>
       <span>开始 <time dateTime={startedAt ? new Date(startedAt).toISOString() : undefined}>{startedAt ? formatTime(startedAt) : '未记录'}</time></span>
       <span>最后回复 <time dateTime={endedAt ? new Date(endedAt).toISOString() : undefined}>{endedAt ? formatTime(endedAt) : '未记录'}</time></span>
+      {message.turnUsage&&<details className={styles.usage}><summary aria-label="查看此轮用量">{message.turnUsage.totals.reportedRequests?`↑ ${message.turnUsage.totals.input.toLocaleString()} · ↓ ${message.turnUsage.totals.output.toLocaleString()} token`:'用量未报告'}</summary>
+        <div>{message.turnUsage.models.map(row=><p key={row.key}>{row.label} · {row.requests} 次 · 输入 {row.input.toLocaleString()} · 输出 {row.output.toLocaleString()}</p>)}
+        <p>消息记录用量，包含工具调用期间的模型请求；分支沿用不重复计费。</p>
+        {!!message.turnUsage.totals.missingRequests&&<p>{message.turnUsage.totals.missingRequests} 次未保存用量，合计仅包括已记录部分。</p>}</div>
+      </details>}
     </div>
   );
 }

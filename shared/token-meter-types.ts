@@ -14,6 +14,8 @@ export interface TokenSide {
 }
 
 export interface TokenMeterSnapshot {
+  historical?: boolean;
+  missingRequests?: number;
   state: "running" | "done" | "aborted";
   phase: TokenMeterPhase;
   runId: number;

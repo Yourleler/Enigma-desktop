@@ -13,3 +13,7 @@
 }
 .record span { white-space: nowrap; }
 .record strong { font-weight: 500; color: var(--text-primary); }
+.usage { position:relative; max-width:100%; }
+.usage summary { cursor:pointer; }
+.usage[open] { flex-basis:100%; }
+.usage p { margin:var(--space-4) 0; overflow-wrap:anywhere; }
