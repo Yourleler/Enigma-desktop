@@ -61,8 +61,8 @@ body.enigma-surface[data-enigma-tone] .app > .enigma-sidebar-rail,body.enigma-su
 body.enigma-surface[data-enigma-tone] .titlebar { height:var(--titlebar-h);box-sizing:border-box;border:0;gap:8px;padding:0 8px 0 12px;z-index:100; }
 body.enigma-surface .titlebar .tb-left-group { display:flex;align-items:center;height:100%;flex:none; }
 body.enigma-surface .titlebar .tb-conversation-group { min-width:0; }
-body.enigma-surface .titlebar .tb-center-title { position:static;transform:none;left:auto;right:auto;top:auto;bottom:auto;flex:1 1 auto;max-width:100%;min-width:0;display:block;text-align:left;font-size:12px; }
-body.enigma-surface .titlebar .tb-center-title span { display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+body.enigma-surface .titlebar .tb-center-title { position:static;transform:none;left:auto;right:auto;top:auto;bottom:auto;flex:1 1 auto;max-width:100%;min-width:0;display:flex;align-items:center;justify-content:flex-start;text-align:left;font:400 13px/20px var(--font-ui);letter-spacing:0;color:var(--text);padding-inline:12px 12px;box-sizing:border-box;height:32px; }
+body.enigma-surface .titlebar .tb-center-title span { min-width:0;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
 body.enigma-surface .titlebar .tb-right-group { margin:0;gap:2px;flex:none; }
 body.enigma-surface #enigma-titlebar-chat-tools { flex:0 1 auto;min-width:0;-webkit-app-region:no-drag;pointer-events:auto; }
 body.enigma-surface #enigma-titlebar-chat-tools .enigma-conversation-header { padding:0;border:0;flex-wrap:nowrap;gap:8px;font-size:11px; }
@@ -72,7 +72,7 @@ body.enigma-surface #enigma-titlebar-workspace { min-width:0;height:100%;-webkit
 body.enigma-surface #enigma-titlebar-workspace[hidden] { display:none; }
 body.enigma-surface #enigma-titlebar-workspace .enigma-dock-header { height:100%;box-sizing:border-box;border:0;padding:0 2px;gap:3px; }
 body.enigma-surface #enigma-titlebar-workspace .enigma-dock-tab { border-radius:7px; }
-body.enigma-surface #enigma-titlebar-workspace .enigma-dock-tab button { height:28px;padding:3px 6px;font-size:11px; }
+body.enigma-surface #enigma-titlebar-workspace .enigma-dock-tab button { height:32px;min-height:32px;padding:6px 8px;font:400 13px/20px var(--font-ui);letter-spacing:0; }
 body.enigma-surface #enigma-titlebar-workspace .enigma-dock-tab button span:last-child { max-width:140px; }
 body.enigma-surface #enigma-titlebar-workspace .enigma-dock-tab-close { max-width:20px;padding:0 3px; }
 body.enigma-surface .enigma-sidebar-rail [data-channel-layout="rail"] { display:flex;flex-direction:column;position:relative;inset:auto;transform:none;background:transparent;border:0;box-shadow:none;padding:0;gap:8px;max-width:100%; }
@@ -92,7 +92,7 @@ body.enigma-surface .enigma-workspace-frame .enigma-workspace-shell[data-files-o
    before tools or timing can paint across the work-panel tabs. */
 body.enigma-surface[data-enigma-tone] .titlebar { display:grid;grid-template-columns:auto minmax(0,1fr) minmax(140px,min(48vw,calc(var(--layout-workspace-space,520px) - 80px))) auto; }
 body.enigma-surface[data-enigma-tone] .titlebar:has(#enigma-titlebar-workspace[hidden]) { grid-template-columns:auto minmax(0,1fr) auto; }
-body.enigma-surface .titlebar .tb-conversation-group { display:grid;grid-template-columns:minmax(0,1fr) max-content;overflow:hidden;gap:8px; }
+body.enigma-surface .titlebar .tb-conversation-group { display:grid;grid-template-columns:minmax(0,1fr) max-content;align-items:center;height:100%;overflow:hidden;gap:8px; }
 body.enigma-surface #enigma-titlebar-chat-tools { max-width:100%; }
 body.enigma-surface #enigma-titlebar-workspace { width:100%;max-width:100%;overflow:hidden; }
 body.enigma-surface .titlebar .tb-center-title { width:100%;overflow:hidden; }
@@ -121,3 +121,12 @@ body.enigma-surface .titlebar[data-sidebar-open="true"] .tb-left-group { width:c
 body.enigma-surface .titlebar .tb-toggle { border-radius:6px;background:transparent; }
 body.enigma-surface .titlebar .tb-toggle:hover { background:color-mix(in srgb,var(--text) 5%,transparent); }
 body.enigma-surface .titlebar .tb-toggle:active { background:color-mix(in srgb,var(--text) 9%,transparent); }
+
+
+/* Text and controls share one 32px row, centered inside the titlebar.
+   Grid items previously inherited a top-aligned line box on desktop. */
+body.enigma-surface #enigma-titlebar-chat-tools .enigma-compact-tools > .enigma-menu-trigger {min-height:32px;line-height:20px;padding-block:6px;}
+body.enigma-surface .titlebar #enigma-titlebar-workspace .enigma-dock-actions > button {height:32px;}
+
+body.enigma-surface .titlebar .enigma-project-context [data-select-widget-trigger] {height:32px;min-height:32px;max-width:100%;white-space:nowrap;overflow:hidden;padding:6px 8px;font:400 12px/20px var(--font-ui);}
+body.enigma-surface .titlebar .enigma-project-context [data-select-widget-trigger] > span {min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
