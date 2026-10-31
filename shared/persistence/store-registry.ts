@@ -221,7 +221,7 @@ export const PERSISTENT_STORES: readonly StoreDescriptor[] = Object.freeze([
     affectedByEpochMigration: false,
     checkpointPolicy: "Bindings identify external engineering workspaces; capture this metadata without traversing or rolling back their repositories.",
     restorePolicy: "Restore only through the schema 1 binding reader; external workspace/code recovery remains an explicit Enigma operation.",
-    compatibility: "An additive plugin-owned file; existing Hana stores and DATA_EPOCH remain unchanged. Material search returns query/count metadata over HTTP without changing these schema 1 bindings or their restore semantics.",
+    compatibility: "An additive plugin-owned file; existing Hana stores and DATA_EPOCH remain unchanged. Background tasks inherit existing binding model-policy counters and source project/permission fields without copying active plans or adding binding fields.",
     siteRules: rules(["plugins/enigma/host.ts"], "Writes the native engineering binding map only.", ["atomic-write"], "this\\.configPath"),
     identityContract: "Hana sessionId owns one current workspace binding; sessionPath is only a locator for a not-yet-registered session.",
   }),
@@ -713,7 +713,7 @@ export const PERSISTENT_STORES: readonly StoreDescriptor[] = Object.freeze([
     },
     openEntry: ["SessionCoordinator create/restore", "Pi SessionManager"],
     migrationEntry: ["core/session-jsonl-file.ts", "core/migrations.ts session JSONL migrations"],
-    compatibility: "The locked Pi package schema/version plus Hana repair and extension readers are canonical; Hana does not duplicate Pi's session schema.",
+    compatibility: "The locked Pi package schema/version plus Hana repair and extension readers are canonical. Optional presentation v1 in enigma.handoff records identifies an exact input by entry id and SHA-256; absent or mismatched metadata keeps the original text visible. Source input and native session schema stay unchanged; old readers ignore this additive custom metadata.",
     identityContract: "sessionId is identity. sessionPath is a mutable locator and must be resolved at boundaries before keyed state access.",
     siteRules: [
       ...rules([

@@ -73,6 +73,7 @@ export interface HistoryApiResponse {
     turnInputVisible?: boolean;
     agentReview?: import('../stores/chat-types').AgentReviewContext;
     agentReviewRequest?: import('../stores/chat-types').AgentReviewRequestContext;
+    contextHandoff?: import('../../../../shared/context-handoff').ContextHandoff;
     sessionRefs?: Array<{ sessionId: string; label: string }>;
     agentMentions?: Array<{ agentId: string; label: string }>;
     displayText?: string;
@@ -582,6 +583,7 @@ export function buildItemsFromHistory(data: HistoryApiResponse): ChatListItem[] 
         ...(origin ? { origin } : {}),
         ...(m.agentReview ? { agentReview: m.agentReview } : {}),
         ...(m.agentReviewRequest ? { agentReviewRequest: m.agentReviewRequest } : {}),
+        ...(m.contextHandoff ? {contextHandoff:m.contextHandoff} : {}),
         ...(m.sessionRefs?.length ? { sessionRefs: m.sessionRefs } : {}),
         ...(m.agentMentions?.length ? { agentMentions: m.agentMentions } : {}),
       };

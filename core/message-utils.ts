@@ -24,6 +24,7 @@ import { includesCompatibleResponseText, isAssistantCommentaryTextBlock } from "
 import { TOOL_ARG_SUMMARY_KEYS, summarizeToolArgs } from "../shared/tool-arg-summary.ts";
 import { projectSessionMessageForDisplay } from "./session-reminders.ts";
 import { isKnownLegacyHanaToolFailure } from "../shared/tool-outcome.ts";
+import { annotateContextHandoffs } from './context-handoff-presentation.ts';
 export { TOOL_ARG_SUMMARY_KEYS };
 
 const SESSION_TAIL_READ_THRESHOLD = 256 * 1024;
@@ -119,7 +120,7 @@ export async function loadSessionHistoryMessages(engine, explicitPath) {
         const message = historyMessageFromEntry(entry);
         if (message) messages.push(message);
       }
-      return messages.map(projectSessionMessageForDisplay);
+      return annotateContextHandoffs(messages).map(projectSessionMessageForDisplay);
     }
   } catch {
     // 旧文件或损坏文件继续走兼容读取，不让历史页直接空白。
@@ -140,7 +141,7 @@ export async function loadSessionHistoryMessages(engine, explicitPath) {
       }
     }
 
-    if (messages.length > 0) return messages.map(projectSessionMessageForDisplay);
+    if (messages.length > 0) return annotateContextHandoffs(messages).map(projectSessionMessageForDisplay);
   } catch {
     // 文件读取失败
   }
@@ -181,6 +182,7 @@ function historyMessageFromEntry(entry) {
       || entry.customType === AGENT_REVIEW_RECORD_TYPE
       || entry.customType === MESSAGE_PRESENTATION_RECORD_TYPE
       || entry.customType === SESSION_COLLAB_DECISION_RECORD_TYPE
+      || entry.customType === 'enigma.handoff'
     )
   ) {
     const message: Record<string, any> = {

@@ -258,6 +258,35 @@ export class EngineeringHost {
     }
     return manager;
   }
+  async createBackgroundContext(sourcePath: string, setup?: (manager: any) => Promise<void>) {
+    const binding = await this.binding(sourcePath);
+    if (!binding) throw new Error('请先连接原对话的工程项目');
+    if (binding.managedGrant) throw new Error('受管工作对话需要由管家创建新任务，不能绕过任务上限另开对话');
+    const source = this.engine.getSessionByPath(sourcePath) || await this.engine.ensureSessionLoaded(sourcePath);
+    const projection = (await this.engine.listSessions()).find((item: any) => item.path === sourcePath);
+    if (!projection) throw new Error('原对话信息不可用，请刷新后重试');
+    const cwd = source.sessionManager.getCwd();
+    const manager = SessionManager.create(cwd, path.dirname(sourcePath), {parentSession: sourcePath});
+    await setup?.(manager);
+    const targetPath = manager.getSessionFile();
+    await this.saveBinding(targetPath, {root: binding.root, memory: binding.memory,
+      ...(binding.modelPolicy ? {modelPolicy: structuredClone(binding.modelPolicy)} : {})});
+    const result = await this.engine.createDetachedSession({
+      sessionMgr: manager, cwd, memoryEnabled: false,
+      model: source.model, thinkingLevel: source.thinkingLevel,
+      agentId: this.engine.resolveSessionOwnership(sourcePath).agentId,
+      permissionMode: this.engine.getSessionPermissionMode(sourcePath),
+      workspaceFolders: this.engine.getSessionWorkspaceFolders?.(sourcePath) || [],
+      authorizedFolders: this.engine.getSessionAuthorizedFolders?.(sourcePath) || [],
+      workspaceMountId: projection.workspaceMountId || null,
+      workspaceLabel: projection.workspaceLabel || null,
+      visibleInSessionList: true, sessionKind: 'enigma-background',
+    });
+    // Assignment is presentation/organization only; it never expands grants.
+    await this.engine.setSessionProjectAssignment({sessionPath: result.sessionPath,
+      projectId: projection.projectId || autoProjectIdForCwd(projection.cwd)});
+    return result;
+  }
   async createConductor(sourcePath: string, limits?: Partial<ConductorLimits>, options: {inheritUserRequirements?:boolean} = {}) {
     const binding = await this.binding(sourcePath);
     if (!binding)
@@ -1621,27 +1650,7 @@ class NativeEngineeringSession extends WorkbenchSession {
       session: this.nativeSession,
       dispose: async () => {},
       newSession: async (options: any = {}) => {
-        const manager = SessionManager.create(
-          this.options.workspace.root,
-          path.dirname(this.nativePath),
-          { parentSession: this.nativePath },
-        );
-        await options.setup?.(manager);
-        const targetPath = manager.getSessionFile();
-        await this.host.saveBinding(targetPath, {
-          root: this.options.workspace.root,
-          memory: this.chat.memory === true,
-        });
-        const result = await this.host.engine.createSession(
-          manager,
-          this.options.workspace.root,
-          false,
-          this.nativeSession.model,
-          {
-            visibleInSessionList: true,
-            thinkingLevel: this.nativeSession.thinkingLevel,
-          },
-        );
+        const result = await this.host.createBackgroundContext(this.nativePath, options.setup);
         this.createdContext = {
           sessionPath: result.sessionPath,
           sessionId: result.sessionId,

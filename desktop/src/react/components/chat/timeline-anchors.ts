@@ -37,6 +37,7 @@ function parseTimestamp(value: ChatMessage['timestamp']): number | null {
 }
 
 function normalizedPreviewSource(message: ChatMessage): string {
+  if (message.contextHandoff) return message.contextHandoff.goal;
   const text = message.text?.replace(/\s+/g, ' ').trim();
   if (text) return text;
 

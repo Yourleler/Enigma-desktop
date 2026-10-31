@@ -2,7 +2,7 @@ import { SessionManager, type ExtensionContext } from '@earendil-works/pi-coding
 import { join } from 'node:path';
 import type { UserNote } from './requirements.js';
 import type { Checkpoint, ForkHandoff } from './types.js';
-import { readJson, safeId, writeJson, ensureDir } from './storage.js';
+import { readJson, safeId, writeJson, ensureDir, hash } from './storage.js';
 import type { Workspace } from './workspace.js';
 import type { HandoffInspection, ContextNote } from './handoff.js';
 
@@ -100,7 +100,10 @@ export async function importPiHandoff(workspace: Workspace, handoff: HandoffInsp
 export async function setupPiHandoff(workspace: Workspace, manager: SessionManager, handoff: HandoffInspection): Promise<void> {
   manager.appendMessage({ role: 'user', content: [{ type: 'text', text: handoff.prompt }], timestamp: Date.now() });
   manager.appendCustomEntry('enigma.handoff', { id: handoff.manifest.id, mode: handoff.manifest.mode, source: handoff.manifest.source,
-    sourceWorkspace: handoff.manifest.sourceWorkspace, checkpoint: handoff.manifest.checkpoint, inheritedRequests: handoff.manifest.source.requests ?? 0 });
+    sourceWorkspace: handoff.manifest.sourceWorkspace, checkpoint: handoff.manifest.checkpoint, inheritedRequests: handoff.manifest.source.requests ?? 0,
+    presentation: {version: 1, inputEntry: manager.getLeafId(), contentHash: hash(handoff.prompt), goal: handoff.manifest.goal,
+      notes: handoff.manifest.notes.map(note=>({role:note.role,kind:note.kind,text:note.text,reference:note.reference})),
+      repositories: handoff.manifest.repos.map(repo=>repo.id)} });
   const currentId = manager.getBranch().find(entry => entry.type === 'message' && entry.message.role === 'user')!.id;
   const planFile = `active-plan-${safeId(manager.getSessionId())}.json`;
   if (handoff.manifest.mode !== 'background' && handoff.manifest.plan) {

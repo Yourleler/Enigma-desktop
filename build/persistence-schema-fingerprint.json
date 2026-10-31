@@ -691,7 +691,7 @@
     ],
     "version": 3
   },
-  "payloadFingerprint": "sha256:289930b6d9e58e9c20eafe9afdd348692b2e9e6fa2f05e99bace6ce415b889b6",
+  "payloadFingerprint": "sha256:82f4d44a0eccaffa0c812cc91a8c2bf9a1cd9bf04f70c6b313ef55ff9b2636ff",
   "registry": [
     {
       "affectedByEpochMigration": true,
@@ -1847,7 +1847,7 @@
       "protocolModules": [],
       "restorePolicy": "Restore only through the schema 1 binding reader; external workspace/code recovery remains an explicit Enigma operation.",
       "schemaContract": {
-        "compatibility": "An additive plugin-owned file; existing Hana stores and DATA_EPOCH remain unchanged. Material search returns query/count metadata over HTTP without changing these schema 1 bindings or their restore semantics.",
+        "compatibility": "An additive plugin-owned file; existing Hana stores and DATA_EPOCH remain unchanged. Background tasks inherit existing binding model-policy counters and source project/permission fields without copying active plans or adding binding fields.",
         "kind": "runtime-source",
         "source": "plugins/enigma/host.ts"
       },
@@ -2855,7 +2855,7 @@
       "protocolModules": [],
       "restorePolicy": "Restore only through the owning module after reader compatibility is established.",
       "schemaContract": {
-        "compatibility": "The locked Pi package schema/version plus Hana repair and extension readers are canonical; Hana does not duplicate Pi's session schema.",
+        "compatibility": "The locked Pi package schema/version plus Hana repair and extension readers are canonical. Optional presentation v1 in enigma.handoff records identifies an exact input by entry id and SHA-256; absent or mismatched metadata keeps the original text visible. Source input and native session schema stay unchanged; old readers ignore this additive custom metadata.",
         "kind": "runtime-source",
         "source": "@earendil-works/pi-coding-agent via package-lock.json integrity"
       },
@@ -3441,8 +3441,8 @@
   ],
   "review": {
     "classification": "compatible",
-    "compatibilityReason": "Desktop readiness timer ownership changes only ephemeral timeout cleanup. Runtime credential deduplication, lazy HTML parsing and visibility-aware refresh preserve persisted fields, schema versions and write sites; no migration is required.",
-    "payloadFingerprint": "sha256:289930b6d9e58e9c20eafe9afdd348692b2e9e6fa2f05e99bace6ce415b889b6"
+    "compatibilityReason": "Background task creation preserves source directory, project, permissions and existing policy counters. Optional enigma.handoff presentation v1 adds input identity and digest for display only; original input and native session schema remain intact. Old readers ignore metadata; no DATA_EPOCH migration is required.",
+    "payloadFingerprint": "sha256:82f4d44a0eccaffa0c812cc91a8c2bf9a1cd9bf04f70c6b313ef55ff9b2636ff"
   },
   "schemas": [
     {
@@ -3702,7 +3702,7 @@
       "contract": "schema 1 native-session/workspace binding, absolute roots, explicit memory flag, validated source identity, manager model grants and bounded guardian configuration/usage",
       "kind": "runtime-contract",
       "module": "plugins/enigma/host.ts",
-      "sourceHash": "sha256:f7266095ff365a4c6938a87d233cd148e6b1eeb72a2325c736faf148291bd992",
+      "sourceHash": "sha256:8d539a02f3d4541b89e2d237378fd5ae382c2f078382c9c64348971b1a9ba286",
       "storeId": "enigma-session-bindings"
     },
     {

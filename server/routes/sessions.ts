@@ -1574,6 +1574,7 @@ export function createSessionsRoute(engine, hub = null) {
               ...(m.id ? { entryId: m.id } : {}),
               role: "user",
               content,
+              ...(m.contextHandoff ? {contextHandoff:m.contextHandoff} : {}),
               images: visibleImages.length ? visibleImages : undefined,
               ...(m.timestamp ? { timestamp: m.timestamp } : {}),
               ...(originInfo?.origin ? { origin: originInfo.origin } : {}),

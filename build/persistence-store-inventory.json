@@ -1191,7 +1191,7 @@
       "schemaContract": {
         "kind": "runtime-source",
         "source": "plugins/enigma/host.ts",
-        "compatibility": "An additive plugin-owned file; existing Hana stores and DATA_EPOCH remain unchanged. Material search returns query/count metadata over HTTP without changing these schema 1 bindings or their restore semantics."
+        "compatibility": "An additive plugin-owned file; existing Hana stores and DATA_EPOCH remain unchanged. Background tasks inherit existing binding model-policy counters and source project/permission fields without copying active plans or adding binding fields."
       },
       "openEntry": [
         "EngineeringHost.load",
@@ -2201,7 +2201,7 @@
       "schemaContract": {
         "kind": "runtime-source",
         "source": "@earendil-works/pi-coding-agent via package-lock.json integrity",
-        "compatibility": "The locked Pi package schema/version plus Hana repair and extension readers are canonical; Hana does not duplicate Pi's session schema."
+        "compatibility": "The locked Pi package schema/version plus Hana repair and extension readers are canonical. Optional presentation v1 in enigma.handoff records identifies an exact input by entry id and SHA-256; absent or mismatched metadata keeps the original text visible. Source input and native session schema stay unchanged; old readers ignore this additive custom metadata."
       },
       "openEntry": [
         "SessionCoordinator create/restore",

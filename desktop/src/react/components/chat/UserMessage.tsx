@@ -26,6 +26,8 @@ import {
 } from '../../stores/message-turn-actions';
 import { AgentReviewCard } from './AgentReviewCard';
 import { AgentReviewRequestCard } from './AgentReviewRequestCard';
+import { ContextHandoffMessage } from './ContextHandoffMessage';
+import { sessionScopedValue } from '../../stores/session-slice';
 import { useSessionNodeActions } from './SessionNodeActions';
 import styles from './Chat.module.css';
 import badgeStyles from '../input/SkillBadgeView.module.css';
@@ -63,6 +65,10 @@ export const UserMessage = memo(function UserMessage({
 }: Props) {
   const t = window.t ?? ((p: string) => p);
   const storeUserName = viewerIdentity.name;
+  const handoffSearch = useStore(state=>{
+    const find=sessionScopedValue(state,state.chatFindBySession,sessionPath);
+    return find?.open?find.query:undefined;
+  });
   const userName = userIdentity?.name || storeUserName;
   const displayAvatarUrl = userIdentity ? (userIdentity.avatarUrl || null) : viewerIdentity.avatarUrl;
   const userDisplayInfo = useMemo(() => resolveAgentDisplayInfo({
@@ -256,7 +262,7 @@ export const UserMessage = memo(function UserMessage({
               spellCheck={false}
             />
           ) : (
-            inlineIndices.size ? <InlineUserAttachments text={message.text||''} attachments={message.attachments||[]} sessionPath={sessionPath} messageId={message.id}/> : message.textHtml && <MarkdownContent html={message.textHtml} linkContext={{ origin: 'session', sessionPath, messageId: message.id }} />
+            message.contextHandoff ? <ContextHandoffMessage value={message.contextHandoff} html={message.textHtml||''} searchQuery={handoffSearch}/> : inlineIndices.size ? <InlineUserAttachments text={message.text||''} attachments={message.attachments||[]} sessionPath={sessionPath} messageId={message.id}/> : message.textHtml && <MarkdownContent html={message.textHtml} linkContext={{ origin: 'session', sessionPath, messageId: message.id }} />
           )}
         </div>
       )}
