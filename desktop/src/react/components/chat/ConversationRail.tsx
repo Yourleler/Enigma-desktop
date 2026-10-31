@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import type { TimelineAnchor } from './timeline-anchors';
 import { formatTimelineAnchorLabel } from './timeline-anchors';
 import styles from './ConversationRail.module.css';
+import { AppIcon } from '../../ui/app-icons';
 
 interface Props {
   anchors: TimelineAnchor[];
@@ -104,7 +105,7 @@ export function ConversationRail({ anchors, activeId, onJump, hasMore, loadingMo
         else if (!event.shiftKey && document.activeElement === controls.at(-1)) { event.preventDefault(); controls[0]?.focus(); }
       }}>
       {directory ? <>
-        <header><div><strong>对话目录</strong><small>{hasMore ? '仅显示已加载的提问' : `${anchors.length} 轮提问 · 按时间排列`}</small></div><button aria-label="关闭对话目录" onClick={closeDirectory}>×</button></header>
+        <header><div><strong>对话目录</strong><small>{hasMore ? '仅显示已加载的提问' : `${anchors.length} 轮提问 · 按时间排列`}</small></div><button aria-label="关闭对话目录" data-tooltip="关闭对话目录" onClick={closeDirectory}><AppIcon name="close" size={15}/></button></header>
         <input aria-label="筛选对话目录" placeholder="搜索提问内容…" value={query} onChange={event => setQuery(event.target.value)} onKeyDown={event => {
           if (event.nativeEvent.isComposing) return;
           if (event.key === 'Enter') {

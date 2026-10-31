@@ -111,6 +111,9 @@ export function ApiKeyCredentials({ providerId, summary, providerConfig: _provid
   const [apiVal, setApiVal] = useState(derivedApi);
   const [apiEdited, setApiEdited] = useState(false);
   const apiDraftRevision = useRef(0);
+  const [connStatus, setConnStatus] = useState<'idle' | 'testing' | 'ok' | 'fail'>('idle');
+  const [connMessage, setConnMessage] = useState('');
+  const testingRef = useRef(false);
 
   // 未编辑时，从 summary 同步已保存的 key 到输入框
   useEffect(() => {
@@ -181,10 +184,12 @@ export function ApiKeyCredentials({ providerId, summary, providerConfig: _provid
       api: apiVal,
     });
     if (!plan.shouldSave) return;
+    if (verify && testingRef.current) return;
+    if (verify) { testingRef.current = true; setConnStatus('testing'); setConnMessage(''); }
     button?.classList.add(styles['spinning']);
     try {
       const headers = parseHeaders();
-      if (!headers) return;
+      if (!headers) { if (verify) setConnStatus('fail'); return; }
       const includeHeaders = headersEdited || Object.keys(headers).length > 0;
       if (verify && plan.shouldVerify) {
         const testRes = await hanaFetch('/api/providers/test', {
@@ -196,25 +201,28 @@ export function ApiKeyCredentials({ providerId, summary, providerConfig: _provid
         if (!testData.ok) {
           const reason=typeof testData.error==='string'&&testData.error.trim()?`: ${testData.error.trim()}`:'';
           showToast(t('settings.providers.verifyFailed')+reason, 'error');
+          setConnStatus('fail'); setConnMessage(t('settings.providers.verifyFailed')+reason);
           return;
         }
+        setConnStatus('ok'); setConnMessage(t('settings.providers.verifySuccess'));
       }
       const payload = await resolveModelsForInitialSave(providerId, plan, headers, includeHeaders);
       await saveProviderConfigPatch(providerId, payload);
       if (isPresetSetup) useSettingsStore.setState({ selectedProviderId: providerId });
       if (!await refreshAfterSave()) return;
-      showToast(plan.shouldVerify ? t('settings.providers.verifySuccess') : t('settings.saved'), 'success');
+      showToast(verify && plan.shouldVerify ? t('settings.providers.verifySuccess') : t('settings.saved'), 'success');
       setKeyEdited(false);
       if (urlEdited) setUrlEdited(false);
       if (headersEdited) setHeadersEdited(false);
+      if (verify && !plan.shouldVerify) setConnStatus('idle');
     } catch (err: unknown) {
+      if (verify) { setConnStatus('fail'); setConnMessage(t('settings.providers.verifyFailed')+': '+errorMessage(err)); }
       reportSaveFailure(err);
     } finally {
+      if (verify) testingRef.current = false;
       button?.classList.remove(styles['spinning']);
     }
   };
-
-  const [connStatus, setConnStatus] = useState<'idle' | 'testing' | 'ok' | 'fail'>('idle');
 
   const revealSavedApiKey = async () => {
     const res = await hanaFetch(`/api/providers/${encodeURIComponent(providerId)}/api-key`);
@@ -223,11 +231,14 @@ export function ApiKeyCredentials({ providerId, summary, providerConfig: _provid
   };
 
   const verifyOnly = async (btn: HTMLButtonElement) => {
+    if (testingRef.current) return;
+    testingRef.current = true;
+    setConnMessage('');
     setConnStatus('testing');
     btn.classList.add(styles['spinning']);
     try {
       const headers = parseHeaders();
-      if (!headers) return;
+      if (!headers) { setConnStatus('fail'); return; }
       const testRes = await hanaFetch('/api/providers/test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -244,11 +255,14 @@ export function ApiKeyCredentials({ providerId, summary, providerConfig: _provid
       const detail = typeof testData.error === 'string' && testData.error.trim()
         ? ': ' + testData.error.trim()
         : '';
+      setConnMessage(testData.ok ? t('settings.providers.verifySuccess') : t('settings.providers.verifyFailed') + detail);
       showToast(testData.ok ? t('settings.providers.verifySuccess') : t('settings.providers.verifyFailed') + detail, testData.ok ? 'success' : 'error');
     } catch (err: unknown) {
       setConnStatus('fail');
+      setConnMessage(t('settings.providers.verifyFailed') + ': ' + errorMessage(err));
       showToast(t('settings.providers.verifyFailed') + ': ' + errorMessage(err), 'error');
     } finally {
+      testingRef.current = false;
       btn.classList.remove(styles['spinning']);
     }
   };
@@ -259,6 +273,7 @@ export function ApiKeyCredentials({ providerId, summary, providerConfig: _provid
         <span className={styles['pv-cred-label']}>{t('settings.api.apiKey')}</span>
         <div className={styles['pv-cred-key-row']}>
           <KeyInput
+            ariaLabel={t('settings.api.apiKey')}
             value={keyVal}
             onChange={(v) => { setKeyVal(v); setKeyEdited(true); setConnStatus('idle'); }}
             onBlur={() => {
@@ -275,6 +290,8 @@ export function ApiKeyCredentials({ providerId, summary, providerConfig: _provid
           <button
             className={`${styles['pv-cred-conn-icon']} ${styles[connStatus] || ''}`}
             title={t('settings.providers.verifyConnection')}
+            disabled={connStatus==='testing'}
+            aria-busy={connStatus==='testing'}
             onClick={(e) => {
               if (keyEdited) {
                 void saveApiKeyConfig({ verify: true, button: e.currentTarget });
@@ -290,6 +307,7 @@ export function ApiKeyCredentials({ providerId, summary, providerConfig: _provid
           </button>
         </div>
       </div>
+      {connMessage && connStatus!=='idle' && <p role="status" className={styles['pv-fetch-hint']}>{connMessage}</p>}
       <div className={`${styles['pv-cred-row']} ${styles['pv-cred-row-top']}`}>
         <span className={styles['pv-cred-label']}>Headers</span>
         <div className={styles['pv-cred-url-row']}>

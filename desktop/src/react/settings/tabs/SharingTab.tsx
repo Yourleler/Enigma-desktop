@@ -87,6 +87,7 @@ export function SharingTab() {
           ]).map(({ key, bg, color, accent }) => (
             <button
               key={key}
+              aria-pressed={screenshotColor === key}
               className={`${styles['theme-card']}${screenshotColor === key ? ' ' + styles['active'] : ''}`}
               style={{ background: bg }}
               onClick={() => { setScreenshotColor(key); localStorage.setItem('hana-screenshot-color', key); }}
@@ -109,12 +110,13 @@ export function SharingTab() {
             return (
               <button
                 key={width}
+                aria-pressed={screenshotWidth === width}
                 className={`${styles['ss-layout-card']}${screenshotWidth === width ? ' ' + styles['active'] : ''}`}
                 onClick={() => { setScreenshotWidth(width); localStorage.setItem('hana-screenshot-width', width); }}
               >
                 <div className={styles['ss-layout-preview']}>
                   {src ? (
-                    <img src={src} alt={title} draggable={false} />
+                    <img src={src} alt="" draggable={false} />
                   ) : null}
                 </div>
                 <div className={styles['ss-layout-info']}>

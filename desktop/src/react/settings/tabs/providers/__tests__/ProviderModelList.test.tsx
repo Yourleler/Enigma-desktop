@@ -49,6 +49,18 @@ function rect(init: Partial<DOMRect>): DOMRect {
 }
 
 describe('ProviderModelList', () => {
+  it('retains the model discovery failure reason and allows another attempt',async()=>{
+    mocks.hanaFetch.mockResolvedValue(jsonResponse({error:'HTTP 401: Unauthorized',models:[]}));
+    render(<ProviderModelList providerId="test" summary={{type:'api-key',auth_type:'api-key',display_name:'test',base_url:'https://example.test/v1',api:'openai-completions',api_key:'',models:[],custom_models:[],has_credentials:true,supports_oauth:false,can_delete:true}} onRefresh={vi.fn()}/>);
+    const button=screen.getByRole('button',{name:'settings.providers.fetchModels'});
+    fireEvent.click(button);
+    expect(await screen.findByRole('alert')).toHaveTextContent('HTTP 401: Unauthorized');
+    await waitFor(()=>expect(button).not.toBeDisabled());
+    mocks.hanaFetch.mockResolvedValue(jsonResponse({models:[{id:'new-model'}]}));fireEvent.click(button);
+    await waitFor(()=>expect(screen.queryByRole('alert')).not.toBeInTheDocument());
+    expect(await screen.findByRole('button',{name:'new-model'})).toBeVisible();
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.hanaFetch.mockResolvedValue(jsonResponse({ models: [{ id: 'kimi-for-coding' }] }));

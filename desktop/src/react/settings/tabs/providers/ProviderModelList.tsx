@@ -208,15 +208,16 @@ export function ProviderModelList({ providerId, summary, onRefresh }: {
   };
 
   const [fetchHint, setFetchHint] = useState<{ msg: string; ok: boolean } | null>(null);
-  const fetchHintTimer = useRef<ReturnType<typeof setTimeout>>(null);
+  const [fetching, setFetching] = useState(false);
+  const fetchingRef = useRef(false);
 
   const showFetchHint = (msg: string, ok: boolean) => {
-    if (fetchHintTimer.current) clearTimeout(fetchHintTimer.current);
     setFetchHint({ msg, ok });
-    fetchHintTimer.current = setTimeout(() => setFetchHint(null), 2500);
   };
 
   const fetchModels = async (btn: HTMLButtonElement | null) => {
+    if (fetchingRef.current) return;
+    fetchingRef.current=true;setFetching(true);setFetchHint(null);
     if (btn) btn.classList.add(styles['spinning']);
     try {
       const res = await hanaFetch('/api/providers/fetch-models', {
@@ -225,17 +226,18 @@ export function ProviderModelList({ providerId, summary, onRefresh }: {
         body: JSON.stringify({ name: providerId, base_url: summary.base_url, api: summary.api }),
       });
       const data = await res.json();
-      if (data.error) { showFetchHint(t('settings.providers.fetchFailed'), false); return; }
+      if (data.error) { showFetchHint(`${t('settings.providers.fetchFailed')}: ${String(data.error)}`, false); return; }
       const models = (data.models || []) as DiscoveredModel[];
-      if (models.length === 0) { showFetchHint(t('settings.providers.fetchFailed'), false); return; }
+      if (models.length === 0) { showFetchHint(t('settings.providers.noModels'), false); return; }
       // Backend already cached the results; just refresh the dropdown
       setDiscoveredModels(models);
       setSearch('');
       setDropdownOpen(true);
       showFetchHint(t('settings.providers.fetchSuccess', { name: providerId, n: models.length }), true);
-    } catch {
-      showFetchHint(t('settings.providers.fetchFailed'), false);
+    } catch (error) {
+      showFetchHint(`${t('settings.providers.fetchFailed')}: ${error instanceof Error ? error.message : String(error)}`, false);
     } finally {
+      fetchingRef.current=false;setFetching(false);
       if (btn) btn.classList.remove(styles['spinning']);
     }
   };
@@ -335,6 +337,8 @@ export function ProviderModelList({ providerId, summary, onRefresh }: {
         <button
           className={styles['pv-fetch-btn-inline']}
           title={t('settings.providers.fetchModels')}
+          disabled={fetching}
+          aria-busy={fetching}
           onClick={(e) => fetchModels(e.currentTarget)}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -344,7 +348,7 @@ export function ProviderModelList({ providerId, summary, onRefresh }: {
           {t('settings.providers.fetchModels')}
         </button>
       </div>
-      {fetchHint && <div className={`${styles['pv-fetch-hint']} ${fetchHint.ok ? styles['ok'] : styles['fail']}`}>{fetchHint.msg}</div>}
+      {fetchHint && <div role={fetchHint.ok?'status':'alert'} className={`${styles['pv-fetch-hint']} ${fetchHint.ok ? styles['ok'] : styles['fail']}`}>{fetchHint.msg}</div>}
       {dropdownOpen && createPortal(
           <div
             className={styles['pv-model-dropdown-panel']}

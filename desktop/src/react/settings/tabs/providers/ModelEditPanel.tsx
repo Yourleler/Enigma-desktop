@@ -105,6 +105,7 @@ export function ModelEditPanel({ modelId, providerId, modelMeta, anchorEl, onClo
         <input
           className={styles['settings-input']}
           type="text"
+          aria-label={t('settings.api.displayName')}
           value={displayName}
           onChange={(e) => setDisplayName(e.target.value)}
           placeholder={modelId}
@@ -113,11 +114,11 @@ export function ModelEditPanel({ modelId, providerId, modelMeta, anchorEl, onClo
       <div className={styles['pv-model-edit-row']}>
         <div className={styles['pv-model-edit-field']}>
           <label className={styles['pv-model-edit-label']}>{t('settings.api.contextLength')}</label>
-          <ComboInput presets={CONTEXT_PRESETS} value={ctxVal} onChange={setCtxVal} placeholder="131072" />
+          <ComboInput ariaLabel={t('settings.api.contextLength')} presets={CONTEXT_PRESETS} value={ctxVal} onChange={setCtxVal} placeholder="131072" />
         </div>
         <div className={styles['pv-model-edit-field']}>
           <label className={styles['pv-model-edit-label']}>{t('settings.api.maxOutput')}</label>
-          <ComboInput presets={OUTPUT_PRESETS} value={outVal} onChange={setOutVal} placeholder="65536" />
+          <ComboInput ariaLabel={t('settings.api.maxOutput')} presets={OUTPUT_PRESETS} value={outVal} onChange={setOutVal} placeholder="65536" />
         </div>
       </div>
       <div className={`${styles['pv-model-edit-row']} ${styles['pv-model-edit-capabilities']}`}>

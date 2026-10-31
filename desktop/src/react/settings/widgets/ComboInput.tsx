@@ -4,6 +4,7 @@
  */
 import React, { useState, useRef, useEffect } from 'react';
 import styles from '../Settings.module.css';
+import { AppIcon } from '../../ui/app-icons';
 
 interface Preset {
   label: string;
@@ -15,9 +16,10 @@ interface ComboInputProps {
   value: string;
   onChange: (val: string) => void;
   placeholder?: string;
+  ariaLabel?: string;
 }
 
-export function ComboInput({ presets, value, onChange, placeholder }: ComboInputProps) {
+export function ComboInput({ presets, value, onChange, placeholder, ariaLabel }: ComboInputProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -34,6 +36,7 @@ export function ComboInput({ presets, value, onChange, placeholder }: ComboInput
     <div className={styles['cml-combo']} ref={ref}>
       <input
         type="number"
+        aria-label={ariaLabel}
         className={styles['cml-edit-panel-input']}
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -42,9 +45,11 @@ export function ComboInput({ presets, value, onChange, placeholder }: ComboInput
       <button
         type="button"
         className={styles['cml-combo-toggle']}
+        aria-label={ariaLabel?`${ariaLabel}预设`:'选择预设'}
+        aria-expanded={open}
         onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
       >
-        ▾
+        <AppIcon name="chevronDown" size={14}/>
       </button>
       <div className={`${styles['cml-combo-dropdown']}${open  ? ' ' + styles['open'] : ''}`}>
         {presets.map(p => (

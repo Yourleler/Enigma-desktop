@@ -53,6 +53,14 @@ function providerSummary(overrides: Partial<ProviderSummary>): ProviderSummary {
 }
 
 describe('ApiKeyCredentials', () => {
+  it('ends validation when header parsing fails and does not claim a request ran', async () => {
+    render(<ApiKeyCredentials providerId="test" summary={providerSummary({api_key:'saved',has_credentials:true})} onRefresh={vi.fn()}/>);
+    fireEvent.change(screen.getByRole('textbox',{name:'HTTP 请求头'}),{target:{value:'broken header'}});
+    fireEvent.click(screen.getByRole('button',{name:'settings.providers.verifyConnection'}));
+    expect(screen.getByRole('button',{name:'settings.providers.verifyConnection'})).toHaveAttribute('aria-busy','false');
+    expect(mocks.hanaFetch).not.toHaveBeenCalled();
+  });
+
   beforeEach(() => {
     mocks.hanaFetch.mockReset();
     mocks.hanaFetch.mockResolvedValue(jsonResponse({ ok: true }));
@@ -228,6 +236,8 @@ describe('ApiKeyCredentials', () => {
     expect(JSON.parse(String((configCall?.[1] as RequestInit).body))).toEqual({
       providers: { deepseek: { api_key: 'sk-replacement-key' } },
     });
+    await waitFor(()=>expect(useSettingsStore.getState().toastMessage).toBe('settings.saved'));
+    expect(mocks.hanaFetch.mock.calls.some(([url])=>url==='/api/providers/test')).toBe(false);
   });
 
   it('does not persist the revealed secret when editing begins from transient text', async () => {

@@ -23,6 +23,7 @@ export function ProviderHeadersField({
 }) {
   return (
     <textarea
+      aria-label="HTTP 请求头"
       className={`${styles['settings-textarea']} ${styles['pv-headers-textarea']}`}
       value={value}
       onChange={(e) => onChange(e.target.value)}
