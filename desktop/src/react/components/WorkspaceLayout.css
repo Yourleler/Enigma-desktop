@@ -5,7 +5,7 @@ body.enigma-surface :is(.app,.enigma-workspace-frame) > .main-content { min-widt
 body.enigma-surface :is(.app,.enigma-workspace-frame) > :is(.sidebar,.jian-sidebar) {
   position:relative !important; inset:auto !important; flex:0 0 auto; min-width:0; max-width:none;
   margin:0; padding:0; border-radius:0; box-shadow:none; z-index:10; overflow:hidden;
-  transition:width var(--enigma-duration-21) cubic-bezier(.22,.7,.25,1);
+  transition:none;
 }
 body.enigma-surface :is(.app,.enigma-workspace-frame) > .sidebar { width:var(--layout-sidebar-width,240px) !important; border:0; border-right:1px solid var(--border); }
 body.enigma-surface :is(.app,.enigma-workspace-frame) > .jian-sidebar { width:var(--right-dock-width,520px) !important; border:0; border-left:1px solid var(--border); }
