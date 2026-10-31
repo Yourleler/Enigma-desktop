@@ -77,7 +77,7 @@ export function ConversationRail({ anchors, activeId, onJump, hasMore, loadingMo
   const preview = hover?.anchor;
   return <nav ref={nav} className={styles.rail} aria-label="对话快速跳转">
     <button ref={trigger} type="button" className={styles.directoryTrigger} aria-label="打开对话目录" aria-expanded={directory} aria-haspopup="dialog" data-tooltip={`对话目录 · 已加载 ${anchors.length} 轮\n在刻度上滚动浏览；悬停预览，点击定位`} onClick={() => { setHover(null); setDirectory(value => !value); }}>
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12M3 6h1M3 12h1M3 18h1"/></svg>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true"><path d="M5 7h14M5 12h10M5 17h12"/></svg>
     </button>
     <div ref={markers} className={styles.markers} data-tooltip-managed="" aria-label="滚动浏览对话轮次">
       {anchors.map((anchor,index) => {
@@ -91,11 +91,11 @@ export function ConversationRail({ anchors, activeId, onJump, hasMore, loadingMo
             const buttons = [...event.currentTarget.parentElement!.querySelectorAll<HTMLButtonElement>('button')];
             const current = buttons.indexOf(event.currentTarget);
             buttons[event.key === 'Home' ? 0 : event.key === 'End' ? buttons.length - 1 : Math.max(0, Math.min(buttons.length - 1, current + (event.key === 'ArrowDown' ? 1 : -1)))]?.focus();
-          }}><span style={{ width: `${Math.max(16, Math.min(26, anchor.markerWidthEm * 26))}px` }}/></button>;
+          }}><span style={{ width: `${Math.max(8, Math.min(14, anchor.markerWidthEm * 14))}px` }}/></button>;
       })}
     </div>
     <span className={styles.counter} aria-label={`当前第 ${Math.max(1,activeIndex + 1)} 轮，共 ${anchors.length} 轮`} data-tooltip="当前阅读位置 / 已加载轮数 · 在刻度上可上下滚动">{Math.max(1, activeIndex + 1)}<span>/{anchors.length}</span></span>
-    {(directory || preview) && createPortal(<div ref={popup} id={previewId} style={position} data-liquid="menu" data-menu-surface="" data-menu-position="fixed" className={`${styles.popup} ${directory ? styles.directory : styles.preview}`} role={directory ? 'dialog' : 'tooltip'} aria-label={directory ? '对话目录' : undefined} data-tooltip-managed=""
+    {(directory || preview) && createPortal(<div ref={popup} id={previewId} style={position} data-liquid={directory?'menu':undefined} data-menu-surface={directory?'':undefined} data-menu-position={directory?'fixed':undefined} data-glass-frame={directory?undefined:'hint'} className={`${styles.popup} ${directory ? styles.directory : styles.preview}`} role={directory ? 'dialog' : 'tooltip'} aria-label={directory ? '对话目录' : undefined} data-tooltip-managed=""
       onMouseEnter={() => clearTimeout(timer.current)} onMouseLeave={() => { if (!directory) closeHover(); }}
       onKeyDown={event => {
         if (event.key !== 'Tab' || !directory) return;

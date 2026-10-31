@@ -304,7 +304,7 @@
 }
 
 .sessionArchiveBtn {
-    color: var(--danger);
+    color: var(--text-muted);
 }
 
 .sessionPinBtn svg,
@@ -341,7 +341,8 @@
     .sessionArchiveBtn:hover,
     .sessionItemSingleLine .sessionArchiveBtn:hover {
         opacity: 1 !important;
-        background: rgba(var(--danger-rgb), 0.08);
+        background: var(--accent-light);
+        color: var(--accent);
     }
 }
 
@@ -436,7 +437,8 @@
 .sessionBrowserBadge:focus-visible {
     opacity: 1;
     color: var(--danger);
-    background: rgba(var(--danger-rgb), 0.08);
+    background: var(--accent-light);
+        color: var(--accent);
     outline: none;
 }
 
@@ -909,10 +911,10 @@
 :global(.enigma-compact-session-list) .sessionItem { padding:var(--space-6) var(--space-8);min-height:32px; }
 :global(.enigma-compact-session-list) .sessionItemMeta { display:none; }
 :global(.enigma-compact-session-list) .sessionItemTitle { font-size:13px;line-height:1.5; }
-:global(.enigma-compact-session-list) .sessionItemActions { position:absolute;right:4px;top:50%;transform:translateY(-50%);opacity:0;pointer-events:none;display:flex;gap:var(--space-2);background:var(--bg-card);border-radius:var(--radius-sm); }
+:global(.enigma-compact-session-list) .sessionItemActions { position:absolute;right:4px;top:50%;transform:translateY(-50%);opacity:0;pointer-events:none;display:flex;gap:2px;background:transparent;border:0;border-radius:0;box-shadow:none; }
 :global(.enigma-compact-session-list) .sessionItem:is(:hover,:focus-within) .sessionItemActions { opacity:1;pointer-events:auto; }
-:global(.enigma-compact-session-list) .sessionItem:is(:hover,:focus-within) .sessionItemHeader { padding-right:var(--space-70,70px); }
-:global(.enigma-compact-session-list) .sessionItemActions > * { display:grid;place-items:center;width:20px;height:22px;opacity:1;pointer-events:auto;position:static; }
+:global(.enigma-compact-session-list) .sessionItem:is(:hover,:focus-within) .sessionItemHeader { padding-right:78px; }
+:global(.enigma-compact-session-list) .sessionItemActions > * { display:grid;place-items:center;width:24px;height:24px;padding:0;border:0;border-radius:6px;background:transparent;color:var(--text-muted);opacity:1;pointer-events:auto;position:static;cursor:pointer; }
 .projectSessionList { margin-left:var(--space-6);padding-left:var(--space-8);border-left:0; }
 .enigmaProjectInfo { padding:var(--space-8) var(--space-10);border-bottom:1px solid var(--border); }
 .sessionMoreBtn { border:0;background:transparent;color:var(--text-muted);padding:0;cursor:pointer; }
@@ -920,9 +922,16 @@
 :global(.enigma-history-results) .sessionItemTitle { font-size:14px; }
 :global(.enigma-history-results) .sessionSearchSnippet { font-size:13px; }
 
-@media(any-hover:none) { :global(.enigma-compact-session-list) .sessionItemActions {opacity:1;pointer-events:auto;} :global(.enigma-compact-session-list) .sessionItemHeader {padding-right:var(--space-70,70px);} }
+@media(any-hover:none) { :global(.enigma-compact-session-list) .sessionItemActions {opacity:1;pointer-events:auto;} :global(.enigma-compact-session-list) .sessionItemHeader {padding-right:78px;} }
 
 .sidebarSectionHeading > button > :global(.enigma-icon) { order:2; }
 :global(.enigma-project-context-menu) { width:310px;max-width:calc(100vw - 24px); }
 :global(.enigma-project-context-menu .context-menu-label) { overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
 :global(.enigma-project-context-menu .context-menu-item:first-child .context-menu-label) { color:var(--text);font-weight:600; }
+
+:global(.enigma-compact-session-list) .sessionItemActions { bottom:auto;width:auto;overflow:visible; }
+:global(.enigma-compact-session-list) .sessionItemActions > button svg { width:15px;height:15px;margin:0;opacity:1; }
+:global(.enigma-compact-session-list) .sessionItemActions > button:is(:hover,:focus-visible,[aria-pressed="true"],[aria-expanded="true"]) { color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,transparent); }
+:global(.enigma-compact-session-list) .sessionItemActions > button:active { transform:scale(.92);background:color-mix(in srgb,var(--accent) 14%,transparent); }
+:global(.enigma-compact-session-list) .sessionItemActions > button:focus-visible { outline:1px solid var(--accent);outline-offset:1px; }
+@media(any-pointer:coarse) { :global(.enigma-compact-session-list) .sessionItemActions > button {width:44px;height:44px;} :global(.enigma-compact-session-list) .sessionItem {min-height:48px;} :global(.enigma-compact-session-list) .sessionItem:is(:hover,:focus-within) .sessionItemHeader,:global(.enigma-compact-session-list) .sessionItemHeader {padding-right:138px;} }

@@ -383,6 +383,25 @@ describe('SessionList context menu', () => {
     expect(row).toHaveAttribute('title', expect.stringContaining('Hana'));
   });
 
+  it('explains each compact row action on hover and keyboard focus without native title duplication',async()=>{
+    render(<SessionList/>);
+    const row=sessionButton('Has summary');
+    const pin=row.querySelector<HTMLButtonElement>('[aria-label="session.pin"]')!;
+    expect(pin).not.toHaveAttribute('title');
+    fireEvent.mouseEnter(pin);
+    expect(await screen.findByRole('tooltip')).toHaveTextContent('将对话固定在列表顶部');
+    fireEvent.mouseLeave(pin);
+    const archive=row.querySelector<HTMLButtonElement>('[aria-label="session.archive"]')!;
+    fireEvent.focus(archive);
+    expect(await screen.findByRole('tooltip')).toHaveTextContent('移入归档，之后可恢复');
+    fireEvent.blur(archive);
+    const more=row.querySelector<HTMLButtonElement>('[aria-label="对话选项 Has summary"]')!;
+    fireEvent.mouseEnter(more);
+    expect(await screen.findByRole('tooltip')).toHaveTextContent('重命名、移动项目等操作');
+    expect(switchSessionMock).not.toHaveBeenCalled();
+    expect(archiveSessionMock).not.toHaveBeenCalled();
+  });
+
   it('never fetches sidebar UI preferences itself', async () => {
     render(<SessionList />);
 
