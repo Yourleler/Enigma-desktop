@@ -6,7 +6,10 @@ import styles from './PreviewSaveNotice.module.css';
 type ExternalContent = { content: string; fileVersion: FileVersion | null; noticeShown: boolean };
 
 /** Saving failures stay beside the affected document until resolved. */
-export function PreviewSaveNotice({issue, external, refreshing, onCopy, onRefresh, onRetry, onResolve}: {
+export function PreviewSaveNotice({issue, external, refreshing, onCopy, onRefresh, onRetry, onResolve, recovered=false, copies=[], onSelectCopy}: {
+  recovered?: boolean;
+  copies?: {id:string;updatedAt:number;text:string}[];
+  onSelectCopy?: (id:string)=>void;
   issue: {conflict: boolean; message: string};
   external: ExternalContent | null;
   refreshing: boolean;
@@ -18,7 +21,8 @@ export function PreviewSaveNotice({issue, external, refreshing, onCopy, onRefres
   const [copied, setCopied] = useState(false), [copyError, setCopyError] = useState('');
   const [choice, setChoice] = useState<{keepDraft: boolean; external: ExternalContent} | null>(null);
   return <section className={styles.notice} data-preview-save-notice="" aria-label="文件保存状态">
-    <p role="status">{issue.conflict ? '文件有外部更新，自动保存已暂停。当前草稿仍保留在编辑器中。' : '文件尚未保存。当前草稿仍保留在编辑器中，可重试保存。'}</p>
+    <p role="status">{recovered ? '已恢复未保存的草稿。自动保存已暂停，请比较磁盘版本后选择如何保存。' : issue.conflict ? '文件有外部更新，自动保存已暂停。当前草稿仍保留在编辑器中。' : '文件尚未保存。当前草稿仍保留在编辑器中，可重试保存。'}</p>
+    {copies.length>1 && <details><summary>其他恢复副本（{copies.length}）</summary>{copies.map(copy=><details key={copy.id}><summary>{new Date(copy.updatedAt).toLocaleString()}</summary><pre>{copy.text}</pre><div className={styles.actions}><button type="button" onClick={()=>onSelectCopy?.(copy.id)}>查看此副本</button></div></details>)}</details>}
     {issue.message && <details><summary>错误详情</summary><p>{issue.message}</p></details>}
     {external && <details><summary>查看外部版本</summary><pre>{external.content}</pre></details>}
     <div className={styles.actions}>

@@ -15,6 +15,7 @@
 import { forwardRef, useEffect, useRef, useCallback, useImperativeHandle, useLayoutEffect, useState, Fragment } from 'react';
 import { EditorContextMenu } from './preview/EditorContextMenu';
 import { PreviewSaveNotice } from './preview/PreviewSaveNotice';
+import { EditorDraftRecovery, editorRecoveryKey, type EditorDraftCopy } from '../stores/editor-draft-recovery';
 import { isContextMenuButton } from '../stores/selection-actions';
 import {
   EditorView, keymap, highlightActiveLine, drawSelection,
@@ -99,6 +100,7 @@ export type PreviewEditorSaveDocument = (
 ) => Promise<VersionedWriteResult>;
 
 export interface PreviewEditorProps {
+  draftScope?: string;
   content: string;
   filePath?: string;
   remoteContentRef?: RemoteWorkbenchContentRef | null;
@@ -394,7 +396,7 @@ function isEditorCoverRailDrop(view: EditorView, event: DragEvent): boolean {
 /* ── Editor Component ── */
 
 export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>(
-  function PreviewEditor({ content, filePath, remoteContentRef, fileVersion, saveDocument, mode, language, onSelectionChange, onSelectionCommit, onQuoteRange, onStatsChange, onContentChange, initialScrollSnapshot, contentHash, onScrollSnapshotChange, readOnly = false, wrapLines = true }, ref) {
+  function PreviewEditor({ content, filePath, remoteContentRef, fileVersion, saveDocument, mode, language, onSelectionChange, onSelectionCommit, onQuoteRange, onStatsChange, onContentChange, initialScrollSnapshot, contentHash, onScrollSnapshotChange, readOnly = false, wrapLines = true, draftScope }, ref) {
     const incomingFileVersionKey = fileVersionIdentity(fileVersion ?? null);
     const remoteIdentityKey=JSON.stringify(remoteContentRef?[remoteContentRef.kind,remoteContentRef.mountId,remoteContentRef.rootId,remoteContentRef.subdir,remoteContentRef.name,remoteContentRef.contentPath]:null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -422,6 +424,12 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
     const saveBlockedRef = useRef(false);
     const [saveIssue, setSaveIssue] = useState<{ conflict: boolean; message: string } | null>(null);
     const [refreshingConflict, setRefreshingConflict] = useState(false);
+    const recovery = useRef<EditorDraftRecovery | null>(null);
+    const recoveryCopy = useRef<EditorDraftCopy | null>(null);
+    const [recovered, setRecovered] = useState(false);
+    const [recoveryCopies, setRecoveryCopies] = useState<EditorDraftCopy[]>([]);
+    const [recoveryError, setRecoveryError] = useState('');
+    const recoveryKey = editorRecoveryKey(filePath, remoteContentRef);
     const diskVersionRef = useRef<FileVersion | null>(fileVersion ?? null);
     const lastPropFileVersionKeyRef = useRef(incomingFileVersionKey);
     const docRevisionRef = useRef(0);
@@ -617,9 +625,30 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
       }, 5000);
     }, []);
 
+    const storeRecovery = (text: string) => {
+      if (!draftScope || !recoveryKey || readOnly) return;
+      try {
+        recovery.current ??= new EditorDraftRecovery(localStorage);
+        const copy: EditorDraftCopy = {id: crypto.randomUUID(), scope: draftScope, key: recoveryKey,
+          text, baseVersion: diskVersionRef.current, updatedAt: Date.now()};
+        recovery.current.write(copy, recoveryCopy.current);
+        recoveryCopy.current = copy;
+        setRecoveryError('');
+      } catch {
+        setRecoveryError('无法保存本地恢复副本。请先复制草稿；关闭或刷新可能丢失未保存内容。');
+      }
+    };
+    const clearRecovery = (savedText?: string, expectedId?: string | null) => {
+      const copy = recoveryCopy.current;
+      if (!copy || savedText !== undefined && copy.text !== savedText || expectedId !== undefined && expectedId !== copy.id) return;
+      try { recovery.current?.remove(copy); recoveryCopy.current = null; setRecoveryCopies([]); setRecoveryError(''); setRecovered(false); }
+      catch { setRecoveryError('文件已保存，但恢复副本暂未清理；下次打开仍会核对磁盘内容。'); }
+    };
+
     const performSave = useCallback(async ({ text, revision }: SaveJob) => {
       const fp = filePathRef.current;
       const saveRemoteDocument = saveDocumentRef.current;
+      const savedCopyId = recoveryCopy.current?.id ?? null;
       if ((!fp && !saveRemoteDocument) || saveBlockedRef.current) return;
 
       try {
@@ -665,6 +694,7 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
           pendingIncomingContentRef.current = null;
         }
         rememberSelfWrite(text);
+        clearRecovery(text, savedCopyId);
         if (!pendingIncomingContentRef.current) setSaveIssue(null);
 
         if (revision === docRevisionRef.current && fp === filePathRef.current && nextVersion !== undefined) {
@@ -706,6 +736,7 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
       if (current === nextContent) {
         if (options.publish) {
           acceptVersion();
+          clearRecovery(nextContent);
           lastSavedContentRef.current = nextContent;
           pendingIncomingContentRef.current = null;
         }
@@ -721,7 +752,7 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
         return;
       }
 
-      const hasLocalUnsavedEdits = !readOnly && current !== lastSavedContentRef.current;
+      const hasLocalUnsavedEdits = !readOnly && (saveBlockedRef.current || current !== lastSavedContentRef.current);
       if (hasLocalUnsavedEdits) {
         const merged = mode === 'markdown' && isMarkdownCoverOnlyUpdate(lastSavedContentRef.current, nextContent)
           ? mergeMarkdownCoverIntoDocument(current, nextContent)
@@ -811,6 +842,7 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
       const revision = ++docRevisionRef.current;
       if (keepDraft) saveToFile(view.state.doc.toString(), revision);
       else {
+        clearRecovery();
         replaceDocumentPreservingSelection(view, expected.content);
         contentCbRef.current?.(expected.content, expected.fileVersion);
       }
@@ -877,6 +909,7 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
                 if (!update.docChanged) return;
                 if (update.transactions.some((tr) => tr.annotation(Transaction.remote))) return;
                 const text = update.state.doc.toString();
+                storeRecovery(text);
                 docRevisionRef.current += 1;
                 const revision = docRevisionRef.current;
                 contentCbRef.current?.(text);
@@ -928,6 +961,25 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
 
       const state = EditorState.create({ doc: content, extensions });
       const view = new EditorView({ state, parent: containerRef.current });
+      // Restore only after the parent successfully read this authorized file.
+      // The disk version remains the baseline and recovery never auto-writes.
+      if (draftScope && recoveryKey && !readOnly) {
+        try {
+          recovery.current ??= new EditorDraftRecovery(localStorage);
+          const copies = recovery.current.list(draftScope, recoveryKey);
+          const copy = copies[0];
+          if (copy) {
+            recoveryCopy.current = copy;
+            setRecoveryCopies(copies); setRecovered(true);
+            saveBlockedRef.current = true;
+            pendingIncomingContentRef.current = null;
+            setSaveIssue({conflict: true, message: ''});
+            replaceDocumentPreservingSelection(view, copy.text);
+            contentCbRef.current?.(copy.text);
+            queueMicrotask(()=>{if(viewRef.current===view)void refreshConflict();});
+          }
+        } catch { setRecoveryError('无法读取本地恢复副本，请保留应用数据后重试。'); }
+      }
       const selectionCommitWindow = containerRef.current.ownerDocument.defaultView ?? window;
       const handledSelectionCommitEvents = new WeakSet<Event>();
       const onSelectionCommitEvent = (event: Event) => {
@@ -1041,7 +1093,7 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
         view.destroy();
         viewRef.current = null;
       };
-    }, [editorHostReadySignal, mode, language, readOnly, filePath, remoteIdentityKey, emitStatsIfChanged, insertMarkdownAttachments]); // eslint-disable-line react-hooks/exhaustive-deps -- 仅在 host 可测量以及 mode/language/readOnly/filePath/remoteContentRef 变化时重建 CodeMirror，content/refs 故意省略以避免销毁重建
+    }, [editorHostReadySignal, mode, language, readOnly, filePath, remoteIdentityKey, draftScope, emitStatsIfChanged, insertMarkdownAttachments]); // eslint-disable-line react-hooks/exhaustive-deps -- 仅在 host 可测量以及源身份变化时重建，content/refs 故意省略以避免销毁重建
 
     useEffect(() => {
       const view = viewRef.current;
@@ -1073,7 +1125,13 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
 
     return (
       <Fragment>
-        {saveIssue && <PreviewSaveNotice issue={saveIssue} external={pendingIncomingContentRef.current}
+        {recoveryError && <p className="enigma-error" role="alert">{recoveryError}</p>}
+        {saveIssue && <PreviewSaveNotice issue={saveIssue} external={pendingIncomingContentRef.current} recovered={recovered}
+          copies={recoveryCopies.map(copy=>({id:copy.id,updatedAt:copy.updatedAt,text:copy.text}))}
+          onSelectCopy={id=>{const copy=recoveryCopies.find(copy=>copy.id===id);const view=viewRef.current;if(!copy||!view)return;
+            storeRecovery(view.state.doc.toString()); recoveryCopy.current=null;storeRecovery(copy.text);
+            setRecoveryCopies(recovery.current?.list(draftScope || '', recoveryKey) || []);
+            replaceDocumentPreservingSelection(view,copy.text);contentCbRef.current?.(copy.text);}}
           refreshing={refreshingConflict} onRefresh={()=>void refreshConflict()}
           onCopy={()=>navigator.clipboard.writeText(viewRef.current?.state.doc.toString() ?? content)}
           onRetry={()=>saveToFile(viewRef.current?.state.doc.toString() ?? content)} onResolve={resolveConflict}/>}

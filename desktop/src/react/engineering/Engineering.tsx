@@ -388,12 +388,13 @@ export function EngineeringPanel({embedded=false}:{embedded?:boolean}={}) {
           ⇥
         </button>
       </div>}
-      {embedded&&state.tabs.filter(t=>t.group===active.group).length>1&&<SurfaceMenu label="相关页面">{state.tabs.filter(t=>t.group===active.group).map(tab=><button key={tab.id} onClick={()=>switchTab(tab)}>{tab.title}</button>)}</SurfaceMenu>}
       <div className="enigma-panel-head">
         <div>
-          <h2>{active.title}</h2>
+          <h2>{active.group==='reading'&&!active.file&&!active.repo?'代码阅读':active.title}</h2>
           {active.file&&<small className="enigma-source-path">{active.repo} / {active.file}</small>}
         </div>
+        <div className="enigma-panel-head-actions">
+        {embedded&&state.tabs.filter(t=>t.group===active.group).length>1&&<SurfaceMenu label="相关页面" hint="切换当前功能中已打开的页面" icon={<AppIcon name="layers" size={17}/>}>{state.tabs.filter(t=>t.group===active.group).map(tab=><button key={tab.id} onClick={()=>switchTab(tab)}>{tab.group==='reading'&&!tab.file&&!tab.repo?'代码阅读':tab.title}</button>)}</SurfaceMenu>}
         <button
           aria-label="刷新当前内容"
           data-tooltip={state.loading ? '正在核对来源，请稍候' : '重新读取当前来源，更新此面板的内容'}
@@ -402,6 +403,7 @@ export function EngineeringPanel({embedded=false}:{embedded?:boolean}={}) {
         >
           <AppIcon name="refresh" size={17}/>
         </button>
+        </div>
       </div>
       {!active.file &&
         !active.resource &&

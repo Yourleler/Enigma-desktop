@@ -43,6 +43,7 @@ import {
 import type { PreviewScrollSnapshot } from '../../../../shared/preview-reading-position.ts';
 import previewStyles from './Preview.module.css';
 import { AppIcon } from '../ui/app-icons';
+import { editorRecoveryScope } from '../stores/editor-draft-recovery';
 
 const EDITABLE_TYPES = new Set(['markdown', 'code', 'csv']);
 const CHAPTER_RAIL_HOVER_ZONE_PX = 64;
@@ -133,6 +134,10 @@ export function PreviewPanel({embedded=false,visible=true,itemId,panelId='previe
   const [chapterRailVisible, setChapterRailVisible] = useState(false);
   const previewBodyRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<PreviewEditorHandle | null>(null);
+  const draftScope = useStore(s => {
+    const server = editorRecoveryScope(s.activeServerConnection);
+    return server ? JSON.stringify([server, s.deskBasePath || s.selectedFolder || s.homeFolder || '']) : '';
+  });
   const previewScrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const restoredPreviewKeyRef = useRef('');
   const activeHeadingRef = useRef<string | null>(null);
@@ -482,8 +487,9 @@ export function PreviewPanel({embedded=false,visible=true,itemId,panelId='previe
               <PreviewRenderer previewItem={previewItem} htmlFind={previewItem.type==='html'?{open:findOpen,query:findQuery,index:findIndex,onResult:(count,truncated)=>{setFindCount(count);setFindTruncated(truncated);},onOpen:()=>setFindOpen(true)}:undefined}/>
             )}
             {previewOpen && previewItem && editable && (
-              <PreviewEditor key={previewItem.id}
+              <PreviewEditor key={`${draftScope}:${previewItem.id}`}
                 ref={editorRef}
+                draftScope={draftScope}
                 content={previewItem.content}
                 filePath={previewItem.filePath}
                 remoteContentRef={previewItem.remoteContentRef}

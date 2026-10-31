@@ -10,6 +10,7 @@ import { createRef } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PreviewEditor, type PreviewEditorHandle } from '../../components/PreviewEditor';
 import type { PlatformApi, VersionedWriteResult } from '../../types';
+import {EditorDraftRecovery, editorRecoveryKey} from '../../stores/editor-draft-recovery';
 
 vi.mock('../../utils/checkpoints', () => ({
   requestUserEditCheckpoint: vi.fn(async () => undefined),
@@ -37,6 +38,7 @@ describe('PreviewEditor file sync', () => {
   let elementRectSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
+    localStorage.clear();
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-05-22T01:02:03Z'));
     window.t = ((key: string) => key) as typeof window.t;
@@ -112,6 +114,41 @@ describe('PreviewEditor file sync', () => {
 
     expect(platform.writeFileIfUnchanged).not.toHaveBeenCalled();
     expect(platform.writeFile).not.toHaveBeenCalled();
+  });
+
+  it('restores an unsaved file draft after remount and compares an actual disk read before allowing save',async()=>{
+    const old={mtimeMs:1,size:8,sha256:'old'},current={mtimeMs:2,size:15,sha256:'new'};
+    Object.assign(window.platform,{readFileSnapshot:vi.fn(async()=>({content:'external update',version:current}))});
+    const ref=createRef<PreviewEditorHandle>();
+    vi.mocked(platform.writeFileIfUnchanged!).mockResolvedValue({ok:false,conflict:true});
+    const first=render(<PreviewEditor ref={ref} draftScope="scope" filePath="/tmp/recovery.md" content="original" fileVersion={old} mode="markdown"/>);
+    act(()=>ref.current!.getView()!.dispatch({changes:{from:0,to:8,insert:'my unsaved draft'},annotations:Transaction.userEvent.of('input.type')}));
+    await act(async()=>{vi.advanceTimersByTime(700);await Promise.resolve();});
+    expect(new EditorDraftRecovery(localStorage).list('scope',editorRecoveryKey('/tmp/recovery.md'))[0].text).toBe('my unsaved draft');
+    first.unmount();vi.mocked(platform.writeFileIfUnchanged!).mockClear();
+    const restored=createRef<PreviewEditorHandle>();
+    render(<PreviewEditor ref={restored} draftScope="scope" filePath="/tmp/recovery.md" content="external update" fileVersion={current} mode="markdown"/>);
+    await act(async()=>{await Promise.resolve();vi.runOnlyPendingTimers();await Promise.resolve();});
+    expect(restored.current!.getView()!.state.doc.toString()).toBe('my unsaved draft');
+    expect(screen.getByText('已恢复未保存的草稿。自动保存已暂停，请比较磁盘版本后选择如何保存。')).toBeTruthy();
+    expect(window.platform.readFileSnapshot).toHaveBeenCalledWith('/tmp/recovery.md');
+    expect(platform.writeFileIfUnchanged).not.toHaveBeenCalled();
+    vi.mocked(platform.writeFileIfUnchanged!).mockResolvedValue({ok:true,version:{mtimeMs:3,size:16,sha256:'saved'}});
+    fireEvent.click(screen.getByRole('button',{name:'保存当前草稿…'}));
+    await act(async()=>{fireEvent.click(screen.getByRole('button',{name:'保存当前草稿'}));await Promise.resolve();});
+    expect(platform.writeFileIfUnchanged).toHaveBeenCalledWith('/tmp/recovery.md','my unsaved draft',current);
+    expect(new EditorDraftRecovery(localStorage).list('scope',editorRecoveryKey('/tmp/recovery.md'))).toEqual([]);
+  });
+
+  it('does not clear a newer local recovery copy when an older save completes',async()=>{
+    const ref=createRef<PreviewEditorHandle>();let complete!:(v:VersionedWriteResult)=>void;
+    vi.mocked(platform.writeFileIfUnchanged!).mockReturnValueOnce(new Promise(resolve=>{complete=resolve;}));
+    render(<PreviewEditor ref={ref} draftScope="scope" filePath="/tmp/recovery.md" content="old" fileVersion={{mtimeMs:1,size:3,sha256:'old'}} mode="markdown"/>);
+    act(()=>ref.current!.getView()!.dispatch({changes:{from:0,to:3,insert:'first'},annotations:Transaction.userEvent.of('input.type')}));
+    await act(async()=>{vi.advanceTimersByTime(700);await Promise.resolve();});
+    act(()=>ref.current!.getView()!.dispatch({changes:{from:0,to:5,insert:'newer draft'},annotations:Transaction.userEvent.of('input.type')}));
+    await act(async()=>{complete({ok:true,version:{mtimeMs:2,size:5,sha256:'first'}});await Promise.resolve();});
+    expect(new EditorDraftRecovery(localStorage).list('scope',editorRecoveryKey('/tmp/recovery.md'))[0].text).toBe('newer draft');
   });
 
   it('uses native selection in markdown while keeping CodeMirror selection drawing for code', () => {
