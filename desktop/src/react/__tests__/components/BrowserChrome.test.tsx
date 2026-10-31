@@ -33,3 +33,18 @@ it('does not let the typing debounce restart a search after Enter advances it',a
  fireEvent.click(screen.getByRole('button',{name:'查找网页内容'}));const input=screen.getByRole('textbox',{name:'查找网页内容'});fireEvent.change(input,{target:{value:'needle'}});fireEvent.keyDown(input,{key:'Enter'});
  await act(async()=>{await vi.advanceTimersByTimeAsync(400);});expect(command.mock.calls.filter(call=>call[0]==='find')).toEqual([['find',{query:'needle',matchCase:false,next:true,forward:true}]]);
 });
+it('restores the committed address after a cancelled provisional navigation',async()=>{
+ const command=vi.fn(async()=>{});const view=render(<BrowserChrome state={state} ready status="手动浏览" onCommand={command} onPreview={vi.fn()}/>);
+ const address=screen.getByRole('textbox',{name:'网页地址'});fireEvent.focus(address);fireEvent.change(address,{target:{value:'http://localhost:3000/slow'}});fireEvent.submit(address.closest('form')!);
+ view.rerender(<BrowserChrome state={{...state,loading:true}} ready status="正在加载" onCommand={command} onPreview={vi.fn()}/>);
+ expect(address).toHaveValue('http://localhost:3000/slow');
+ fireEvent.click(screen.getByRole('button',{name:'停止加载'}));
+ view.rerender(<BrowserChrome state={{...state,loading:false}} ready status="手动浏览" onCommand={command} onPreview={vi.fn()}/>);
+ expect(address).toHaveValue(state.url);
+ expect(command).toHaveBeenCalledWith('stop',{});
+ // A newer unfinished address must survive unrelated load state updates.
+ fireEvent.focus(address);fireEvent.change(address,{target:{value:'example.org/draft'}});
+ view.rerender(<BrowserChrome state={{...state,loading:true}} ready status="正在加载" onCommand={command} onPreview={vi.fn()}/>);
+ view.rerender(<BrowserChrome state={{...state,loading:false}} ready status="手动浏览" onCommand={command} onPreview={vi.fn()}/>);
+ expect(address).toHaveValue('example.org/draft');
+});

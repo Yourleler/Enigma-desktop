@@ -3,11 +3,11 @@ import type {MarkdownHeading} from '../../utils/markdown-document';
 import {previewCopyInfo} from '../../utils/preview-copy';
 import {SurfaceMenu} from '../../engineering/SurfaceMenu';
 import './DocumentNavigation.css';
-interface Props {documentId:string;contentType?:string;findOpen?:boolean;headings:MarkdownHeading[];activeHeadingId:string|null;editable:boolean;wrapLines:boolean;onJump:(heading:MarkdownHeading)=>void;onFind:()=>void;onGotoLine:()=>void;onToggleWrap:()=>void;onFold?:()=>void;onUnfold?:()=>void;children?:ReactNode}
+interface Props {documentId:string;contentType?:string;language?:string|null;findOpen?:boolean;headings:MarkdownHeading[];activeHeadingId:string|null;editable:boolean;wrapLines:boolean;onJump:(heading:MarkdownHeading)=>void;onFind:()=>void;onGotoLine:()=>void;onToggleWrap:()=>void;onFold?:()=>void;onUnfold?:()=>void;children?:ReactNode}
 function SearchIcon(){return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg>;}
 function HelpIcon(){return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 .5c0 1.7-2.5 1.9-2.5 3.5M12 17h.01"/></svg>;}
 /** Keep navigation on the left, and document actions, search and help on the right. */
-export function DocumentNavigation({documentId,contentType,findOpen,headings,activeHeadingId,editable,wrapLines,onJump,onFind,onGotoLine,onToggleWrap,onFold,onUnfold,children}:Props){
+export function DocumentNavigation({documentId,contentType,language,findOpen,headings,activeHeadingId,editable,wrapLines,onJump,onFind,onGotoLine,onToggleWrap,onFold,onUnfold,children}:Props){
  const [outline,setOutline]=useState(false),[query,setQuery]=useState('');
  useEffect(()=>{setOutline(false);setQuery('');},[documentId]);
  const shown=headings.filter(h=>h.text.toLocaleLowerCase().includes(query.toLocaleLowerCase()));
@@ -28,7 +28,7 @@ export function DocumentNavigation({documentId,contentType,findOpen,headings,act
     <SurfaceMenu label="文件预览帮助" hint="了解查找范围、复制内容及文件操作" icon={<HelpIcon/>} stayOpen panelClassName="enigma-document-help">
      <strong>文件操作说明</strong>
      <p><b>查找</b>{editable?'搜索当前文件内容，可替换、区分大小写或使用正则表达式。':'只搜索当前打开文档'+(contentType==='html'?'中的可见网页文字。':'的正文。')}</p>
-     <p><b>{previewCopyInfo(contentType).label}</b>{previewCopyInfo(contentType).description}复制选中的部分请使用 ⌘/Ctrl+C。</p>
+     <p><b>{previewCopyInfo(contentType,language).label}</b>{previewCopyInfo(contentType,language).description}复制选中的部分请使用 ⌘/Ctrl+C。</p>
      <p><b>其他操作</b>相机图标制作内容截图。{contentType==='markdown'?'眼睛图标切换阅读与编辑；行号、换行和折叠在“阅读选项”中。':'悬停其他图标可查看对应操作名称。'}</p>
      <p className="enigma-document-help-shortcuts">⌘/Ctrl+F 查找 · Enter 下一项 · Shift+Enter 上一项 · Esc 关闭</p>
     </SurfaceMenu>

@@ -1,2 +1,17 @@
 @import url('./design-tokens.css');
 html,body,#app{width:100%;height:100%;margin:0;overflow:hidden}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}#error{position:absolute;inset:0;background:var(--marble-preview-paper);color:var(--spreadsheet-preview-ink);padding:var(--space-32);z-index:99999}#error[hidden]{display:none}
+.enigma-sheet-find{display:flex;flex-direction:column;gap:var(--space-12);font:inherit;color:inherit}
+.enigma-sheet-find-query{display:flex;align-items:center;gap:var(--space-6)}
+.enigma-sheet-find-query input{min-width:0;flex:1}
+.enigma-sheet-find-query output{white-space:nowrap;font-variant-numeric:tabular-nums}
+.enigma-sheet-find input,.enigma-sheet-find select,.enigma-sheet-find button{font:inherit;color:inherit;accent-color:var(--univer-primary-600);border-radius:var(--space-6)}
+.enigma-sheet-find input:not([type=checkbox]),.enigma-sheet-find select{border:1px solid color-mix(in srgb,currentColor 18%,transparent);background:transparent;padding:var(--space-6) var(--space-8)}
+.enigma-sheet-find button{border:0;background:transparent;cursor:pointer;padding:var(--space-6)}
+.enigma-sheet-find button:hover{background:color-mix(in srgb,currentColor 8%,transparent)}
+.enigma-sheet-find button:disabled{opacity:.4;cursor:default}
+.enigma-sheet-find :focus-visible{outline:2px solid var(--univer-primary-600);outline-offset:2px}
+.enigma-sheet-find-options{align-self:flex-start}
+.enigma-sheet-find-advanced{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-10)}
+.enigma-sheet-find-advanced label{display:flex;flex-direction:column;gap:var(--space-4);min-width:0}
+.enigma-sheet-find-advanced .enigma-sheet-find-check{grid-column:1/-1;flex-direction:row;align-items:center;gap:var(--space-8)}
+.enigma-sheet-find small{opacity:.65}

@@ -6,3 +6,18 @@
 .toolbarField {border-radius:5px;}
 /* Opening another document belongs to the outer file workbench. */
 #secondaryOpenFile,#openFile {display:none!important;}
+/* Search options remain recognisable checkboxes in the embedded reader. */
+#findbar .toggleButton.toolbarLabel {
+  display:inline-flex;flex-direction:row;align-items:center;justify-content:flex-start;
+  gap:var(--pdf-search-option-gap,6px);min-height:26px;height:auto;
+  padding:var(--pdf-search-option-padding,4px 6px);border-radius:5px;cursor:pointer;
+}
+#findbar .toggleButton > input {
+  position:static;opacity:1;width:14px;height:14px;flex:0 0 14px;
+  margin:0;accent-color:var(--main-color);cursor:pointer;
+}
+#findbar .toggleButton > label {width:auto;cursor:pointer;white-space:nowrap;}
+#findbar .toggleButton:has(> input:focus-visible) {outline:2px solid var(--main-color);outline-offset:1px;}
+@media(forced-colors:none) {
+  .textLayer .highlight {--highlight-bg-color:rgb(255 213 69 / 45%);--highlight-selected-bg-color:rgb(255 166 45 / 58%);}
+}

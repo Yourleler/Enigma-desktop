@@ -1,7 +1,9 @@
 import {createUniver,LocaleType,mergeLocales,defaultTheme,greenTheme,LifecycleStages} from '@univerjs/presets';
-import {UniverSheetsCorePreset,CalculationMode} from '@univerjs/preset-sheets-core';
+import {UniverSheetsCorePreset,CalculationMode,ComponentManager} from '@univerjs/preset-sheets-core';
 import SheetsZh from '@univerjs/preset-sheets-core/locales/zh-CN';
-import {UniverSheetsFindReplacePreset,OpenFindDialogOperation,IFindReplaceService,FindScope} from '@univerjs/preset-sheets-find-replace';
+import {UniverSheetsFindReplacePreset,OpenFindDialogOperation,CloseFindDialogOperation,IFindReplaceService,FindScope} from '@univerjs/preset-sheets-find-replace';
+import {createElement} from 'react';
+import {SpreadsheetFind} from './react/spreadsheet/SpreadsheetFind';
 import FindZh from '@univerjs/preset-sheets-find-replace/locales/zh-CN';
 import '@univerjs/preset-sheets-core/lib/index.css';
 import '@univerjs/preset-sheets-find-replace/lib/index.css';
@@ -38,8 +40,13 @@ addEventListener('message',async event=>{
     if(data.type==='load'&&!loaded){
       loaded=true;worker=new Worker(new URL('./react/spreadsheet/import-worker.ts',import.meta.url),{type:'module'});
       const result=await new Promise<ImportedSpreadsheet>((resolve,reject)=>{const timer=setTimeout(()=>{worker?.terminate();reject(new Error('表格读取超时，请使用系统应用打开'));},25000);worker!.onmessage=event=>{clearTimeout(timer);worker?.terminate();worker=null;event.data.ok?resolve(event.data.result):reject(new Error(event.data.error));};worker!.onerror=()=>{clearTimeout(timer);reject(new Error('表格导入组件无法启动'));};worker!.postMessage({bytes:data.bytes,csv:data.csv,name:data.name,id:data.id});});
-      runtime=createUniver({locale:LocaleType.ZH_CN,darkMode:!!data.dark,theme:data.dark?greenTheme:lightTheme,locales:{[LocaleType.ZH_CN]:mergeLocales(SheetsZh,FindZh,previewLocale)},presets:[UniverSheetsCorePreset({container:'app',header:false,toolbar:false,formulaBar:true,disableAutoFocus:true,contextMenu:true,formula:{initialFormulaComputing:CalculationMode.NO_CALCULATION},footer:{sheetBar:true,statisticBar:true,zoomSlider:true,addSheetButtonConfig:{show:false}}}),UniverSheetsFindReplacePreset()]});
+      runtime=createUniver({locale:LocaleType.ZH_CN,darkMode:!!data.dark,theme:data.dark?greenTheme:lightTheme,locales:{[LocaleType.ZH_CN]:mergeLocales(SheetsZh,FindZh,previewLocale)},presets:[UniverSheetsCorePreset({container:'app',header:false,toolbar:false,formulaBar:true,disableAutoFocus:true,contextMenu:false,formula:{initialFormulaComputing:CalculationMode.NO_CALCULATION},footer:{sheetBar:true,statisticBar:true,zoomSlider:true,addSheetButtonConfig:{show:false}}}),UniverSheetsFindReplacePreset()]});
       const book=runtime.univerAPI.createWorkbook(result.data);await book.getWorkbookPermission().setReadOnly();
+      const currentRuntime=runtime;
+      eventDisposables.push(runtime.univer.__getInjector().get(ComponentManager).register('FindReplaceDialog',()=>createElement(SpreadsheetFind,{
+        service:currentRuntime.univer.__getInjector().get(IFindReplaceService),
+        onClose:()=>{void currentRuntime.univerAPI.executeCommand(CloseFindDialogOperation.id);},
+      }),{override:true}));
       if(runtime.univerAPI.getCurrentLifecycleStage()<LifecycleStages.Rendered)await new Promise<void>(resolve=>{const listener=runtime!.univerAPI.addEvent(runtime!.univerAPI.Event.LifeCycleChanged,event=>{if(event.stage>=LifecycleStages.Rendered){listener.dispose();resolve();}});});
       await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()));
       // Read-only snapshot: original file bytes are never mutated or exported through the SDK.

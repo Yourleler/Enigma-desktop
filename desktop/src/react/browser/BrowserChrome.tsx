@@ -23,11 +23,13 @@ export function BrowserChrome({state,ready,status,surfaceId,onCommand,onPreview,
   },[onCommand]);
   useEffect(()=>{
     const changed=previousTab.current!==state?.activeTabId;
-    if(changed||!addressEditing.current)setAddress(state?.url==='about:blank'?'':state?.url||'');
+    if(changed||!addressEditing.current&&!state?.loading)setAddress(state?.url==='about:blank'?'':state?.url||'');
     if(!changed&&previousUrl.current!==state?.url){setFindOpen(false);setQuery('');}
     previousUrl.current=state?.url;
     if(changed){previousTab.current=state?.activeTabId;addressEditing.current=false;setQuery(state?.find?.query||'');setMatchCase(state?.find?.matchCase||false);setFindOpen(!!state?.find?.query);}
-  },[state?.url,state?.activeTabId]);
+  // Aborted provisional navigation may leave the committed URL unchanged.
+  // Resync on load completion without overwriting a new address draft.
+  },[state?.url,state?.activeTabId,state?.loading]);
   useEffect(()=>{tabStrip.current?.querySelector('[aria-selected="true"]')?.scrollIntoView?.({block:'nearest',inline:'nearest'});},[state?.activeTabId]);
   const focusFind=()=>{setFindOpen(true);requestAnimationFrame(()=>{findInput.current?.focus();findInput.current?.select();});};
   const focusAddress=()=>{addressInput.current?.focus();addressInput.current?.select();};

@@ -199,17 +199,25 @@ try {
    });await new Promise(resolve=>control.listen(0,'127.0.0.1',resolve));
    const observer=await RunObserver.create(root,native.sessionManager.getSessionId(),{heartbeatMs:100});
    const before=await workspace.observe();
+   const completedAnswers=session=>session?.sessionManager.getBranch().filter(entry=>entry.type==='message'&&entry.message.role==='assistant'&&entry.message.stopReason==='stop').length||0;
+   const answersBefore=completedAnswers(engine.getSessionByPath(created.sessionPath));
    try{
      await fs.writeFile(path.join(home,'server-info.json'),JSON.stringify({pid:process.pid,port:control.address().port,token:'guardian-fixture-token'}),{mode:0o600});
      const started=await host.guardian.start(created.sessionPath,{mode:'managed',stageDeadlineMs:1000,maxInterventions:2,allowedActions:['notify','cancel-and-resume']});assert(started.pid!==process.pid);
      observer.record({kind:'start',stage:'run',id:'guardian-practice'});
      for(let attempt=0;attempt<3;attempt++){const result=await runProcess([process.execPath,'-e','process.stderr.write("controlled failure\\n");process.exit(1)'],root);assert.equal(result.status,'failed');observer.record({kind:'fact',stage:'tool.failed',reference:'controlled-check',fingerprint:'controlled-error',detail:'actual command failed with exit code 1'});}
      await observer.flush();const diagnosis=await host.guardian.diagnose(created.sessionPath,'这些记录能证明什么？应该怎样保留原文件恢复任务？');assert(diagnosis.usedModel);assert(diagnosis.basis.observation.available);
-     await host.guardian.act(created.sessionPath,{action:'cancel-and-resume',reason:'Three actual command failures were observed. Inspect current code and original check coverage without editing source.',observationId:observer.state.id,run:observer.state.run});
-     const deadline=Date.now()+120000;while(!engine.getSessionByPath(created.sessionPath).isIdle&&Date.now()<deadline)await new Promise(resolve=>setTimeout(resolve,250));
-     assert(engine.getSessionByPath(created.sessionPath).isIdle);assert.deepEqual(await workspace.observe(),before);
+     // Let the separate guardian perform the intervention. A second manual
+     // action here races it and correctly fails the stale-observation check.
+     // Capability refresh temporarily removes the old runtime. Wait for a new
+     // successful answer, not an idle gap or a transient null session lookup.
+     const settled=()=>{const session=engine.getSessionByPath(created.sessionPath);return session?.isIdle&&completedAnswers(session)>answersBefore;};
+     const deadline=Date.now()+120000;while(!settled()&&Date.now()<deadline)await new Promise(resolve=>setTimeout(resolve,250));
+     assert(settled(),'Guardian must finish an actual resumed model turn');assert.deepEqual(await workspace.observe(),before);
+     const automatic=await host.guardian.status(created.sessionPath);
+     assert(automatic?.events.some(event=>event.action==='cancel-and-resume'),'Separate guardian must record its actual recovery');
      await host.guardian.stop(created.sessionPath);assert.equal((await host.binding(created.sessionPath)).guardianEnabled,false);
-     guardianProbe={status:'verified',separateProcess:true,actualFailures:3,independentModelDiagnosis:true,continuedActualMainSession:true,currentFilesPreserved:true,originalRequestsPreserved:true,shutdown:true};
+     guardianProbe={status:'verified',separateProcess:true,automaticRecovery:true,actualFailures:3,independentModelDiagnosis:true,continuedActualMainSession:true,currentFilesPreserved:true,originalRequestsPreserved:true,shutdown:true};
    }finally{await host.guardian.stop(created.sessionPath).catch(()=>{});await observer.close();control.closeAllConnections();await new Promise(resolve=>control.close(resolve));}
    Object.assign(state,await readJson(path.join(workspace.data,`session-${native.sessionManager.getSessionId()}.json`)));
  }

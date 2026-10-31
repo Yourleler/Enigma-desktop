@@ -183,7 +183,7 @@ export function FloatingActions({
   onToggleMarkdownPreview,
 }: Props) {
   const [copyLabel, setCopyLabel] = useState<string | null>(null);
-  const copyInfo=previewCopyInfo(contentType);
+  const copyInfo=previewCopyInfo(contentType,language);
   const copyGeneration=useRef(0);
   const [coverBusy, setCoverBusy] = useState(false);
   const [coverMenuOpen, setCoverMenuOpen] = useState(false);
