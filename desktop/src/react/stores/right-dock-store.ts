@@ -1,10 +1,10 @@
 import {create} from 'zustand';
-export type DockTab='files'|'changes'|'browser'|'tasks'|'tools'|`tool:${string}`|`preview:${string}`;
+export type DockTab='files'|'changes'|'browser'|'tasks'|'tools'|'agents'|`tool:${string}`|`preview:${string}`;
 export type DockView={tab:DockTab;expanded:boolean;fileId?:string;browserSession?:string|null;order?:DockTab[];hidden?:DockTab[];inlineIds?:string[];directoryPreviewId?:string;fileListOpen?:boolean;fileListWidth?:number};
 const fallback:DockView={tab:'files',expanded:false};
 export const defaultDockTabs:DockTab[]=['files','changes','browser','tasks'];
 export const dockScope=(s:{activeServerConnectionId?:string|null;currentSessionPath?:string|null;deskBasePath?:string})=>JSON.stringify([s.activeServerConnectionId||'local',s.currentSessionPath||s.deskBasePath||'new']);
-const valid=(tab:unknown):tab is DockTab=>typeof tab==='string'&&([...defaultDockTabs,'tools'].includes(tab as DockTab)||/^tool:[a-z-]+$/.test(tab)||tab.startsWith('preview:'));
+const valid=(tab:unknown):tab is DockTab=>typeof tab==='string'&&([...defaultDockTabs,'tools','agents'].includes(tab as DockTab)||/^tool:[a-z-]+$/.test(tab)||tab.startsWith('preview:'));
 const list=(value:unknown):DockTab[]=>Array.isArray(value)?[...new Set(value.filter(valid))]:[];
 export function normalizeDockView(v:any):DockView {
   return {tab:valid(v?.tab)?v.tab:'files',expanded:false,

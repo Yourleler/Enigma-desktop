@@ -1,4 +1,6 @@
 import {motion,useReducedMotion} from 'motion/react';
+import {ChangeWorkbench} from '../../engineering/ChangeWorkbench';
+import {SubagentPanel} from './SubagentPanel';
 import {HeaderSlot} from '../app/HeaderSlot';
 import {createPortal} from 'react-dom';
 import {FileSplitPane} from './FileSplitPane';
@@ -51,7 +53,7 @@ export function RightDock(){
   const fileId=active.startsWith('preview:')?active.slice(8):view?.fileId;
   const toolsLabel=groups.find(g=>`group:${g.id}`===engineeringActive)?.label||'工具';
   const customIds=[...new Set([...(view?.order||[]),active,...(view?.hidden||[])])].filter(id=>id.startsWith('tool:')&&groups.some(group=>group.id===id.slice(5)));
-  const available:TabInfo[]=[...fixed,...customIds.map(id=>({id,label:groups.find(g=>g.id===id.slice(5))!.label,icon:'skill' as AppIconName,hint:'打开项目工具'})),...(active==='tools'&&engineering?.connected&&engineeringActive?[{id:'tools' as DockTab,label:toolsLabel,icon:'skill' as AppIconName,hint:'已打开的项目工具'}]:[]),...fileTabs.map(item=>({id:`preview:${item!.id}` as DockTab,label:item!.title,icon:'file' as AppIconName,hint:item!.filePath||item!.title}))];
+  const available:TabInfo[]=[...fixed,...(active==='agents'||view?.order?.includes('agents')?[{id:'agents' as DockTab,label:'协作助手',icon:'team' as AppIconName,hint:'子任务、执行记录和父对话定位'}]:[]),...customIds.map(id=>({id,label:groups.find(g=>g.id===id.slice(5))!.label,icon:'skill' as AppIconName,hint:'打开项目工具'})),...(active==='tools'&&engineering?.connected&&engineeringActive?[{id:'tools' as DockTab,label:toolsLabel,icon:'skill' as AppIconName,hint:'已打开的项目工具'}]:[]),...fileTabs.map(item=>({id:`preview:${item!.id}` as DockTab,label:item!.title,icon:'file' as AppIconName,hint:item!.filePath||item!.title}))];
   const availableIds=available.map(t=>t.id),ordered=(draftOrder||orderedDockTabs(view,availableIds)).filter(id=>availableIds.includes(id)),tabs=ordered.map(id=>available.find(t=>t.id===id)!);
   const resolved=tabs.some(t=>t.id===active)?active:tabs[0]?.id||null;
   useEffect(()=>{
@@ -128,6 +130,7 @@ export function RightDock(){
         <SurfaceMenu label="添加面板" hint="恢复已关闭面板、添加文件或项目工具" icon={<AppIcon name="add" size={17}/>}>
           <button onClick={()=>picker.current?.click()}>打开文件…<small>选择本机文件，固定为独立标签</small></button>
           {fixed.map(tab=><button key={tab.id} onClick={()=>choose(tab.id)}><DockIcon name={tab.icon}/>{tab.label}<small>{tabs.some(t=>t.id===tab.id)?'切换到此面板':'重新添加'}</small></button>)}
+          <button onClick={()=>choose('agents')}><AppIcon name="team" size={16}/>协作助手<small>查看子任务及执行记录</small></button>
           {fileTabs.filter(item=>(view?.hidden||[]).includes(`preview:${item!.id}`)).map(item=><button key={item!.id} onClick={()=>choose(`preview:${item!.id}`)}>重新打开 {item!.title}</button>)}
           {toolSections.map(section=><div key={section.label} className="enigma-feature-section"><div className="enigma-menu-section-title">{section.label}</div>{section.ids.filter(id=>id!=='reading'&&id!=='conductor').map(id=><button key={id} onClick={()=>choose(`tool:${id}`)}>{groups.find(group=>group.id===id)?.label}</button>)}</div>)}
         </SurfaceMenu>
@@ -144,8 +147,9 @@ export function RightDock(){
           <RightWorkspacePanel filesOnly active={show('files')}/>
         </FileSplitPane>
       </section>
-      {hasVisited('changes')&&<section key={`changes:${scope}`} hidden={!show('changes')} inert={!show('changes')} aria-hidden={!show('changes')} className="enigma-dock-section">{session?<RepositoryChangesPanel embedded/>:<div className="enigma-dock-empty">开始项目对话后，在这里查看代码变更。</div>}</section>}
+      {hasVisited('changes')&&<section key={`changes:${scope}`} hidden={!show('changes')} inert={!show('changes')} aria-hidden={!show('changes')} className="enigma-dock-section">{session?<ChangeWorkbench/>:<div className="enigma-dock-empty">开始项目对话后，在这里查看代码变更。</div>}</section>}
       {hasVisited('browser')&&<section key={`browser:${scope}`} hidden={!show('browser')} inert={!show('browser')} aria-hidden={!show('browser')} className="enigma-dock-section"><SidebarBrowser sessionPath={view?.browserSession===undefined?session:view.browserSession}/></section>}
+      {hasVisited('agents')&&<section hidden={!show('agents')} inert={!show('agents')} aria-hidden={!show('agents')} className="enigma-dock-section"><SubagentPanel/></section>}
       {hasVisited('tasks')&&<section hidden={!show('tasks')} inert={!show('tasks')} aria-hidden={!show('tasks')} className="enigma-dock-section enigma-dock-task-list"><div className="enigma-dock-task-intro"><h3>任务概览</h3><p>当前对话的计划、协作和运行信息。</p>{engineering?.connected&&<div><button onClick={()=>openGroup('plan')}>计划</button><button onClick={()=>openGroup('acceptance')}>检查结果</button><button onClick={()=>openGroup('observer')}>运行诊断</button></div>}</div><SessionTodoCard/><WorkflowCard/><AgentActivityCard/><SessionStatusCard/></section>}
       {(resolved==='tools'||resolved?.startsWith('tool:'))&&<section className="enigma-dock-section">{engineering?.connected?<EngineeringPanel embedded/>:<div className="enigma-dock-empty"><h3>打开项目工具</h3><p>沿用当前对话的目录。没有目录的项目也可以管理任务；代码功能需要在“仓库”中关联代码目录。</p><button onClick={()=>void openProjectTool(resolved?.startsWith('tool:')?resolved.slice(5):'project')}>打开工具</button></div>}</section>}
       {!(show('files')&&inlineItem?.id===fileId)&&<PreviewPanel embedded watchDocuments={false} visible={previewShown} itemId={fileId||null}/>}

@@ -103,3 +103,9 @@ body.enigma-surface .enigma-dock-task-intro p { margin:0;color:var(--text-muted)
  body.enigma-surface .titlebar .enigma-dock-actions {gap:0;}
  body.enigma-surface .titlebar .enigma-dock-actions > button {width:24px;}
 }
+.enigma-titlebar-dividers { position:absolute;inset:0;pointer-events:none; }
+.enigma-titlebar-dividers i { position:absolute;top:50%;height:18px;width:1px;background:var(--eg-stroke-strong);transform:translateY(-50%); }
+body.enigma-surface .titlebar[data-sidebar-open="true"] .tb-left-group { width:calc(var(--layout-sidebar-space,240px) + var(--app-rail-width,44px) - 12px);box-sizing:border-box; }
+body.enigma-surface .titlebar .tb-toggle { border-radius:6px;background:transparent; }
+body.enigma-surface .titlebar .tb-toggle:hover { background:color-mix(in srgb,var(--text) 5%,transparent); }
+body.enigma-surface .titlebar .tb-toggle:active { background:color-mix(in srgb,var(--text) 9%,transparent); }

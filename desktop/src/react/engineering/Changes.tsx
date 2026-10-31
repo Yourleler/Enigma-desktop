@@ -1,4 +1,5 @@
 import { GlassSelection } from '../ui/GlassSelection';
+import {DiffReader} from './DiffReader';
 import { useState, useId, useRef, useEffect } from "react";
 import { useEngineering, showAction, openEngineering,rememberEngineeringView } from "./state";
 import {SurfaceMenu} from './SurfaceMenu';
@@ -36,7 +37,8 @@ export function Changes({
     matching.find((file: any) => `${file.repo}:${file.file}` === selected) ||
     matching[0];
   useEffect(()=>{expansion.current++;setFullPatch('');setExpanding(false);setExpandError('');},[record?.version,file?.repo,file?.file]);
-  const clipped=file?.patchTruncated||file?.patch?.length===120000;
+  const retainedFull=file&&(!file.before||file.before.content!==undefined)&&(!file.after||file.after.content!==undefined);
+  const clipped=!retainedFull&&(file?.patchTruncated||file?.patch?.length===120000);
   const shownPatch=fullPatch||file?.patch;
   const plainDiff=!!shownPatch&&shownPatch.split('\n').length>2000;
   const expand=async()=>{
@@ -165,7 +167,7 @@ export function Changes({
                   {clipped&&!fullPatch&&<><p className="enigma-source-note" role="status">这份差异先展示前 120,000 个字符，后续内容尚未展开。</p>{(!file.before||file.before.content!==undefined)&&(!file.after||file.after.content!==undefined)&&<button disabled={expanding} onClick={()=>void expand()}>{expanding?'正在展开完整差异…':'显示完整差异'}</button>}</>}
                   {expandError&&<p role="alert" className="enigma-error">{expandError}</p>}
                   {plainDiff&&<p className="enigma-source-note">长差异以可选择的纯文本显示，减少逐行渲染开销。</p>}
-                  <pre>
+                  {(!file.before||file.before.content!==undefined)&&(!file.after||file.after.content!==undefined)?<DiffReader change={file} version={record.version}/>:<pre>
                     {fullPatch || plainDiff ? shownPatch : (
                       file.patch ||
                       omission(file.after?.omitted || file.before?.omitted || '') ||
@@ -188,7 +190,7 @@ export function Changes({
                           {line || " "} {"\n"}
                         </span>
                       ))}
-                  </pre>
+                  </pre>}
                 </section>
               )}
             </div>

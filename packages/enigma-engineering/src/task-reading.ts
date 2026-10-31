@@ -8,7 +8,7 @@ import { ReadingStore } from './reading-store.js';
 import { discoverContracts } from './contracts.js';
 import { ProjectContext } from './project-context.js';
 import { SourceIndex } from './source-index.js';
-import { ensureDir, id, readJson, redact, safeId, writeJson } from './storage.js';
+import { ensureDir, id, readJson, redact, safeId, writeJson,hash } from './storage.js';
 import type {Observation,Evidence} from './types.js';
 import {emitActivity} from './telemetry.js';
 
@@ -124,6 +124,18 @@ export class TaskReadingStore {
       for (const reading of readings) {
         for (const node of reading.map?.nodes ?? []) if (!nodes.has(node.id)) nodes.set(node.id, { ...node, role: sourceRole(node.source), responsibility: this.workspace.repo(node.source.repo).role });
         for (const edge of reading.map?.edges ?? []) edges.set(`${edge.from}:${edge.to}:${edge.kind}`, edge);
+      }
+      // Documents and small configuration edits may have no language symbol.
+      // Keep a literal, versioned excerpt rather than dropping them from reading.
+      for(const change of changes.slice(0,80)){
+        if([...nodes.values()].some(n=>n.source.repo===change.repo&&n.source.file===change.file))continue;
+        try{
+          const bytes=await readFile(await this.workspace.path(change.repo,change.file));if(bytes.length>512000||bytes.includes(0))continue;
+          const text=new TextDecoder('utf-8',{fatal:true}).decode(bytes),lines=text.split('\n');
+          const start=Math.max(1,Math.min(lines.length,Number(/@@ -\d+(?:,\d+)? \+(\d+)/.exec(change.patch||'')?.[1])||1));
+          const source:SourceLocation={repo:change.repo,file:change.file,line:start,endLine:Math.min(lines.length,start+39),hash:hash(bytes),symbol:change.file,kind:'file-excerpt',snippet:lines.slice(start-1,start+39).join('\n').slice(0,6000),truncated:lines.length>40};
+          const nodeId=`file-${hash(`${change.repo}:${change.file}`).slice(0,20)}`;nodes.set(nodeId,{id:nodeId,source,role:sourceRole(source),responsibility:'固定版本文件片段；未推断调用关系'});
+        }catch{gaps.push(`Unavailable file excerpt: ${change.repo}/${change.file}`);}
       }
       const ordered = [...nodes.values()].sort((a, b) => roles.indexOf(a.role) - roles.indexOf(b.role) || `${a.source.repo}:${a.source.file}:${a.source.line}`.localeCompare(`${b.source.repo}:${b.source.file}:${b.source.line}`, undefined, { numeric: true }));
       const changedFiles = changes.map(change => ({ ...change,

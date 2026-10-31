@@ -143,6 +143,7 @@ import {
 } from "../shared/tool-categories.ts";
 import { workspaceRootsForSandbox } from "../shared/workspace-scope.ts";
 import { wrapWithCheckpoint } from "../lib/checkpoint-wrapper.ts";
+import {captureToolChanges} from "./conversation-change-capture.ts";
 import { wrapWithSessionPermission } from "../lib/tools/session-permission-wrapper.ts";
 import { createToolCatalog } from "./tool-catalog.ts";
 import { hashCacheContractValue } from "../lib/llm/cache-prefix-contract.ts";
@@ -3359,6 +3360,8 @@ export class HanaEngine {
         }),
       };
     }
+
+    if (this.hanakoHome) result = {...result,tools:captureToolChanges(result.tools,this,cwd,getSessionPath),customTools:captureToolChanges(result.customTools,this,cwd,getSessionPath)};
 
     // Startup assertion: every built-in tool must be categorized in
     // shared/tool-categories.ts. All session-creation paths route through

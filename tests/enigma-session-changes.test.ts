@@ -11,7 +11,7 @@ async function fixture() {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'enigma-changes-')); roots.push(root);
   const repo = path.join(root, 'repo'), home = path.join(root, 'profile');
   await fs.mkdir(repo); await fs.mkdir(home);
-  const git = (...args: string[]) => execFileSync('git', args, { cwd: repo, encoding: 'utf8' });
+  const git = (...args: string[]) => execFileSync('git', ['-c','core.hooksPath=/dev/null',...args], { cwd: repo, encoding: 'utf8',timeout:8000 });
   git('init', '-q'); git('config', 'user.name', 'Test'); git('config', 'user.email', 'test@example.com');
   await fs.writeFile(path.join(repo, 'main.ts'), 'export const value = 1;\n');
   git('add', '.'); git('commit', '-qm', 'baseline');

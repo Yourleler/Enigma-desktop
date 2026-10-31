@@ -1,5 +1,6 @@
 import {desktopInputQueue} from '../../core/desktop-input-queue.ts';
 import { SessionChanges } from '../../plugins/enigma/session-changes.ts';
+import {ChangeWorkbench} from '../../plugins/enigma/change-workbench.ts';
 import { Hono } from "hono";
 import { safeJson } from "../hono-helpers.ts";
 import { createRequestContext } from "../http/boundary.ts";
@@ -52,6 +53,20 @@ export function createEnigmaRoute(engine: any) {
   route.patch('/enigma/input-queue',async c=>{try{const body=await safeJson(c),sessionPath=await session(c,true,body);return c.json(await desktopInputQueue(engine).update(sessionPath,body));}catch(error){return fail(c,error);}});
   route.post('/enigma/input-queue/send',async c=>{try{const body=await safeJson(c),sessionPath=await session(c,true,body);await desktopInputQueue(engine).sendNow(sessionPath,body.id);return c.json({ok:true});}catch(error){return fail(c,error);}});
   const changes = new SessionChanges(engine, host);
+  const readingWorkbench=new ChangeWorkbench(engine,host);
+  const readingAccess=async(c:any,write=false,body:any={})=>{
+    const sessionPath=await session(c,write,body);
+    if(!createRequestContext(c,engine).authorize?.('files.read',{kind:'session',sessionPath})?.allowed)throw Error('没有读取当前文件的权限');
+    if(write&&isReadOnlyPermissionMode(engine.getSessionPermissionMode?.(sessionPath)))throw Error('只读对话不能发起分析或修复操作');
+    return sessionPath;
+  };
+  route.get('/enigma/change-workbench',async c=>{try{return c.json(await readingWorkbench.catalog(await readingAccess(c)));}catch(error){return fail(c,error);}});
+  route.post('/enigma/change-workbench/source',async c=>{try{const body=await safeJson(c),sp=await readingAccess(c,false,body);return c.json(await readingWorkbench.capture(sp,body.input));}catch(error){return fail(c,error);}});
+  route.get('/enigma/change-workbench/source',async c=>{try{return c.json(await readingWorkbench.source(await readingAccess(c),c.req.query('id')||''));}catch(error){return fail(c,error);}});
+  route.get('/enigma/change-workbench/file',async c=>{try{return c.json(await readingWorkbench.file(await readingAccess(c),c.req.query('id')||'',c.req.query('repo')||'',c.req.query('file')||''));}catch(error){return fail(c,error);}});
+  route.post('/enigma/change-workbench/analyze',async c=>{try{const body=await safeJson(c),sp=await readingAccess(c,true,body);if(!['reading','review'].includes(body.kind))throw Error('分析类型无效');return c.json(await readingWorkbench.analyze(sp,body.source,body.kind,body.model,body.previous));}catch(error){return fail(c,error);}});
+  route.get('/enigma/change-workbench/job',async c=>{try{return c.json(await readingWorkbench.job(await readingAccess(c),c.req.query('id')||''));}catch(error){return fail(c,error);}});
+  route.post('/enigma/change-workbench/action',async c=>{try{const body=await safeJson(c),sp=await readingAccess(c,true,body);return c.json(await readingWorkbench.action(sp,body.job,body.action,body.finding,body.reason));}catch(error){return fail(c,error);}});
   route.get('/enigma/changes/files',async c=>{
     try{
       const sessionPath=await session(c);

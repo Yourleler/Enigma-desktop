@@ -3,6 +3,7 @@ import { AppIcon } from '../../ui/app-icons';
 import { ChannelTabBar } from '../channels/ChannelTabBar';
 import { WidgetButtons } from '../plugin/WidgetButtons';
 import { WindowControls } from '../WindowControls';
+import {useLayoutEffect,useRef,useState} from 'react';
 
 interface AppTitlebarProps {
   sidebarOpen: boolean;
@@ -36,7 +37,8 @@ export function AppTitlebar({
   const t = window.t ?? ((p: string) => p);
 
   return (
-    <div className="titlebar">
+    <div className="titlebar" data-sidebar-open={sidebarOpen}>
+      <TitlebarDividers sidebarOpen={sidebarOpen} workspaceOpen={jianOpen}/>
       <div className="tb-left-group">
         <button
           className={`tb-toggle tb-toggle-left${sidebarOpen ? ' active' : ''}`}
@@ -99,10 +101,28 @@ export function AppTitlebar({
 }
 
 function PanelToggleIcon({side,open}:{side:'left'|'right';open:boolean}) {
-  return <svg className="enigma-panel-toggle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <rect x="3" y="3" width="18" height="18" rx="2"/>
-    <path d={side==='left'?'M9 3v18':'M15 3v18'}/>
-    <path className="enigma-panel-toggle-fill" d={side==='left'?'M4 4h4v16H4z':'M16 4h4v16h-4z'} fill="currentColor" stroke="none" opacity={open ? 0.22 : 0}/>
-    <path className="enigma-panel-toggle-arrow" d={side==='left'?'m13 9 3 3-3 3':'m11 9-3 3 3 3'} style={{transformOrigin:side==='left'?'14.5px 12px':'9.5px 12px',transform:`rotate(${open?180:0}deg)`}}/>
+  return <svg className="enigma-panel-toggle-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <rect x="3" y="5" width="18" height="14" rx="2"/>
+    <path d={side==='left'?'M9 5v14':'M15 5v14'}/>
+    <path className="enigma-panel-toggle-fill" d={side==='left'?'M4 6h4v12H4z':'M16 6h4v12h-4z'} fill="currentColor" stroke="none" opacity={open ? 0.16 : 0}/>
   </svg>;
+}
+
+function TitlebarDividers({sidebarOpen,workspaceOpen}:{sidebarOpen:boolean;workspaceOpen:boolean}){
+  const root=useRef<HTMLDivElement>(null),[positions,setPositions]=useState<{side:string;x:number}[]>([]);
+  useLayoutEffect(()=>{
+    const update=()=>{
+      const title=root.current?.parentElement?.getBoundingClientRect();if(!title)return;
+      const next:{side:string;x:number}[]=[];
+      for(const [side,selector,open] of [['left','#sidebar',sidebarOpen],['right','#jianSidebar',workspaceOpen]] as const){
+        const rect=document.querySelector(selector)?.getBoundingClientRect();
+        if(open&&rect&&rect.width>1)next.push({side,x:(side==='left'?rect.right:rect.left)-title.left});
+      }
+      setPositions(previous=>JSON.stringify(previous)===JSON.stringify(next)?previous:next);
+    };
+    update();const observer=typeof ResizeObserver==='undefined'?null:new ResizeObserver(update);
+    for(const selector of ['.enigma-workspace-frame','#sidebar','#jianSidebar']){const element=document.querySelector(selector);if(element)observer?.observe(element);}
+    window.addEventListener('resize',update);return()=>{observer?.disconnect();window.removeEventListener('resize',update);};
+  },[sidebarOpen,workspaceOpen]);
+  return <div ref={root} className="enigma-titlebar-dividers" aria-hidden="true">{positions.map(p=><i key={p.side} data-divider-side={p.side} style={{left:p.x}}/>)}</div>;
 }

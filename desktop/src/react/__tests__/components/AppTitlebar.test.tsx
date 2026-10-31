@@ -114,4 +114,13 @@ describe('AppTitlebar', () => {
     expect(screen.queryByTitle('preview.toggle')).not.toBeInTheDocument();
     const button=screen.getByRole('button',{name:'工作面板'});expect(button).toHaveAttribute('aria-expanded','true');fireEvent.click(button);expect(toggle).toHaveBeenCalledTimes(1);
   });
+  it('aligns separators to the actual sidebar edges and removes the closed-side divider',()=>{
+    const left=document.createElement('aside'),right=document.createElement('aside');left.id='sidebar';right.id='jianSidebar';
+    left.getBoundingClientRect=()=>({left:44,right:284,width:240} as DOMRect);right.getBoundingClientRect=()=>({left:752,right:1272,width:520} as DOMRect);
+    document.body.append(left,right);
+    const props={sidebarOpen:true,jianOpen:true,onToggleSidebar:vi.fn(),onToggleJian:vi.fn()};const view=render(<AppTitlebar {...props}/>);
+    expect(document.querySelector<HTMLElement>('[data-divider-side="left"]')?.style.left).toBe('284px');
+    expect(document.querySelector<HTMLElement>('[data-divider-side="right"]')?.style.left).toBe('752px');
+    view.rerender(<AppTitlebar {...props} sidebarOpen={false}/>);expect(document.querySelector('[data-divider-side="left"]')).toBeNull();left.remove();right.remove();
+  });
 });

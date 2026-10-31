@@ -5,9 +5,13 @@ import {useSideQuery} from './useSideQuery';
 import {displayTime} from './interaction-copy';
 import {MarkdownContent} from '../components/chat/MarkdownContent';
 import {renderMarkdown} from '../utils/markdown';
+import {ChangeWorkbench} from './ChangeWorkbench';
 
 const statuses:Record<string,string>={completed:'审查已完成',failed:'审查未完成',cancelled:'审查已取消',stale:'原审查已过期'};
 export function ReviewPanel({initial,evidence}:{initial:any;evidence:(value:any)=>ReactNode}){
+  return <div className="enigma-unified-review"><ChangeWorkbench initialMode="review"/><details className="enigma-legacy-review" open={Boolean((Array.isArray(initial)?initial:initial?.items)?.length)}><summary>项目快照审查与历史报告</summary><LegacyReviewPanel initial={initial} evidence={evidence}/></details></div>;
+}
+function LegacyReviewPanel({initial,evidence}:{initial:any;evidence:(value:any)=>ReactNode}){
   const sessionPath=useEngineering(s=>s.sessionPath),snapshot=useEngineering(s=>s.snapshot),query=useSideQuery<any>('/data/review',sessionPath);
   const readOnly=useStore(s=>s.sessionPermissionMode==='read_only'),data=query.data||initial,items=Array.isArray(data)?data:data?.items||[];
   const action=snapshot?.actions?.find((item:any)=>item.id==='review-run'),busy=snapshot?.state?.idle===false||snapshot?.state?.operation?.state==='running';
@@ -31,7 +35,7 @@ function ReviewReport({report,staleQuery,evidence}:{report:any;staleQuery:boolea
     {['failed','cancelled'].includes(report.status)&&<p>这次审查没有形成完整结论，下面可能只有部分内容或失败原因。</p>}
     {report.coverage&&<p className="enigma-source-note">冻结了 {report.coverage.files} 个改动文件。{report.coverage.additionalFiles>0?`其中前 ${report.coverage.inlineDiffFiles} 个差异直接提供给模型，其余 ${report.coverage.additionalFiles} 个需要按需读取；不能据此声称全部已审查。`:'结论覆盖范围以报告正文为准。'}</p>}
     {Number.isSafeInteger(report.coverage?.providedDiffFiles)&&<p className="enigma-source-note">本次向模型提供了 {report.coverage.providedDiffFiles} / {report.coverage.files} 个文件的差异片段。读取过片段不代表已完整审查。</p>}
-    <div className="enigma-review-text"><MarkdownContent html={renderMarkdown(report.text||'没有返回可读的审查结论。')}/></div>
+    <div className="enigma-review-text"><MarkdownContent html={renderMarkdown(report.summary||report.text||'没有返回可读的审查结论。')}/></div>
     {!!report.changes?.length&&<details className="enigma-result"><summary>核对本次冻结的差异 · {report.changes.length} 个文件</summary>{report.changes.map((change:any)=><details key={`${change.repo}:${change.file}`} className="enigma-restore-file"><summary>{change.repo} / {change.file} · {({added:'新增',deleted:'删除',modified:'修改'} as Record<string,string>)[change.change]||change.change}</summary>{change.patch&&<pre>{change.patch}</pre>}<div className="enigma-inline-actions"><button data-tooltip="读取审查时保存的源码，不会切换或恢复项目文件" onClick={()=>setSource({repo:change.repo,file:change.file,side:change.change==='deleted'?'baseline':'target'})}>{change.change==='deleted'?'查看删除前源码':'查看审查时源码'}</button>{change.change!=='deleted'&&<button data-tooltip="打开仓库当前文件；可能与本报告引用的版本不同" onClick={()=>openEngineering({id:`file:${change.repo}:${change.file}`,title:change.file,group:'reading',repo:change.repo,file:change.file})}>查看当前文件</button>}</div></details>)}</details>}
     {source&&<FrozenReviewSource key={`${report.id}:${source.repo}:${source.file}:${source.side}`} review={report.id} source={source} close={()=>setSource(null)}/>}
     <details className="enigma-result"><summary>审查范围、来源与完整记录</summary>{evidence(report)}</details>

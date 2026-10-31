@@ -1,3 +1,4 @@
+import {startChangeCapture,finishChangeCapture,inheritChangeCapture} from "./conversation-change-capture.ts";
 import { engineeringHost } from '../plugins/enigma/host.ts';
 import {QueuedModelSwitch} from './queued-model-switch.ts';
 import {withProjectTurnContext} from './project-turn-context.ts';
@@ -2131,6 +2132,7 @@ export class SessionCoordinator {
         workspaceFolders: workspaceScope.workspaceFolders,
         authorizedFolders: folderScope.authorizedFolders,
         getAuthorizedFolders: () => this.getSessionAuthorizedFolders(sessionPathRef.current || sessionPathForMeta),
+        getSessionPath: () => sessionPathRef.current || sessionPathForMeta || sessionMgr.getSessionFile?.() || null,
         agentDir: agent.agentDir,
         // Sizes the deferred-tool listing against the model this session froze.
         modelContextWindowTokens: effectiveModel?.contextWindow ?? null,
@@ -4052,6 +4054,7 @@ export class SessionCoordinator {
           `fork memory materialization scheduling failed for ${childSessionId}: ${notificationError?.message || notificationError}`,
         );
       }
+      await inheritChangeCapture(this._d.getEngine?.(),sourceSessionPath,childSessionPath,retainedEntries);
       return result;
     } catch (error) {
       if (childSessionPath) this._deleteRuntimeValueForPath(this._hibernatedSessionMeta, childSessionPath);
@@ -4949,10 +4952,14 @@ export class SessionCoordinator {
     const promptOpts = buildPromptMediaOptions(opts);
     const nativeMediaTurn = engine?.beginCurrentTurnNativeMedia?.(sp, opts);
     if (sp && turnContext) this._setRuntimeValueForPath(this._turnContextBySession, sp, turnContext);
+    const changeCapture=await startChangeCapture(engine,sp,text,this._session.sessionManager);
+    let changeInterrupted=true;
     try {
       if (sp) this.preflightSessionInput(sp);
       await this._session.prompt(text, promptOpts);
+      changeInterrupted=false;
     } finally {
+      await finishChangeCapture(engine,sp,changeCapture,this._session.sessionManager,changeInterrupted);
       if (sp && turnContext) this._deleteRuntimeValueForPath(this._turnContextBySession, sp);
       engine?.endCurrentTurnNativeMedia?.(nativeMediaTurn);
       pruneSessionInlineMediaHistory(this._session);
@@ -5075,6 +5082,8 @@ export class SessionCoordinator {
     const promptOpts = buildPromptMediaOptions(opts, notifyPromptPreflight);
     const nativeMediaTurn = engine?.beginCurrentTurnNativeMedia?.(sessionPath, opts);
     if (turnContext) this._setRuntimeValueForPath(this._turnContextBySession, sessionPath, turnContext);
+    const changeCapture=await startChangeCapture(engine,sessionPath,text,entry.session.sessionManager);
+    let changeInterrupted=true;
     try {
       // Recheck after asynchronous media preparation. A background custom turn
       // may have started since the route-level guard; no input side effects may
@@ -5082,7 +5091,9 @@ export class SessionCoordinator {
       if (entry.session.isStreaming) throw new Error("session_busy");
       this.preflightSessionInput(sessionPath);
       await entry.session.prompt(text, promptOpts);
+      changeInterrupted=false;
     } finally {
+      await finishChangeCapture(engine,sessionPath,changeCapture,entry.session.sessionManager,changeInterrupted);
       if (turnContext) this._deleteRuntimeValueForPath(this._turnContextBySession, sessionPath);
       engine?.endCurrentTurnNativeMedia?.(nativeMediaTurn);
       pruneSessionInlineMediaHistory(entry.session);
@@ -8209,9 +8220,13 @@ export class SessionCoordinator {
         return { sessionPath: null, replyText: "", error: "aborted" };
       }
 
+      const isolatedChanges=opts.persist?await startChangeCapture(this._d.getEngine?.(),childSessionPath,prompt,session.sessionManager):null;
+      let isolatedChangesInterrupted=true;
       try {
         await session.prompt(prompt);
+        isolatedChangesInterrupted=false;
       } finally {
+        await finishChangeCapture(this._d.getEngine?.(),childSessionPath,isolatedChanges,session.sessionManager,isolatedChangesInterrupted);
         if (childSessionPath) {
           this._syncSessionBranchHeadQuiet(childSessionPath, session.sessionManager, "isolated_prompt_finally");
         }

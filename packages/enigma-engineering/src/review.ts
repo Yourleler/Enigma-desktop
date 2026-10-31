@@ -4,6 +4,7 @@ import type { Workspace } from './workspace.js';
 import type { Checkpoint, Observation } from './types.js';
 import { PlanStore } from './planning.js';
 import { id, writeJson, readJson, redact, hash, safeId } from './storage.js';
+import {parseReviewFindings} from './review-findings.js';
 
 export interface ReviewInput { baseline: string; goal: string; requirements: { text: string; reference: string }[]; evidence?: string[]; task?:string; planFile?:string }
 export interface ReviewSnapshot {
@@ -58,7 +59,18 @@ export async function finishReview(workspace: Workspace, review: ReviewSnapshot,
   const current = JSON.stringify(await workspace.observe()) === JSON.stringify(review.observation);
   const report = { schema: 1, id: review.id, baseline: review.baseline.id, target: review.target.id, task:review.task,goal:review.goal,model: result.model, session: result.session,
     status: result.status === 'completed' && !current ? 'stale' : result.status, sourceCurrent: current, text: redact(result.text, workspace.secrets),provider:result.provider,requests:result.requests,
-    evidence: review.evidence,coverage:result.coverage, createdAt: new Date().toISOString(), limitations: ['Model review is advisory, not independent proof of test completion.', 'Source is frozen at the captured target; runtime behavior requires actual checks.'] };
+    ...parseReviewFindings(redact(result.text,workspace.secrets),review.target.id,review.changes),evidence: review.evidence,coverage:result.coverage, createdAt: new Date().toISOString(), limitations: ['Model review is advisory, not independent proof of test completion.', 'Source is frozen at the captured target; runtime behavior requires actual checks.'] };
+  for(const finding of report.findings){
+    const valid=[];for(const anchor of finding.anchors){try{await readReviewSource(workspace,anchor.side==='baseline'?{...review,target:review.baseline}:review,anchor.repo,anchor.file,anchor.line,anchor.endLine);valid.push(anchor);}catch{}}
+    if(valid.length!==finding.anchors.length)report.limitations.push(`Finding ${finding.id} contained unavailable source anchors.`);
+    finding.anchors=valid;
+  }
+  report.findings=report.findings.filter(f=>f.anchors.length>0);
+  for(const verdict of report.verdicts||[]){
+    const anchors=[];for(const a of verdict.anchors){try{const source=await readReviewSource(workspace,review,a.repo,a.file,a.line,a.endLine);anchors.push({...a,hash:source.hash});}catch{}}
+    verdict.anchors=anchors;
+    if(verdict.status==='resolved'&&!anchors.length)verdict.status='unverified';
+  }
   await writeJson(join(workspace.data, 'reviews', review.id, 'report.json'), report); return report;
 }
 
