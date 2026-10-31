@@ -7,7 +7,7 @@ import {afterEach,beforeEach,expect,it,vi} from 'vitest';
 import {useStore} from '../../stores';
 import {useEngineering} from '../../engineering/state';
 import {dockScope,dockView,hideDockTab,moveDockTab,reorderDockTabs,patchDockView,normalizeDockView,orderedDockTabs,selectDockTab,useRightDock} from '../../stores/right-dock-store';
-import {openPreview} from '../../stores/preview-actions';
+import {closePreview,openPreview} from '../../stores/preview-actions';
 import {RightDock} from '../../components/right-workspace/RightDock';
 vi.mock('../../utils/dock-file-drop',()=>({openDockFiles:vi.fn(async()=>{})}));
 vi.mock('../../components/app/OpenPreviewDocumentWatchBridge',()=>({OpenPreviewDocumentWatchBridge:()=>null}));
@@ -56,6 +56,14 @@ it('keeps a file-list preview inside Files until the user pins it',()=>{
  expect(screen.getByRole('button',{name:'固定为独立标签'})).toBeVisible();
  fireEvent.click(screen.getByRole('button',{name:'固定为独立标签'}));
  expect(screen.getByRole('tab',{name:'Guide.md'})).toHaveAttribute('aria-selected','true');
+});
+it('does not leave a document heading over an empty pane after navigation closes its preview',()=>{
+ render(<RightDock/>);act(()=>openPreview({id:'inline',type:'markdown',title:'Guide.md',content:'# guide'},{placement:'files'}));
+ expect(screen.getByRole('button',{name:'固定为独立标签'})).toBeVisible();
+ act(()=>closePreview());
+ expect(screen.queryByRole('button',{name:'固定为独立标签'})).not.toBeInTheDocument();
+ expect(useStore.getState().previewItems.some(item=>item.id==='inline')).toBe(true);
+ expect(dockView(dockScope(useStore.getState())).directoryPreviewId).toBe('inline');
 });
 it('closes and restores a base panel without clearing its browser state',()=>{
  render(<RightDock/>);fireEvent.click(screen.getByRole('tab',{name:'浏览器'}));fireEvent.change(screen.getByLabelText('Page form'),{target:{value:'retain'}});

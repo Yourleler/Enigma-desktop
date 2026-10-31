@@ -8,6 +8,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { InlineErrorEntry } from '../../stores/streaming-slice';
+import {dockScope,dockView,patchDockView} from '../../stores/right-dock-store';
 
 type MockState = Record<string, unknown>;
 
@@ -608,6 +609,14 @@ function mockPermissionDefault(mode = 'ask') {
   });
 
   describe('createNewSession cwd draft', () => {
+    it('reveals a new project conversation without losing its retained document tabs',async()=>{
+      mockPermissionDefault();
+      const scope=dockScope({deskBasePath:'/workspace/acceptance'});
+      patchDockView(scope,{expanded:true,tab:'files',directoryPreviewId:'retained-file',inlineIds:['retained-file']});
+      await createNewSession({projectId:'project-acceptance',cwd:'/workspace/acceptance'});
+      expect(dockView(scope)).toMatchObject({expanded:false,directoryPreviewId:'retained-file',inlineIds:['retained-file']});
+      expect(mockState.pendingProjectId).toBe('project-acceptance');
+    });
     it('resets a global new-session draft to the primary agent and its effective workspace', async () => {
       (mockState as Record<string, unknown>).agents = [
         {

@@ -27,6 +27,7 @@ import type { ChatMessage, ContentBlock } from './chat-types';
 import { readMessageLiveVersion } from './message-live-version';
 import type { SessionMetaRecoveryStatus, SessionPermissionMode } from '../types';
 import { findPrimaryAgent, resolveAgentWorkspace } from '../utils/agent-workspace';
+import {dockScope,expandDock} from './right-dock-store';
 
 // ── 防竞争计数器 ──
 
@@ -201,6 +202,11 @@ function shouldRestoreInputFocus(path: string | null): boolean {
 }
 
 function requestChatInputFocus(path: string | null): void {
+  const state=useStore.getState();
+  const current=path?state.currentSessionPath===path:state.pendingNewSession&&state.currentSessionPath===null&&!state.pendingSessionSwitchPath;
+  // Opening a conversation must reveal its composer, even when the previous
+  // task was using the expanded document pane. Keep its tabs and reading state.
+  if(current&&state.currentTab==='chat')expandDock(dockScope(state),false);
   if (shouldRestoreInputFocus(path)) useStore.getState().requestInputFocus?.();
 }
 

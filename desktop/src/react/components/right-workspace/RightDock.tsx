@@ -50,7 +50,7 @@ export function RightDock(){
   const strip=useRef<HTMLDivElement>(null),root=useRef<HTMLDivElement>(null),body=useRef<HTMLDivElement>(null),picker=useRef<HTMLInputElement>(null),dragging=useRef<DockTab|null>(null),last=useRef({scope,active}),positions=useRef<Record<string,number>>({});
   const inline=new Set(view?.inlineIds||[]);
   const fileTabs=openTabs.map(id=>items.find(item=>item.id===id)).filter(item=>item&&item.type!=='browser'&&!inline.has(item.id));
-  const inlineItem=items.find(item=>item.id===view?.directoryPreviewId);
+  const inlineItem=previewOpen?items.find(item=>item.id===view?.directoryPreviewId):undefined;
   const fileId=active.startsWith('preview:')?active.slice(8):view?.fileId;
   const toolsLabel=groups.find(g=>`group:${g.id}`===engineeringActive)?.label||'工具';
   const customIds=[...new Set([...(view?.order||[]),active,...(view?.hidden||[])])].filter(id=>id.startsWith('tool:')&&groups.some(group=>group.id===id.slice(5)));
