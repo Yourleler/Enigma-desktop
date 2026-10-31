@@ -36,6 +36,7 @@ describe("yuan metadata", () => {
     expect(getYuanThinkingBlock("butter")).toBe("PULSE");
     expect(getYuanThinkingBlock("ming")).toBe("沉思");
     expect(getYuanThinkingBlock("kong")).toBeNull();
+    expect(getYuanThinkingBlock("enigma")).toBeNull();
   });
 
   for (const yuan of ["hanako", "butter", "ming", "kong"]) {

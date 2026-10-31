@@ -4,8 +4,8 @@ import path from "path";
 import { COMPUTER_USE_ERRORS, computerUseError } from "../errors.ts";
 import { createCommandRunner } from "./command-runner.ts";
 
-const HANA_CURSOR_BLOOM_COLOR = "#537D96";
-const HANA_CURSOR_GRADIENT_COLORS = Object.freeze(["#FFFDF8", "#8FAABD", "#2F4A56"]);
+const HANA_CURSOR_BLOOM_COLOR = "#55A88E";
+const HANA_CURSOR_GRADIENT_COLORS = Object.freeze(["#F2FFF9", "#B6F0DB", "#667D96"]);
 const HANA_CUA_CURSOR_STYLE = Object.freeze({
   gradient_colors: HANA_CURSOR_GRADIENT_COLORS,
   bloom_color: HANA_CURSOR_BLOOM_COLOR,

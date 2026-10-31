@@ -87,6 +87,16 @@ enum ForegroundDrag {
             CGPoint(x: bounds.minX + x / request.screenshot_width * bounds.width, y: bounds.minY + y / request.screenshot_height * bounds.height)
         }
         let start = point(request.from_x, request.from_y), end = point(request.to_x, request.to_y)
+        let pointerBeforeGlide = CGEvent(source: nil)?.location ?? start
+        AgentCursor.shared.pinAbove(pid: request.pid)
+        AgentCursor.shared.setPosition(pointerBeforeGlide)
+        AgentCursor.shared.show()
+        defer { AgentCursor.shared.hide() }
+        await AgentCursor.shared.animateAndWait(to: start)
+        guard stillTarget() else { throw failure("COMPUTER_OPERATION_CANCELLED: Target changed during pointer travel.") }
+        if let cursor = CGEvent(source: nil)?.location, hypot(cursor.x - pointerBeforeGlide.x, cursor.y - pointerBeforeGlide.y) > 18 {
+            throw failure("COMPUTER_OPERATION_CANCELLED: User moved the pointer during travel.")
+        }
         var flags = CGEventFlags()
         for key in request.modifier ?? [] {
             switch key.lowercased() {
@@ -121,6 +131,7 @@ enum ForegroundDrag {
                 guard stillTarget() else { throw failure("COMPUTER_OPERATION_CANCELLED: Click target changed.") }
                 if let cursor=CGEvent(source:nil)?.location, hypot(cursor.x-start.x,cursor.y-start.y)>18 { throw failure("COMPUTER_OPERATION_CANCELLED: User moved the pointer.") }
                 try post(.leftMouseDown,start,clickCount:index);held=true
+                EnigmaCursorFeedback.shared.click()
                 fputs("ENIGMA_FOREGROUND_POINTER_DOWN\n",stderr);fflush(stderr)
                 try await Task.sleep(for:.milliseconds(20))
                 try post(.leftMouseUp,start,clickCount:index);held=false
@@ -131,6 +142,7 @@ enum ForegroundDrag {
             return
         }
         try post(.leftMouseDown, start)
+        EnigmaCursorFeedback.shared.begin(.dragging)
         fputs("ENIGMA_FOREGROUND_POINTER_DOWN\n", stderr)
         fflush(stderr)
         defer {
@@ -152,6 +164,7 @@ enum ForegroundDrag {
             let progress = Double(step) / Double(steps)
             last = CGPoint(x: start.x + (end.x - start.x) * progress, y: start.y + (end.y - start.y) * progress)
             try post(.leftMouseDragged, last)
+            AgentCursor.shared.setPosition(last)
         }
         try await Task.sleep(for: .milliseconds(80))
     }

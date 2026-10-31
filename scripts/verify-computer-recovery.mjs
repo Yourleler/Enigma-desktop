@@ -7,7 +7,7 @@ import {EventBus} from '../hub/event-bus.ts';
 import {createComputerUseTool} from '../lib/tools/computer-use-tool.ts';
 import {createComputerLabRuntime} from './interaction-computer-runtime.mjs';
 
-const native=await createComputerLabRuntime({parent:process.argv[2],fixture:process.argv[3],helper:process.argv[4]});
+const native=await createComputerLabRuntime({parent:process.argv[2],fixture:process.argv[3],helper:process.argv[4],cursorEnabled:process.argv.includes('--cursor')});
 const builtin=path.join(native.root,'plugins-builtin'),community=path.join(native.root,'plugins-community');
 fs.mkdirSync(builtin);fs.mkdirSync(community);
 for(const name of ['browser-control','computer-control'])fs.cpSync(path.join('plugins',name),path.join(builtin,name),{recursive:true});
@@ -15,11 +15,16 @@ let disabled=[];
 const manager=new PluginManager({pluginsDirs:[builtin,community],dataDir:path.join(native.root,'plugin-data'),bus:new EventBus(),appVersion:'0.452.72',preferencesManager:{getDisabledPlugins:()=>disabled,setDisabledPlugins:next=>{disabled=next;},getAllowFullAccessPlugins:()=>true}});
 const cases=[];
 const pending=[];
+const downCount=()=>fs.existsSync(path.join(native.root,'native-events.jsonl'))?(fs.readFileSync(path.join(native.root,'native-events.jsonl'),'utf8').match(/card-down/g)||[]).length:0;
+const waitForDown=async(previous)=>{const deadline=Date.now()+4500;while(downCount()<=previous&&Date.now()<deadline)await new Promise(resolve=>setTimeout(resolve,30));assert(downCount()>previous,'The native mouse-down must be observed before testing interruption');};
 try {
   manager.scan();await manager.loadAll();
   const contribution=manager.getNativeToolContribution('computer');assert(contribution);
   const tool=manager.createNativeTool(contribution,[{getComputerHost:()=>native.host,getSessionAccessMode:()=> 'operate'}],{createComputerUseTool});
-  const execute=(action)=>{const work=tool.execute('recovery-'+cases.length,action,undefined,undefined,native.ctx);pending.push(work);return work;};
+  const execute=(action)=>{const work=tool.execute('recovery-'+cases.length,action,undefined,undefined,native.ctx).then(result=>{
+    fs.appendFileSync(path.join(native.root,'recovery-actions.jsonl'),JSON.stringify({action,details:result.details,text:result.content?.filter(block=>block.type==='text').map(block=>block.text)})+'\n');
+    return result;
+  });pending.push(work);return work;};
   const windows=await native.host.listWindows(native.ctx,native.fixtureInfo.bundleId);
   const target=windows.find(window=>window.isOnScreen&&window.bounds?.height>500);assert(target);
   let result=await execute({action:'start',appId:native.fixtureInfo.bundleId,windowId:target.windowId});assert(!result.details?.error);
@@ -50,7 +55,7 @@ try {
   // its current image size. They address only its purple source/drop regions.
   let settled=false;
   const running=execute({action:'drag',foreground:true,fromX:display.width*600/1286,fromY:display.height*1004/1568,toX:display.width*620/1286,toY:display.height*1143/1568,durationMs:2000}).finally(()=>{settled=true;});
-  await new Promise(resolve=>setTimeout(resolve,800));
+  await waitForDown(0);
   const events=fs.readFileSync(path.join(native.root,'native-events.jsonl'),'utf8');
   assert(events.includes('card-down'),'The real native mouse-down must happen before disabling');
   assert(!settled,'Native gesture ended before disabling; this is not a mid-action test');
@@ -67,10 +72,9 @@ try {
   await manager.enablePlugin('computer-control',{source:'builtin'});
   result=await execute({action:'get_app_state'});assert(!result.details?.error);
   cases.push({case:'reenable-observes-same-window',passed:true});
-  const eventCount=fs.readFileSync(path.join(native.root,'native-events.jsonl'),'utf8').split('card-down').length;
+  const eventCount=downCount();
   const crashed=execute({action:'drag',foreground:true,fromX:display.width*600/1286,fromY:display.height*1004/1568,toX:display.width*620/1286,toY:display.height*1143/1568,durationMs:2000});
-  await new Promise(resolve=>setTimeout(resolve,800));
-  assert(fs.readFileSync(path.join(native.root,'native-events.jsonl'),'utf8').split('card-down').length>eventCount);
+  await waitForDown(eventCount);
   assert.equal(native.foregroundChildren.size,1);
   for(const process of native.foregroundChildren)process.kill('SIGKILL');
   result=await crashed;assert.equal(result.details?.errorCode,'PROVIDER_CRASHED');
@@ -80,9 +84,8 @@ try {
   const gesture=()=>execute({action:'drag',foreground:true,fromX:display.width*600/1286,fromY:display.height*1004/1568,toX:display.width*620/1286,toY:display.height*1143/1568,durationMs:2000});
   const ownWindow=`import AppKit; import CoreGraphics; guard NSWorkspace.shared.frontmostApplication?.processIdentifier == ${native.child.pid} else { exit(2) }; `;
   for(const mode of ['escape','pointer']) {
-    const before=fs.readFileSync(path.join(native.root,'native-events.jsonl'),'utf8').split('card-down').length;
-    const action=gesture();await new Promise(resolve=>setTimeout(resolve,800));
-    assert(fs.readFileSync(path.join(native.root,'native-events.jsonl'),'utf8').split('card-down').length>before);
+    const before=downCount();
+    const action=gesture();await waitForDown(before);
     const input=mode==='escape'
       ? 'let s=CGEventSource(stateID:.hidSystemState);CGEvent(keyboardEventSource:s,virtualKey:53,keyDown:true)?.post(tap:.cghidEventTap);usleep(200000);CGEvent(keyboardEventSource:s,virtualKey:53,keyDown:false)?.post(tap:.cghidEventTap)'
       : `CGEvent(mouseEventSource:CGEventSource(stateID:.hidSystemState),mouseType:.mouseMoved,mouseCursorPosition:CGPoint(x:${target.bounds.x+target.bounds.width*.7},y:${target.bounds.y+target.bounds.height*.2}),mouseButton:.left)?.post(tap:.cghidEventTap)`;

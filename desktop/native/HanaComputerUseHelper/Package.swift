@@ -21,5 +21,8 @@ let package = Package(
             ],
             swiftSettings: [.unsafeFlags(["-parse-as-library"])]
         ),
+        .executableTarget(name: "CursorMotionCheck", dependencies: [
+            .product(name: "CuaDriverCore", package: "cua"),
+        ], path: "Checks"),
     ]
 )

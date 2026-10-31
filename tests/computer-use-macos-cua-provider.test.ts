@@ -353,8 +353,8 @@ describe("macos Cua provider", () => {
     const { runner, calls } = makeRunner((_command, args) => {
       if (args[0] === "set_agent_cursor_style") {
         expect(JSON.parse(args[1])).toEqual({
-          gradient_colors: ["#FFFDF8", "#8FAABD", "#2F4A56"],
-          bloom_color: "#537D96",
+          gradient_colors: ["#F2FFF9", "#B6F0DB", "#667D96"],
+          bloom_color: "#55A88E",
           image_path: "",
         });
         return rawResult({ ok: true });
@@ -769,8 +769,8 @@ describe("macos Cua provider", () => {
     expect(cursorConfig).toMatchObject({
       enabled: true,
       style: {
-        gradient_colors: ["#FFFDF8", "#8FAABD", "#2F4A56"],
-        bloom_color: "#537D96",
+        gradient_colors: ["#F2FFF9", "#B6F0DB", "#667D96"],
+        bloom_color: "#55A88E",
         image_path: "",
       },
       motion: {

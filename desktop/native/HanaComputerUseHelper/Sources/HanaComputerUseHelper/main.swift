@@ -19,6 +19,12 @@ private struct HelperError: Error {
 
 @main
 struct HanaComputerUseHelper {
+    private static let runtimeRegistry = ToolRegistry(handlers: Array(ToolRegistry.default.handlers.values) + [
+        ToolHandler(tool: Tool(name: "hide_agent_cursor", description: "Hide the current visual indicator without changing its settings.", inputSchema: ["type": "object", "properties": [:]]), invoke: { _ in
+            await MainActor.run { AgentCursor.shared.hide() }
+            return CallTool.Result(content: [.text(text: "Cursor hidden.", annotations: nil, _meta: nil)])
+        }),
+    ])
     static func main() {
         do {
             try run()
@@ -92,7 +98,7 @@ struct HanaComputerUseHelper {
 
     private static func callTool(_ name: String, args: [String], raw: Bool, compact: Bool, socketPath: String) async throws {
         let arguments = try decodeArguments(args.first)
-        guard ["drag_foreground", "click_foreground", "release_foreground_input"].contains(name) || ToolRegistry.default.handlers[name] != nil else {
+        guard ["drag_foreground", "click_foreground", "release_foreground_input"].contains(name) || runtimeRegistry.handlers[name] != nil else {
             throw HelperError(code: ExitCode.usage, message: "Unknown tool: \(name)")
         }
 
@@ -129,6 +135,14 @@ struct HanaComputerUseHelper {
         if name == "drag_foreground" || name == "click_foreground" {
             do {
                 let request = try JSONDecoder().decode(ForegroundDragRequest.self, from: Data((args.first ?? "{}").utf8))
+                let config = await ConfigStore.shared.load()
+                await MainActor.run {
+                    AgentCursor.shared.apply(config: config.agentCursor)
+                    applyHanaCursorRuntimeConfig(from: ProcessInfo.processInfo.environment)
+                }
+                // Foreground input owns its own overlay process. Retire the
+                // daemon's previous marker so only one pointer is visible.
+                _ = DaemonClient.sendRequest(DaemonRequest(method: "call", name: "hide_agent_cursor", args: nil), socketPath: socketPath)
                 try await ForegroundDrag.run(request)
                 try emitToolResult(CallTool.Result(content: [.text("Foreground drag released. Inspect the new window state to verify the result.")]), raw: raw, compact: compact)
                 return
@@ -149,7 +163,7 @@ struct HanaComputerUseHelper {
 
         let result: CallTool.Result
         do {
-            result = try await ToolRegistry.default.call(name, arguments: arguments)
+            result = try await runtimeRegistry.call(name, arguments: arguments)
         } catch {
             throw HelperError(code: ExitCode.software, message: "Tool \(name) threw: \(error)")
         }
@@ -239,7 +253,7 @@ struct HanaComputerUseHelper {
                 AgentCursor.shared.apply(config: config.agentCursor)
                 applyHanaCursorRuntimeConfig(from: ProcessInfo.processInfo.environment)
             }
-            let server = DaemonServer(socketPath: socketPath, pidFilePath: nil)
+            let server = DaemonServer(socketPath: socketPath, pidFilePath: nil, registry: runtimeRegistry)
             try await server.run()
             return 0
         } catch {

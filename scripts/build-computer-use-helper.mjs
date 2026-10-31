@@ -1,4 +1,5 @@
 import fs from "fs";
+import {createHash} from 'node:crypto';
 import path from "path";
 import { execFileSync } from "child_process";
 import { fileURLToPath, pathToFileURL } from "url";
@@ -441,6 +442,16 @@ export function applyCuaDriverSourcePatches({ scratchPath } = {}) {
       '                        // Enigma: preserve an already-focused selection.\n                        if AXInput.boolAttribute("AXFocused", of: element) != true {\n                            try? AXInput.setAttribute("AXFocused", on: element, value: kCFBooleanTrue as CFTypeRef)\n                        }', 'avoid key focus reset');
     fs.chmodSync(keyPath,0o644);fs.writeFileSync(keyPath,patched);patchedAny=true;
   }
+  let selectionSource=fs.readFileSync(keyPath,'utf8');
+  if(!selectionSource.includes('import ApplicationServices')) {
+    selectionSource='import ApplicationServices\n'+selectionSource;
+    fs.chmodSync(keyPath,0o644);fs.writeFileSync(keyPath,selectionSource);patchedAny=true;
+  }
+  if(!selectionSource.includes('// Enigma: native full-text selection')) {
+    const insertion=fs.readFileSync(path.join(__dirname,'../desktop/native/HanaComputerUseHelper/Integration/SelectAll.swift.inc'),'utf8');
+    selectionSource=replaceRequired(selectionSource,'                    // Focus the element, then post the key via the',insertion+'\n                    // Focus the element, then post the key via the','native text selection before keyboard fallback');
+    fs.chmodSync(keyPath,0o644);fs.writeFileSync(keyPath,selectionSource);patchedAny=true;
+  }
   const appStateSource = fs.readFileSync(appStatePath, "utf8");
   const patchedAppState = patchCuaDriverVisibleRowsSource(patchCuaDriverAppStateSource(appStateSource));
   if (patchedAppState !== appStateSource) {
@@ -470,6 +481,46 @@ export function applyCuaDriverSourcePatches({ scratchPath } = {}) {
         AgentCursorRenderer.shared.setInitialPosition(point)`, 'bounded cursor arrival');
     cursor=replaceRequired(cursor,'public func playClickPress(duration: CFTimeInterval = 0.65)', 'public func playClickPress(duration: CFTimeInterval = 0.09)', 'short visual press');
     fs.chmodSync(cursorPath,0o644);fs.writeFileSync(cursorPath,cursor);patchedAny=true;
+  }
+  if(!cursor.includes('EnigmaCursorFeedback.shared.click()')) {
+    cursor=replaceRequired(cursor,
+      '    public func playClickPress(duration: CFTimeInterval = 0.09) async {\n        guard isEnabled else { return }',
+      '    public func playClickPress(duration: CFTimeInterval = 0.09) async {\n        guard isEnabled else { return }\n        EnigmaCursorFeedback.shared.click()', 'visible click feedback');
+    cursor=replaceRequired(cursor,'    public func hide() {\n',
+      '    public func hide() {\n        EnigmaCursorFeedback.shared.reset()\n', 'clear feedback on release');
+    fs.chmodSync(cursorPath,0o644);fs.writeFileSync(cursorPath,cursor);patchedAny=true;
+  }
+  if(!cursor.includes('finishEnigmaMove')) {
+    cursor=replaceRequired(cursor,'        animate(to: point)\n','        animate(to: point, duration: duration, options: options)\n', 'pass the actual glide duration');
+    cursor=replaceRequired(cursor,
+      '        try? await Task.sleep(nanoseconds: UInt64(max(0, min(duration, 0.18)) * 1_000_000_000))\n        AgentCursorRenderer.shared.setInitialPosition(point)',
+      '        try? await Task.sleep(nanoseconds: UInt64(AgentCursorRenderer.shared.enigmaDuration * 1_000_000_000))\n        AgentCursorRenderer.shared.finishEnigmaMove()', 'finish interpolated pointer travel');
+    cursor=replaceRequired(cursor,
+      '        AgentCursorRenderer.shared.moveTo(point: point, endAngleDegrees: 45.0)',
+      '        AgentCursorRenderer.shared.beginEnigmaMove(point: point, duration: duration ?? glideDurationSeconds)', 'bounded continuous pointer path');
+    fs.chmodSync(cursorPath,0o644);fs.writeFileSync(cursorPath,cursor);patchedAny=true;
+  }
+  const rendererPath=path.join(path.dirname(cursorPath),'AgentCursorRenderer.swift');
+  let renderer=fs.readFileSync(rendererPath,'utf8');
+  const motion=fs.readFileSync(path.join(__dirname,'../desktop/native/HanaComputerUseHelper/Integration/CursorMotion.swift.inc'),'utf8');
+  if(!renderer.includes('beginEnigmaMove')) {
+    renderer='import AppKit\n'+renderer;
+    renderer=replaceRequired(renderer,'    // -------- Internal state',motion+'\n    // -------- Internal state','continuous cursor motion state');
+    renderer=replaceRequired(renderer,'    public func tick(now: CFTimeInterval) {\n','    public func tick(now: CFTimeInterval) {\n        if tickEnigmaMove(now: now) { return }\n','render the current travel position');
+    renderer=replaceRequired(renderer,'        position = point\n','        enigmaMove = nil\n        position = point\n','direct positioning cancels prior travel');
+    fs.chmodSync(rendererPath,0o644);fs.writeFileSync(rendererPath,renderer);patchedAny=true;
+  } else {
+    const start=renderer.indexOf('    // Enigma: time-based travel'),end=renderer.indexOf('    // -------- Internal state',start);
+    if(start<0||end<start)throw new Error('Review the cursor motion integration markers');
+    const next=renderer.slice(0,start)+motion+'\n'+renderer.slice(end);
+    if(next!==renderer){fs.chmodSync(rendererPath,0o644);fs.writeFileSync(rendererPath,next);patchedAny=true;}
+  }
+  const viewPath=path.join(path.dirname(cursorPath),'AgentCursorView.swift');
+  const currentView=fs.readFileSync(viewPath,'utf8');
+  const viewSource=fs.readFileSync(path.join(__dirname,'../desktop/native/HanaComputerUseHelper/Integration/AgentCursorView.swift'),'utf8');
+  if(currentView!==viewSource) {
+    if(!currentView.startsWith('// Enigma presentation')&&createHash('sha256').update(currentView).digest('hex')!=='930426efcdf0a783207d882b7f6f65cd80ea314fb8d6431b343ee10b8bbaf5d4')throw new Error('Review the updated upstream cursor view before replacing its presentation');
+    fs.chmodSync(viewPath,0o644);fs.writeFileSync(viewPath,viewSource);patchedAny=true;
   }
 
   const scrollSource = fs.readFileSync(scrollToolPath, 'utf8');
@@ -536,6 +587,9 @@ export function buildComputerUseHelper({
   const target = path.join(outDir, "hana-computer-use-helper");
   fs.copyFileSync(source, target);
   fs.chmodSync(target, 0o755);
+  for(const [dependency,license,name] of [['cua','LICENSE.md','cua-LICENSE.txt'],['swift-sdk','LICENSE','swift-mcp-sdk-LICENSE.txt']]) {
+    fs.copyFileSync(path.join(scratchPath,'checkouts',dependency,license),path.join(outDir,name));
+  }
   console.log(`[computer-use-helper] copied ${target}`);
   return { skipped: false, target };
 }
