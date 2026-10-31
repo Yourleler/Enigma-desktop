@@ -63,6 +63,18 @@ const CUA_CLICK_TOOL_RELATIVE_PATH = path.join(
 const CUA_SCROLL_TOOL_RELATIVE_PATH = path.join('checkouts', 'cua', 'libs', 'cua-driver', 'Sources', 'CuaDriverServer', 'Tools', 'ScrollTool.swift');
 const CUA_PRESS_KEY_RELATIVE_PATH = path.join('checkouts', 'cua', 'libs', 'cua-driver', 'Sources', 'CuaDriverServer', 'Tools', 'PressKeyTool.swift');
 const CUA_FOCUS_ENFORCER_RELATIVE_PATH = path.join('checkouts', 'cua', 'libs', 'cua-driver', 'Sources', 'CuaDriverCore', 'Focus', 'SyntheticAppFocusEnforcer.swift');
+const CUA_MOUSE_INPUT_RELATIVE_PATH = path.join('checkouts', 'cua', 'libs', 'cua-driver', 'Sources', 'CuaDriverCore', 'Input', 'MouseInput.swift');
+
+export function patchCuaDriverMouseInputSource(source) {
+  const marker = '// Enigma: background input must not promote itself to system HID.';
+  if (source.includes(marker)) return source;
+  const automaticForeground = /        let targetIsFrontmost =\n            NSRunningApplication\(processIdentifier: pid\)\?\.isActive \?\? false\n        if targetIsFrontmost \{[\s\S]*?\n            return\n        \}/g;
+  const branches = [...source.matchAll(automaticForeground)];
+  if (branches.length !== 2 || !branches[0][0].includes('clickFrontmostViaHIDTap') || !branches[1][0].includes('dragFrontmostViaHIDTap')) {
+    throw new Error('[computer-use-helper] Cua automatic foreground input anchors changed');
+  }
+  return source.replace(automaticForeground, `        ${marker}\n        // Window focus is not permission to move the user's pointer.\n        // Explicit foreground input uses the separate host-approved helper.`);
+}
 
 const CUA_AX_PATCH_SENTINEL = "cuaDriverAXMessagingTimeoutSeconds";
 const CUA_CLICK_PATCH_SENTINEL = '"show_default_ui": "AXShowDefaultUI"';
@@ -426,6 +438,13 @@ export function applyCuaDriverSourcePatches({ scratchPath } = {}) {
   if (!fs.existsSync(scrollToolPath)) throw new Error('Cua ScrollTool.swift is missing');
 
   let patchedAny = false;
+  const mousePath = path.join(scratchPath, CUA_MOUSE_INPUT_RELATIVE_PATH);
+  const mouseSource = fs.readFileSync(mousePath, 'utf8');
+  const patchedMouse = patchCuaDriverMouseInputSource(mouseSource);
+  if (patchedMouse !== mouseSource) {
+    fs.chmodSync(mousePath, 0o644); fs.writeFileSync(mousePath, patchedMouse); patchedAny = true;
+    console.log('[computer-use-helper] kept coordinate clicks and drags cursor-neutral regardless of window focus');
+  }
   const focusPath = path.join(scratchPath, CUA_FOCUS_ENFORCER_RELATIVE_PATH);
   const focus = fs.readFileSync(focusPath, 'utf8');
   if (!focus.includes('// Enigma: redundant focus writes')) {

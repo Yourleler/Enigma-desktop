@@ -18,6 +18,15 @@ distance, then dispatches the click. Reduced Motion keeps the contact mark
 without scaling or travel animation. The native window remains click-through. No feedback
 animation changes file content or broadens application access.
 
+The host patches the pinned driver's implicit frontmost-window HID routing.
+Coordinate clicks and drags remain per-process input even when the target is
+frontmost; visual pointer travel never grants permission to move the system
+pointer. Surfaces that reject per-process events may need the separate explicit
+foreground helper. The model-facing tool requires a visible, single-action
+confirmation before using that helper; app access approval is insufficient.
+Declined, unavailable, or cancelled confirmation dispatches no input. Existing
+snapshot freshness and foreground cancellation checks remain in force.
+
 Cua's MIT license is retained in the helper output alongside the Swift MCP SDK
 license. This view is authored for Enigma; the surrounding Cua code retains its
 upstream attribution and license.

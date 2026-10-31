@@ -1041,7 +1041,7 @@ export function createMacosCuaProvider({
           click_count:action.type==='double_click'?2:1,modifier:action.modifiers||[]},_ctx?.signal);
       }
       if(action.type==='double_click'&&!(action.snapshotElement?.actions||[]).some((name:string)=>['AXOpen','open'].includes(name))) {
-        throw computerUseError(COMPUTER_USE_ERRORS.ACTION_REQUIRES_FOREGROUND,'This target has no AXOpen action. Background double-click may be ignored. Read a fresh state, then use double_click with foreground:true and screenshot x/y coordinates. No click was dispatched.');
+        throw computerUseError(COMPUTER_USE_ERRORS.ACTION_REQUIRES_FOREGROUND,'This target has no AXOpen action. Background double-click may be ignored. If needed, request a visible one-action user confirmation through double_click with foreground:true and fresh screenshot x/y coordinates. Never silently take over the system pointer. No click was dispatched.');
       }
       if (action.type === 'click_point' || action.type === 'double_click') {
         const payload:any={pid,window_id:windowId};

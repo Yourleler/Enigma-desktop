@@ -3653,6 +3653,13 @@
       "allowForSession": "本次工作階段不再詢問此工具",
       "allowAlways": "一律允許此工具",
       "grantFailed": "無法記住這次授權"
+    },
+    "computerForeground": {
+      "title": "暫時接管系統滑鼠？",
+      "body": "此操作會將目標視窗帶到前景，並移動你的實際滑鼠。只允許這一次；按 Esc 或移動滑鼠可中斷。",
+      "subject": "前景點擊或拖曳",
+      "confirm": "僅允許這一次",
+      "reject": "保持背景操作"
     }
   },
   "auth": {

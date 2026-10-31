@@ -1,3 +1,4 @@
+import { ConfirmStore } from "../lib/confirm-store.ts";
 import { describe, expect, it, vi } from "vitest";
 import { ComputerHost } from "../core/computer-use/computer-host.ts";
 import { ComputerProviderRegistry } from "../core/computer-use/provider-registry.ts";
@@ -91,7 +92,7 @@ function makeNativeCursorTool() {
   return { tool, ctx, emitted };
 }
 
-function makeCoordinateOnlyTool() {
+function makeCoordinateOnlyTool(options: any = {}) {
   const provider = createMockComputerProvider({ providerId: "macos:cua" });
   provider.capabilities.pointClick = "allowed";
   provider.createLease = async (_ctx, target) => ({
@@ -115,13 +116,14 @@ function makeCoordinateOnlyTool() {
     getAgentId: () => "hana",
     isAgentToolEnabled: () => true,
     emitEvent: (event, sessionPath) => emitted.push({ event, sessionPath }),
+    ...options,
   });
   const ctx = {
     sessionManager: { getSessionFile: () => "/tmp/session.jsonl" },
     agentId: "hana",
     model: { id: "gpt-5.5", provider: "openai", input: ["text", "image"] },
   };
-  return { tool, ctx, emitted };
+  return { tool, ctx, emitted, provider, host };
 }
 
 function makeHybridCoordinateTool() {
@@ -860,4 +862,32 @@ describe("computer tool", () => {
     expect((result.details as any).confirmed).toBe(false);
     expect(approve).not.toHaveBeenCalled();
   });
+});
+
+describe('explicit foreground pointer takeover',()=>{
+ for(const decision of ['confirmed','rejected'])it(`waits for one-action user confirmation: ${decision}`,async()=>{
+  const store=new ConfirmStore();const f=makeCoordinateOnlyTool({confirmStore:store,getPermissionMode:()=>"ask"});const spy=vi.spyOn(f.provider,'performAction');
+  await f.tool.execute('start',{action:'start',appId:'app.notes'},undefined,undefined,f.ctx);
+  await f.tool.execute('state',{action:'get_app_state'},undefined,undefined,f.ctx);
+  const pending=f.tool.execute('click',{action:'click_point',x:20,y:30,foreground:true},undefined,undefined,f.ctx);
+  await vi.waitFor(()=>expect(f.emitted.some(e=>e.event.request?.kind==='computer_foreground_input')).toBe(true));
+  expect(spy).not.toHaveBeenCalled();const request=f.emitted.find(e=>e.event.request?.kind==='computer_foreground_input').event.request;
+  store.resolve(request.confirmId,decision,undefined);await pending;expect(spy).toHaveBeenCalledTimes(decision==='confirmed'?1:0);
+  await f.host.dispose();
+ });
+ it('does not dispatch foreground input when no human confirmation surface exists',async()=>{
+  const f=makeCoordinateOnlyTool(),spy=vi.spyOn(f.provider,'performAction');
+  await f.tool.execute('start',{action:'start',appId:'app.notes'},undefined,undefined,f.ctx);await f.tool.execute('state',{action:'get_app_state'},undefined,undefined,f.ctx);
+  const result=await f.tool.execute('click',{action:'click_point',x:20,y:30,foreground:true},undefined,undefined,f.ctx);
+  expect((result.details as any).errorCode).toBe('ACTION_REQUIRES_INPUT_INJECTION_APPROVAL');expect(spy).not.toHaveBeenCalled();await f.host.dispose();
+ });
+});
+
+it('cancels pending pointer takeover without input or a surviving approval',async()=>{
+ const store=new ConfirmStore(),f=makeCoordinateOnlyTool({confirmStore:store,getPermissionMode:()=> 'ask'}),spy=vi.spyOn(f.provider,'performAction');
+ await f.tool.execute('start',{action:'start',appId:'app.notes'},undefined,undefined,f.ctx);await f.tool.execute('state',{action:'get_app_state'},undefined,undefined,f.ctx);
+ const abort=new AbortController(),pending=f.tool.execute('click',{action:'click_point',x:20,y:30,foreground:true},abort.signal,undefined,f.ctx);
+ await vi.waitFor(()=>expect(f.emitted.some(e=>e.event.request?.kind==='computer_foreground_input')).toBe(true));
+ const id=f.emitted.find(e=>e.event.request?.kind==='computer_foreground_input').event.request.confirmId;abort.abort();await pending;
+ expect(store.get(id)).toBeNull();expect(spy).not.toHaveBeenCalled();await f.host.dispose();
 });

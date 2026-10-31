@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   computerUseHelperOutputDir,
   patchCuaDriverAppStateSource,
+  patchCuaDriverMouseInputSource,
   patchCuaDriverClickToolSource,
   patchCuaDriverVisibleRowsSource,
   patchCuaDriverScrollToolSource,
@@ -148,4 +149,19 @@ describe("Computer Use helper build script", () => {
     expect(patched).toContain('"show_default_ui": "AXShowDefaultUI"');
     expect(patchCuaDriverClickToolSource(patched)).toBe(patched);
   });
+});
+
+it('never promotes background pointer input solely because the target is frontmost',()=>{
+ const branch=name=>`        let targetIsFrontmost =
+            NSRunningApplication(processIdentifier: pid)?.isActive ?? false
+        if targetIsFrontmost {
+            try ${name}()
+            return
+        }`;
+ const source=branch('clickFrontmostViaHIDTap')+'\nkeepPidRoutedClick()\n'+branch('dragFrontmostViaHIDTap')+'\nkeepPidRoutedDrag()';
+ const patched=patchCuaDriverMouseInputSource(source);
+ expect(patched).not.toContain('try clickFrontmostViaHIDTap');expect(patched).not.toContain('try dragFrontmostViaHIDTap');
+ expect(patched).toContain('keepPidRoutedClick()');expect(patched).toContain('keepPidRoutedDrag()');
+ expect(patchCuaDriverMouseInputSource(patched)).toBe(patched);
+ expect(()=>patchCuaDriverMouseInputSource('upstream changed')).toThrow('anchors changed');
 });

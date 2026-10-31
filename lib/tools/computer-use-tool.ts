@@ -432,6 +432,26 @@ async function createLeaseWithAppApproval(options, toolCtx, host, params) {
   }
 }
 
+async function confirmForegroundInput(options, toolCtx, params) {
+  const policy = resolveSessionApprovalPolicy({mode:resolveComputerPermissionMode(options,toolCtx.sessionPath),approvalPolicy:toolCtx.approvalPolicy,allowHumanApproval:toolCtx.allowHumanApproval});
+  const store = options.getConfirmStore?.() || options.confirmStore;
+  if (toolCtx.allowHumanApproval === false || policy === SESSION_APPROVAL_POLICIES.DENY_ON_PROMPT || !store || !options.emitEvent || !toolCtx.sessionPath) {
+    throw computerUseError(COMPUTER_USE_ERRORS.ACTION_REQUIRES_INPUT_INJECTION_APPROVAL,'This action moves the system pointer. A visible, one-action user confirmation is required; use background input or report the limitation. No input was dispatched.');
+  }
+  const lease=options.getComputerHost?.()?.getActiveLease?.(toolCtx);
+  const payload = {appId:lease?.appId,windowId:lease?.windowId,leaseId:params.leaseId,snapshotId:params.snapshotId,action:params.action,target:actionTarget(params)};
+  const {confirmId,promise} = store.create('computer_foreground_input',payload,toolCtx.sessionPath);
+  options.emitEvent({type:'session_confirmation',request:{type:'session_confirmation',kind:'computer_foreground_input',confirmId,surface:'input',status:'pending',severity:'elevated',title:t('approval.computerForeground.title'),body:t('approval.computerForeground.body'),subject:{label:lease?.appId||t('approval.computerForeground.subject'),detail:t('approval.computerForeground.body')},actions:{confirmLabel:t('approval.computerForeground.confirm'),rejectLabel:t('approval.computerForeground.reject')},payload}},toolCtx.sessionPath);
+  const abort=()=>store.resolve(confirmId,'aborted');
+  toolCtx.signal?.addEventListener('abort',abort,{once:true});
+  try {
+    if(toolCtx.signal?.aborted)abort();
+    const decision=await promise;
+    toolCtx.signal?.throwIfAborted();
+    if(decision?.action!=='confirmed')throw computerUseError(COMPUTER_USE_ERRORS.ACTION_BLOCKED_BY_POLICY,'Foreground pointer takeover was not confirmed. No input was dispatched.');
+  } finally {toolCtx.signal?.removeEventListener('abort',abort);}
+}
+
 async function withActionOverlay(options, toolCtx, params, fn) {
   const presentation = params.presentation || {};
   const base = {
@@ -564,7 +584,7 @@ export function createComputerUseTool(options: Record<string, any> = {}) {
       toX: Type.Optional(Type.Number()),
       toY: Type.Optional(Type.Number()),
       durationMs: Type.Optional(Type.Number({minimum:100,maximum:2000})),
-      foreground: Type.Optional(Type.Boolean({description:'For drag, double_click or click_point: raise only the approved window and use the real pointer with current screenshot coordinates. Native drag/drop and double-click without AXOpen require this; do not pass elementId. Stops on Escape, pointer takeover or focus change. Omit for background input.'})),
+      foreground: Type.Optional(Type.Boolean({description:'For drag, double_click or click_point: raise only the approved window and use the real pointer with current screenshot coordinates. Native drag/drop and double-click without AXOpen require this; do not pass elementId. Requires a visible one-action user confirmation even when app access was already granted. Stops on Escape, pointer takeover or focus change. Omit for cursor-neutral input; window focus never authorizes takeover.'})),
       modifiers: Type.Optional(Type.Array(StringEnum(['cmd','shift','ctrl','option']))),
       value: Type.Optional(Type.String()),
       query: Type.Optional(Type.String({description:'For get_app_state: filter element labels/roles.'})),
@@ -665,6 +685,9 @@ export function createComputerUseTool(options: Record<string, any> = {}) {
             const leaseParams = resolveCurrentLeaseParams(host, toolCtx, params);
             if(!leaseParams.leaseId)throw computerUseError(COMPUTER_USE_ERRORS.LEASE_NOT_FOUND,'Start an approved app lease before interacting.',{action:params.action});
             if(!leaseParams.snapshotId)throw computerUseError(COMPUTER_USE_ERRORS.STALE_SNAPSHOT,'Read get_app_state before interacting.',{action:params.action});
+            if (['drag','double_click','click_point'].includes(params.action) && params.foreground === true) {
+              await confirmForegroundInput(options,toolCtx,{...params,...leaseParams});
+            }
             const presentation = ['drag','double_click','click_point'].includes(params.action) && params.foreground === true
               ? {...(host.getActionPresentation?.(toolCtx, leaseParams.leaseId, params.action) || {}),inputMode:'foreground-input',requiresForeground:true,interruptKey:'Escape'}
               : host.getActionPresentation?.(toolCtx, leaseParams.leaseId, params.action) || {};

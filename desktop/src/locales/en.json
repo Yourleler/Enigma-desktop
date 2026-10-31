@@ -3658,6 +3658,13 @@
       "allowForSession": "Don’t ask again this session",
       "allowAlways": "Always allow this tool",
       "grantFailed": "Could not remember this decision"
+    },
+    "computerForeground": {
+      "title": "Temporarily take over the system pointer?",
+      "body": "This action brings the target window forward and moves your real pointer. Allow this action only; press Esc or move the pointer to interrupt.",
+      "subject": "Foreground click or drag",
+      "confirm": "Allow this action",
+      "reject": "Keep working in background"
     }
   },
   "auth": {

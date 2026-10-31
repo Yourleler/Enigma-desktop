@@ -3541,6 +3541,13 @@
       "allowForSession": "本会话不再询问此工具",
       "allowAlways": "始终允许此工具",
       "grantFailed": "无法记住这次授权"
+    },
+    "computerForeground": {
+      "title": "临时接管系统鼠标？",
+      "body": "此操作需要将目标窗口带到前台，并移动你的真实鼠标。仅允许这一次；按 Esc 或移动鼠标可中断。",
+      "subject": "前台点击或拖动",
+      "confirm": "仅允许这一次",
+      "reject": "保持后台操作"
     }
   },
   "auth": {

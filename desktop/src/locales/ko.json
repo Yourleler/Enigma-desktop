@@ -3653,6 +3653,13 @@
       "allowForSession": "이 세션에서는 다시 묻지 않기",
       "allowAlways": "이 도구를 항상 허용",
       "grantFailed": "이 허용을 기억하지 못했습니다"
+    },
+    "computerForeground": {
+      "title": "시스템 포인터를 잠시 제어할까요?",
+      "body": "대상 창을 앞으로 가져와 실제 포인터를 움직입니다. 이번 동작만 허용하며 Esc 키나 마우스 이동으로 중단할 수 있습니다.",
+      "subject": "전면 클릭 또는 드래그",
+      "confirm": "이번 동작만 허용",
+      "reject": "백그라운드 유지"
     }
   },
   "auth": {
