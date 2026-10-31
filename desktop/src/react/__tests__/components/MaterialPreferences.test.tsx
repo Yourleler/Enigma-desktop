@@ -23,3 +23,12 @@ it('covers small controls at the dense end while preserving their clear endpoint
  expect(Number(document.body.style.getPropertyValue('--glass-control-edge-opacity'))).toBeCloseTo(.14);
  expect(document.body.style.getPropertyValue('--glass-control-blur')).toBe('20.5px');
 });
+it('adjusts the main content and outer chrome together, keeping content material denser',()=>{
+ for(const tint of [0,50,100]){
+  act(()=>saveMaterialPreferences({glass:true,motion:true,tint}));
+  const style=document.body.style;
+  expect(parseFloat(style.getPropertyValue('--glass-content-blur'))).toBeGreaterThan(parseFloat(style.getPropertyValue('--glass-chrome-blur')));
+  expect(parseFloat(style.getPropertyValue('--glass-content-mix'))).toBeGreaterThan(parseFloat(style.getPropertyValue('--glass-chrome-mix')));
+ }
+ expect(document.body.style.getPropertyValue('--glass-content-mix')).toBe('96%');
+});

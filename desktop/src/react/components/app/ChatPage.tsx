@@ -7,6 +7,7 @@ import { InputArea, type InputAreaProps } from '../InputArea';
 import { WelcomeScreen } from '../WelcomeScreen';
 import { ChatArea } from '../chat/ChatArea';
 import { RegionalErrorBoundary } from '../RegionalErrorBoundary';
+import {HeaderSlot} from './HeaderSlot';
 
 function WelcomeContainer() {
   const visible = useStore(s => s.welcomeVisible);
@@ -30,11 +31,11 @@ export function ChatPage({
 
   return (
     <>
-      <div className="enigma-conversation-header">
+      <HeaderSlot id="enigma-titlebar-chat-tools"><div className="enigma-conversation-header">
         {!currentSessionPath&&<ProjectContextBar compact/>}
         <EngineeringToolbar compact/>
-        <SessionClock compact/>
-      </div>
+        <SessionClock compact inline/>
+      </div></HeaderSlot>
       <div className={`chat-area${hasPanels ? ' has-panels' : ''}`}>
         <WelcomeContainer />
         <RegionalErrorBoundary region={`${regionPrefix}chat`} resetKeys={[currentSessionPath]}>

@@ -9,7 +9,7 @@ export function formatClockTime(at:number|null):string {
   if(!at || !Number.isFinite(at))return '未记录';
   return new Date(at).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
 }
-export function SessionClock({compact=false}:{compact?:boolean}={}) {
+export function SessionClock({compact=false,inline=false}:{compact?:boolean;inline?:boolean}={}) {
   const path=useStore(s=>s.currentSessionPath), connection=useStore(s=>s.activeServerConnectionId),connected=useStore(s=>s.connected),welcome=useStore(s=>s.welcomeVisible);
   const meter=useTokenMeterStore(s=>path?s.metersBySession[tokenMeterKey(connection,path)]:undefined);
   const meterReceipt=useRef({value:meter,at:Date.now()});
@@ -45,6 +45,14 @@ export function SessionClock({compact=false}:{compact?:boolean}={}) {
   const elapsed=clock?.elapsedMs==null?null:clock.elapsedMs+(clock.state==='running'&&!stale&&received?Math.max(0,now-received):0);
   const label=clock?.kind==='goal'?'Goal 循环':clock?.kind==='conductor'?'管家协作':'本轮对话';
   const state=stale?'状态待同步':clock?.state==='running'?'运行中':clock?.state==='paused'?'已暂停':clock?.state==='done'?'已结束':clock?.state==='stopped'?'已停止':'状态待核对';
+  if(inline){
+    const started=data?.value.createdAt;
+    const detail=`对话开始 ${data?formatClockTime(started??null):error?'未获取':'读取中…'}${clock?`\n${label} · ${state} · ${elapsedClock(elapsed)}\n开始 ${formatClockTime(clock.startedAt)}`:''}`;
+    return <div className={styles.inlineBar} data-testid="session-clock" aria-label="对话时间" data-tooltip={detail}>
+      <span>开始 <time>{started?new Date(started).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',hour12:false}):'—'}</time></span>
+      {clock&&<span className={styles.run} data-active={clock.state==='running'&&!stale}>{state} <strong>{elapsedClock(elapsed)}</strong></span>}
+    </div>;
+  }
   return <div className={styles.bar} aria-label="对话时间" data-compact={compact||undefined} data-testid="session-clock">
     <span>对话开始 <time dateTime={data?.value.createdAt?new Date(data.value.createdAt).toISOString():undefined}>{data?formatClockTime(data.value.createdAt):error?'未获取':'读取中…'}</time></span>
     {clock&&<><span className={styles.run} data-active={clock.state==='running'&&!stale}>{label} · {state} <strong>{elapsedClock(elapsed)}</strong></span><span>{clock.kind==='goal'?'目标开始':clock.kind==='conductor'?'协作开始':'本轮开始'} <time>{formatClockTime(clock.startedAt)}</time></span></>}

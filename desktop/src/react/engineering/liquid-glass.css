@@ -274,13 +274,14 @@ body.enigma-surface.enigma-glass-off .enigma-workspace-shell { background:var(--
 body.enigma-surface [data-liquid="sheet"] { --glass-fill:color-mix(in srgb,var(--eg-card) var(--glass-frame-mix,57%),transparent); --glass-blur:14px; border-radius:22px; }
 body.enigma-surface [data-glass-frame], body.enigma-surface .enigma-modal[data-glass-frame], body.enigma-surface .enigma-panel[data-glass-frame] {
   --glass-light-opacity: 0;
-  background:radial-gradient(ellipse 340px 200px at var(--glass-pointer-x,50%) var(--glass-pointer-y,50%),rgb(var(--glass-aura-rgb) / calc(var(--glass-light-opacity,0) * .22)),transparent 80%),linear-gradient(140deg,color-mix(in srgb,var(--glass-edge) 6%,transparent),transparent 58%),color-mix(in srgb,var(--eg-card) var(--glass-frame-mix,57%),transparent);
+  background:radial-gradient(ellipse var(--glass-spot-width,340px) var(--glass-spot-height,200px) at var(--glass-pointer-x,50%) var(--glass-pointer-y,50%),rgb(var(--glass-aura-rgb) / calc(var(--glass-light-opacity,0) * var(--glass-spot-strength,.22))),transparent 80%),linear-gradient(140deg,color-mix(in srgb,var(--glass-edge) 6%,transparent),transparent 58%),color-mix(in srgb,var(--eg-card) var(--glass-frame-mix,57%),transparent);
   border:1px solid var(--eg-stroke-strong);
   box-shadow:inset 0 1px 0 var(--glass-edge),inset 0 -1px 0 var(--glass-edge-low),0 18px 48px -20px var(--glass-shadow);
   backdrop-filter:blur(14px) saturate(1.18); -webkit-backdrop-filter:blur(14px) saturate(1.18);
 }
 body.enigma-surface .enigma-modal[data-glass-frame] > :is(header,footer) { background:transparent; }
 body.enigma-surface [data-glass-frame="settings"] .settings-panel { background:transparent; }
+body.enigma-surface [data-glass-frame="settings"] { --glass-spot-width:180px;--glass-spot-height:120px;--glass-spot-strength:.16; }
 body.enigma-surface .settings-panel { --bg-card:color-mix(in srgb,var(--eg-card) 32%,transparent); }
 body.enigma-surface .settings-panel [data-settings-surface="card"] { background:color-mix(in srgb,var(--eg-card) 28%,transparent); }
 body.enigma-surface .settings-panel input:not([type="range"]):not([type="checkbox"]),body.enigma-surface .settings-panel textarea { background:color-mix(in srgb,var(--eg-card) 36%,transparent); }

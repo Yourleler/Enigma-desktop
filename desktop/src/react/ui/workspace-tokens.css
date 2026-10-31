@@ -1,0 +1,37 @@
+/* Shared workbench spacing, overlays and motion values. */
+:root {
+    --enigma-spacing-1: 8px;
+    --enigma-spacing-2: 4px;
+    --enigma-spacing-3: 12px;
+    --enigma-spacing-4: 2px;
+    --enigma-spacing-5: 6px;
+    --enigma-spacing-6: 1px;
+    --enigma-spacing-7: 10px;
+    --enigma-spacing-8: 5px;
+    --enigma-spacing-9: 52px;
+    --enigma-spacing-10: 3px;
+    --enigma-spacing-11: 9px;
+    --enigma-spacing-12: 7px;
+    --enigma-spacing-13: 18px;
+    --enigma-spacing-14: 14px;
+    --enigma-color-15: rgba(, 0.12);
+    --enigma-color-16: rgba(var(--accent-rgb), 0.08);
+    --enigma-color-17: rgba(40, 36, 34, 0.08);
+    --enigma-color-18: rgba(0, 0, 0, 0.14);
+    --enigma-color-19: rgba(0, 0, 0, 0.07);
+    --enigma-duration-20: 1.5s;
+    --enigma-duration-21: 180ms;
+    --enigma-spacing-22: 16px;
+    --enigma-spacing-23: 22px;
+    --enigma-spacing-24: 11px;
+    --enigma-color-25: rgb(0 0 0 / 20%);
+    --enigma-duration-26: 1.8s;
+    --enigma-duration-27: 2.1s;
+    --enigma-color-28: rgba(, 0.18);
+    --enigma-color-29: rgba(, 0.1);
+    --enigma-color-30: #177d52;
+    --enigma-color-31: #73d6ad;
+    --enigma-color-32: #b63354;
+    --enigma-color-33: #f2a0ad;
+    --enigma-spacing-34: 24px;
+}

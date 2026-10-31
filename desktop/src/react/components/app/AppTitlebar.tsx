@@ -30,7 +30,7 @@ export function AppTitlebar({
   centerTitle = null,
   showNewSessionButton = false,
   showPreviewToggle = false,
-  showChannelTabs = true,
+  showChannelTabs = false,
   showWidgetButtons = true,
 }: AppTitlebarProps) {
   const t = window.t ?? ((p: string) => p);
@@ -65,11 +65,15 @@ export function AppTitlebar({
           </button>
         )}
       </div>
+      <div className="tb-conversation-group">
       {centerTitle && (
         <div className="tb-center-title" aria-label={t('titlebar.currentChatTitle')} title={centerTitle}>
           <span>{centerTitle}</span>
         </div>
       )}
+      <div id="enigma-titlebar-chat-tools"/>
+      </div>
+      <div id="enigma-titlebar-workspace" hidden={!jianOpen}/>
       <div className="tb-right-group">
         {showChannelTabs && <div className="enigma-window-modes"><ChannelTabBar /></div>}
         {showWidgetButtons && <WidgetButtons />}

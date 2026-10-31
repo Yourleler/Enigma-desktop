@@ -25,6 +25,10 @@ export function applyMaterialPreferences(value:MaterialPreferences){
  document.body.style.setProperty('--glass-control-highlight',`${10+tint*.32-35*dense}%`);
  document.body.style.setProperty('--glass-menu-mix',`${38+tint*.32+28*dense}%`);
  document.body.style.setProperty('--glass-frame-mix',`${38+tint*.38+22*dense}%`);
+ document.body.style.setProperty('--glass-chrome-mix',`${2+tint*.1+20*dense}%`);
+ document.body.style.setProperty('--glass-chrome-blur',`${.5+tint*.035+7*dense}px`);
+ document.body.style.setProperty('--glass-content-mix',`${6+tint*.72+18*dense}%`);
+ document.body.style.setProperty('--glass-content-blur',`${2+tint*.12+18*dense}px`);
 }
 export function saveMaterialPreferences(value:MaterialPreferences){
  localStorage.setItem('enigma-appearance',JSON.stringify(value));

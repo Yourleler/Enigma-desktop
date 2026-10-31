@@ -1,4 +1,5 @@
 import { useLayoutEffect } from 'react';
+import './workspace-tokens.css';
 import { isDarkTheme, STORAGE_KEY, resolveSavedTheme, type ThemeId } from '../../shared/theme-registry';
 import '../engineering/enigma-design.css';
 import { LiquidGlass } from './LiquidGlass';

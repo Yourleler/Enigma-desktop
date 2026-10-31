@@ -5,3 +5,6 @@
 .run[data-active="true"]::before { content:''; width:6px; height:6px; border-radius:50%; background:var(--accent); }
 .detail { font-size:11px; }
 @media(max-width:600px){.bar {padding:var(--space-5) var(--space-12);gap:var(--space-3) var(--space-10);}}
+.inlineBar { display:flex;align-items:center;flex-wrap:nowrap;gap:8px;white-space:nowrap;font:10px/1.4 var(--font-ui);color:var(--text-muted);font-variant-numeric:tabular-nums; }
+.inlineBar span { display:inline-flex;align-items:center;gap:4px; }
+.inlineBar time { color:var(--text); }

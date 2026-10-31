@@ -2,7 +2,7 @@ import React, { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useStat
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { AppTitlebar } from '../components/app/AppTitlebar';
 import { ChatPage } from '../components/app/ChatPage';
-import { ChatSidebar } from '../components/app/ChatSidebar';
+import { ChatSidebar,AppNavigationRail } from '../components/app/ChatSidebar';
 import { MainContent } from '../MainContent';
 import { StatusBar } from '../components/StatusBar';
 import { ToastContainer } from '../components/ToastContainer';
@@ -345,7 +345,10 @@ function MobileDesktopShell({
         </div>
       )}
       <div className="app mobile-desktop-app" data-preview-expanded={previewExpanded || undefined} data-layout-drawer={layoutDrawer || undefined}>
+        <AppNavigationRail showActivityBars={false} showSettingsButton={settingsAvailable} onOpenSettings={()=>openSettingsModal()}/>
+        <div className="enigma-workspace-frame">
         <ChatSidebar
+          showNavigationRail={false}
           open={sidebarOpen && currentTab === 'chat'}
           includeChannels={false}
           showSettingsButton={settingsAvailable}
@@ -363,6 +366,7 @@ function MobileDesktopShell({
             <LazyWorkspaceCompanionRail />
           </Suspense>
         )}
+        </div>
       </div>
       <StatusBar />
       <Suspense fallback={null}>

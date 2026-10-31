@@ -6,6 +6,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useStore } from '../../stores';
 import { AppPages } from '../../components/app/AppPages';
+import {useRightDock} from '../../stores/right-dock-store';
 
 vi.mock('../../MainContent', () => ({
   MainContent: ({ children }: { children: React.ReactNode }) => (
@@ -68,6 +69,7 @@ vi.mock('../../components/BridgePanel', () => ({
 describe('AppPages page ownership', () => {
   beforeEach(() => {
     window.t = ((key: string) => key) as typeof window.t;
+    useRightDock.setState({views:{}});
     useStore.setState({
       currentTab: 'chat',
       welcomeVisible: false,
@@ -78,6 +80,7 @@ describe('AppPages page ownership', () => {
       channelInfoName: '',
       jianOpen: true,
       previewOpen: true,
+      previewItems: [],openTabs:[],activeTabId:null,
     } as never);
   });
 
@@ -86,6 +89,7 @@ describe('AppPages page ownership', () => {
   });
 
   it('renders the file preview only on the chat page', () => {
+    useStore.setState({previewItems:[{id:'fixture',type:'markdown',title:'fixture.md',content:'# Preview fixture',ext:'md'}],openTabs:['fixture'],activeTabId:'fixture'} as never);
     render(<AppPages />);
 
     expect(screen.getByTestId('chat-area')).toBeInTheDocument();

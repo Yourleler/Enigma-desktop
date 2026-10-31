@@ -75,13 +75,13 @@ describe('AppTitlebar', () => {
 
   it('retains the same right-side page switcher when the conversation title disappears', () => {
     const props = { sidebarOpen:true, jianOpen:true, onToggleSidebar:vi.fn(), onToggleJian:vi.fn() };
-    const view = render(<AppTitlebar {...props} centerTitle="正在工作"/>);
+    const view = render(<AppTitlebar {...props} showChannelTabs centerTitle="正在工作"/>);
     const tabs = screen.getByTestId('channel-tabs');
     expect(tabs.closest('.tb-right-group')).not.toBeNull();
-    view.rerender(<AppTitlebar {...props}/>);
+    view.rerender(<AppTitlebar {...props} showChannelTabs/>);
     expect(screen.getByTestId('channel-tabs')).toBe(tabs);
     expect(tabs.closest('.enigma-window-modes')?.parentElement).toHaveClass('tb-right-group');
-    view.rerender(<AppTitlebar {...props} centerTitle="回到聊天"/>);
+    view.rerender(<AppTitlebar {...props} showChannelTabs centerTitle="回到聊天"/>);
     expect(screen.getByTestId('channel-tabs')).toBe(tabs);
   });
 

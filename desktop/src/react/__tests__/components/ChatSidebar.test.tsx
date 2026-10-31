@@ -5,7 +5,7 @@ import React from 'react';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useStore } from '../../stores';
-import { ChatSidebar, ChatSidebarContent } from '../../components/app/ChatSidebar';
+import { ChatSidebar, ChatSidebarContent,AppNavigationRail } from '../../components/app/ChatSidebar';
 
 vi.mock('../../components/channels/ChannelList', () => ({
   ChannelListSidebar: () => <section data-testid="channel-list-sidebar" />,
@@ -68,6 +68,12 @@ describe('ChatSidebarContent', () => {
   });
 
   it('places settings at the bottom of the narrow application rail',()=>{const onOpenSettings=vi.fn();render(<ChatSidebarContent onNewSession={vi.fn()} onCollapse={vi.fn()} onOpenSettings={onOpenSettings}/>);const settings=screen.getByRole('button',{name:'设置'});expect(settings.closest('.enigma-sidebar-rail-bottom')).toBeTruthy();fireEvent.click(settings);expect(onOpenSettings).toHaveBeenCalledOnce();expect(screen.getByRole('button',{name:'搜索对话历史'})).toBeVisible();});
+
+  it('keeps the outer navigation and settings accessible when the conversation list is collapsed',()=>{
+    const open=vi.fn();render(<div className="app"><AppNavigationRail onOpenSettings={open}/><div className="enigma-workspace-frame"><ChatSidebar open={false} showNavigationRail={false} includeChannels={false} onNewSession={vi.fn()} onCollapse={vi.fn()}/></div></div>);
+    const settings=screen.getByRole('button',{name:'设置'});expect(settings.closest('[inert]')).toBeNull();
+    fireEvent.click(settings);expect(open).toHaveBeenCalledOnce();expect(screen.getAllByRole('navigation',{name:'应用导航'})).toHaveLength(1);
+  });
 
   it('opens the skills panel from the activity bar below automation', () => {
     const onTogglePanel = vi.fn();

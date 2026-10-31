@@ -299,7 +299,7 @@ describe('MobileApp', () => {
       const url=String(input);return Promise.resolve(jsonResponse(url.includes('/api/web-auth/session')?{authenticated:true,principal:principal(['chat','resources.read','files.read','files.write','settings.read'])}:jsonResponseForMobile(url,options)));
     });
     render(<MobileApp/>);await waitForMobileChatReady();
-    fireEvent.click(screen.getByTitle('settings.title'));expect(await screen.findByTestId('mobile-settings-modal')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button',{name:'settings.title'}));expect(await screen.findByTestId('mobile-settings-modal')).toBeInTheDocument();
     act(()=>useStore.setState({settingsModal:{open:false,activeTab:'agent'}} as never));
     fireEvent.keyDown(document,{key:',',ctrlKey:true});expect(await screen.findByTestId('mobile-settings-modal')).toBeInTheDocument();
   });

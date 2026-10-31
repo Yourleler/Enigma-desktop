@@ -28,3 +28,10 @@ it('removes finished run clocks from the header but keeps the conversation start
  expect(screen.getByTestId('session-clock')).not.toHaveTextContent('本轮');
  expect(screen.queryByText('00:10')).not.toBeInTheDocument();
 });
+it('keeps start and elapsed time visible in the single titlebar with full dates in its hint',async()=>{
+ vi.mocked(hanaFetch).mockResolvedValue(new Response(JSON.stringify(snapshot())));
+ render(<SessionClock compact inline/>);await act(async()=>{});
+ expect(screen.getByTestId('session-clock')).toHaveTextContent('开始');
+ expect(screen.getByText('00:10')).toBeVisible();
+ expect(screen.getByTestId('session-clock').getAttribute('data-tooltip')).toContain('Goal 循环');
+});

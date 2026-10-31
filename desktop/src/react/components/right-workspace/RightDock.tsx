@@ -1,4 +1,5 @@
 import {motion,useReducedMotion} from 'motion/react';
+import {HeaderSlot} from '../app/HeaderSlot';
 import {createPortal} from 'react-dom';
 import {FileSplitPane} from './FileSplitPane';
 import {OpenPreviewDocumentWatchBridge} from '../app/OpenPreviewDocumentWatchBridge';
@@ -111,7 +112,7 @@ export function RightDock(){
     onDropCapture={event=>{if(canFileDrop(event)&&!preserveTreeMove(event)){event.preventDefault();event.stopPropagation();void drop(Array.from(event.dataTransfer.files),readAppFileDragPayload(event.dataTransfer));}}}>
     {dragGhost&&createPortal(<div className="enigma-dock-drag-ghost" style={{left:dragGhost.x,top:dragGhost.y,width:dragGhost.width}} aria-hidden="true"><DockIcon name={dragGhost.tab.icon}/><span>{dragGhost.tab.label}</span></div>,document.body)}
     <OpenPreviewDocumentWatchBridge/>
-    <header className="enigma-dock-header">
+    <HeaderSlot id="enigma-titlebar-workspace"><header className="enigma-dock-header">
       <div className="enigma-dock-tabs" data-reordering={!!draftOrder||undefined} role="tablist" aria-label="工作面板" ref={strip} data-glass-segmented="" onWheel={event=>{if(strip.current&&strip.current.scrollWidth>strip.current.clientWidth)strip.current.scrollLeft+=Math.abs(event.deltaX)>Math.abs(event.deltaY)?event.deltaX:event.deltaY;}}>
         <GlassSelection selection={`${resolved}:${ordered.join(',')}`} selector=".enigma-dock-tab.active" layoutCoordinates/>
         {tabs.map((tab,index)=><motion.div layout="position" key={tab.id} transition={{layout:{duration:reduceMotion?0:0.18}}} className={`enigma-dock-tab${resolved===tab.id?' active':''}`} data-dock-tab-id={tab.id} data-drag-placeholder={dragGhost?.tab.id===tab.id||undefined} onPointerDown={event=>startDrag(tab,event)} onDragStartCapture={event=>event.preventDefault()}>
@@ -133,7 +134,7 @@ export function RightDock(){
         <button aria-label={view?.expanded?'还原面板宽度':'展开工作面板'} data-tooltip={view?.expanded?'恢复聊天与工作面板并排':'展开阅读区域'} onClick={()=>expandDock(scope,!view?.expanded)}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">{view?.expanded?<path d="M9 3v6H3m12 12v-6h6M3 9l6-6m6 18 6-6"/>:<path d="M14 4h6v6M20 4l-7 7M10 20H4v-6M4 20l7-7"/>}</svg></button>
       </div>
       <input hidden ref={picker} type="file" multiple onChange={event=>{void drop(Array.from(event.target.files||[]),null);event.target.value='';}}/>
-    </header>
+    </header></HeaderSlot>
     {dropError&&<div className="enigma-dock-feedback" role="alert">{dropError}<button onClick={()=>setDropError('')}>关闭</button></div>}
     {fileDrop&&<div className="enigma-dock-drop-hint" aria-hidden="true">松开后固定为独立标签</div>}
     <div ref={body} id="enigma-dock-body" className="enigma-dock-body" role="tabpanel" aria-labelledby={resolved?`dock-tab-${Math.max(0,tabs.findIndex(t=>t.id===resolved))}`:undefined}>

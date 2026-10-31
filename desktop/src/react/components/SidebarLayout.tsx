@@ -20,7 +20,7 @@ export function updateLayout(intent?:LayoutIntent):void {
   resolving=true;
   try{
     const s=useStore.getState(),root=document.documentElement;
-    const app=document.querySelector<HTMLElement>('.app');
+    const app=document.querySelector<HTMLElement>('.enigma-workspace-frame')||document.querySelector<HTMLElement>('.app');
     const width=app?.clientWidth||window.innerWidth;
     const expanded=(s.jianOpen||s.jianAutoCollapsed)&&dockView(dockScope(s)).expanded;
     const result=resolveWorkspaceLayout({width,
@@ -74,7 +74,7 @@ export function SidebarLayout({ restorePreference = true }: { restorePreference?
     const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(schedule);
     // Inner panel widths animate; observing them feeds transient geometry back
     // into the decision and can alternate open/closed states. Observe the viewport only.
-    const app=document.querySelector('.app');if(app)observer?.observe(app);
+    const app=document.querySelector('.enigma-workspace-frame')||document.querySelector('.app');if(app)observer?.observe(app);
     window.addEventListener('resize', schedule);
     updateLayout();
     const onKeydown = (e: KeyboardEvent) => {

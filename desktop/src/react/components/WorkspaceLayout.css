@@ -1,30 +1,105 @@
-/* One flush three-column layout. The planner supplies stable target widths. */
+/* Shared workspace geometry. The planner uses the rounded frame width,
+   excluding permanent window navigation. */
 .app { position:relative; overflow:hidden; }
-body.enigma-surface .app > .main-content { min-width:var(--layout-chat-min,400px); flex:1 1 0; }
-body.enigma-surface .app > :is(.sidebar,.jian-sidebar) {
+body.enigma-surface :is(.app,.enigma-workspace-frame) > .main-content { min-width:var(--layout-chat-min,400px); flex:1 1 0; }
+body.enigma-surface :is(.app,.enigma-workspace-frame) > :is(.sidebar,.jian-sidebar) {
   position:relative !important; inset:auto !important; flex:0 0 auto; min-width:0; max-width:none;
   margin:0; padding:0; border-radius:0; box-shadow:none; z-index:10; overflow:hidden;
   transition:width var(--enigma-duration-21) cubic-bezier(.22,.7,.25,1);
 }
-body.enigma-surface .app > .sidebar { width:var(--layout-sidebar-width,240px) !important; border:0; border-right:1px solid var(--border); }
-body.enigma-surface .app > .jian-sidebar { width:var(--right-dock-width,520px) !important; border:0; border-left:1px solid var(--border); }
-body.enigma-surface .app > :is(.sidebar,.jian-sidebar).collapsed { width:0 !important; border-width:0; pointer-events:none; }
+body.enigma-surface :is(.app,.enigma-workspace-frame) > .sidebar { width:var(--layout-sidebar-width,240px) !important; border:0; border-right:1px solid var(--border); }
+body.enigma-surface :is(.app,.enigma-workspace-frame) > .jian-sidebar { width:var(--right-dock-width,520px) !important; border:0; border-left:1px solid var(--border); }
+body.enigma-surface :is(.app,.enigma-workspace-frame) > :is(.sidebar,.jian-sidebar).collapsed { width:0 !important; border-width:0; pointer-events:none; }
 body.enigma-surface .app .sidebar-inner { width:var(--layout-sidebar-width,240px) !important; min-width:var(--layout-sidebar-width,240px) !important; }
 body.enigma-surface .app .jian-sidebar-inner { width:var(--right-dock-width,520px) !important; min-width:var(--right-dock-width,520px) !important; }
 body.enigma-surface .app :is(.sidebar-inner,.jian-sidebar-inner) { padding:0; border-radius:0; box-shadow:none; transform:none !important; transition:opacity var(--enigma-duration-21) ease; }
-body.enigma-surface .app > :is(.sidebar,.jian-sidebar)::after { display:none; }
-body.enigma-surface .app[data-layout-drawer] > .main-content,
-body.enigma-dock-expanded .app > .main-content { display:none; }
+body.enigma-surface :is(.app,.enigma-workspace-frame) > :is(.sidebar,.jian-sidebar)::after { display:none; }
+body.enigma-surface .app[data-layout-drawer] .enigma-workspace-frame > .main-content,
+body.enigma-dock-expanded :is(.app,.enigma-workspace-frame) > .main-content { display:none; }
 body.enigma-surface .app[data-layout-drawer] :is(#sidebarResizeHandle,#jianResizeHandle),
 body.enigma-dock-expanded #jianResizeHandle { display:none; }
 /* Browser shell has a fixed titlebar; native shell already has a separate row. */
 body.enigma-surface .mobile-desktop-app { padding-top:var(--titlebar-h,44px); box-sizing:border-box; }
-body.enigma-surface .mobile-desktop-app > .main-content { padding-top:0 !important; }
+body.enigma-surface .mobile-desktop-app .enigma-workspace-frame > .main-content { padding-top:0 !important; }
 body.enigma-surface .mobile-desktop-app :is(.sidebar-inner,.jian-sidebar-inner) { padding-top:0; }
 .app #previewPanel [data-preview-panel-inner] { max-width:100%; min-width:0 !important; }
 .enigma-preview-return { display:flex; align-items:center; gap:var(--enigma-spacing-5); flex-shrink:0; border:0; border-bottom:1px solid var(--border); background:transparent; color:var(--text); padding:var(--enigma-spacing-7) var(--enigma-spacing-14); font:inherit; font-size:13px; cursor:pointer; }
 .enigma-preview-return span { margin-left:auto; color:var(--text-muted); }
-body.resizing .app > :is(.sidebar,.jian-sidebar),
-body.enigma-motion-off .app > :is(.sidebar,.jian-sidebar),
+body.resizing :is(.app,.enigma-workspace-frame) > :is(.sidebar,.jian-sidebar),
+body.enigma-motion-off :is(.app,.enigma-workspace-frame) > :is(.sidebar,.jian-sidebar),
 body.enigma-motion-off .app :is(.sidebar-inner,.jian-sidebar-inner) { transition:none !important; }
-@media(prefers-reduced-motion:reduce) { .app > :is(.sidebar,.jian-sidebar),.app :is(.sidebar-inner,.jian-sidebar-inner) { transition:none !important; } }
+@media(prefers-reduced-motion:reduce) { :is(.app,.enigma-workspace-frame) > :is(.sidebar,.jian-sidebar),.app :is(.sidebar-inner,.jian-sidebar-inner) { transition:none !important; } }
+
+/* Connected window chrome surrounds one rounded, three-column workspace. */
+:root:has(body.enigma-surface) { --titlebar-h:46px;--app-rail-width:44px; }
+body.enigma-surface .app { padding:0 8px 8px 0;box-sizing:border-box;gap:0; }
+.enigma-workspace-frame { display:flex;flex:1 1 0;min-width:0;min-height:0;overflow:hidden;border:1px solid var(--border);border-radius:14px;isolation:isolate; }
+body.enigma-surface[data-enigma-tone] .enigma-workspace-frame > .main-content {
+  background:color-mix(in srgb,var(--eg-card) var(--glass-content-mix,42%),transparent);
+  backdrop-filter:blur(var(--glass-content-blur,8px)) saturate(1.08);-webkit-backdrop-filter:blur(var(--glass-content-blur,8px)) saturate(1.08);
+  padding-top:0;overflow:hidden;
+}
+body.enigma-surface .enigma-workspace-frame :is(.sidebar-inner[data-liquid="sidebar"],[data-right-dock][data-liquid="sidebar"]) { --glass-fill:color-mix(in srgb,var(--eg-sidebar) var(--glass-content-mix,42%),transparent);--glass-blur:var(--glass-content-blur,8px); }
+body.enigma-surface .enigma-workspace-frame .enigma-right-dock { border:0;border-radius:0;box-shadow:none; }
+body.enigma-surface .app > .enigma-sidebar-rail { width:var(--app-rail-width);flex:0 0 var(--app-rail-width);box-sizing:border-box;border:0;padding:8px 4px; }
+body.enigma-surface[data-enigma-tone] .app > .enigma-sidebar-rail,body.enigma-surface[data-enigma-tone] .titlebar {
+  background:color-mix(in srgb,var(--eg-sidebar) var(--glass-chrome-mix,7%),transparent);
+  backdrop-filter:blur(var(--glass-chrome-blur,2.25px)) saturate(1.1);-webkit-backdrop-filter:blur(var(--glass-chrome-blur,2.25px)) saturate(1.1);
+}
+body.enigma-surface[data-enigma-tone] .titlebar { height:var(--titlebar-h);box-sizing:border-box;border:0;gap:8px;padding:0 8px 0 12px;z-index:100; }
+body.enigma-surface .titlebar .tb-left-group { display:flex;align-items:center;height:100%;flex:none; }
+body.enigma-surface .titlebar .tb-conversation-group { min-width:0; }
+body.enigma-surface .titlebar .tb-center-title { position:static;transform:none;left:auto;right:auto;top:auto;bottom:auto;flex:1 1 auto;max-width:100%;min-width:0;display:block;text-align:left;font-size:12px; }
+body.enigma-surface .titlebar .tb-center-title span { display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+body.enigma-surface .titlebar .tb-right-group { margin:0;gap:2px;flex:none; }
+body.enigma-surface #enigma-titlebar-chat-tools { flex:0 1 auto;min-width:0;-webkit-app-region:no-drag;pointer-events:auto; }
+body.enigma-surface #enigma-titlebar-chat-tools .enigma-conversation-header { padding:0;border:0;flex-wrap:nowrap;gap:8px;font-size:11px; }
+body.enigma-surface #enigma-titlebar-chat-tools .enigma-new-task-settings button { max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px; }
+body.enigma-surface #enigma-titlebar-chat-tools .enigma-project-context { max-width:150px; }
+body.enigma-surface #enigma-titlebar-workspace { min-width:0;height:100%;-webkit-app-region:no-drag;pointer-events:auto; }
+body.enigma-surface #enigma-titlebar-workspace[hidden] { display:none; }
+body.enigma-surface #enigma-titlebar-workspace .enigma-dock-header { height:100%;box-sizing:border-box;border:0;padding:0 2px;gap:3px; }
+body.enigma-surface #enigma-titlebar-workspace .enigma-dock-tab { border-radius:7px; }
+body.enigma-surface #enigma-titlebar-workspace .enigma-dock-tab button { height:28px;padding:3px 6px;font-size:11px; }
+body.enigma-surface #enigma-titlebar-workspace .enigma-dock-tab button span:last-child { max-width:140px; }
+body.enigma-surface #enigma-titlebar-workspace .enigma-dock-tab-close { max-width:20px;padding:0 3px; }
+body.enigma-surface .enigma-sidebar-rail [data-channel-layout="rail"] { display:flex;flex-direction:column;position:relative;inset:auto;transform:none;background:transparent;border:0;box-shadow:none;padding:0;gap:8px;max-width:100%; }
+body.enigma-surface .enigma-sidebar-rail [data-channel-layout="rail"] > button { width:34px;height:34px;min-height:34px;padding:0;display:grid;place-items:center;border-radius:8px; }
+body.enigma-surface .enigma-sidebar-rail [data-channel-layout="rail"] > button[aria-pressed="true"] { color:var(--accent);background:var(--accent-light); }
+body.enigma-surface .enigma-sidebar-rail [data-channel-layout="rail"] > [data-glass-selection] { display:none; }
+body.enigma-surface.enigma-glass-off .enigma-workspace-frame > .main-content {background:var(--eg-card);backdrop-filter:none;-webkit-backdrop-filter:none;}
+body.enigma-surface.enigma-glass-off .app > .enigma-sidebar-rail,body.enigma-surface.enigma-glass-off .titlebar {background:var(--eg-sidebar);backdrop-filter:none;-webkit-backdrop-filter:none;}
+@media(prefers-reduced-transparency:reduce),(prefers-contrast:more) {body.enigma-surface[data-enigma-tone] .enigma-workspace-frame > .main-content,body.enigma-surface[data-enigma-tone] .app > .enigma-sidebar-rail,body.enigma-surface[data-enigma-tone] .titlebar {background:var(--eg-card);backdrop-filter:none;-webkit-backdrop-filter:none;}}
+@media(max-width:1050px) {body.enigma-surface #enigma-titlebar-chat-tools .enigma-project-context {max-width:105px;}body.enigma-surface #enigma-titlebar-chat-tools .enigma-conversation-header {gap:4px;}body.enigma-surface #enigma-titlebar-chat-tools .enigma-compact-tools > button {gap:3px;padding:2px 4px;}}
+@media(max-width:700px) {body.enigma-surface .titlebar{gap:3px;padding-right:4px;}body.enigma-surface .titlebar .tb-conversation-group{gap:3px;}body.enigma-surface .titlebar:has(#enigma-titlebar-workspace:not([hidden])) .tb-center-title{display:none;}body.enigma-surface .titlebar:has(#enigma-titlebar-workspace:not([hidden])) #enigma-titlebar-chat-tools [data-testid="session-clock"]{display:none;}body.enigma-surface #enigma-titlebar-chat-tools .enigma-project-context{max-width:90px;}body.enigma-surface #enigma-titlebar-chat-tools .enigma-new-task-settings button{max-width:80px;}body.enigma-surface .app{padding-right:4px;padding-bottom:4px;}.enigma-workspace-frame{border-radius:11px;}}
+body.enigma-surface .app.mobile-desktop-app { padding-top:var(--titlebar-h,46px); }
+body.enigma-surface .enigma-workspace-frame .enigma-workspace-shell[data-files-only] { margin:0;height:100%;width:100%;padding:0;border:0;border-radius:0;box-shadow:none;background:transparent; }
+body.enigma-surface .enigma-workspace-frame .enigma-workspace-shell[data-files-only] [role="tabpanel"] { margin:0;border:0;border-radius:0;background:transparent; }
+
+/* Each titlebar region owns its width; short windows truncate the title
+   before tools or timing can paint across the work-panel tabs. */
+body.enigma-surface[data-enigma-tone] .titlebar { display:grid;grid-template-columns:auto minmax(0,1fr) minmax(140px,min(48vw,calc(var(--layout-workspace-space,520px) - 80px))) auto; }
+body.enigma-surface[data-enigma-tone] .titlebar:has(#enigma-titlebar-workspace[hidden]) { grid-template-columns:auto minmax(0,1fr) auto; }
+body.enigma-surface .titlebar .tb-conversation-group { display:grid;grid-template-columns:minmax(0,1fr) max-content;overflow:hidden;gap:8px; }
+body.enigma-surface #enigma-titlebar-chat-tools { max-width:100%; }
+body.enigma-surface #enigma-titlebar-workspace { width:100%;max-width:100%;overflow:hidden; }
+body.enigma-surface .titlebar .tb-center-title { width:100%;overflow:hidden; }
+body.enigma-surface .enigma-dock-section.enigma-dock-task-list { padding:18px 20px;box-sizing:border-box;gap:14px; }
+body.enigma-surface .enigma-dock-task-intro { padding:0;margin:0; }
+body.enigma-surface .enigma-dock-task-intro h3 { margin:0 0 5px;font-size:14px;font-weight:600;line-height:1.5; }
+body.enigma-surface .enigma-dock-task-intro p { margin:0;color:var(--text-muted);font-size:12px;line-height:1.6; }
+@media(max-width:760px) {
+ body.enigma-surface[data-enigma-tone] .titlebar {grid-template-columns:auto minmax(0,1fr) minmax(140px,40vw) auto;}
+ body.enigma-surface .titlebar .tb-conversation-group {gap:4px;}
+ body.enigma-surface #enigma-titlebar-chat-tools .enigma-project-context {display:none;}
+ body.enigma-surface .titlebar:has(#enigma-titlebar-workspace:not([hidden])) #enigma-titlebar-chat-tools [data-testid="session-clock"] {display:none;}
+ body.enigma-surface .enigma-dock-section.enigma-dock-task-list {padding:16px;}
+}
+@media(max-width:520px) {
+ body.enigma-surface .titlebar .tb-new-session {display:none;}
+ body.enigma-surface .titlebar:has(#enigma-titlebar-workspace:not([hidden])) .tb-conversation-group {grid-template-columns:minmax(0,1fr);}
+ body.enigma-surface .titlebar #enigma-titlebar-chat-tools .enigma-compact-tools > .enigma-menu-trigger {font-size:0;gap:0;width:28px;}
+ body.enigma-surface .titlebar #enigma-titlebar-chat-tools .enigma-compact-tools > .enigma-menu-trigger .enigma-icon {font-size:12px;}
+ body.enigma-surface .titlebar .enigma-dock-actions {gap:0;}
+ body.enigma-surface .titlebar .enigma-dock-actions > button {width:24px;}
+}

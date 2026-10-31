@@ -32,7 +32,7 @@ import { initTheme, initDragPrevention } from './bootstrap';
 import { initApp } from './app-init';
 import { openSettingsModal } from './stores/settings-modal-actions';
 import { AppTitlebar } from './components/app/AppTitlebar';
-import { ChatSidebar } from './components/app/ChatSidebar';
+import { ChatSidebar,AppNavigationRail } from './components/app/ChatSidebar';
 import { AppPages } from './components/app/AppPages';
 
 declare function t(key: string, vars?: Record<string, string | number>): string;
@@ -110,6 +110,7 @@ function App() {
           jianOpen={jianOpen}
           previewOpen={previewOpen}
           showPreviewToggle
+          showChannelTabs={false}
           onTogglePreview={() => togglePreviewPanel()}
           onToggleSidebar={() => toggleSidebar()}
           onToggleJian={() => toggleJianSidebar()}
@@ -117,7 +118,10 @@ function App() {
 
         {/* ── App body ── */}
         <div className="app" data-preview-expanded={previewExpanded || undefined} data-layout-drawer={layoutDrawer || undefined}>
+          <AppNavigationRail includeChannels onOpenSettings={()=>openSettingsModal()} onTogglePanel={togglePanel}/>
+          <div className="enigma-workspace-frame">
           <ChatSidebar
+            showNavigationRail={false}
             open={sidebarOpen && !isPluginTab}
             onNewSession={createNewSession}
             onCollapse={() => toggleSidebar()}
@@ -128,6 +132,7 @@ function App() {
           <RegionalErrorBoundary region="app-pages" resetKeys={[currentTab]}>
             <AppPages />
           </RegionalErrorBoundary>
+          </div>
         </div>
       </div>
 

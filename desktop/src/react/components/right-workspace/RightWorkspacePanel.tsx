@@ -136,7 +136,7 @@ export function RightWorkspacePanel({ compact = false, filesOnly = false,active 
     : 'workspace';
 
   return (
-    <FileStatusProvider active={active}><div className={`${styles.shell} enigma-workspace-shell`} data-liquid="sidebar">
+    <FileStatusProvider active={active}><div className={`${styles.shell} enigma-workspace-shell`} data-liquid={filesOnly?undefined:'sidebar'} data-files-only={filesOnly||undefined}>
       {!compact&&!filesOnly && <SessionTodoCard />}
       <div
         className={`universal-card ${styles.workspaceCard}`}

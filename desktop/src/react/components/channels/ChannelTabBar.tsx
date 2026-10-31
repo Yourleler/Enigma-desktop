@@ -16,6 +16,7 @@ import { PluginTabOverflow } from '../plugin/PluginTabOverflow';
 import { ContextMenu, type ContextMenuItem } from '../../ui';
 import styles from './Channels.module.css';
 import { GlassSelection } from '../../ui/GlassSelection';
+import {AppIcon} from '../../ui/app-icons';
 
 declare function t(key: string, vars?: Record<string, string | number>): string;
 
@@ -81,7 +82,7 @@ function getTabLabel(tab: TabType, pluginPages: PluginPageInfo[], locale: string
 
 interface MenuState { items: ContextMenuItem[]; position: { x: number; y: number } }
 
-export function ChannelTabBar() {
+export function ChannelTabBar({rail=false}:{rail?:boolean}={}) {
   const currentTab = useStore(s => s.currentTab);
   const channelTotalUnread = useStore(s => s.channelTotalUnread);
   const locale = useStore(s => s.locale);
@@ -114,6 +115,7 @@ export function ChannelTabBar() {
   }, []);
 
   const handleTabClick = useCallback((tab: TabType) => {
+    useStore.getState().setActivePanel(null);
     switchTab(tab);
   }, []);
 
@@ -192,7 +194,7 @@ export function ChannelTabBar() {
   ];
 
   return (
-    <div className={styles.tbTabs} data-glass-segmented="" aria-label="主页面切换">
+    <div className={styles.tbTabs} data-channel-layout={rail?'rail':undefined} data-glass-segmented="" aria-label="主页面切换">
       <GlassSelection selection={`${currentTab}:${locale}:${visibleTabs.join(',')}`} selector="button[data-tab][aria-pressed='true']"/>
       {visibleTabs.map(tab => {
         const isActive = currentTab === tab;
@@ -208,6 +210,7 @@ export function ChannelTabBar() {
             key={tab}
             className={cls}
             data-tab={tab}
+            aria-label={getTabLabel(tab,pluginPages,locale)}
             data-tooltip={tab === 'channels' ? '多个助手参与的群聊，与普通工作对话分开' : tab === 'chat' ? '个人工作对话与项目' : undefined}
             aria-pressed={isActive}
             draggable={tab !== 'chat'}
@@ -219,7 +222,7 @@ export function ChannelTabBar() {
             onDrop={(e) => onDrop(e, tab)}
             onDragEnd={onDragEnd}
           >
-            {getTabLabel(tab, pluginPages, locale)}
+            {rail?<AppIcon name={tab==='chat'?'newChat':tab==='channels'?'team':'layers'} size={18}/>:getTabLabel(tab, pluginPages, locale)}
             {tab === 'channels' && channelTotalUnread > 0 && <span className={styles.tbTabBadge} />}
           </button>
         );
