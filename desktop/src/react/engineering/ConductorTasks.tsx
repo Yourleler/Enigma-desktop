@@ -1,4 +1,5 @@
-import { switchSession } from "../stores/session-actions";
+import { loadSessions, switchSession } from "../stores/session-actions";
+import { useEffect } from 'react';
 import { MarkdownContent } from "../components/chat/MarkdownContent";
 import { renderMarkdown } from "../utils/markdown";
 import { engineeringRequest, useEngineering, openEngineering,loadEngineeringTab } from "./state";
@@ -20,6 +21,8 @@ export function ConductorTasks({ value: initial }: { value: any }) {
   const sessionPath = useEngineering((state) => state.sessionPath),action=useSideAction(sessionPath);
   const manager=useEngineering(state=>state.snapshot?.kind==='manager');
   const query=useSideQuery<any>('/data/conductor',sessionPath,manager),value=query.data||initial;
+  const membership=JSON.stringify([value.projects?.map((project:any)=>project.id),value.tasks?.map((task:any)=>[task.sessionPath,task.projectId])]);
+  useEffect(()=>{if(manager)void loadSessions();},[manager,sessionPath,membership]);
   const stop=useSideAction(sessionPath);
   const cancel=(id:string)=>stop.run(id,()=>engineeringRequest('/conductor/cancel',sessionPath,{id}),()=>{const current=useEngineering.getState(),tab=current.tabs.find(tab=>tab.id===current.active);if(tab?.group==='conductor')return loadEngineeringTab(tab);});
   const report = () => action.run('report',()=>engineeringRequest('/conductor/report',sessionPath,{}),artifact=>{

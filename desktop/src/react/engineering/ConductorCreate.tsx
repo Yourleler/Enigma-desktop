@@ -3,7 +3,7 @@ import { FormMultiChoice } from "./FormSelect";
 import styles from "./FormLayout.module.css";
 import { useState } from "react";
 import { useStore } from "../stores";
-import { switchSession } from "../stores/session-actions";
+import { loadSessions, switchSession } from "../stores/session-actions";
 import { useEngineering, engineeringRequest } from "./state";
 import {useSideAction} from './useSideAction';
 
@@ -41,7 +41,11 @@ export function ConductorCreateDialog({ close }: { close: () => void }) {
           },
         },
       );
-      },async result=>{close();await switchSession(result.sessionPath);});
+      },async result=>{
+        await loadSessions();
+        if(useEngineering.getState().sessionPath!==sourceSession||useEngineering.getState().connectionId!==sourceConnection)return;
+        close();await switchSession(result.sessionPath);
+      });
   return <SurfaceModal onClose={close}><div className="enigma-modal-backdrop">
     <section className={`enigma-modal enigma-surface-card ${styles.dialog}`} role="dialog" data-glass-frame="sheet" data-glass-controls="" aria-modal="true" aria-label="创建任务编排管家">
       <header><h2>把目标交给管家</h2><button type="button" onClick={close}>关闭</button></header>

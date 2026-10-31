@@ -29,7 +29,8 @@ export function TokenMeterPill() {
     return {historicalMeter:meter,latestInputAt:inputAt};
   },[history]);
   const currentLive=liveMeter&&(liveMeter.state==='running'||!latestInputAt||(liveMeter.endedAt??liveMeter.startedAt)>=latestInputAt)?liveMeter:null;
-  const meter=currentLive&&(!historicalMeter||currentLive.state==='running'||currentLive.startedAt>=historicalMeter.startedAt)?currentLive:historicalMeter;
+  const completeHistory=currentLive?.state==='done'&&historicalMeter&&historicalMeter.startedAt<=currentLive.startedAt&&(historicalMeter.endedAt??0)>=currentLive.startedAt;
+  const meter=completeHistory?historicalMeter:currentLive&&(!historicalMeter||currentLive.state==='running'||currentLive.startedAt>=historicalMeter.startedAt)?currentLive:historicalMeter;
   const [open, setOpen] = useState(false), [now, setNow] = useState(Date.now()),[view,setView]=useState<'round'|'session'>('round');
   const anchor = useRef<HTMLButtonElement>(null), panel = useRef<HTMLDivElement>(null);
   useEffect(() => { setOpen(false);setView('round'); }, [sessionPath, connection]);

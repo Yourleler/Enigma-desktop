@@ -188,18 +188,8 @@ export async function refreshEngineering(
   }
   useEngineering.setState({ snapshot: value, results, tabs: nextTabs, refreshError: '' });
   if (removedActive) { openGroup('materials'); return; }
-  if (
-    value.kind === "manager" &&
-    !useEngineering.getState().loading &&
-    useEngineering.getState().active === "group:conductor" &&
-    JSON.stringify(value.conductorSummary) !==
-      JSON.stringify(useEngineering.getState().data?.summary)
-  ) {
-    const tab = useEngineering
-      .getState()
-      .tabs.find((tab) => tab.id === "group:conductor");
-    if (tab) void loadEngineeringTab(tab);
-  }
+  // ConductorTasks owns its progress query and preserves the visible cards.
+  // Reloading the whole tab here remounted it on every changing summary.
 }
 
 export function openEngineering(tab: Tab) {

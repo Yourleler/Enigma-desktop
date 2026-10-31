@@ -691,7 +691,7 @@
     ],
     "version": 3
   },
-  "payloadFingerprint": "sha256:96eff56cbfac4df14c1cb63f35ab95efd595bab1065ca1da3f1ba53c8c0d625b",
+  "payloadFingerprint": "sha256:c4be987a30d86a6a7913c89619c7132ac12cba9a9d327605cac00f5c8fdf6ebf",
   "registry": [
     {
       "affectedByEpochMigration": true,
@@ -3441,8 +3441,8 @@
   ],
   "review": {
     "classification": "compatible",
-    "compatibilityReason": "Engineering host approval now supplies existing registered writable repository roots and explicit restore checkpoint choices. Session binding schema, persisted keys, and write sites are unchanged; only the hashed host module behavior changed. Existing data is readable without migration.",
-    "payloadFingerprint": "sha256:96eff56cbfac4df14c1cb63f35ab95efd595bab1065ca1da3f1ba53c8c0d625b"
+    "compatibilityReason": "Manager creation preserves source project membership and phase status reports an unconfigured model without mutation. Review progress polling and on-demand source analysis preserve persisted fields, versions, and write sites. No data migration is required.",
+    "payloadFingerprint": "sha256:c4be987a30d86a6a7913c89619c7132ac12cba9a9d327605cac00f5c8fdf6ebf"
   },
   "schemas": [
     {
@@ -3566,7 +3566,7 @@
       "contract": "frozen source publications, analysis jobs, findings and generated read-only workspaces",
       "kind": "directory-contract",
       "module": "plugins/enigma/change-workbench.ts",
-      "sourceHash": "sha256:6aeef0278d7c67a11472c7ef9cefd96e62c8d1b775033e7e982347de979a77dd",
+      "sourceHash": "sha256:25d05131e8d2b4026705554da612f4968b78902b3f39e304321dcea868dbf078",
       "storeId": "conversation-review-workbench"
     },
     {
@@ -3681,7 +3681,7 @@
       "contract": "schema 1 manager identity, explicit limits, owned projects/conversations, resumable interrupted tasks, selected integration previews and original acceptance evidence",
       "kind": "runtime-contract",
       "module": "plugins/enigma/conductor.ts",
-      "sourceHash": "sha256:ee98da2b7a7c5a6cc838ff47294fb9bd6dd320e76a6ec24bedcc9e6e4c1ab07e",
+      "sourceHash": "sha256:5cccf2ac938eb1dc7427a47e543332d9679d7dd2d4bf79568c70475a1087e8ec",
       "storeId": "enigma-conductor-ledgers"
     },
     {
@@ -3695,14 +3695,14 @@
       "contract": "managerId/taskId owned isolated workspace roots; code/Enigma state have independently verified protocols",
       "kind": "directory-contract",
       "module": "plugins/enigma/conductor.ts",
-      "sourceHash": "sha256:ee98da2b7a7c5a6cc838ff47294fb9bd6dd320e76a6ec24bedcc9e6e4c1ab07e",
+      "sourceHash": "sha256:5cccf2ac938eb1dc7427a47e543332d9679d7dd2d4bf79568c70475a1087e8ec",
       "storeId": "enigma-managed-workspace-roots"
     },
     {
       "contract": "schema 1 native-session/workspace binding, absolute roots, explicit memory flag, validated source identity, manager model grants and bounded guardian configuration/usage",
       "kind": "runtime-contract",
       "module": "plugins/enigma/host.ts",
-      "sourceHash": "sha256:789cd2c2e037b5b3e529ef6f543813d1e774620d0e2129d800cbc40646ef50c0",
+      "sourceHash": "sha256:f7266095ff365a4c6938a87d233cd148e6b1eeb72a2325c736faf148291bd992",
       "storeId": "enigma-session-bindings"
     },
     {

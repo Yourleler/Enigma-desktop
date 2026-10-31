@@ -3219,3 +3219,22 @@ describe("chat route model switch guard", () => {
     handlers.onClose({}, closedWs);
   });
 });
+
+describe('extension follow-up lifecycle',()=>{
+ for(const followup of [false,true])it(`settles only the idle original stream (new request: ${followup})`,async()=>{
+  vi.useFakeTimers();
+  try{
+   let factory:any,subscriber:any,running=true;const path='/tmp/extension-follow-up.jsonl';
+   const hub={subscribe:vi.fn(fn=>{subscriber=fn;}),send:vi.fn(async()=>{}),eventBus:{emit:vi.fn()}};
+   const engine={agentName:'Enigma',abortAllStreaming:vi.fn(async()=>{}),getSessionByPath:()=>({entries:[],sessionManager:{getBranch:()=>[]}}),isSessionStreaming:()=>running,isSessionSwitching:()=>false,slashDispatcher:null};
+   createChatRoute(engine,hub,{upgradeWebSocket:vi.fn(fn=>{factory=fn;return()=>new Response(null);})});const handlers=factory({}),ws={readyState:1,send:vi.fn()};handlers.onOpen({},ws);ws.send.mockClear();
+   subscriber({type:'turn_start'},path);subscriber({type:'message_update',assistantMessageEvent:{type:'text_delta',delta:'completed'}},path);subscriber({type:'turn_end'},path);
+   running=false;
+   if(followup){running=true;subscriber({type:'turn_start'},path);subscriber({type:'message_update',assistantMessageEvent:{type:'text_delta',delta:'next'}},path);}
+   await vi.advanceTimersByTimeAsync(3000);
+   const stopped=ws.send.mock.calls.map(([raw])=>JSON.parse(raw)).filter(m=>m.type==='status'&&m.isStreaming===false);
+   expect(stopped).toHaveLength(followup?0:1);
+   if(!followup)expect(stopped[0]).toMatchObject({sessionPath:path});
+  }finally{vi.useRealTimers();}
+ });
+});

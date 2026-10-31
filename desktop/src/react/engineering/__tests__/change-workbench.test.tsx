@@ -28,3 +28,10 @@ it('does not expose analysis writes in read-only mode',async()=>{
 it('supports comma-separated include globs without evaluating regular expressions from users',()=>{
  expect(changeMatches('repo/src/a.ts','src/**')).toBe(true);expect(changeMatches('repo/docs/a.md','src/**,docs/*.md')).toBe(true);expect(changeMatches('repo/docs/a.md','src/**')).toBe(false);expect(changeMatches('repo/a[1].ts','a[1].ts')).toBe(true);
 });
+
+it('retains existing results and explains an uncertain timeout without retrying writes',async()=>{
+ render(<ChangeWorkbench/>);fireEvent.click(await screen.findByRole('button',{name:'查看变更'}));await screen.findByText('2 个文件 · 版本 version');
+ vi.mocked(hanaFetch).mockImplementation(async(url,options)=>{if(options?.method==='POST')throw new DOMException('signal is aborted without reason','AbortError');return new Response(JSON.stringify({turns:[],repositories:[],jobs:[]}));});
+ fireEvent.click(screen.getByRole('button',{name:'查看变更'}));await screen.findByRole('alert');
+ expect(screen.getByRole('alert')).toHaveTextContent('分析可能仍在后台运行');expect(screen.getByText('2 个文件 · 版本 version')).toBeVisible();
+});

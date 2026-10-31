@@ -54,7 +54,7 @@ export class ChangeWorkbench {
       input={...input,from,to};
     }else if(input.source==='git'){
       if(!['working','staged','commit'].includes(input.kind||''))throw Error('请选择仓库差异来源');
-      const resultGit=await this.git.read(session,input.kind!,undefined,{base:input.base,target:input.target});
+      const resultGit=await this.git.read(session,input.kind!,undefined,{base:input.base,target:input.target},{analyze:false});
       result={...resultGit.changeReading.record,roots:await this.git.repositories(session),gitContext:resultGit.changeReading.record.sourceRoot,gitView:{root:resultGit.changeReadingRoot,record:resultGit.changeReading.record.id}};
       input={...input,base:Object.fromEntries(result.repositories.map((r:any)=>[r.id,r.base]))};
     }else throw Error('变更来源无效');
@@ -163,11 +163,19 @@ export class ChangeWorkbench {
       finally{job.endedAt=new Date().toISOString();try{await this.save(path.join(this.directory(session),'job-'+job.id+'.json'),job);}finally{this.jobs.delete(job.id);this.activeSessions.delete(session);}}
     })().catch(()=>{this.jobs.delete(job.id);this.activeSessions.delete(session);});return job;
   }
-  async job(session:string,id:string){
+  private async storedJob(session:string,id:string){
     const file=path.join(this.directory(session),'job-'+safe(id)+'.json');let job:Job=JSON.parse(await fs.readFile(file,'utf8'));
-    if(job.session!==session)throw Error('分析记录不属于本对话');const source=await this.source(session,job.publication);
+    if(job.session!==session)throw Error('分析记录不属于本对话');
     if(job.status==='running'&&!this.jobs.has(job.id))job=JSON.parse(await fs.readFile(file,'utf8'));
-    return {...job,sourceCurrent:source.current,...(job.status==='running'&&!this.jobs.has(job.id)?{status:'failed',error:'分析已中断，请重新发起'}:{})};
+    return {...job,...(job.status==='running'&&!this.jobs.has(job.id)?{status:'failed' as const,error:'分析已中断，请重新发起'}:{})};
+  }
+  async job(session:string,id:string):Promise<Job & {sourceCurrent?:boolean}>{
+    const job=await this.storedJob(session,id);
+    // In-flight polls only report progress, never certify source validity.
+    // Re-snapshotting every repository on every poll delayed the analysis itself.
+    if(job.status==='running')return job;
+    const source=await this.source(session,job.publication);
+    return {...job,sourceCurrent:source.current};
   }
   private async serialize<T>(key:string,action:()=>Promise<T>){
     const previous=this.writing.get(key)||Promise.resolve(),next=previous.catch(()=>{}).then(action);
@@ -175,12 +183,13 @@ export class ChangeWorkbench {
   }
   async action(session:string,jobId:string,action:string,findingId?:string,reason?:string){
     return this.serialize(jobId,async()=>{
-      const job=await this.job(session,jobId);if(action==='cancel'){this.jobs.get(jobId)?.abort();return {ok:true};}
+      const job=await this.storedJob(session,jobId);if(action==='cancel'){this.jobs.get(jobId)?.abort();return {ok:true};}
       if(action==='recheck'){
         if(job.status!=='completed'||job.kind!=='review')throw Error('只有已完成的审查可以复查');
         const old=await this.source(session,job.publication),pub=await this.capture(session,old.input.source==='git'?{source:'git',kind:'working',base:old.input.base}:{...old.input,to:undefined});
         return this.analyze(session,pub.id,'review',undefined,job.id);
       }
+      await this.source(session,job.publication);
       const finding=job.result?.findings?.find((f:any)=>f.id===findingId);if(!finding)throw Error('没有找到这条审查意见');
       if(action==='ignore'){if(!reason?.trim())throw Error('请填写忽略原因');finding.state='ignored';finding.reason=reason.slice(0,2000);}
       else if(action==='reopen'){finding.state='open';finding.reason=reason||'';}

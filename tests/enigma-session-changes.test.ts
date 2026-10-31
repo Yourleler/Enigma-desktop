@@ -52,6 +52,19 @@ it('handles a repository before its first commit and distinguishes a non-reposit
   expect(await summarizeRepository(fresh, 'fresh')).toMatchObject({ files: 1, added: 1, removed: 0 });
   expect(await summarizeRepository(f.home, 'not-repo')).toMatchObject({ error: expect.any(String) });
 });
+it('can freeze a diff before optional reading analysis while retaining full source and freshness', async () => {
+  const f = await fixture();
+  await fs.writeFile(path.join(f.repo, 'main.ts'), 'export const value = 2;\n');
+  const {changeReading} = await f.changes.read('session', 'working', undefined, undefined, {analyze:false});
+  expect(changeReading.record.status).toBe('captured');
+  expect(changeReading.record.reading).toBeUndefined();
+  expect(changeReading.record.changes[0]).toMatchObject({before:{content:'export const value = 1;\n'},after:{content:'export const value = 2;\n'}});
+  expect(changeReading.matchesWorkspace).toBe(true);
+  const frozen=path.join(changeReading.record.sourceRoot,'repos','main','main.ts');
+  expect(await fs.readFile(frozen,'utf8')).toBe('export const value = 2;\n');
+  await fs.writeFile(path.join(f.repo,'main.ts'),'export const value = 3;\n');
+  expect(await fs.readFile(frozen,'utf8')).toBe('export const value = 2;\n');
+});
 it('opens current source separately and rejects source path traversal and secret files', async () => {
   const f = await fixture();
   expect(await f.changes.source('session', 'main', 'main.ts')).toMatchObject({ content: 'export const value = 1;\n' });

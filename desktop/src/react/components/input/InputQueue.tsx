@@ -19,9 +19,9 @@ export function InputQueue({editor}:{editor:Editor|null}){
   if(body.action==='edit')setEditing(null);await load();
  }catch(error){setError(error instanceof Error?error.message:'操作失败');}};
  if(!session||(!queue.items?.length&&!error))return null;
- return <section className="enigma-input-queue" aria-label="待发送消息"><header><span>待发送 · {queue.items.length}</span><small>{queue.paused?'已暂停':'当前回复结束后依次发送'}</small><button onClick={()=>void action({action:'pause',paused:!queue.paused})}>{queue.paused?'继续队列':'暂停队列'}</button></header>
+ return <section className="enigma-input-queue" aria-label="待发送消息"><header><span>消息队列 · {queue.items.length}</span><small>{queue.paused?'已暂停':queue.items.some((item:any)=>item.state==='sending')?'正在处理已交付的消息，其余按序发送':'当前回复结束后依次发送'}</small><button onClick={()=>void action({action:'pause',paused:!queue.paused})}>{queue.paused?'继续队列':'暂停队列'}</button></header>
   {queue.items.map((item:any,index:number)=><article key={item.id} draggable={item.state==='queued'} onDragStart={()=>setDrag(item.id)} onDragOver={event=>event.preventDefault()} onDrop={event=>{event.preventDefault();if(drag)void action({action:'move',id:drag,index});setDrag(null);}}>
-   <div className="enigma-queue-text"><span>{index+1}</span><p>{item.text||'附件消息'}</p><small>{({queued:'等待发送',sending:'正在发送',failed:'发送失败',unknown:'需要核对'} as any)[item.state]}</small></div>
+   <div className="enigma-queue-text"><span>{index+1}</span>{item.state==='sending'?<details><summary>{item.text?.slice(0,90)||'附件消息'}{item.text?.length>90?'…':''}</summary><p>{item.text||'附件消息'}</p></details>:<p>{item.text||'附件消息'}</p>}<small>{({queued:'等待发送',sending:'已交给助手，处理中',failed:'发送失败',unknown:'需要核对'} as any)[item.state]}</small></div>
    {item.error&&<p role="alert">{item.error}</p>}
    <div className="enigma-queue-actions"><button disabled={item.state==='sending'||index===0} onClick={()=>void action({action:'move',id:item.id,index:index-1})} aria-label={`上移第${index+1}条`}>↑</button><button disabled={item.state==='sending'||index===queue.items.length-1} onClick={()=>void action({action:'move',id:item.id,index:index+1})} aria-label={`下移第${index+1}条`}>↓</button>
     <button disabled={item.state!=='queued'} onClick={()=>{void action({action:'pause',paused:true});setEditing(item.id);setText(item.text);}}>编辑</button>

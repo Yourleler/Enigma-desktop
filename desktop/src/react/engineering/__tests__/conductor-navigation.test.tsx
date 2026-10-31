@@ -6,13 +6,19 @@ import {ConductorCreateDialog}from'../ConductorCreate';
 import {ConductorTasks}from'../ConductorTasks';
 import {useEngineering,engineeringRequest,openEngineering}from'../state';
 import {useStore}from'../../stores';
-import {switchSession}from'../../stores/session-actions';
+import {loadSessions,switchSession}from'../../stores/session-actions';
 import {composeTaskRequest}from'../compose-task';
 vi.mock('../state',async load=>({...await load<typeof import('../state')>(),engineeringRequest:vi.fn(),openEngineering:vi.fn()}));
-vi.mock('../../stores/session-actions',()=>({switchSession:vi.fn()}));
+vi.mock('../../stores/session-actions',()=>({loadSessions:vi.fn(),switchSession:vi.fn()}));
 vi.mock('../compose-task',()=>({composeTaskRequest:vi.fn()}));
 beforeEach(()=>{vi.clearAllMocks();useEngineering.setState({sessionPath:'/old',connectionId:'a',snapshot:{overview:{repositories:[]}}});useStore.setState({models:[{id:'model',provider:'test',name:'Test',isCurrent:true}] as any});});
 afterEach(cleanup);
+it('refreshes the new manager identity before opening its composer',async()=>{
+ vi.mocked(engineeringRequest).mockResolvedValue({sessionPath:'/created',sessionId:'manager-id'});const close=vi.fn();render(<ConductorCreateDialog close={close}/>);
+ await act(async()=>fireEvent.click(screen.getByRole('button',{name:'创建管家对话'})));
+ expect(loadSessions).toHaveBeenCalledOnce();expect(switchSession).toHaveBeenCalledWith('/created');
+ expect(vi.mocked(loadSessions).mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(switchSession).mock.invocationCallOrder[0]);
+});
 it('a delayed manager creation never navigates away from a new conversation',async()=>{
  let resolve!:(value:any)=>void;vi.mocked(engineeringRequest).mockImplementationOnce(()=>new Promise(r=>{resolve=r;}));const close=vi.fn();render(<ConductorCreateDialog close={close}/>);
  fireEvent.click(screen.getByRole('button',{name:'创建管家对话'}));act(()=>useEngineering.setState({sessionPath:'/new'}));

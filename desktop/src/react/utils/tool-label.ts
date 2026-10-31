@@ -11,6 +11,55 @@ import type { ToolCall } from '../stores/chat-types';
 export type ToolPhase = 'running' | 'done' | 'failed';
 export type ToolStatus = NonNullable<ToolCall['status']>;
 
+/** Exact first-party extension registrations; never strip arbitrary plugin prefixes. */
+export const ENGINEERING_TOOL_NAMES: ReadonlySet<string> = new Set([
+  'agent_phase',
+  'artifact_manage',
+  'background_task',
+  'browser_validate',
+  'change_reading',
+  'code_trace',
+  'conductor',
+  'delegate_task',
+  'document_work',
+  'history_search',
+  'memory_dream',
+  'memory_feedback',
+  'memory_note',
+  'memory_read',
+  'memory_search',
+  'project_context',
+  'project_knowledge',
+  'project_overview',
+  'reading_open',
+  'recipe_manage',
+  'repo_add',
+  'repo_edit',
+  'repo_files',
+  'repo_read',
+  'repo_run',
+  'repo_stage',
+  'repo_write',
+  'schema_reading',
+  'service_manage',
+  'skill_discover',
+  'solution_experiment',
+  'source_index',
+  'task_acceptance',
+  'task_events',
+  'task_package',
+  'task_plan',
+  'task_reading',
+  'task_requirements',
+  'time_machine',
+  'workspace_changes',
+  'workspace_contracts',
+  'workspace_evidence',
+  'workspace_graph',
+  'workspace_repos',
+  'workspace_verify',
+]);
+
 /** 这两个工具复用别的工具的文案。 */
 export const TOOL_LABEL_ALIASES: Record<string, string> = {
   exec_command: 'bash',
@@ -57,6 +106,7 @@ export const BUILTIN_TOOL_NAMES: ReadonlySet<string> = new Set([
   'hana_card_guide', 'show_card',
   'channel_read_context', 'channel_reply', 'channel_pass',
   'create_artifact', 'dm',
+  ...ENGINEERING_TOOL_NAMES,
 ]);
 
 export function isExternalTool(name: string): boolean {
@@ -76,6 +126,14 @@ export function getToolLabel(
   args?: Record<string, unknown>,
 ): string {
   const vars = { name: agentName };
+  if (ENGINEERING_TOOL_NAMES.has(name)) {
+    const path = `engineeringTools.${name}`;
+    const operation = window.t?.(path);
+    if (operation && operation !== path) {
+      const label = resolveToolCopy('_engineering', phase, { ...vars, operation });
+      if (label) return label;
+    }
+  }
   const key = labelKeyFor(name, args);
   return resolveToolCopy(key, phase, vars)
     ?? (isExternalTool(name) ? resolveToolCopy('_plugin', phase, vars) : null)

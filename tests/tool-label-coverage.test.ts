@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import {
-  BUILTIN_TOOL_NAMES, TOOL_LABEL_ALIASES as RUNTIME_ALIASES, SESSION_ACTION_LABEL_KEYS,
+  BUILTIN_TOOL_NAMES, ENGINEERING_TOOL_NAMES, TOOL_LABEL_ALIASES as RUNTIME_ALIASES, SESSION_ACTION_LABEL_KEYS,
   isExternalTool, phaseForStatus, sessionToolTargetName, sessionToolTargetPath,
 } from '../desktop/src/react/utils/tool-label';
 
@@ -120,6 +120,7 @@ describe('工具行文案对账', () => {
       ...ACTION_LABEL_KEYS,
       '_fallback',
       '_plugin',
+      '_engineering',
     ]);
     const orphans = Object.entries(tool)
       .filter(([key, value]) => (value as any)?.running && !known.has(key))
@@ -145,6 +146,7 @@ describe('工具行文案对账', () => {
     const expected = new Set([
       ...LABELED_TOOL_NAMES.filter((n) => !bundledPluginTools.includes(n)),
       ...Object.keys(RUNTIME_ALIASES),
+      ...ENGINEERING_TOOL_NAMES,
     ]);
     expect([...BUILTIN_TOOL_NAMES].sort()).toEqual([...expected].sort());
   });
@@ -202,5 +204,24 @@ describe('工具行文案对账', () => {
     ];
     const stale = bareNames.filter((n) => tool[n]);
     expect(stale, '插件工具运行时名为 `<pluginId>_<tool>`，无前缀键是死键').toEqual([]);
+  });
+});
+
+// The extension's exact registrations must have readable labels too. Generic
+// plugin fallback hid repository reads/writes and failed acceptance actions.
+describe('engineering tool labels',()=>{
+  it('covers the installed extension registrations',()=>{
+    const root=path.join(process.cwd(),'node_modules/enigma-next/src');
+    const registered=new Set(['conductor','agent_phase']);
+    for(const file of fs.readdirSync(root).filter(f=>f.startsWith('pi-')&&f.endsWith('.ts'))){
+      const source=fs.readFileSync(path.join(root,file),'utf8');
+      for(const match of source.matchAll(/registerTool\(\{\s*name:\s*['"]([^'"]+)['"]/g))registered.add(match[1]);
+    }
+    expect([...registered].sort()).toEqual([...ENGINEERING_TOOL_NAMES].sort());
+  });
+  for(const locale of locales)it(`${locale} describes every engineering operation`,()=>{
+    const data=loadLocale(locale);
+    for(const name of ENGINEERING_TOOL_NAMES)expect(data.engineeringTools[name]).toEqual(expect.any(String));
+    for(const phase of phases)expect(data.tool._engineering[phase]).toContain('{operation}');
   });
 });

@@ -2025,6 +2025,15 @@ export function createChatRoute(
         turnWasAborted ? "aborted" : "done",
         (finalMeter) => {
           if (finalMeter) broadcastTokenMeter(sessionPath, finalMeter);
+          // Direct extension follow-ups do not pass through the prompt wrapper
+          // that emits session_status(false). Reconcile only the same finished
+          // stream and only when the runtime explicitly reports it idle.
+          let idle = false;
+          try { idle = engine.isSessionStreaming?.(sessionPath) === false; } catch {}
+          if (idle && ss.streamId === turnStreamId && !ss.turnActive) {
+            finishStreamingState(ss, sessionPath);
+            broadcast({ type: "status", isStreaming: false, sessionPath, streamId: turnStreamId });
+          }
         },
       );
 

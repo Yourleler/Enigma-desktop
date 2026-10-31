@@ -2368,6 +2368,7 @@ export function createSessionsRoute(engine, hub = null) {
         : (switchedAgent?.isSessionMemoryEnabledFor?.(sessionPath) ?? engine.memoryEnabled);
       return c.json({
         ok: true,
+        sessionId: engine.getSessionIdForPath?.(sessionPath) || session?.sessionManager?.getSessionId?.() || null,
         messageCount: session?.messages?.length || 0,
         memoryEnabled: frozenSessionMemoryEnabled,
         planMode: engine.planMode,

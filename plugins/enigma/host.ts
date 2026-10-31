@@ -321,6 +321,13 @@ export class EngineeringHost {
       nativeManager.appendCustomEntry('enigma.manager-source',{sourceSession:source.sessionManager.getSessionId(),entries:sourceNotes.map(note=>note.id),purpose:'Original user requirements retained for authorized isolated repair; not a new user instruction.'});
     }
     await this.engine.saveSessionTitle(created.sessionPath, "任务编排管家");
+    const sourceProjection = (await this.engine.listSessions?.() || []).find((item:any) => item.path === sourcePath);
+    if (sourceProjection && this.engine.setSessionProjectAssignment) {
+      await this.engine.setSessionProjectAssignment({
+        sessionPath: created.sessionPath,
+        projectId: sourceProjection.projectId || autoProjectIdForCwd(sourceProjection.cwd),
+      });
+    }
     return {
       sessionPath: created.sessionPath,
       sessionId: created.sessionId,
@@ -590,8 +597,11 @@ export class EngineeringHost {
         }),
         execute: async (_id, args, signal, _update, ctx) => {
           const binding = await this.binding(sessionPath);
-          if (!binding?.modelPolicy)
-            throw new Error("No model separation configured");
+          if (!binding?.modelPolicy) {
+            if (args.action !== "status") throw new Error("尚未配置多模型分工，请先设置规划、执行或审查模型。");
+            const value = { configured: false, mode: "single", phase: "execution", message: "当前使用对话模型，未配置多模型分工；查询不会切换模型。" };
+            return { content: [{ type: "text", text: JSON.stringify(value) }], details: value, structuredContent: value };
+          }
           if (args.action === "execute") {
             const workspace = await Workspace.open(binding.root),
               state = await readJson<{ planFile: string }>(

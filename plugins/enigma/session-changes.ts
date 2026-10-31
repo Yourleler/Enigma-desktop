@@ -153,16 +153,16 @@ export class SessionChanges {
     return {repositories,git:repos.length>0};
   }
 
-  async read(sessionPath: string, kind: 'working' | 'staged' | 'commit', signal?: AbortSignal, revisions?:{base?:Record<string,string>;target?:Record<string,string>}) {
-    const key = `${sessionPath}:${kind}:${JSON.stringify(revisions)}`;
+  async read(sessionPath: string, kind: 'working' | 'staged' | 'commit', signal?: AbortSignal, revisions?:{base?:Record<string,string>;target?:Record<string,string>}, options: { analyze?: boolean } = {}) {
+    const key = `${sessionPath}:${kind}:${JSON.stringify(revisions)}:${options.analyze !== false}`;
     const pending = this.pending.get(key);
     if (pending) return pending;
-    const task = this.capture(sessionPath, kind, signal,revisions);
+    const task = this.capture(sessionPath, kind, signal,revisions, options.analyze !== false);
     this.pending.set(key, task);
     try { return await task; } finally { if (this.pending.get(key) === task) this.pending.delete(key); }
   }
 
-  private async capture(sessionPath: string, kind: 'working' | 'staged' | 'commit', signal?: AbortSignal,revisions?:{base?:Record<string,string>;target?:Record<string,string>}) {
+  private async capture(sessionPath: string, kind: 'working' | 'staged' | 'commit', signal?: AbortSignal,revisions?:{base?:Record<string,string>;target?:Record<string,string>}, analyze = true) {
     const repos = await this.repositories(sessionPath);
     if (!repos.length) throw new Error('当前文件夹不是 Git 仓库，暂无版本差异');
     const root = path.join(this.engine.hanakoHome, 'plugin-data', 'enigma', 'change-previews', hash(`${sessionPath}:${kind}:${JSON.stringify(repos)}`));
@@ -177,7 +177,10 @@ export class SessionChanges {
     nativeEngineeringPolicy(this.engine, workspace, sessionPath);
     return withNativeEngineeringExecution(this.engine, workspace, sessionPath, async () => {
       const readings = new ChangeReadings(workspace);
-      const record = await readings.build({ kind,...revisions,task: 'sidebar', goal: '核对当前代码变更、调用关系与影响范围' }, { signal });
+      const input = { kind, ...revisions, task: 'sidebar', goal: '核对当前代码变更、调用关系与影响范围' };
+      // The workbench has explicit analysis actions. Freeze source for its diff
+      // first; computing the reading graph here delayed even simple previews.
+      const record = analyze ? await readings.build(input, { signal }) : await readings.capture(input, signal);
       const checked = await readings.latest('sidebar');
       // Recheck assigned roots before exposing a completed asynchronous result.
       if (JSON.stringify(repos) !== JSON.stringify(await this.repositories(sessionPath))) throw new Error('对话工作区已变化，请重新打开变更');

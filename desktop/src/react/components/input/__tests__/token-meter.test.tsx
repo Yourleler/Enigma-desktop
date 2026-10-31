@@ -42,6 +42,12 @@ it('does not show an earlier completed round as the usage of a newer unanswered 
  useStore.getState().initSession('sp',[{type:'message',data:{id:'new',role:'user',timestamp:3000,text:'Next request'}}],false);
  render(<TokenMeterPill/>);expect(screen.getByText('尚无用量')).toBeVisible();
 });
+it('uses the full completed round when a worker notification started a second live segment',()=>{
+ useTokenMeterStore.getState().applyTokenMeter('sp',{...meter,state:'done',startedAt:1000,endedAt:2400},'a');
+ useStore.getState().initSession('sp',[{type:'message',data:{id:'input',role:'user',timestamp:100,text:'Delegate'}},{type:'message',data:{id:'reply',role:'assistant',blocks:[],turnUsage:{startedAt:100,endedAt:2300,totals:{...emptyUsageTotals(),requests:3,reportedRequests:3,input:4321,output:123,total:4444},models:[]}}}],false);
+ render(<TokenMeterPill/>);fireEvent.click(screen.getByRole('button',{name:'查看本轮模型用量'}));
+ expect(screen.getByRole('dialog')).toHaveTextContent('4,321');expect(screen.getByRole('dialog')).toHaveTextContent('原始消息');
+});
 
 it('labels post-response processing separately and preserves actual token totals',()=>{
  useTokenMeterStore.getState().applyTokenMeter('sp',{...meter,phase:'processing',rate:0},'a');render(<TokenMeterPill/>);expect(screen.getByText('后续处理中')).toBeVisible();fireEvent.click(screen.getByRole('button',{name:'查看本轮模型用量'}));expect(screen.getByRole('dialog')).toHaveTextContent('这次模型响应已结束');expect(screen.getByRole('dialog')).toHaveTextContent('当前没有模型输出');expect(screen.getByRole('dialog')).toHaveTextContent('1,234');

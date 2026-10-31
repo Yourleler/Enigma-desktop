@@ -21,6 +21,15 @@ it('keeps the last engineering model choice when credential checks finish out of
   await f.host.applyRequestedModel(f.session);
   expect(f.engine.switchSessionModel).toHaveBeenCalledExactlyOnceWith(f.session,'latest','test');
 });
+it('reports an unconfigured model policy as status without changing model or permissions',async()=>{
+  const f=await setup();let tool:any;
+  f.host.modelPolicyFactory(f.session)({on:()=>{},registerTool:(value:any)=>{tool=value;}} as any);
+  const result=await tool.execute('status',{action:'status'});
+  expect(result.structuredContent).toMatchObject({configured:false,mode:'single'});
+  expect((await f.host.binding(f.session))?.modelPolicy).toBeUndefined();
+  expect(f.engine.switchSessionModel).not.toHaveBeenCalled();
+  await expect(tool.execute('execute',{action:'execute'})).rejects.toThrow('尚未配置');
+});
 it('cancels an engineering selection while its credential check is still pending',async()=>{
   const f=await setup(),entered=gate(),slow=gate();
   f.engine.resolveModelWithCredentialsFresh.mockImplementation(async role=>{entered.release();await slow.promise;return role;});

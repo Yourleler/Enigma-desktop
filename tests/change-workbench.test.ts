@@ -1,4 +1,4 @@
-import {afterEach,it,expect} from 'vitest';
+import {afterEach,it,expect,vi} from 'vitest';
 import fs from 'node:fs/promises';import path from 'node:path';import os from 'node:os';
 import {SessionManager,ModelRuntime} from '../lib/pi-sdk/index.ts';
 import {fauxProvider,fauxAssistantMessage} from '@earendil-works/pi-ai';
@@ -75,4 +75,17 @@ it('preserves a user ignore made while independent recheck is running',async()=>
  f.faux.setResponses([async()=>{started();await waiting;return fauxAssistantMessage(JSON.stringify({summary:'Rechecked',findings:[],verdicts:[{id:finding.id,status:'resolved',evidence:'Read main.ts at line 1.',anchors:[{repo,file:'main.ts',line:1}]}]}));}]);
  const job=await f.api.action(f.session,old.id,'recheck') as any;await ready;await f.api.action(f.session,old.id,'ignore',finding.id,'Intentional decision');release();
  expect((await untilDone(f.api,f.session,job.id)).status).toBe('completed');const result=await f.api.job(f.session,old.id);expect(result.result.findings[0]).toMatchObject({state:'ignored',reason:'Intentional decision'});
+});
+
+it('polls and cancels running analysis without repeated source snapshots',async()=>{
+ const f=await fixture();const turn=await f.capture.begin(f.session,'Create',null);await fs.writeFile(path.join(f.work,'main.ts'),'export const a=1;');await f.capture.end(f.session,turn);const source=await f.api.capture(f.session,{source:'conversation'});
+ let release!:()=>void,started!:()=>void;const waiting=new Promise<void>(r=>{release=r;}),ready=new Promise<void>(r=>{started=r;});
+ f.faux.setResponses([async()=>{started();await waiting;return fauxAssistantMessage(JSON.stringify({summary:'done',findings:[]}));}]);
+ const job=await f.api.analyze(f.session,source.id,'review');await ready;const spy=vi.spyOn(f.api,'source');
+ try{
+  const status=await f.api.job(f.session,job.id);expect(status.status).toBe('running');expect(status).not.toHaveProperty('sourceCurrent');
+  await expect(f.api.job('another',job.id)).rejects.toThrow();
+  await f.api.action(f.session,job.id,'cancel');expect(spy).not.toHaveBeenCalled();
+ }finally{spy.mockRestore();release();}
+ expect((await untilDone(f.api,f.session,job.id)).status).toBe('cancelled');
 });

@@ -3,9 +3,9 @@ import '@testing-library/jest-dom/vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { ConnectDialog } from '../Engineering';
-import { useEngineering, engineeringRequest, openGroup } from '../state';
+import { useEngineering, engineeringRequest, openGroup, loadEngineeringTab } from '../state';
 import { useStore } from '../../stores';
-vi.mock('../state', async load => ({...await load<typeof import('../state')>(), engineeringRequest:vi.fn(), openGroup:vi.fn()}));
+vi.mock('../state', async load => ({...await load<typeof import('../state')>(), engineeringRequest:vi.fn(), openGroup:vi.fn(), loadEngineeringTab:vi.fn()}));
 beforeEach(() => {
   vi.useFakeTimers();vi.clearAllMocks();
   window.hana = {} as typeof window.hana;
@@ -27,4 +27,15 @@ it('never sends a local picker path to a remote server',async()=>{
   useEngineering.setState({connectionId:'remote'});
   render(<ConnectDialog/>);await act(async()=>{vi.runOnlyPendingTimers();});
   expect(window.platform.selectFolder).not.toHaveBeenCalled();expect(screen.getByText('服务端目录路径')).toBeVisible();
+});
+it('keeps the memory page open when only its workspace settings change',async()=>{
+  const tab={id:'group:memory',group:'memory',title:'记忆'};
+  useEngineering.setState({snapshot:{connected:true,root:'/workspace/chosen',memory:false},tabs:[tab],active:tab.id});
+  vi.mocked(engineeringRequest).mockResolvedValue({connected:true,root:'/workspace/chosen',memory:true});
+  render(<ConnectDialog/>);
+  await act(async()=>{fireEvent.click(screen.getByRole('switch',{name:'工程记忆'}));});
+  await act(async()=>{fireEvent.click(screen.getByRole('button',{name:'连接工作区'}));});
+  expect(engineeringRequest).toHaveBeenCalledWith('/connect','/session',{root:'/workspace/chosen',memory:true});
+  expect(openGroup).not.toHaveBeenCalled();expect(loadEngineeringTab).toHaveBeenCalledWith(tab);
+  expect(useEngineering.getState().active).toBe(tab.id);
 });

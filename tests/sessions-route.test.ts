@@ -123,6 +123,7 @@ describe("sessions route", () => {
       })),
       getSessionMemoryEnabled: vi.fn(() => false),
       getAgent: vi.fn(() => ({ agentName: "Hana" })),
+      getSessionIdForPath: vi.fn(() => "new-manager-id"),
       getSessionWorkspaceMount: vi.fn(() => ({ mountId: "mount_docs", label: "Docs" })),
       agentIdFromSessionPath: vi.fn((sp) => {
         const rel = path.relative("/tmp/agents", sp);
@@ -165,6 +166,7 @@ describe("sessions route", () => {
     expect(data.browserUrl).toBe("https://after.example.com"); // per-session URL
     expect(data.memoryEnabled).toBe(false);
     expect(engine.getSessionMemoryEnabled).toHaveBeenCalledWith("/tmp/agents/a/sessions/new.jsonl");
+    expect(data.sessionId).toBe("new-manager-id");
     expect(data.workspaceMountId).toBe("mount_docs");
     expect(data.workspaceLabel).toBe("Docs");
     expect(data.currentModelAudio).toBe(true);

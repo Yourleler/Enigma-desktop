@@ -17,7 +17,7 @@ export interface ModelPolicy {
 export function validateModelPolicy(input: unknown): ModelPolicy {
   const value = input as ModelPolicy;
   if (!value || !["single", "plan-execute", "adaptive"].includes(value.mode))
-    throw new Error("Select a model policy");
+    throw new Error('Model policy requires mode single, plan-execute, or adaptive. For one model use {"mode":"single","execution":{"provider":"…","id":"…"}}; enqueue may omit modelPolicy to use an allowed default.');
   for (const role of [value.execution, value.planning, value.review].filter(
     Boolean,
   )) {

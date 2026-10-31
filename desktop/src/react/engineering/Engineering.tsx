@@ -711,8 +711,12 @@ export function ConnectDialog() {
       nativePicker={nativePicker} busy={!!action.busy} error={action.error} canConnect={!!sessionPath}
       onCancel={close} onConnect={(root, memory) => {
         void action.run('connect', () => engineeringRequest('/connect', sessionPath, { root, memory }), value => {
+          const current = useEngineering.getState();
+          const currentTab = current.tabs.find(tab => tab.id === current.active);
+          const sameWorkspace = current.snapshot?.connected && current.snapshot.root === value.root;
           useEngineering.setState({ snapshot: value, connectOpen: false });
-          openGroup('project');
+          if (sameWorkspace && currentTab) void loadEngineeringTab(currentTab);
+          else openGroup('project');
         });
       }}/>
   </Modal>;
