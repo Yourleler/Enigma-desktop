@@ -24,3 +24,11 @@ it('ignores forged messages and removes a failed renderer before retry',()=>{
  act(()=>window.dispatchEvent(new MessageEvent('message',{data:{channel:new URL(frame.src).hash.slice(1),type:'error',message:'forged'}})));expect(screen.queryByText('forged')).toBeNull();
  event(frame,'error',{message:'文件无法读取'});expect(screen.queryByTitle('table.xlsx · 交互表格')).toBeNull();expect(screen.getByRole('alert')).toHaveTextContent('文件无法读取');fireEvent.click(screen.getByRole('button',{name:'重新加载'}));expect(screen.getByTitle('table.xlsx · 交互表格')).toBeTruthy();
 });
+it('shows the saved formula result separately from its expression, including missing results',()=>{
+ render(<SpreadsheetPreview previewItem={item}/>);const frame=screen.getByTitle('table.xlsx · 交互表格') as HTMLIFrameElement;
+ event(frame,'loaded',{sheets:[{id:'one',name:'工作表'}],cellCount:4,warnings:[],sheetTotal:1});
+ event(frame,'selection',{sheetId:'one',sheet:'工作表',address:'B5',value:'15',formula:'=SUM(B3:B4)',zoom:1});
+ expect(screen.getByRole('status')).toHaveTextContent('B5 · 15');expect(screen.getByRole('status')).toHaveTextContent('公式：=SUM(B3:B4)');
+ event(frame,'selection',{sheetId:'one',sheet:'工作表',address:'B6',value:'未缓存结果',formula:'=B3*B4',zoom:1});
+ expect(screen.getByRole('status')).toHaveTextContent('B6 · 未缓存结果');
+});

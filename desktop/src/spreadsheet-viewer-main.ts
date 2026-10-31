@@ -9,6 +9,7 @@ import '@univerjs/preset-sheets-core/lib/index.css';
 import '@univerjs/preset-sheets-find-replace/lib/index.css';
 import './spreadsheet-viewer.css';
 import type {ImportedSpreadsheet} from './react/spreadsheet/import-workbook';
+import {onFindClosed} from './react/spreadsheet/find-selection';
 
 const channel=location.hash.slice(1);
 const previewOnly='这里是只读预览。要编辑，请下载原文件或在系统应用中打开。';
@@ -43,6 +44,23 @@ addEventListener('message',async event=>{
       runtime=createUniver({locale:LocaleType.ZH_CN,darkMode:!!data.dark,theme:data.dark?greenTheme:lightTheme,locales:{[LocaleType.ZH_CN]:mergeLocales(SheetsZh,FindZh,previewLocale)},presets:[UniverSheetsCorePreset({container:'app',header:false,toolbar:false,formulaBar:true,disableAutoFocus:true,contextMenu:false,formula:{initialFormulaComputing:CalculationMode.NO_CALCULATION},footer:{sheetBar:true,statisticBar:true,zoomSlider:true,addSheetButtonConfig:{show:false}}}),UniverSheetsFindReplacePreset()]});
       const book=runtime.univerAPI.createWorkbook(result.data);await book.getWorkbookPermission().setReadOnly();
       const currentRuntime=runtime;
+      // Find highlights do not change the selection. Observe its public state
+      // so both the dialog close button and Escape commit the same match.
+      eventDisposables.push(onFindClosed(currentRuntime.univer.__getInjector().get(IFindReplaceService),match=>{
+        requestAnimationFrame(()=>{
+          const workbook=currentRuntime.univerAPI.getActiveWorkbook();
+          if(closed||workbook?.getId()!==match.unitId)return;
+          const sheet=workbook.getSheetBySheetId(match.sheetId);if(!sheet)return;
+          const {startRow,startColumn,endRow,endColumn}=match.range;
+          try {
+            // Numeric range construction attaches workbook/sheet identity.
+            // Find's plain range has coordinates only and cannot be selected directly.
+            workbook.setActiveSheet(match.sheetId);
+            sheet.setActiveSelection(sheet.getRange(startRow,startColumn,endRow-startRow+1,endColumn-startColumn+1));
+            sheet.scrollToCell(startRow,startColumn);selection();
+          } catch { send('notice',{message:'未能选中查找结果，请使用单元格地址重新定位。'}); }
+        });
+      }));
       eventDisposables.push(runtime.univer.__getInjector().get(ComponentManager).register('FindReplaceDialog',()=>createElement(SpreadsheetFind,{
         service:currentRuntime.univer.__getInjector().get(IFindReplaceService),
         onClose:()=>{void currentRuntime.univerAPI.executeCommand(CloseFindDialogOperation.id);},

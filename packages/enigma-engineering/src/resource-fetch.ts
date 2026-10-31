@@ -102,7 +102,8 @@ export async function fetchResource(workspace: Workspace, uri: string, options: 
     if (options.signal?.aborted) throw new Error('Document fetch cancelled');
     const response = await getHttp(url, trusted, options.signal);
     if ([301, 302, 303, 307, 308].includes(response.status) && response.location) { url = validateUri(new URL(response.location, url).href); continue; }
-    if (response.status !== 200) throw new Error(`Document HTTP ${response.status}`);
+    if ([401,403].includes(response.status)) throw new Error(`来源需要认证或没有访问权限（HTTP ${response.status}）。未保存资料，请使用已授权的链接或先配置来源接入。`);
+    if (response.status !== 200) throw new Error(`来源读取失败（HTTP ${response.status}），未保存资料。请确认链接后重试。`);
     if (!/^text\/|application\/(json|xml|xhtml\+xml)/i.test(response.type)) throw new Error('Source is not a supported text document');
     const charset = /charset=([^;]+)/i.exec(response.type)?.[1]?.trim() ?? 'utf-8', text = new TextDecoder(charset, { fatal: true }).decode(response.body);
     const html = /html/i.test(response.type), title = options.title ?? (html ? /<title[^>]*>([\s\S]*?)<\/title>/i.exec(text)?.[1]?.replace(/<[^>]+>/g, '').trim() : undefined) ?? url.hostname;
