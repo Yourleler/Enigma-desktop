@@ -148,6 +148,7 @@ export interface SessionSlice {
   /** 当前首页新会话草稿的实例身份；每次重新进入新会话页都会更换，防止迟到创建响应 ABA。 */
   pendingDraftId: string | null;
   pendingProjectId: string | null;
+  pendingNewSessionMemoryEnabled: boolean | null;
   pendingNewSessionThinkingLevel: ThinkingLevel | null;
   pendingNewSessionPermissionMode: SessionPermissionMode | null;
   sessionPermissionMode: SessionPermissionMode;
@@ -206,6 +207,7 @@ export const createSessionSlice = (
   pendingNewSession: false,
   pendingDraftId: null,
   pendingProjectId: null,
+  pendingNewSessionMemoryEnabled: null,
   pendingNewSessionThinkingLevel: null,
   pendingNewSessionPermissionMode: null,
   sessionPermissionMode: 'ask',
@@ -263,7 +265,7 @@ export const createSessionSlice = (
       ...(s.pendingNewSession ? { pendingNewSessionPermissionMode: normalized } : {}),
     }));
   },
-  setMemoryEnabled: (enabled) => set({ memoryEnabled: enabled }),
+  setMemoryEnabled: (enabled) => set(s=>({memoryEnabled:enabled,...(s.pendingNewSession?{pendingNewSessionMemoryEnabled:enabled}:{})})),
   // 兼容：旧调用方仍可用，写入当前 session
   setSessionTodos: (todos) =>
     set((s) => {

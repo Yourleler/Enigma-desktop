@@ -180,7 +180,7 @@ try {
      await host.guardian.start(created.sessionPath,{mode:'managed',stageDeadlineMs:1000,maxInterventions:1,allowedActions:['propose-repair']});
      const proposed=await host.guardian.act(created.sessionPath,{requestId:'isolated-repair-one',action:'propose-repair',reason:'Actual gamma/runtime-check.cjs failed: alpha/runtime-phase.cjs describe(done) returned running instead of completed. Reproduce using the unchanged original check, repair only runtime-phase.cjs in the isolated child, preserve all other files and the joint check. Do not integrate into original source.'});
      const coordinator=host.conductor(proposed.manager.sessionPath),until=Date.now()+180000;
-     while(coordinator.active.size&&Date.now()<until)await new Promise(resolve=>setTimeout(resolve,250));
+     while(Date.now()<until){const pending=(await coordinator.load()).tasks.find(task=>task.id===proposed.task);if(pending&&!['queued','creating','running'].includes(pending.status))break;await new Promise(resolve=>setTimeout(resolve,250));}
      const report=await coordinator.status(),task=report.tasks.find(task=>task.id===proposed.task);assert.equal(task.status,'completed',task.error||task.result);assert(task.changes.some(change=>change.file==='runtime-phase.cjs'));
      assert.deepEqual(await workspace.observe(),original);assert.equal(await fs.readFile(component,'utf8'),componentBytes);assert.equal(JSON.stringify(workspace.config.checks),checks);
      const childWorkspace=await Workspace.open(task.root),verified=await childWorkspace.exclusive(()=>childWorkspace.verify());assert.equal(verified.status,'verified');

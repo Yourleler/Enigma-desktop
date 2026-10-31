@@ -431,12 +431,12 @@ export function PreviewPanel({embedded=false,visible=true,itemId,panelId='previe
         {!embedded&&previewExpanded && <button className="enigma-preview-return" onClick={() => closePreview()}><AppIcon name="chevronLeft" size={16}/>返回对话<span>已打开的文件会保留</span></button>}
         {!embedded&&<TabBar />}
         {previewItem?.type==='csv'&&isEditable(previewItem)&&<div className="enigma-csv-mode" role="group" aria-label="CSV 显示方式"><button aria-pressed={!csvSource} onClick={()=>setCsvSource(false)}>表格预览</button><button aria-pressed={csvSource} onClick={()=>setCsvSource(true)}>编辑 CSV</button></div>}
-        {previewOpen&&previewItem&&['markdown','code','text','html'].includes(previewItem.type)&&!['missing','unavailable'].includes(previewItem.status||'')&&<DocumentNavigation
+        {previewOpen&&previewItem&&(['markdown','code','text','html'].includes(previewItem.type)||previewItem.type==='csv'&&csvSource)&&!['missing','unavailable'].includes(previewItem.status||'')&&<DocumentNavigation
           documentId={previewItem.id} contentType={previewItem.type} language={previewItem.language} findOpen={findOpen} headings={markdownHeadings} activeHeadingId={activeHeadingId} editable={editable} wrapLines={wrapLines}
           onJump={handleJumpHeading} onFind={()=>{if(editable)editorRef.current?.openSearch();else setFindOpen(true);}}
           onGotoLine={()=>editorRef.current?.gotoLine()} onToggleWrap={()=>setWrapLines(value=>{try{localStorage.setItem('enigma-preview-wrap',String(!value));}catch{}return !value;})}
           onFold={editable?()=>editorRef.current?.foldAll():undefined} onUnfold={editable?()=>editorRef.current?.unfoldAll():undefined}>
-          {previewOpen && previewItem && !['browser', 'media', 'pdf', 'docx', 'xlsx', 'csv', 'file-info'].includes(previewItem.type) && !['missing','unavailable'].includes(previewItem.status||'') && (
+          {previewOpen && previewItem && (!['browser', 'media', 'pdf', 'docx', 'xlsx', 'csv', 'file-info'].includes(previewItem.type)||previewItem.type==='csv'&&csvSource) && !['missing','unavailable'].includes(previewItem.status||'') && (
             <FloatingActions inline
               content={previewItem.content}
               filePath={previewItem.filePath}

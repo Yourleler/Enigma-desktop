@@ -39,7 +39,6 @@ import { markdownBlockSelectionPlugin } from '../editor/markdown-block-selection
 import { mermaidDecoField } from '../editor/mermaid-field';
 import { linkClickHandler } from '../editor/link-handler';
 import { tableDecoField } from '../editor/table-field';
-import { csvTableField } from '../editor/csv-field';
 import { requestUserEditCheckpoint, type UserEditCheckpointReason } from '../utils/checkpoints';
 import {
   arrayBufferToBase64,
@@ -844,7 +843,7 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
           }
         }),
         // Dynamic compartments
-        c.gutter.of(isMd || isCsv ? [] : [lineNumbers(),foldGutter()]),
+        c.gutter.of(isMd ? [] : [lineNumbers(),foldGutter()]),
         c.lang.of(
           isMd ? markdown({ base: markdownLanguage, codeLanguages: languages }) : [],
         ),
@@ -868,13 +867,11 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
           }),
         ] : []),
         ...(isMd ? [tableDecoField] : []),
-        ...(isCsv ? [csvTableField] : []),
-        c.theme.of(isMd || isCsv ? markdownTheme : codeTheme),
+        c.theme.of(isMd ? markdownTheme : codeTheme),
         linkClickHandler,
       ];
 
-      // 代码模式保留行高亮，markdown / csv 模式不要
-      if (!isMd && !isCsv) extensions.push(highlightActiveLine());
+      if (!isMd) extensions.push(highlightActiveLine());
 
       const state = EditorState.create({ doc: content, extensions });
       const view = new EditorView({ state, parent: containerRef.current });

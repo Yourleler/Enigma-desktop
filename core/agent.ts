@@ -399,13 +399,13 @@ export class Agent {
     const userSetUtilityLarge = sharedModels.utility_large || this._config.models?.utility_large || null;
 
     this._utilityModel = userSetUtility || chatModelRef;
-    this._memoryModel = userSetUtilityLarge || chatModelRef;
+    this._memoryModel = userSetUtilityLarge || this._utilityModel;
 
     if (!userSetUtility && chatModelRef) {
       moduleLog.log(`utility 模型未配置，使用聊天模型作为工具模型`);
     }
-    if (!userSetUtilityLarge && chatModelRef) {
-      moduleLog.log(`utility_large 模型未配置，使用聊天模型作为记忆模型`);
+    if (!userSetUtilityLarge && this._utilityModel) {
+      moduleLog.log(`utility_large 模型未配置，复用辅助模型作为记忆模型`);
     }
 
     // 保存解析函数：每次 tick 现场调用，拿到最新凭证。

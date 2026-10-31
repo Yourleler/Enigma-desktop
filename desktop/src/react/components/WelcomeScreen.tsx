@@ -61,7 +61,7 @@ function WelcomeInner() {
   const agentYuan = useStore(s => s.agentYuan);
   const currentAgentId = useStore(s => s.currentAgentId);
   const selectedAgentId = useStore(s => s.selectedAgentId);
-  const memoryEnabled = useStore(s => s.memoryEnabled);
+  const memoryEnabled = useStore(s => s.pendingNewSession ? s.pendingNewSessionMemoryEnabled ?? true : s.memoryEnabled);
   const activeMemoryMasterEnabled = useStore(s => s.memoryMasterEnabled);
   const selectedFolder = useStore(s => s.selectedFolder);
   const selectedWorkspaceMountId = useStore(s => s.selectedWorkspaceMountId);
@@ -580,7 +580,8 @@ function MemoryToggle({ enabled, masterEnabled, t }: {
   t: (key: string) => string;
 }) {
   const handleClick = useCallback(() => {
-    useStore.setState((s) => ({ memoryEnabled: !s.memoryEnabled }));
+    const s=useStore.getState();
+    s.setMemoryEnabled(!(s.pendingNewSession?s.pendingNewSessionMemoryEnabled??true:s.memoryEnabled));
   }, []);
   const disabled = !masterEnabled;
   const label = disabled ? t('welcome.memoryDisabled') : t(enabled ? 'welcome.memoryOn' : 'welcome.memoryOff');

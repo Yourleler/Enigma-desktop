@@ -94,7 +94,7 @@ export class ExecutionRouter {
     const requireUtilityLarge = options?.requireUtilityLarge !== false;
     const chatModelRef = cfg.models?.chat || null;
     const utilityModelRef = sharedModels?.utility || cfg.models?.utility || chatModelRef;
-    const largeModelRef = sharedModels?.utility_large || cfg.models?.utility_large || chatModelRef;
+    const largeModelRef = sharedModels?.utility_large || cfg.models?.utility_large || (requireUtilityLarge ? utilityModelRef : chatModelRef);
 
     if (!utilityModelRef) throw new Error(t("error.noUtilityModel"));
     if (requireUtilityLarge && !largeModelRef) throw new Error(t("error.noUtilityLargeModel"));
@@ -354,9 +354,9 @@ export class ExecutionRouter {
       case "chat":
         return cfg.models?.chat || null;
       case "utility":
-        return sharedModels?.utility || cfg.models?.utility || null;
+        return sharedModels?.utility || cfg.models?.utility || cfg.models?.chat || null;
       case "utility_large":
-        return sharedModels?.utility_large || cfg.models?.utility_large || null;
+        return sharedModels?.utility_large || cfg.models?.utility_large || sharedModels?.utility || cfg.models?.utility || cfg.models?.chat || null;
       case "embed":
         return cfg.embedding_api?.model || null;
       default:

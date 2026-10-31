@@ -52,8 +52,8 @@ function nextPendingDraftId(): string {
  * 要求 pendingDraftId 非空才认这是一个有效的待建草稿；裸设会让身份残缺，
  * submitEditorMessage 的 ensureSession 门槛就此失效，发送静默无响应（#2101）。
  */
-export function pendingNewSessionIdentityPatch(): { pendingNewSession: true; pendingDraftId: string } {
-  return { pendingNewSession: true, pendingDraftId: nextPendingDraftId() };
+export function pendingNewSessionIdentityPatch(): { pendingNewSession: true; pendingDraftId: string; pendingNewSessionMemoryEnabled: null } {
+  return { pendingNewSession: true, pendingDraftId: nextPendingDraftId(), pendingNewSessionMemoryEnabled: null };
 }
 
 function invalidateSessionSwitches(): void {
@@ -1052,7 +1052,7 @@ type PendingSessionCreateBody = Record<string, any>;
 
 function buildPendingSessionCreateBody(state: Record<string, any>): PendingSessionCreateBody {
   const body: PendingSessionCreateBody = {
-    memoryEnabled: state.memoryEnabled,
+    memoryEnabled: state.pendingNewSessionMemoryEnabled ?? true,
     recordWorkspaceHistory: true,
   };
   if (state.selectedWorkspaceMountId) {

@@ -30,6 +30,7 @@ const initialStateFactory = (): MockState => ({
   pendingNewSession: false,
   pendingDraftId: null,
   pendingProjectId: null,
+  pendingNewSessionMemoryEnabled: null,
   pendingNewSessionThinkingLevel: null,
   pendingNewSessionPermissionMode: null,
   sessionPermissionMode: 'ask',
@@ -1061,6 +1062,15 @@ function mockPermissionDefault(mode = 'ask') {
       );
       expect(mockState.pendingNewSessionThinkingLevel).toBeNull();
       expect(mockState.thinkingLevel).toBe('high');
+    });
+    it.each([null,false,true])('uses the new draft memory choice %s instead of the previous conversation',async(choice)=>{
+      Object.assign(mockState,{pendingNewSession:true,pendingDraftId:'memory-draft',currentAgentId:'hana',currentSessionPath:null,memoryEnabled:false,pendingNewSessionMemoryEnabled:choice,selectedFolder:'/workspace-a'});
+      mockFetch.mockResolvedValueOnce(jsonResponse({ok:true,path:'/session/memory.jsonl',sessionId:'memory-new',agentId:'hana',cwd:'/workspace-a',workspaceFolders:[]}));
+      mockFetch.mockResolvedValueOnce(jsonResponse({ok:true,sessionId:'memory-new',agentId:'hana',cwd:'/workspace-a',workspaceFolders:[],memoryEnabled:choice??true}));
+      await ensureSession();
+      const call=mockFetch.mock.calls.find(([url])=>url==='/api/sessions/new-detached');
+      expect(call).toBeDefined();
+      expect(JSON.parse(String(call?.[1]?.body)).memoryEnabled).toBe(choice??true);
     });
 
     it('carries the pending new-session permission draft into session creation', async () => {

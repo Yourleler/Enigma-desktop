@@ -1,4 +1,6 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {loadAgents} from '../../stores/agent-actions';
+vi.mock('../../stores/agent-actions',()=>({loadAgents:vi.fn(async()=>{})}));
 import { useStore } from '../../stores';
 import {
   closeSettingsModal,
@@ -8,6 +10,7 @@ import {
 
 describe('settings modal actions', () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     useStore.setState({
       settingsModal: { open: false, activeTab: 'agent' },
     } as never);
@@ -39,6 +42,7 @@ describe('settings modal actions', () => {
       open: false,
       activeTab: 'bridge',
     });
+    expect(loadAgents).toHaveBeenCalledOnce();
   });
 
   it('maps the removed Computer Use tab to experiments when reopening', () => {

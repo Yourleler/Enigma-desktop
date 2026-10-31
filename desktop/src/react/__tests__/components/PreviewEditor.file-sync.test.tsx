@@ -159,6 +159,19 @@ describe('PreviewEditor file sync', () => {
     expect(ref.current?.getView()).toBeTruthy();
     expect(container.querySelector('.cm-content')?.getAttribute('spellcheck')).toBe('false');
   });
+  it('edits CSV as source with normal selection, undo and search instead of nested editable cells',()=>{
+    const ref=createRef<PreviewEditorHandle>();
+    const source='名称,数量\n项目,3\n';
+    const {container}=render(<PreviewEditor ref={ref} content={source} filePath="/tmp/new.csv" mode="csv"/>);
+    const view=ref.current!.getView()!;
+    expect(view.state.doc.toString()).toBe(source);
+    expect(container.querySelector('.cm-csv-table-widget')).toBeNull();
+    expect(container.querySelector('.cm-lineNumbers')).not.toBeNull();
+    const at=source.indexOf('3');act(()=>view.dispatch({changes:{from:at,to:at+1,insert:'8'}}));
+    expect(view.state.doc.toString()).toContain('项目,8');
+    act(()=>{undo(view);});expect(view.state.doc.toString()).toBe(source);
+    act(()=>ref.current!.openSearch());expect(searchPanelOpen(view.state)).toBe(true);
+  });
 
   it('toggles the shared block menu closed on a second handle click and keeps inline actions', () => {
     const coordsSpy = vi.spyOn(EditorView.prototype, 'coordsAtPos').mockReturnValue({

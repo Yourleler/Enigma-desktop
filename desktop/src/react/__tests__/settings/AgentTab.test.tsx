@@ -180,6 +180,12 @@ describe('AgentTab settings agent selection', () => {
     expect(screen.getByTestId('memory-section')).toHaveAttribute('data-has-utility', 'loading');
     expect(screen.getByTestId('memory-section')).toHaveAttribute('data-memory-enabled', 'true');
   });
+  it('allows memory with one selected auxiliary model without enabling memory automatically',async()=>{
+    useSettingsStore.setState({globalModelsConfig:{models:{utility:{id:'chosen',provider:'test'},utility_large:null}},settingsConfig:{agent:{name:'Hana',yuan:'hanako'},memory:{enabled:false}}});
+    const {AgentTab}=await import('../../settings/tabs/AgentTab');render(<AgentTab/>);
+    expect(screen.getByTestId('memory-section')).toHaveAttribute('data-has-utility','true');
+    expect(screen.getByTestId('memory-section')).toHaveAttribute('data-memory-enabled','false');
+  });
 
   it('shows the provider icon in the selected agent chat model trigger', async () => {
     hanaFetchMock.mockImplementation(async (_url: string, _opts?: RequestInit): Promise<MockResponse> => ({

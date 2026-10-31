@@ -1,4 +1,5 @@
 import { useStore } from './index';
+import {loadAgents} from './agent-actions';
 
 const DEFAULT_SETTINGS_TAB = 'agent';
 
@@ -26,6 +27,7 @@ export function closeSettingsModal(): void {
       activeTab: normalizeSettingsTab(current?.activeTab),
     },
   });
+  void loadAgents();
 }
 
 export function setSettingsModalActiveTab(tab: string): void {

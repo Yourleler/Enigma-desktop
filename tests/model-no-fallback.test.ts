@@ -498,12 +498,14 @@ describe("模型选择无 fallback", () => {
         .toThrow(/noUtilityModel|utility 模型|utility model|尚未配置辅助模型/);
     });
 
-    it("utility_large 未配置时抛错", () => {
+    it("unconfigured utility_large reuses the selected utility but invalid explicit models still fail", () => {
       const mm = new ModelManager({ hanakoHome: tempDir });
       setupRouter(mm);
-      mm._availableModels = [{ id: "some-model", provider: "x" }];
-      expect(() => mm.resolveUtilityConfig({}, { utility: { id: "some-model", provider: "x" } }, {}))
-        .toThrow(/noUtilityLargeModel|utility_large 模型|utility_large model|尚未配置深度辅助模型/);
+      mm._availableModels = [{ id: "some-model", provider: "x", _cred: { api: "openai-completions", apiKey: "fixture", baseUrl: "https://test.example.com/v1" } }];
+      const selected = { id: "some-model", provider: "x" };
+      expect(mm.resolveUtilityConfig({}, { utility: selected }, {}).utility_large).toMatchObject(selected);
+      expect(mm.resolveUtilityConfig({models:{chat:{id:'different-chat',provider:'y'}}}, {utility:selected}, {}).utility_large).toMatchObject(selected);
+      expect(() => mm.resolveUtilityConfig({}, { utility: selected, utility_large: { id: "missing", provider: "x" } }, {})).toThrow();
     });
 
     it("明确 small-only 调用时不要求 utility_large", () => {
