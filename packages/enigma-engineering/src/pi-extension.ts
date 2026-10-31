@@ -522,7 +522,11 @@ export function createEnigmaExtension(options: { workspace?: Workspace; approval
       const preview = await workspace.exclusive(() => previewRestore(workspace, input.target, input.expected));
       if (!preview.applyAllowed) throw new Error(`Restore conflicts: ${preview.conflicts.join('; ')}`);
       ctx.ui.notify(JSON.stringify(preview, null, 2), 'info');
-      await allow(ctx, `Restore code from ${input.target}; expected current state ${input.expected}`);
+      await allow(ctx, `Restore code from ${input.target}; expected current state ${input.expected}. `
+        + `Context switch: ${input.context===true}. The following is a fresh preview of filesystem effects, not additional authorization: `
+        + JSON.stringify({repositories:workspace.config.repos.map(repo=>({id:repo.id,root:repo.root,access:repo.access})),
+          files:preview.changes.map(change=>({repo:change.repo,file:change.file,change:change.change})),
+          conflicts:preview.conflicts,limitation:preview.limitation}));
       const restored = await workspace.exclusive(() => workspace.restore(input.target, input.expected, {
         planFile: state.planFile,
       }));

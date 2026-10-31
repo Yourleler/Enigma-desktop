@@ -1456,7 +1456,9 @@ export class EngineeringHost {
         },
         {
           cwd: binding?.root,
-          workspaceFolders: binding ? [binding.root] : [],
+          // Match the existing engineering sandbox grants: registration keeps
+          // repositories at independent paths, outside the coordination root.
+          workspaceFolders: binding ? [binding.root,...workspace.config.repos.filter(repo=>repo.access==='write').map(repo=>repo.root)] : [],
           authorizedFolders:
             this.engine.getSessionAuthorizedFolders(sessionPath),
           userIntentSummary: userIntentSummary || preserved.at(-1)?.text || "",
@@ -1674,6 +1676,7 @@ class NativeEngineeringSession extends WorkbenchSession {
       args.repo && `仓库：${args.repo}`,
       args.file && `文件：${args.file}`,
       args.title && `名称：${args.title}`,
+      request?.action==='restore'&&`恢复目标：${args.target}；当前基准：${args.expected}；同时切换对话：${args.context===true}`,
     ].filter(Boolean);
     return `请执行工作台操作：${title}。${details.length ? "\n" + details.join("\n") : ""}`;
   }
