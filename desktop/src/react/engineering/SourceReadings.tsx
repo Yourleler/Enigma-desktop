@@ -3,7 +3,7 @@ import {openEngineering,readRecordAction,useEngineering} from './state';
 import {useSideAction} from './useSideAction';
 import {displayTime} from './interaction-copy';
 
-const openSource=(source:any)=>openEngineering({id:`file:${source.repo}:${source.file}`,title:source.file,group:'reading',repo:source.repo,file:source.file});
+const openSource=(source:any)=>openEngineering({id:`file:${source.repo}:${source.file}`,title:source.file,group:'reading',repo:source.repo,file:source.file,line:source.line});
 const label=(source:any)=>`${source.repo} / ${source.file}:${source.line} · ${source.symbol}`;
 const role=(kind:string)=>kind==='outgoing-call'?'向下调用':kind==='call-site'?'调用位置':kind==='import-binding'?'导入引用':kind==='source-reference'?'引用位置':'定义与源码';
 

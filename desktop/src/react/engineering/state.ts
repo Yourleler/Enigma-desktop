@@ -32,6 +32,7 @@ export interface Tab {
   group: string;
   repo?: string;
   file?: string;
+  line?: number;
   resource?: string;
   artifact?: string;
 }
@@ -205,7 +206,7 @@ export function openEngineering(tab: Tab) {
   if(!activeConversationMatches()){useStore.getState().addToast('正在切换对话，请稍后打开这个功能。','info');return;}
   const state = useEngineering.getState();
   const tabs = state.tabs.some((item) => item.id === tab.id)
-    ? state.tabs.map(item=>item.id===tab.id?{...item,title:tab.title}:item)
+    ? state.tabs.map(item=>item.id===tab.id?{...item,...tab}:item)
     : [...state.tabs, tab].slice(-20);
   useEngineering.setState({
     tabs,

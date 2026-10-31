@@ -1,6 +1,7 @@
 import { WorkspaceChooser } from "./WorkspaceChooser";
 import { resolveServerConnection } from "../services/server-connection";
 import { GlassSelection } from '../ui/GlassSelection';
+import {SourceDocument} from './SourceDocument';
 import { FormSelectControl } from './FormSelect';
 import { AppearanceMenu } from "./AppearanceMenu";
 import { switchSession } from "../stores/session-actions";
@@ -526,7 +527,7 @@ function Content({
         (tab.artifact && value.record?.extension === ".md") ? (
           <MarkdownContent html={renderMarkdown(value.content || "")} />
         ) : (
-          <pre>{value.content || ""}</pre>
+          tab.file?<SourceDocument key={`${tab.repo}/${tab.file}:${tab.line||0}`} file={tab.file} content={value.content||''} line={tab.line}/>:<pre>{value.content || ""}</pre>
         )}
       </div>
     );
