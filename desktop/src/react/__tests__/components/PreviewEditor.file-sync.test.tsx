@@ -1,7 +1,7 @@
 /**
  * @vitest-environment jsdom
  */
-import { act, cleanup, fireEvent, render } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import {undo} from '@codemirror/commands';
 import {searchPanelOpen} from '@codemirror/search';
 import { Transaction } from '@codemirror/state';
@@ -915,9 +915,65 @@ describe('PreviewEditor file sync', () => {
       expect(onContentChange).toHaveBeenLastCalledWith('local draft');
       expect(onContentChange).toHaveBeenCalledTimes(2);
       expect(notices.some(notice => String(notice.text ?? '').includes('settings.fileChangedOnDisk'))).toBe(true);
+      await act(async () => {
+        ref.current!.getView()!.dispatch({changes: {from: 11, insert: ' plus more'}, annotations: Transaction.userEvent.of('input.type')});
+        vi.advanceTimersByTime(700);
+        await Promise.resolve();
+      });
+      // The newer disk version belongs to the rejected external content, not
+      // this draft. Subsequent keystrokes must never silently accept it.
+      expect(platform.writeFileIfUnchanged).not.toHaveBeenCalled();
+      expect(ref.current!.getView()!.state.doc.toString()).toBe('local draft plus more');
+      expect(screen.getByRole('region', {name: '文件保存状态'})).toBeTruthy();
     } finally {
       window.removeEventListener('hana-inline-notice', onNotice);
     }
+  });
+
+  it.each(['local', 'remote'])('requires explicit choice before saving a conflicted %s draft and keeps version checks', async kind => {
+    const ref = createRef<PreviewEditorHandle>();
+    const loaded = {mtimeMs: 1, size: 8, sha256: 'original'};
+    const external = {mtimeMs: 2, size: 15, sha256: 'external'};
+    const remoteSave = vi.fn(async () => ({ok: false, conflict: true}));
+    const saved = vi.fn();
+    const props = {ref, filePath: '/tmp/conflict.md', mode: 'markdown' as const, onContentChange: saved, ...(kind==='remote'?{saveDocument: remoteSave}:{})};
+    const {rerender} = render(<PreviewEditor {...props} content="original" fileVersion={loaded}/>);
+    act(()=>ref.current!.getView()!.dispatch({changes: {from:0,to:8,insert:'my draft'}, annotations:Transaction.userEvent.of('input.type')}));
+    rerender(<PreviewEditor {...props} content="external update" fileVersion={external}/>);
+    await act(async()=>{vi.advanceTimersByTime(700);await Promise.resolve();});
+    expect(platform.writeFileIfUnchanged).not.toHaveBeenCalled();
+    expect(remoteSave).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button',{name:'保存当前草稿…'}));
+    fireEvent.click(screen.getByRole('button',{name:'继续比较'}));
+    expect(platform.writeFileIfUnchanged).not.toHaveBeenCalled();
+    expect(remoteSave).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button',{name:'保存当前草稿…'}));
+    await act(async()=>{fireEvent.click(screen.getByRole('button',{name:'保存当前草稿'}));await Promise.resolve();});
+    if(kind==='remote') {
+      expect(remoteSave).toHaveBeenCalledWith('my draft',external);
+      expect(screen.getByText('文件有外部更新，自动保存已暂停。当前草稿仍保留在编辑器中。')).toBeTruthy();
+      act(()=>ref.current!.getView()!.dispatch({changes:{from:8,insert:' more'},annotations:Transaction.userEvent.of('input.type')}));
+      await act(async()=>{vi.advanceTimersByTime(700);await Promise.resolve();});
+      expect(remoteSave).toHaveBeenCalledTimes(1);
+    } else expect(platform.writeFileIfUnchanged).toHaveBeenCalledWith('/tmp/conflict.md','my draft',external);
+  });
+
+  it('adopts the external content only after confirmation without writing the rejected draft', async () => {
+    const ref=createRef<PreviewEditorHandle>();
+    const saved=vi.fn(), loaded={mtimeMs:1,size:8,sha256:'original'}, external={mtimeMs:2,size:15,sha256:'external'};
+    const props={ref,filePath:'/tmp/conflict.md',mode:'markdown' as const,onContentChange:saved};
+    const {rerender}=render(<PreviewEditor {...props} content="original" fileVersion={loaded}/>);
+    act(()=>ref.current!.getView()!.dispatch({changes:{from:0,to:8,insert:'my draft'},annotations:Transaction.userEvent.of('input.type')}));
+    rerender(<PreviewEditor {...props} content="external update" fileVersion={external}/>);
+    fireEvent.click(screen.getByRole('button',{name:'采用外部版本…'}));
+    fireEvent.click(screen.getByRole('button',{name:'采用外部版本'}));
+    await act(async()=>{vi.advanceTimersByTime(700);await Promise.resolve();});
+    expect(ref.current!.getView()!.state.doc.toString()).toBe('external update');
+    expect(saved).toHaveBeenLastCalledWith('external update',external);
+    expect(platform.writeFileIfUnchanged).not.toHaveBeenCalled();
+    act(()=>ref.current!.getView()!.dispatch({changes:{from:15,insert:' merged'},annotations:Transaction.userEvent.of('input.type')}));
+    await act(async()=>{vi.advanceTimersByTime(700);await Promise.resolve();});
+    expect(platform.writeFileIfUnchanged).toHaveBeenCalledWith('/tmp/conflict.md','external update merged',external);
   });
 
   it('pastes clipboard images into the markdown attachment folder at the cursor', async () => {

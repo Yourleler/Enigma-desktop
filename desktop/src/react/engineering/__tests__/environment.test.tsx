@@ -40,3 +40,12 @@ it('prefills service edits and shows acknowledged unknown effects without anothe
  vi.mocked(engineeringRequest).mockResolvedValue({background:[{spec:{id:'run',label:'已核对任务',repo:'api',argv:['node','work.js']},state:{status:'unknown'},terminal:true,reconciled:true,reconciliation:{observation:'已检查实际文件'}}]});
  await act(async()=>{render(<EnvironmentPanel initial={{}} evidence={()=>null}/>);});expect(screen.getByText('实际效果已核对')).toBeVisible();expect(screen.queryByRole('button',{name:'记录已核对的效果'})).toBeNull();
 });
+it('does not present a successful arbitrary command as project acceptance',async()=>{
+ const run={spec:{id:'run',label:'生成数据',repo:'app',argv:['node','generate.js'],createdAt:'2026-11-01T00:00:00Z'},state:{status:'passed',exitCode:0,output:'DONE'},terminal:true};
+ vi.mocked(engineeringRequest).mockResolvedValue({background:[run]});await act(async()=>{render(<EnvironmentPanel initial={{background:[run]}} evidence={()=>null}/>);});
+ expect(screen.getByText('执行成功')).toBeVisible();expect(screen.queryByText('检查通过')).toBeNull();
+});
+it('labels retained startup receipts as historical rather than current running state',()=>{
+ render(<OperationResult value={{spec:{id:'run',label:'生成数据',argv:['node','generate.js']},state:{status:'running'}}} details={null}/>);
+ expect(screen.getByRole('heading')).toHaveTextContent('后台命令已提交');expect(screen.getByText(/提交时状态/)).toBeVisible();
+});

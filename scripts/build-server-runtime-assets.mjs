@@ -85,6 +85,10 @@ export function copyServerRuntimeAssets({ rootDir, outDir, fsImpl = fs }) {
       path.join("desktop", "dist-renderer", dirName),
     );
   }
+  // The renderer build clears this separately compiled bootstrap. A package
+  // without it can open normally while every appearance control is inert.
+  assertRequiredAssetExists(fsImpl, path.join(sourceRendererDir, "lib", "theme.js"),
+    "desktop/dist-renderer/lib/theme.js — run npm run build:theme after building the renderer");
   fsImpl.rmSync(targetRendererDir, { recursive: true, force: true });
   fsImpl.mkdirSync(path.dirname(targetRendererDir), { recursive: true });
   for (const fileName of SERVER_RUNTIME_RENDERER_REQUIRED_FILES) {

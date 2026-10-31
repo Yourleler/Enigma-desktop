@@ -28,19 +28,18 @@
 .workspaceHeader {
     flex: 0 0 auto;
     display: flex;
-    flex-direction: column;
-    align-items: stretch;
+    align-items: center;
     gap: var(--space-7);
     padding: var(--space-12) var(--space-12) var(--space-8);
 }
 
 .workspaceTitle {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
+    flex: 1;
     gap: var(--space-8);
     min-width: 0;
     max-width: 100%;
-    overflow-wrap: anywhere;
     font-family: var(--font-ui);
     font-size: var(--fs-body);
     line-height: 1.4;
@@ -48,21 +47,23 @@
     color: var(--text);
 }
 
-.workspaceHeaderTools {
-    display: flex;
-    align-items: flex-start;
-    flex-wrap: wrap;
-    gap: var(--space-6) var(--space-12);
-}
+.workspaceTitle span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.workspaceTitle :global(.enigma-icon) { flex-shrink: 0; }
+.workspaceOptions { flex: 0 0 28px; width: 28px; height: 28px; min-width: 28px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--text-muted); display: grid; place-items: center; }
+.workspaceOptions:hover, .workspaceOptions[aria-expanded="true"] { background: var(--overlay-light); color: var(--text); }
+.workspaceOptions:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.workspaceOptionsPanel .workspacePath { padding: var(--space-10) var(--space-12); }
+.workspaceOptionsPanel .workspacePath summary { min-height: 24px; line-height: 24px; }
+.workspaceOptionsPanel .workspacePath summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+.workspaceOptionsPanel :is(.directoryNotes, button) { display: flex; align-items: center; gap: var(--space-8); }
 
 .workspacePath {
     min-width: 0;
-    flex: 1 1 70px;
     font-size: var(--fs-caption);
     color: var(--text-muted);
 }
 
-.workspacePath summary { cursor: pointer; width: fit-content; }
+.workspacePath summary { cursor: pointer; width: fit-content; white-space: nowrap; }
 .workspacePath code { display: block; margin-top: var(--space-6); overflow-wrap: anywhere; white-space: normal; user-select: text; }
 
 .tabs {
@@ -405,8 +406,6 @@
         transition: none !important;
     }
 }
-
-.workspacePath[open] { flex-basis: 100%; }
 
 .workspaceTitle { border:0; background:transparent; padding:0; text-align:left; cursor:pointer; border-radius:6px; }
 .workspaceTitle:hover { color:var(--accent); }

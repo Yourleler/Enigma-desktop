@@ -1,0 +1,12 @@
+.notice { flex: 0 0 auto; max-height: 45%; overflow: auto; padding: 10px 12px; color: var(--text); background: var(--overlay-light); border-bottom: 1px solid var(--overlay-medium); font: var(--fs-caption)/1.5 var(--font-ui); overflow-wrap: anywhere; }
+:global([data-preview-panel-body]:has(> [data-preview-save-notice])) { display: flex; flex-direction: column; }
+:global([data-preview-panel-body]:has(> [data-preview-save-notice]) > .preview-editor) { flex: 1; min-height: 0; height: auto; }
+.notice p { margin: 0 0 6px; }
+.notice details { margin: 6px 0; }
+.notice summary { cursor: pointer; color: var(--text-muted); }
+.notice pre { max-height: 120px; overflow: auto; white-space: pre-wrap; user-select: text; font-size: inherit; }
+.actions { display: flex; flex-wrap: wrap; gap: 4px 8px; }
+.actions button { min-height: 28px; border: 0; border-radius: 6px; padding: 4px 6px; color: var(--text); background: transparent; font: inherit; cursor: pointer; }
+.actions button:hover { background: var(--overlay-medium); }
+.actions button:disabled { opacity: .5; cursor: default; }
+.actions button:focus-visible, .notice summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }

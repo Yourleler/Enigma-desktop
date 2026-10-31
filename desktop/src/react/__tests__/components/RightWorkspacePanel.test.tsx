@@ -128,6 +128,7 @@ describe('RightWorkspacePanel', () => {
   let localStorageData: Record<string, string>;
 
   beforeEach(() => {
+    vi.stubGlobal('ResizeObserver', class { observe() {} unobserve() {} disconnect() {} });
     localStorageData = {};
     Object.defineProperty(window, 'localStorage', {
       configurable: true,
@@ -169,6 +170,7 @@ describe('RightWorkspacePanel', () => {
 
   afterEach(() => {
     cleanup();
+    vi.unstubAllGlobals();
   });
 
   it('renders extensible right workspace tabs and keeps workspace as the compatibility default', () => {
@@ -893,6 +895,8 @@ describe('RightWorkspacePanel', () => {
 
     expect(drawer).toHaveAttribute('data-open', 'false');
     expect(drawer).not.toBeVisible();
+    expect(screen.queryByRole('button', {name:'自动整理说明'})).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', {name:'目录选项'}));
     expect(screen.getByRole('button', {name:'自动整理说明'})).toHaveAttribute('aria-expanded','false');
     expect(screen.getByPlaceholderText('写点什么...').closest('[inert]')).not.toBeNull();
 

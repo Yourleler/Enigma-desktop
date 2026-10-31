@@ -141,4 +141,9 @@ describe("server runtime assets", () => {
     expect(()=>copyServerRuntimeAssets({rootDir,outDir})).toThrow(/missing.*viewer.*missing\.js/);
   });
 
+  it("rejects an incomplete renderer missing its separately built theme runtime",()=>{
+    fs.unlinkSync(path.join(rootDir,'desktop/dist-renderer/lib/theme.js'));
+    expect(()=>copyServerRuntimeAssets({rootDir,outDir})).toThrow(/theme\.js.*build:theme/);
+  });
+
 });

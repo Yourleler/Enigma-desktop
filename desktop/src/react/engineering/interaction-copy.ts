@@ -42,6 +42,10 @@ export function operationLabel(state: string | undefined) {
   if(state&&observerLabels[state])return observerLabels[state];
   return ({ running: '正在执行', starting:'正在启动', ready:'服务已就绪', 'not-started':'尚未启动', 'configuration-changed':'服务配置已变化', 'dependency-changed':'上游依赖已变化', 'source-changed':'源码版本已变化', 'readiness-timeout':'就绪等待超时', completed: '已完成', failed: '执行失败', cancelled: '已取消', timeout:'执行超时', unknown: '结果待核对', pending: '等待结果', settled: '已结束', acknowledged: '已核对', 'rolled-back': '已撤销', idle: '空闲', active: '运行中', stale: '观测已过期', alive: '进程存活', dead: '进程已退出', fresh: '观测正常', unavailable: '暂不可用', 'missing': '未获取到' } as Record<string,string>)[state || ''] || state || '待核对';
 }
+/** Process exit status alone does not certify project acceptance. */
+export function processResultLabel(state:string|undefined) {
+  return state==='passed'?'执行成功':operationLabel(state);
+}
 const timeCopy: Record<string, [string, string]> = {
   checkpoint: ['保存当前代码快照', '记录各仓库当前文件和关联对话位置。之后可以比较或恢复这份代码；不会创建 Git 提交。'],
   'restore-preview': ['查看恢复预览', '比较目标快照与核对基准，检查当前文件是否有冲突。这一步不修改代码。'],

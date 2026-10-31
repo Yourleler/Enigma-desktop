@@ -14,6 +14,7 @@
 
 import { forwardRef, useEffect, useRef, useCallback, useImperativeHandle, useLayoutEffect, useState, Fragment } from 'react';
 import { EditorContextMenu } from './preview/EditorContextMenu';
+import { PreviewSaveNotice } from './preview/PreviewSaveNotice';
 import { isContextMenuButton } from '../stores/selection-actions';
 import {
   EditorView, keymap, highlightActiveLine, drawSelection,
@@ -58,7 +59,7 @@ import {
   applyMarkdownCoverImageDrop,
   hasMarkdownCoverDropImage,
 } from '../utils/markdown-cover-drop';
-import { isRemoteWorkbenchContentRef } from '../utils/remote-file-preview';
+import { isRemoteWorkbenchContentRef, readRemotePreviewItem } from '../utils/remote-file-preview';
 import type { FileVersion, RemoteWorkbenchContentRef, VersionedWriteResult } from '../types';
 import type { PreviewScrollSnapshot } from '../../../../shared/preview-reading-position.ts';
 
@@ -418,6 +419,9 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
     const lastSavedContentRef = useRef<string>(content);
     const selfWriteContentsRef = useRef<Set<string>>(new Set());
     const pendingIncomingContentRef = useRef<PendingIncomingContent | null>(null);
+    const saveBlockedRef = useRef(false);
+    const [saveIssue, setSaveIssue] = useState<{ conflict: boolean; message: string } | null>(null);
+    const [refreshingConflict, setRefreshingConflict] = useState(false);
     const diskVersionRef = useRef<FileVersion | null>(fileVersion ?? null);
     const lastPropFileVersionKeyRef = useRef(incomingFileVersionKey);
     const docRevisionRef = useRef(0);
@@ -444,12 +448,6 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
     const scrollSnapshotCbRef = useRef(onScrollSnapshotChange);
     scrollSnapshotCbRef.current = onScrollSnapshotChange;
     const restoredScrollKeyRef = useRef<string>('');
-
-    useEffect(() => {
-      if (fileVersion !== undefined) {
-        diskVersionRef.current = fileVersion;
-      }
-    }, [fileVersion]);
 
     // Per-instance compartments for dynamic reconfiguration
     const cRef = useRef({
@@ -622,11 +620,11 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
     const performSave = useCallback(async ({ text, revision }: SaveJob) => {
       const fp = filePathRef.current;
       const saveRemoteDocument = saveDocumentRef.current;
-      if (!fp && !saveRemoteDocument) return;
+      if ((!fp && !saveRemoteDocument) || saveBlockedRef.current) return;
 
       try {
         if (fp) await createCheckpointIfDue(fp);
-        if (revision !== docRevisionRef.current || fp !== filePathRef.current) return;
+        if (revision !== docRevisionRef.current || fp !== filePathRef.current || saveBlockedRef.current) return;
         const expectedVersion = diskVersionRef.current;
         let nextVersion: FileVersion | null | undefined;
 
@@ -635,6 +633,7 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
           if (!result?.ok) {
             if (result?.conflict) {
               const tFn = window.t ?? ((p: string) => p);
+              saveBlockedRef.current = true;
               throw new Error(tFn('settings.fileChangedOnDisk'));
             }
             throw new Error('saveDocument returned false');
@@ -648,6 +647,7 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
             if (!result?.ok) {
               if (result?.conflict) {
                 const tFn = window.t ?? ((p: string) => p);
+                saveBlockedRef.current = true;
                 throw new Error(tFn('settings.fileChangedOnDisk'));
               }
               throw new Error('write-file-if-unchanged returned false');
@@ -665,12 +665,14 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
           pendingIncomingContentRef.current = null;
         }
         rememberSelfWrite(text);
+        if (!pendingIncomingContentRef.current) setSaveIssue(null);
 
         if (revision === docRevisionRef.current && fp === filePathRef.current && nextVersion !== undefined) {
           contentCbRef.current?.(text, nextVersion);
         }
       } catch (err) {
         console.warn('[PreviewEditor] write failed:', err);
+        setSaveIssue({ conflict: saveBlockedRef.current, message: getErrorMessage(err) });
         showSaveError('settings.saveFailed', err);
       }
     }, [createCheckpointIfDue, rememberSelfWrite]);
@@ -692,12 +694,18 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
       drainSaveQueue();
     }, [drainSaveQueue]);
 
-    const applyIncomingContent = useCallback((nextContent: string, options: { publish?: boolean } = {}) => {
+    const applyIncomingContent = useCallback((nextContent: string, options: { publish?: boolean; version?: FileVersion | null } = {}) => {
       const view = viewRef.current;
       if (!view) return;
+      const acceptVersion = () => {
+        if (options.version !== undefined) diskVersionRef.current = options.version;
+        saveBlockedRef.current = false;
+        setSaveIssue(null);
+      };
       const current = view.state.doc.toString();
       if (current === nextContent) {
         if (options.publish) {
+          acceptVersion();
           lastSavedContentRef.current = nextContent;
           pendingIncomingContentRef.current = null;
         }
@@ -706,6 +714,7 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
 
       if (selfWriteContentsRef.current.has(nextContent)) {
         if (options.publish) {
+          acceptVersion();
           lastSavedContentRef.current = nextContent;
           pendingIncomingContentRef.current = null;
         }
@@ -718,6 +727,7 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
           ? mergeMarkdownCoverIntoDocument(current, nextContent)
           : null;
         if (merged) {
+          acceptVersion();
           docRevisionRef.current += 1;
           const revision = docRevisionRef.current;
           if (saveTimerRef.current) {
@@ -732,7 +742,9 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
           return;
         }
 
-        const nextVersion = diskVersionRef.current;
+        // An observed version is not the baseline of an unapplied draft.
+        // Accepting it here would let the next keystroke overwrite that file.
+        const nextVersion = options.version ?? null;
         const previousPending = pendingIncomingContentRef.current;
         const samePending = !!previousPending
           && previousPending.content === nextContent
@@ -743,6 +755,10 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
           noticeShown: samePending ? previousPending.noticeShown : false,
         };
         pendingIncomingContentRef.current = pending;
+        saveBlockedRef.current = true;
+        pendingSaveRef.current = null;
+        if (saveTimerRef.current) { clearTimeout(saveTimerRef.current); saveTimerRef.current = null; }
+        setSaveIssue({ conflict: true, message: '' });
         contentCbRef.current?.(current);
         if (!pending.noticeShown) {
           showSaveError('settings.fileChangedOnDisk', 'local edits are not saved yet');
@@ -752,6 +768,7 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
       }
 
       docRevisionRef.current += 1;
+      acceptVersion();
       if (saveTimerRef.current) {
         clearTimeout(saveTimerRef.current);
         saveTimerRef.current = null;
@@ -763,6 +780,42 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
         contentCbRef.current?.(nextContent, diskVersionRef.current);
       }
     }, [mode, readOnly, saveToFile]);
+
+    const refreshConflict = useCallback(async () => {
+      const path = filePathRef.current, remote = remoteContentRefRef.current;
+      setRefreshingConflict(true);
+      try {
+        const snapshot = isRemoteWorkbenchContentRef(remote)
+          ? await readRemotePreviewItem({ id: 'conflict-read', title: '', content: '', type: 'text', remoteContentRef: remote })
+          : path && window.platform?.readFileSnapshot ? await window.platform.readFileSnapshot(path) : null;
+        if (path !== filePathRef.current || remote !== remoteContentRefRef.current) return;
+        if (!snapshot) throw new Error('无法读取文件，请检查文件是否仍存在，再重试。');
+        const version = 'version' in snapshot ? snapshot.version : snapshot.fileVersion;
+        if (!version) throw new Error('没有取得文件版本，请重新打开文件后再保存。');
+        applyIncomingContent(snapshot.content, { publish: true, version });
+      } catch (error) {
+        setSaveIssue({ conflict: true, message: getErrorMessage(error) });
+      } finally { setRefreshingConflict(false); }
+    }, [applyIncomingContent]);
+
+    const resolveConflict = (keepDraft: boolean, expected: PendingIncomingContent) => {
+      const view = viewRef.current;
+      if (!view || expected !== pendingIncomingContentRef.current || !expected.fileVersion) return;
+      if (saveTimerRef.current) { clearTimeout(saveTimerRef.current); saveTimerRef.current = null; }
+      pendingSaveRef.current = null;
+      pendingIncomingContentRef.current = null;
+      diskVersionRef.current = expected.fileVersion;
+      lastSavedContentRef.current = expected.content;
+      saveBlockedRef.current = false;
+      setSaveIssue(null);
+      const revision = ++docRevisionRef.current;
+      if (keepDraft) saveToFile(view.state.doc.toString(), revision);
+      else {
+        replaceDocumentPreservingSelection(view, expected.content);
+        contentCbRef.current?.(expected.content, expected.fileVersion);
+      }
+      view.focus();
+    };
 
     // Create editor
     useLayoutEffect(() => {
@@ -1012,7 +1065,7 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
     useEffect(() => {
       const versionChanged = incomingFileVersionKey !== lastPropFileVersionKeyRef.current;
       lastPropFileVersionKeyRef.current = incomingFileVersionKey;
-      applyIncomingContent(content, { publish: versionChanged });
+      applyIncomingContent(content, { publish: versionChanged, version: fileVersion });
     }, [content, incomingFileVersionKey, applyIncomingContent]);
 
     const getViewForMenu = useCallback(() => viewRef.current, []);
@@ -1020,6 +1073,10 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
 
     return (
       <Fragment>
+        {saveIssue && <PreviewSaveNotice issue={saveIssue} external={pendingIncomingContentRef.current}
+          refreshing={refreshingConflict} onRefresh={()=>void refreshConflict()}
+          onCopy={()=>navigator.clipboard.writeText(viewRef.current?.state.doc.toString() ?? content)}
+          onRetry={()=>saveToFile(viewRef.current?.state.doc.toString() ?? content)} onResolve={resolveConflict}/>}
         <div className={`preview-editor mode-${mode}`} ref={containerRef} onInputCapture={event=>{
           // Upstream commits on keyup/change. Also commit input events from
           // paste, accessibility and programmatic fill before a replace click.

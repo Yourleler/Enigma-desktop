@@ -3,7 +3,7 @@ import { useStore } from '../stores';
 import { engineeringRequest, showRecordAction,showAction,readRecordAction,useEngineering,type Action } from './state';
 import { useSideAction } from './useSideAction';
 import { useSideQuery } from './useSideQuery';
-import { displayTime, operationLabel,executionHint } from './interaction-copy';
+import { displayTime, operationLabel,processResultLabel,executionHint } from './interaction-copy';
 import {BrowserChecks} from './BrowserChecks';
 
 export function serviceEditAction(action:Action,item:any):Action {
@@ -60,7 +60,7 @@ export function EnvironmentPanel({ initial, evidence }: { initial:any; evidence:
     <h3 className="enigma-section-title">后台运行记录</h3>
     {!background.length&&<p className="enigma-source-note">暂无独立后台命令。当前服务的输出在上方卡片中。</p>}
     {background.map((item:any)=><article className="enigma-step" key={item.spec.id}><span aria-hidden="true">{!item.terminal?'◌':'○'}</span><div><strong>{item.spec.label}</strong>
-      <div className="enigma-chips"><span>{operationLabel(item.state.status)}</span><span>{item.spec.repo}</span>{item.spec.kind==='service'&&<span>历史服务运行</span>}{item.reconciled&&<span>实际效果已核对</span>}</div><small>{displayTime(item.spec.createdAt)}</small>
+      <div className="enigma-chips"><span>{processResultLabel(item.state.status)}</span><span>{item.spec.repo}</span>{item.spec.kind==='service'&&<span>历史服务运行</span>}{item.reconciled&&<span>实际效果已核对</span>}</div><small>{displayTime(item.spec.createdAt)}</small>
       <details className="enigma-result"><summary>命令与日志</summary><pre className="enigma-runtime-log">{item.spec.argv.join('\n')}</pre><RuntimeLog state={item.state}/>{item.reconciliation&&<p>核对说明：{item.reconciliation.observation}</p>}<details><summary>完整运行回执</summary>{evidence(item)}</details></details>
       {!item.terminal&&<button disabled={!!control.busy} data-tooltip="取消这条后台命令，不中断主对话" onClick={()=>void stop('background',item.spec.id)}>{stopping('background',item.spec.id)?'正在停止…':'取消此后台任务'}</button>}
       {item.state.status==='unknown'&&!item.reconciled&&item.terminal&&action('background-acknowledge')&&<button disabled={blocked} onClick={()=>void showRecordAction('background-acknowledge',{id:item.spec.id},{id:item.spec.label})}>记录已核对的效果</button>}

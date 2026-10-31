@@ -6,6 +6,7 @@ import { isWebRuntime } from '../../utils/platform-runtime';
 import { useChangesPanel } from '../../stores/changes-panel-store';
 import { RepositoryChangesCard, RepositoryChangesPanel } from './RepositoryChangesCard';
 import { EngineeringPanel } from '../../engineering/Engineering';
+import { SurfaceMenu } from '../../engineering/SurfaceMenu';
 import { useEngineering } from '../../engineering/state';
 import { useId,useState } from 'react';
 import { GlassSelection } from '../../ui/GlassSelection';
@@ -94,14 +95,14 @@ function WorkspaceHeader() {
     <>
       <div className={styles.workspaceHeader}>
         <button type="button" className={styles.workspaceTitle} onClick={openDirectory} aria-label={nativeOpen?`在文件管理器打开 ${title}`:`打开目录文件 ${title}`} data-tooltip={`${nativeOpen?'在系统文件管理器中打开':'查看这个目录的文件'}\n${titlePath||''}`}><AppIcon name="project" size={18}/><span>{title}</span></button>
-        <div className={styles.workspaceHeaderTools}>
+        <SurfaceMenu label="目录选项" hint="查看完整路径、自动整理说明和项目技能" icon={<AppIcon name="settings" size={16}/>} triggerClassName={styles.workspaceOptions} panelClassName={styles.workspaceOptionsPanel}>
           {titlePath && <details className={styles.workspacePath}>
             <summary>{t('desk.fullPath')}</summary>
             <code>{titlePath}</code>
           </details>}
           <button type="button" className={styles.directoryNotes} aria-label="自动整理说明" aria-expanded={notesOpen} data-tooltip="给自动巡检填写处理要求；不会自动作为每轮聊天的共享背景" onClick={()=>useStore.getState().setJianDrawerOpen(!notesOpen)}><AppIcon name="file" size={14}/>自动整理</button>
           <DeskCwdSkillsButton inline />
-        </div>
+        </SurfaceMenu>
       </div>
       <DeskCwdSkillsPanel inline />
     </>

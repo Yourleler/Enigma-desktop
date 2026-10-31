@@ -10,7 +10,7 @@ import {RuntimeLog} from './Environment';
 import {BrowserReportResult} from './BrowserChecks';
 import { RestorePreview } from './TimeMachine';
 import { DelegationMergePreview } from './Collaboration';
-import { operationLabel,executionHint,checkpointLabel,displayTime } from './interaction-copy';
+import { operationLabel,processResultLabel,executionHint,checkpointLabel,displayTime } from './interaction-copy';
 import { MarkdownContent } from '../components/chat/MarkdownContent';
 import { renderMarkdown } from '../utils/markdown';
 import { switchSession } from '../stores/session-actions';
@@ -38,7 +38,7 @@ export function OperationResult({value,details}:{value:any;details:ReactNode}){
   if(value?.serviceConfigured)return <section className="enigma-result"><h3>服务配置已保存</h3><p>{value.label} · {value.repo}，保存没有启动进程。可在服务卡片核对命令后启动。</p><details><summary>完整配置</summary>{details}</details></section>;
   if(value?.service&&typeof value.ready==='boolean')return <section className="enigma-result"><h3>{value.service.label}：{operationLabel(value.status)}</h3><p>{value.ready?'就绪条件已满足；这不等于项目检查通过。':value.status==='readiness-timeout'?'服务没有按时就绪。可以查看日志，停止当前实例或修正配置后重启。':'请在下方服务卡片查看当前进程、配置和下一步操作。'}</p>{value.process&&<details><summary>本次服务输出</summary><RuntimeLog state={value.process}/></details>}<details><summary>完整运行回执</summary>{details}</details></section>;
   if(value?.backgroundAcknowledged)return <section className="enigma-result"><h3>后台效果已核对</h3><p>{value.label}：{value.observation}</p><p>历史中断状态仍保留，没有重做命令；后续仍需原检查验收。</p></section>;
-  if(value?.spec?.argv&&value.state)return <section className="enigma-result"><h3>{value.spec.label}：{operationLabel(value.state.status)}</h3><p>已登记这次后台运行。完成与否按实际退出结果核对；日志和取消入口在下方卡片。</p><details><summary>本次输出</summary><RuntimeLog state={value.state}/></details></section>;
+  if(value?.spec?.argv&&value.state)return <section className="enigma-result"><h3>后台命令已提交：{value.spec.label}</h3><p>提交时状态：{processResultLabel(value.state.status)}。这是提交回执；当前状态、日志和取消入口在下方运行记录中，命令成功不表示项目验收通过。</p><details><summary>提交时的输出</summary><RuntimeLog state={value.state}/></details></section>;
   if(value?.spec?.condition&&value.state || value?.condition&&value.fingerprint){const spec=value.spec||value;return <section className="enigma-result"><h3>{value.state?.status==='cancelled'?'等待已取消':'等待已登记'}：{spec.label}</h3><p>{value.state?.status==='cancelled'?'目标运行没有被停止，也不会自动接续。':spec.resume?'结果到达后按任务规则接续。':'只记录结果，不自动发起下一轮。'}等待和目标运行各自独立，可在下方查看最新状态。</p></section>;}
   if(value?.sourceIndex)return <SourceIndexResult value={value} details={details}/>;
   if(value?.schemaReading)return <SchemaReadingResult value={value} details={details}/>;
