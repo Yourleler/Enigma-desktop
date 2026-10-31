@@ -281,7 +281,21 @@ body.enigma-surface [data-glass-frame], body.enigma-surface .enigma-modal[data-g
 }
 body.enigma-surface .enigma-modal[data-glass-frame] > :is(header,footer) { background:transparent; }
 body.enigma-surface [data-glass-frame="settings"] .settings-panel { background:transparent; }
-body.enigma-surface [data-glass-frame="settings"] { --glass-spot-width:180px;--glass-spot-height:120px;--glass-spot-strength:.16; }
+/* Compact, feathered light with monochrome dither. The noise is part of
+   the material background, so it neither covers text nor intercepts input. */
+body.enigma-surface [data-glass-frame="settings"] {
+  --glass-spot-width:110px;--glass-spot-height:74px;--glass-spot-strength:.14;
+  background:
+    url('../../assets/enigma/material-dither.svg') 0 0 / 128px 128px repeat,
+    radial-gradient(ellipse var(--glass-spot-width) var(--glass-spot-height) at var(--glass-pointer-x,50%) var(--glass-pointer-y,50%),
+      rgb(var(--glass-aura-rgb) / calc(var(--glass-light-opacity,0) * .14)) 0%,
+      rgb(var(--glass-aura-rgb) / calc(var(--glass-light-opacity,0) * .125)) 16%,
+      rgb(var(--glass-aura-rgb) / calc(var(--glass-light-opacity,0) * .085)) 34%,
+      rgb(var(--glass-aura-rgb) / calc(var(--glass-light-opacity,0) * .037)) 55%,
+      rgb(var(--glass-aura-rgb) / calc(var(--glass-light-opacity,0) * .008)) 78%,
+      rgb(var(--glass-aura-rgb) / 0) 100%),
+    color-mix(in srgb,var(--eg-card) var(--glass-frame-mix,57%),transparent);
+}
 body.enigma-surface .settings-panel { --bg-card:color-mix(in srgb,var(--eg-card) 32%,transparent); }
 body.enigma-surface .settings-panel [data-settings-surface="card"] { background:color-mix(in srgb,var(--eg-card) 28%,transparent); }
 body.enigma-surface .settings-panel input:not([type="range"]):not([type="checkbox"]),body.enigma-surface .settings-panel textarea { background:color-mix(in srgb,var(--eg-card) 36%,transparent); }
