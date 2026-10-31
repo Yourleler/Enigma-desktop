@@ -1,4 +1,5 @@
 import { useLayoutEffect } from 'react';
+import {createPortal} from 'react-dom';
 import './workspace-tokens.css';
 import { isDarkTheme, STORAGE_KEY, resolveSavedTheme, type ThemeId } from '../../shared/theme-registry';
 import '../engineering/enigma-design.css';
@@ -27,5 +28,5 @@ export function EnigmaDesign() {
     window.addEventListener('storage', sync);
     return () => { observer.disconnect(); system?.removeEventListener('change', sync); window.removeEventListener('storage', sync); };
   }, []);
-  return <><AnimatedBackground /><LiquidGlass /></>;
+  return <><AnimatedBackground />{createPortal(<div className="enigma-window-material" aria-hidden="true"/>,document.body)}<LiquidGlass /></>;
 }

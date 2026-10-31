@@ -477,7 +477,7 @@ export function PreviewPanel({embedded=false,visible=true,itemId,panelId='previe
             onClose={() => setFindOpen(false)}
           />
           {previewOpen && anchorMessage && <div role="status" className={previewStyles.previewAnchorMessage}>{anchorMessage}<button type="button" aria-label="关闭章节提示" onClick={()=>setAnchorMessage('')}>×</button></div>}
-          <div ref={previewBodyRef} className={`universal-card ${previewStyles.previewPanelBody}`} id={panelId==='previewPanel'?'previewBody':`${panelId}-body`} data-preview-panel-body="" onMouseUp={handleMouseUp}>
+          <div ref={previewBodyRef} className={`universal-card ${previewStyles.previewPanelBody}`} id={panelId==='previewPanel'?'previewBody':`${panelId}-body`} data-preview-panel-body="" data-preview-kind={previewItem?.type} onMouseUp={handleMouseUp}>
             {previewOpen && previewItem && !editable && (
               <PreviewRenderer previewItem={previewItem} htmlFind={previewItem.type==='html'?{open:findOpen,query:findQuery,index:findIndex,onResult:(count,truncated)=>{setFindCount(count);setFindTruncated(truncated);},onOpen:()=>setFindOpen(true)}:undefined}/>
             )}

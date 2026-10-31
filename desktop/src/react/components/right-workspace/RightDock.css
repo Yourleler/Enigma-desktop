@@ -115,3 +115,11 @@ body.enigma-surface .enigma-files-document [data-preview-panel-body] { border-ra
 .enigma-subagent-panel header p { margin:4px 0 10px;color:var(--text-muted); }
 .enigma-subagent-panel select,.enigma-subagent-panel button { max-width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:7px;background:transparent;color:inherit;font:inherit; }
 .enigma-subagent-transcript { flex:1;min-height:0;overflow:auto; }
+
+/* The document owns its page color; its dock and rounded corners inherit
+   the workspace instead of exposing a second opaque shell. */
+body.enigma-surface [data-preview-root][data-dock-preview] {background:transparent;}
+body.enigma-surface [data-dock-preview] [data-preview-panel-body][data-preview-kind="html"] {
+ background:transparent;border:0;border-radius:10px;box-shadow:none;overflow:hidden;isolation:isolate;
+}
+body.enigma-surface [data-dock-preview] [data-preview-kind="html"] .preview-html-frame {border-radius:0;}
