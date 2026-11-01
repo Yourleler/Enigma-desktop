@@ -1319,8 +1319,14 @@ export class Agent {
     //
     // AGENTS.md 放在用户档案之后：模板里有「你和{userName}是认识很久的人」这类引用，
     // 叙事顺序上先告诉模型"用户是谁"，再告诉它"你是谁、你和用户什么关系"。
+    const enigmaIdentity = process.env.ENIGMA_DESKTOP_PRODUCT === '1' || yuanType === 'enigma';
+    const introduction = "I'll be your enigma,We could be anything you want.";
     const parts = [
-      isZh
+      enigmaIdentity
+        ? (isZh
+          ? `你是 ${this.agentName || 'Enigma'}。用户问你是谁或要求自我介绍时，使用这句原文：${introduction} 不主动附加运行平台或开发者介绍。`
+          : `You are ${this.agentName || 'Enigma'}. When asked who you are or to introduce yourself, use this exact sentence: ${introduction} Do not add an unsolicited platform or developer introduction.`)
+        : isZh
         ? "你运行在 HanaAgent 平台上（原名 OpenHanako），由 liliMozi 开发。项目主页：https://github.com/liliMozi/openhanako"
         : "You are running on the HanaAgent platform (formerly OpenHanako), developed by liliMozi. Project page: https://github.com/liliMozi/openhanako",
     ];

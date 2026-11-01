@@ -147,6 +147,7 @@
 }
 
 .composer {
+  position: relative;
   display: flex;
   flex: 0 0 auto;
   flex-direction: column;
@@ -156,6 +157,10 @@
   box-shadow: none;
   -webkit-app-region: no-drag;
 }
+
+.compactClose { position:absolute;top:8px;right:8px;z-index:2;cursor:pointer; }
+.compactClose:focus-visible { outline:2px solid var(--accent);outline-offset:2px; }
+.host:not(.expanded) .textarea { padding-right:32px; }
 
 .expanded .composer {
   margin: 0 10px 10px;

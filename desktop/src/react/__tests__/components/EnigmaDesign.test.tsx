@@ -26,3 +26,15 @@ it('follows the OS when standalone windows use the system theme', () => {
   render(<EnigmaDesign />);
   expect(document.body.dataset.enigmaTone).toBe('dark');
 });
+it('keeps a floating input on the shared palette without painting a rectangular window backdrop',async()=>{
+  vi.stubGlobal('ResizeObserver',class{observe(){}unobserve(){}disconnect(){}});
+  const view=render(<EnigmaDesign surface="floating"/>);
+  expect(document.body.dataset.enigmaWindow).toBe('floating');
+  expect(document.querySelector('.enigma-animated-background')).toBeNull();
+  expect(document.querySelector('.enigma-window-material')).toBeNull();
+  expect(document.querySelector('.enigma-liquid-definitions')).not.toBeNull();
+  await act(async()=>document.documentElement.setAttribute('data-theme',AUTO_DARK_DEFAULT));
+  expect(document.body.dataset.enigmaTone).toBe('dark');
+  expect(document.body.dataset.enigmaWindow).toBe('floating');
+  view.unmount();expect(document.body.dataset.enigmaWindow).toBeUndefined();
+});

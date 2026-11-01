@@ -438,7 +438,9 @@ export async function resolveAndInstallExternalServerDeps({
   );
 
   log("[build-server] installing external dependencies...");
-  runWithTargetNode(`"${cachedNpmCli}" install --omit=dev --no-audit --no-fund --ignore-scripts=false`);
+  // Distribution dependencies are public packages. Do not inherit a machine's
+  // default mirror, whose catalog may lag behind a newly resolved dependency.
+  runWithTargetNode(`"${cachedNpmCli}" install --registry=https://registry.npmjs.org --omit=dev --no-audit --no-fund --ignore-scripts=false`);
   ensureNodePtySpawnHelperExecutable({ baseDir: outDir, platform, arch, isWin });
 
   // Verify every string Vite external actually resolved into node_modules.

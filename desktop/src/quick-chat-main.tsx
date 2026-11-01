@@ -8,5 +8,5 @@ initDragPrevention();
 
 const el = document.getElementById('react-root');
 if (el) {
-  createRoot(el).render(<><EnigmaDesign /><QuickChatApp /></>);
+  createRoot(el).render(<><EnigmaDesign surface="floating" /><QuickChatApp /></>);
 }

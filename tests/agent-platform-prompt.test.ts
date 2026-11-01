@@ -41,12 +41,20 @@ function writeUserProfile(agent, content) {
 
 afterEach(() => {
   vi.useRealTimers();
+  vi.unstubAllEnvs();
   for (const dir of tempDirs.splice(0)) {
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
 
 describe("Agent platform prompt identity", () => {
+  it.each(['zh-CN','en'])('uses the requested Enigma introduction in %s without the upstream platform introduction',locale=>{
+    vi.stubEnv('ENIGMA_DESKTOP_PRODUCT','1');const agent=makeAgent(locale);agent.agentName='Enigma';
+    const prompt=agent.buildSystemPrompt({forceMemoryEnabled:false,forceExperienceEnabled:false});
+    expect(prompt).toContain("I'll be your enigma,We could be anything you want.");
+    expect(prompt).not.toContain('你运行在 HanaAgent 平台上');
+    expect(prompt).not.toContain('You are running on the HanaAgent platform');
+  });
   it("describes the current HanaAgent platform name and the former OpenHanako name in Chinese", () => {
     const prompt = makeAgent("zh-CN").buildSystemPrompt({
       forceMemoryEnabled: false,

@@ -695,6 +695,15 @@ export function QuickChatApp() {
     markHidden();
     window.hana?.quickChatHide?.();
   }, [markHidden]);
+  useEffect(()=>{
+    const closeOnEscape=(event:KeyboardEvent)=>{
+      if(event.key==='Escape'&&!event.defaultPrevented&&!event.isComposing&&!isComposingRef.current){
+        event.preventDefault();closeQuickChat();
+      }
+    };
+    window.addEventListener('keydown',closeOnEscape);
+    return()=>window.removeEventListener('keydown',closeOnEscape);
+  },[closeQuickChat]);
 
   const stop = useCallback(() => {
     const path = sessionPathRef.current, ws = wsRef.current;
@@ -792,6 +801,7 @@ export function QuickChatApp() {
         )}
 
         <div className={classNames(styles.composer, inputStyles['input-wrapper'])} data-liquid="composer">
+          {!expanded&&<button type="button" className={classNames(styles.closeButton,styles.compactClose)} aria-label={t('quickChat.close')} title={`${t('quickChat.close')} · Esc`} data-tooltip={`${t('quickChat.close')} · Esc`} onClick={closeQuickChat}><AppIcon name="close" size={14}/></button>}
           {attachments.length > 0 && (
             <div className={styles.attachmentRow}>
               <AttachedFilesBar

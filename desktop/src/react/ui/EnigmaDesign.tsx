@@ -8,9 +8,11 @@ import { AnimatedBackground } from './AnimatedBackground';
 import { applyMaterialPreferences, readMaterialPreferences } from './material-preferences';
 
 /** Keep standalone windows on the same palette as the main workbench. */
-export function EnigmaDesign() {
+export function EnigmaDesign({surface='window'}:{surface?:'window'|'floating'}={}) {
   useLayoutEffect(() => {
     document.body.classList.add('enigma-surface');
+    const previousSurface=document.body.dataset.enigmaWindow;
+    document.body.dataset.enigmaWindow=surface;
     const system = window.matchMedia?.('(prefers-color-scheme: dark)');
     const sync = () => {
       document.body.classList.remove('paper-texture');
@@ -26,7 +28,7 @@ export function EnigmaDesign() {
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
     system?.addEventListener('change', sync);
     window.addEventListener('storage', sync);
-    return () => { observer.disconnect(); system?.removeEventListener('change', sync); window.removeEventListener('storage', sync); };
-  }, []);
-  return <><AnimatedBackground />{createPortal(<div className="enigma-window-material" aria-hidden="true"/>,document.body)}<LiquidGlass /></>;
+    return () => { observer.disconnect(); system?.removeEventListener('change', sync); window.removeEventListener('storage', sync);if(previousSurface===undefined)delete document.body.dataset.enigmaWindow;else document.body.dataset.enigmaWindow=previousSurface; };
+  }, [surface]);
+  return <>{surface==='window'&&<><AnimatedBackground />{createPortal(<div className="enigma-window-material" aria-hidden="true"/>,document.body)}</>}<LiquidGlass /></>;
 }

@@ -40,6 +40,7 @@ beforeEach(() => {
     return {ok:true,status:200,json:async()=>data};
   }));
   window.hana={getServerPort:async()=>61879,getServerToken:async()=>'',quickChatResize:vi.fn(),
+    quickChatHide:vi.fn(),
     onQuickChatShown:(listener:()=>void)=>{shown=listener;return()=>{shown=undefined;};}} as any;
   useStore.setState({currentSessionPath:null,currentSessionId:null,sessions:[],chatSessions:{},streamingSessions:[],inlineErrors:{},activeSessionStreams:{}} as any);
 });
@@ -55,6 +56,20 @@ async function composer(){
 function addImage(container:HTMLElement,name:string){
   fireEvent.change(container.querySelector('input[type="file"]')!,{target:{files:[new File(['image'],name,{type:'image/png'})]}});
 }
+it('can close the compact window with its visible button and reopen without losing the draft',async()=>{
+  const {container,input}=await composer();addImage(container,'kept.png');
+  fireEvent.click(screen.getByRole('button',{name:'quickChat.close'}));expect(window.hana?.quickChatHide).toHaveBeenCalledOnce();
+  await act(async()=>{shown?.();});expect(input).toHaveValue('保留这份草稿');expect(screen.getByText('kept.png')).toBeVisible();
+  expect(TestSocket.instances).toHaveLength(0);
+});
+it('hides with Escape while preserving input and does not dismiss during composition',async()=>{
+  const {input}=await composer();fireEvent.compositionStart(input);fireEvent.keyDown(input,{key:'Escape'});
+  expect(window.hana?.quickChatHide).not.toHaveBeenCalled();fireEvent.compositionEnd(input);
+  fireEvent.keyDown(input,{key:'Escape'});expect(window.hana?.quickChatHide).toHaveBeenCalledOnce();expect(input).toHaveValue('保留这份草稿');
+});
+it('also dismisses when focus is on the window rather than the input',async()=>{
+  await composer();fireEvent.keyDown(window,{key:'Escape'});expect(window.hana?.quickChatHide).toHaveBeenCalledOnce();
+});
 it('keeps unsent text and images when returning after the reuse timeout',async()=>{
   const {container,input}=await composer();addImage(container,'kept.png');
   vi.spyOn(Date,'now').mockReturnValue(1000);fireEvent(window,new Event('pagehide'));

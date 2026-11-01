@@ -216,3 +216,14 @@ body.enigma-surface.paper-texture, body.enigma-surface.paper-texture .settings-p
 body.enigma-surface.enigma-motion-off *, body.enigma-surface.enigma-motion-off *::before, body.enigma-surface.enigma-motion-off *::after { animation: none !important; transition: none !important; }
 @media (prefers-reduced-motion: reduce) { body.enigma-surface *, body.enigma-surface *::before, body.enigma-surface *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
 @media (max-width: 700px) { body.enigma-surface .enigma-toolbar { padding: var(--space-8) var(--space-12); } body.enigma-surface .enigma-progress { padding-inline: var(--space-20); } }
+/* Floating inputs keep the shared palette and glass controls, while the
+   native window's padding and rounded corners remain genuinely transparent. */
+body.enigma-surface[data-enigma-window="floating"] { background:transparent !important; }
+body.enigma-surface[data-enigma-window="floating"]::before,
+body.enigma-surface[data-enigma-window="floating"]::after { display:none !important; }
+/* Desktop content behind a floating input is unpredictable. Keep the frame
+   transparent, but give its text a readable frosted surface of its own. */
+body.enigma-surface[data-enigma-window="floating"][data-enigma-tone]:not(.enigma-glass-off) [data-liquid="composer"][data-liquid-surface] {
+  --glass-fill:color-mix(in srgb,var(--eg-card) max(90%,var(--glass-composer-mix,38%)),transparent);
+  --glass-blur:max(16px,var(--glass-composer-blur,5.35px));
+}
