@@ -42,7 +42,6 @@
  *     desktop/dist-renderer/  ← PWA 静态入口、hashed assets、themes（/mobile/* 由 server 读取）
  *     skills2set/             ← 技能包
  *     package.json            ← external deps + version（node_modules 解析 + 运行时版本读取）
- *     package-lock.json       ← npm install 生成，记录 external 安装结果
  *     node_modules/           ← 仅 external deps（~50 packages）
  */
 import fs from "fs";
@@ -58,6 +57,7 @@ import {
   prepareNodeRuntime,
   pruneServerNodeModulesViaNft,
   resolveAndInstallExternalServerDeps,
+  removeGeneratedInstallMetadata,
   writeServerWrapperScripts,
 } from "./build-server-phases.mjs";
 import {
@@ -194,6 +194,7 @@ applyPlatformPackageTrim({ outDir, platform, arch });
 // ── 9. 更新 package.json ──
 // fromRoot("package.json") 在运行时读取版本号
 finalizeServerPackageJsonVersion({ outDir, version: rootPkg.version });
+removeGeneratedInstallMetadata({ outDir });
 
 // ── 10. Wrapper 脚本 ──
 writeServerWrapperScripts({ outDir, isWin });

@@ -721,6 +721,16 @@ export function applyPlatformPackageTrim({ outDir, platform, arch, log = (msg) =
 
 // ── package.json version + wrapper scripts ──────────────────────────────
 
+/** Exclude npm's generated installation metadata from a self-contained runtime.
+ * It may contain build-machine registry addresses and is not used by Node.
+ * The repository lock and upstream package manifests/licenses stay intact.
+ */
+export function removeGeneratedInstallMetadata({outDir}) {
+  for (const relative of ['package-lock.json', 'node_modules/.package-lock.json']) {
+    fs.rmSync(path.join(outDir, relative), {force:true});
+  }
+}
+
 /**
  * npm install leaves `outDir/package.json` in place (already externalPkg's
  * shape) but its version wasn't necessarily set explicitly; write it

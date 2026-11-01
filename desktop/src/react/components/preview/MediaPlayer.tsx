@@ -34,15 +34,18 @@ export function MediaPlayer({src,name,kind,restoreKey=src,active=true,onReady,on
     const node=media.current;if(!node)return;
     let disposed=false;
     restored.current=false;setState('loading');
+    // A picture-in-picture window remains visible after its owner window is
+    // hidden. Inactive previews still stop, even when they own that window.
+    const playbackAllowed=()=>activeRef.current&&(!document.hidden||document.pictureInPictureElement===node);
     // Surface rejected play requests (the packaged controls intentionally swallow
     // their promise). Keep the wrapper local to this media element and lifetime.
     const nativePlay=node.play;
     const requestPlay=async()=>{
       setMessage('');
       try{
-        if(!activeRef.current||document.hidden)throw new DOMException('Inactive preview','AbortError');
+        if(!playbackAllowed())throw new DOMException('Inactive preview','AbortError');
         await nativePlay.call(node);
-        if(disposed||!activeRef.current||document.hidden)node.pause();
+        if(disposed||!playbackAllowed())node.pause();
       }catch(error){
         if(!disposed){setState('paused');setMessage(error instanceof DOMException&&error.name==='NotAllowedError'?'播放被浏览器阻止，请再次点击播放。':error instanceof DOMException&&error.name==='AbortError'?'':'播放未开始，请重试或切换系统控件。');}
         throw error;
@@ -62,15 +65,17 @@ export function MediaPlayer({src,name,kind,restoreKey=src,active=true,onReady,on
     };
     // React StrictMode replays effects on an existing element after cleanup.
     if(node.getAttribute('src')!==src){node.src=src;node.load();}
-    const hidden=()=>{if(document.hidden||!activeRef.current)node.pause();};
+    const hidden=()=>{if(!playbackAllowed())node.pause();};
     // A pending play promise may resolve after the preview is hidden.
-    const guardPlayback=()=>{if(document.hidden||!activeRef.current)node.pause();};
+    const guardPlayback=()=>{if(!playbackAllowed())node.pause();};
     document.addEventListener('visibilitychange',hidden);node.addEventListener('play',guardPlayback);
+    node.addEventListener('leavepictureinpicture',hidden);
     return()=>{
       disposed=true;if(node.play===requestPlay)node.play=nativePlay;
       if(fullscreenTarget&&nativeFullscreen)fullscreenTarget.requestFullscreen=nativeFullscreen;
       if(node instanceof HTMLVideoElement&&nativePip)node.requestPictureInPicture=nativePip;
       document.removeEventListener('visibilitychange',hidden);node.removeEventListener('play',guardPlayback);
+      node.removeEventListener('leavepictureinpicture',hidden);
       savePosition(node);node.pause();node.removeAttribute('src');node.load();
       if(document.pictureInPictureElement===node)void document.exitPictureInPicture().catch(()=>{});
     };

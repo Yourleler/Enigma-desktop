@@ -3,7 +3,11 @@ import {act,cleanup,fireEvent,render,screen,waitFor} from '@testing-library/reac
 import {afterEach,beforeEach,expect,it,vi} from 'vitest';
 import {MediaPlayer,formatMediaTime} from '../../components/preview/MediaPlayer';
 import {StrictMode} from 'react';
+const originalPipDescriptor=Object.getOwnPropertyDescriptor(document,'pictureInPictureElement');
+const originalExitPipDescriptor=Object.getOwnPropertyDescriptor(document,'exitPictureInPicture');
 beforeEach(()=>{
+  Object.defineProperty(document,'pictureInPictureElement',{configurable:true,get:()=>null});
+  Object.defineProperty(document,'exitPictureInPicture',{configurable:true,writable:true,value:vi.fn(async()=>{})});
   vi.spyOn(HTMLMediaElement.prototype,'audioTracks','get').mockReturnValue(Object.assign(new EventTarget(),{length:0,*[Symbol.iterator](){}}) as never);
   vi.spyOn(HTMLMediaElement.prototype,'videoTracks','get').mockReturnValue(Object.assign(new EventTarget(),{length:0,*[Symbol.iterator](){}}) as never);
   vi.spyOn(document,'hidden','get').mockReturnValue(false);
@@ -13,7 +17,10 @@ beforeEach(()=>{
   vi.stubGlobal('ResizeObserver',class{observe(){}disconnect(){}});
   vi.stubGlobal('IntersectionObserver',class{observe(){}disconnect(){}});
 });
-afterEach(()=>{cleanup();vi.unstubAllGlobals();vi.restoreAllMocks()});
+afterEach(()=>{cleanup();vi.unstubAllGlobals();vi.restoreAllMocks();
+  if(originalPipDescriptor)Object.defineProperty(document,'pictureInPictureElement',originalPipDescriptor);else Reflect.deleteProperty(document,'pictureInPictureElement');
+  if(originalExitPipDescriptor)Object.defineProperty(document,'exitPictureInPicture',originalExitPipDescriptor);else Reflect.deleteProperty(document,'exitPictureInPicture');
+});
 const props={src:'file:///new/video.webm',name:'new.webm',kind:'video' as const,onReady:vi.fn(),onError:vi.fn()};
 function metadata(video:HTMLMediaElement){Object.defineProperty(video,'duration',{configurable:true,value:125});Object.defineProperty(video,'readyState',{configurable:true,value:4});fireEvent.loadedMetadata(video);fireEvent.canPlay(video);}
 function setup(){const view=render(<MediaPlayer {...props}/>);const video=view.container.querySelector('video')!;metadata(video);return {video,...view};}
@@ -50,6 +57,40 @@ it('stops an inactive gallery video including late play completion',async()=>{
   let resolve!:()=>void;vi.mocked(HTMLMediaElement.prototype.play).mockImplementationOnce(()=>new Promise<void>(r=>resolve=r));
   const view=setup();let playing!:Promise<void>;act(()=>{playing=view.video.play()});view.rerender(<MediaPlayer {...props} active={false}/>);
   await act(async()=>{resolve();await playing;});expect(view.video.paused).toBe(true);
+});
+it('keeps the visible picture-in-picture playing while the main window is hidden, then pauses when it closes',async()=>{
+  const {video}=setup();
+  let pip:Element|null=video;
+  vi.spyOn(document,'pictureInPictureElement','get').mockImplementation(()=>pip);
+  await act(()=>video.play());
+  vi.spyOn(document,'hidden','get').mockReturnValue(true);
+  fireEvent(document,new Event('visibilitychange'));
+  expect(video.paused).toBe(false);
+  await act(()=>video.play());
+  expect(video.paused).toBe(false);
+  pip=null;fireEvent(video,new Event('leavepictureinpicture'));
+  expect(video.paused).toBe(true);
+});
+it('still stops picture-in-picture when its preview becomes inactive',async()=>{
+  const view=setup();
+  vi.spyOn(document,'pictureInPictureElement','get').mockReturnValue(view.video);
+  await act(()=>view.video.play());
+  view.rerender(<MediaPlayer {...props} active={false}/>);
+  expect(view.video.paused).toBe(true);
+});
+it('does not keep hidden media playing just because another video owns picture-in-picture',async()=>{
+  const {video}=setup();
+  vi.spyOn(document,'pictureInPictureElement','get').mockReturnValue(document.createElement('video'));
+  await act(()=>video.play());
+  vi.spyOn(document,'hidden','get').mockReturnValue(true);fireEvent(document,new Event('visibilitychange'));
+  expect(video.paused).toBe(true);
+});
+it('closes its picture-in-picture and releases the media when its preview is removed',async()=>{
+  const {video,unmount}=setup();
+  vi.spyOn(document,'pictureInPictureElement','get').mockReturnValue(video);
+  await act(()=>video.play());unmount();
+  expect(document.exitPictureInPicture).toHaveBeenCalledOnce();
+  expect(video.paused).toBe(true);expect(video.getAttribute('src')).toBeNull();
 });
 it('validates local subtitles and releases their object URL',async()=>{
   vi.stubGlobal('URL',class extends URL{static createObjectURL=vi.fn(()=> 'blob:subtitle');static revokeObjectURL=vi.fn()});

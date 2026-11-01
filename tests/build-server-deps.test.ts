@@ -15,6 +15,7 @@ import {
 } from "../scripts/build-server-deps.mjs";
 
 const tempDirs = [];
+import {removeGeneratedInstallMetadata} from '../scripts/build-server-phases.mjs';
 
 function makeTempDir() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "hana-build-server-deps-"));
@@ -29,6 +30,17 @@ afterEach(() => {
 });
 
 describe("build-server external dependency packaging", () => {
+  it('excludes generated installation locks while preserving source locks and upstream notices',()=>{
+    const root=makeTempDir(),outDir=path.join(root,'runtime');
+    fs.mkdirSync(path.join(outDir,'node_modules','example'),{recursive:true});
+    for(const file of ['package-lock.json','node_modules/.package-lock.json'])fs.writeFileSync(path.join(outDir,file),JSON.stringify({resolved:'https://build-mirror.example.invalid/pkg.tgz'}));
+    const preserved=[path.join(root,'package-lock.json'),path.join(outDir,'package.json'),path.join(outDir,'node_modules','example','package.json'),path.join(outDir,'node_modules','example','LICENSE')];
+    for(const file of preserved)fs.writeFileSync(file,'preserve');
+    removeGeneratedInstallMetadata({outDir});removeGeneratedInstallMetadata({outDir});
+    expect(fs.existsSync(path.join(outDir,'package-lock.json'))).toBe(false);
+    expect(fs.existsSync(path.join(outDir,'node_modules/.package-lock.json'))).toBe(false);
+    for(const file of preserved)expect(fs.readFileSync(file,'utf8')).toBe('preserve');
+  });
   it("collects bare static import package names from the emitted server bundle", () => {
     const packages = collectBareImportPackageNames([
       "import fs from 'node:fs';",
