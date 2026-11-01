@@ -3,7 +3,8 @@ import { AppIcon } from '../../ui/app-icons';
 import { ChannelTabBar } from '../channels/ChannelTabBar';
 import { WidgetButtons } from '../plugin/WidgetButtons';
 import { WindowControls } from '../WindowControls';
-import {useLayoutEffect,useRef,useState} from 'react';
+import {useLayoutEffect,useRef} from 'react';
+import {syncTitlebarDividers} from '../../utils/titlebar-dividers';
 
 interface AppTitlebarProps {
   sidebarOpen: boolean;
@@ -109,20 +110,15 @@ function PanelToggleIcon({side,open}:{side:'left'|'right';open:boolean}) {
 }
 
 function TitlebarDividers({sidebarOpen,workspaceOpen}:{sidebarOpen:boolean;workspaceOpen:boolean}){
-  const root=useRef<HTMLDivElement>(null),[positions,setPositions]=useState<{side:string;x:number}[]>([]);
+  const root=useRef<HTMLDivElement>(null);
   useLayoutEffect(()=>{
-    const update=()=>{
-      const title=root.current?.parentElement?.getBoundingClientRect();if(!title)return;
-      const next:{side:string;x:number}[]=[];
-      for(const [side,selector,open] of [['left','#sidebar',sidebarOpen],['right','#jianSidebar',workspaceOpen]] as const){
-        const rect=document.querySelector(selector)?.getBoundingClientRect();
-        if(open&&rect&&rect.width>1)next.push({side,x:(side==='left'?rect.right:rect.left)-title.left});
-      }
-      setPositions(previous=>JSON.stringify(previous)===JSON.stringify(next)?previous:next);
-    };
+    const update=()=>syncTitlebarDividers(root.current);
     update();const observer=typeof ResizeObserver==='undefined'?null:new ResizeObserver(update);
     for(const selector of ['.enigma-workspace-frame','#sidebar','#jianSidebar']){const element=document.querySelector(selector);if(element)observer?.observe(element);}
     window.addEventListener('resize',update);return()=>{observer?.disconnect();window.removeEventListener('resize',update);};
   },[sidebarOpen,workspaceOpen]);
-  return <div ref={root} className="enigma-titlebar-dividers" aria-hidden="true">{positions.map(p=><i key={p.side} data-divider-side={p.side} style={{left:p.x}}/>)}</div>;
+  return <div ref={root} className="enigma-titlebar-dividers" aria-hidden="true">
+    {sidebarOpen&&<i data-divider-side="left"/>}
+    {workspaceOpen&&<i data-divider-side="right"/>}
+  </div>;
 }

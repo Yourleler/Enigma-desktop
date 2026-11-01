@@ -90,6 +90,43 @@ describe('useSidebarResize', () => {
     installResizeDom();
   });
 
+  it('moves both titlebar dividers with the panel during each drag event, without waiting for ResizeObserver', () => {
+    const title = document.createElement('div');
+    title.innerHTML = '<div class="enigma-titlebar-dividers"><i data-divider-side="left"></i><i data-divider-side="right"></i></div>';
+    title.getBoundingClientRect = () => ({left:0} as DOMRect);
+    document.body.appendChild(title);
+    const left = document.getElementById('sidebar')!, right = document.getElementById('jianSidebar')!;
+    const root = document.documentElement;
+    left.getBoundingClientRect = () => {
+      const width = parseFloat(root.style.getPropertyValue('--layout-sidebar-width')) || 240;
+      return {left:44,right:44+width,width} as DOMRect;
+    };
+    right.getBoundingClientRect = () => {
+      const width = parseFloat(root.style.getPropertyValue('--right-dock-width')) || 520;
+      return {left:1592-width,right:1592,width} as DOMRect;
+    };
+    Object.defineProperty(right,'offsetWidth',{configurable:true,value:520});
+    render(<Harness/>);
+    const leftMarker = title.querySelector<HTMLElement>('[data-divider-side="left"]')!;
+    const rightMarker = title.querySelector<HTMLElement>('[data-divider-side="right"]')!;
+    fireEvent.mouseDown(document.getElementById('sidebarResizeHandle')!,{clientX:284});
+    for(const clientX of [320,390,280,345]) {
+      fireEvent.mouseMove(document,{clientX});
+      expect(leftMarker.style.left).toBe(`${left.getBoundingClientRect().right}px`);
+      expect(rightMarker.style.left).toBe(`${right.getBoundingClientRect().left}px`);
+    }
+    fireEvent.mouseUp(document);
+    fireEvent.mouseDown(document.getElementById('jianResizeHandle')!,{clientX:1072});
+    for(const clientX of [990,1100,930,1060]) {
+      fireEvent.mouseMove(document,{clientX});
+      expect(rightMarker.style.left).toBe(`${right.getBoundingClientRect().left}px`);
+      expect(leftMarker.style.left).toBe(`${left.getBoundingClientRect().right}px`);
+    }
+    fireEvent.mouseUp(document);
+    expect(document.querySelector('[data-resize-event-shield]')).toBeNull();
+    title.remove();
+  });
+
   it('unmount 时会清理 handle 监听和进行中的拖拽监听', () => {
     const leftHandle = document.getElementById('sidebarResizeHandle') as HTMLElement;
     const removeHandleSpy = vi.spyOn(leftHandle, 'removeEventListener');

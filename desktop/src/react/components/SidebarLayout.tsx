@@ -7,6 +7,7 @@ import { createNewSession } from '../stores/session-actions';
 import { closePreview } from '../stores/preview-actions';
 import { useEngineering } from '../engineering/state';
 import { resolveWorkspaceLayout, type LayoutIntent } from '../utils/workspace-layout';
+import {syncTitlebarDividers} from '../utils/titlebar-dividers';
 import './WorkspaceLayout.css';
 
 function preferredWidth(variable:string,key:string,fallback:number):number {
@@ -42,6 +43,7 @@ export function updateLayout(intent?:LayoutIntent):void {
     for(const [name,value] of Object.entries(properties))if(root.style.getPropertyValue(name)!==value)root.style.setProperty(name,value);
     document.body.classList.toggle('enigma-dock-expanded',expanded&&state.jianOpen);
     if(Object.entries(state).some(([key,value])=>s[key as keyof typeof s]!==value))useStore.setState(state);
+    syncTitlebarDividers();
   }finally{resolving=false;}
 }
 
