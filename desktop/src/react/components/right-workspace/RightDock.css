@@ -1,6 +1,21 @@
 .enigma-right-dock { display:flex; flex-direction:column; height:100%; min-height:0; min-width:0; border:1px solid var(--border); border-radius:16px; overflow:hidden; }
 .enigma-dock-header { display:flex; align-items:center; flex:0 0 auto; gap:var(--enigma-spacing-2); padding:var(--enigma-spacing-8); border-bottom:1px solid var(--border); min-width:0; }
-.enigma-dock-tabs { display:flex; position:relative; flex:1; overflow-x:auto; min-width:0; gap:var(--enigma-spacing-4); scrollbar-width:thin; }
+.enigma-dock-tabs-viewport { position:relative;flex:1;min-width:0;--dock-fade-left:0px;--dock-fade-right:0px; }
+.enigma-dock-tabs-viewport[data-overflow-left] { --dock-fade-left:34px; }
+.enigma-dock-tabs-viewport[data-overflow-right] { --dock-fade-right:34px; }
+.enigma-dock-tabs { display:flex; position:relative; overflow-x:auto; min-width:0; gap:var(--enigma-spacing-4); scrollbar-width:none; mask-image:linear-gradient(to right,transparent,#000 var(--dock-fade-left),#000 calc(100% - var(--dock-fade-right)),transparent); }
+.enigma-dock-tabs::-webkit-scrollbar { display:none; }
+.enigma-dock-tabs-viewport:not([data-overflow-left]):not([data-overflow-right]) .enigma-dock-tabs { mask-image:none; }
+.enigma-dock-scroll { position:absolute;z-index:2;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:26px;height:32px;padding:0;border:0;border-radius:7px;background:transparent;color:var(--text-muted);cursor:pointer;opacity:0;visibility:hidden;transition:opacity 120ms; }
+.enigma-dock-scroll-left { left:0; }
+.enigma-dock-scroll-right { right:0; }
+.enigma-dock-scroll[data-visible] { opacity:1;visibility:visible; }
+.enigma-dock-scroll::before { content:'';position:absolute;inset:-2px -8px;z-index:-1;pointer-events:none;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);mask-image:linear-gradient(to right,#000 35%,transparent); }
+.enigma-dock-scroll-right::before { mask-image:linear-gradient(to left,#000 35%,transparent); }
+.enigma-dock-scroll:hover { color:var(--text); }
+.enigma-dock-scroll:hover::before { background:color-mix(in srgb,var(--bg) 16%,transparent); }
+.enigma-dock-scroll:focus-visible { outline:2px solid var(--accent);outline-offset:-3px; }
+@media (prefers-reduced-motion:reduce) { .enigma-dock-scroll {transition:none;} }
 .enigma-dock-tab { display:flex; position:relative; flex:0 0 auto; min-width:0; border-radius:9px; color:var(--text-muted); }
 .enigma-dock-tab.active { color:var(--text); background:var(--overlay-light); }
 .enigma-dock-tab button { display:flex; gap:var(--enigma-spacing-5); align-items:center; border:0; background:transparent; padding:var(--enigma-spacing-12) var(--enigma-spacing-1); color:inherit; font:12px/1.5 var(--font-ui); cursor:pointer; white-space:nowrap; }

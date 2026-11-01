@@ -54,6 +54,21 @@ export function RightDock(){
   useEffect(()=>()=>dragCleanup.current(),[scope]);
   useEffect(()=>{setDraftOrder(null);orderRef.current=null;dragging.current=null;},[scope]);
   const strip=useRef<HTMLDivElement>(null),root=useRef<HTMLDivElement>(null),body=useRef<HTMLDivElement>(null),picker=useRef<HTMLInputElement>(null),dragging=useRef<DockTab|null>(null),last=useRef({scope,active}),positions=useRef<Record<string,number>>({});
+  const [scrollEdges,setScrollEdges]=useState({left:false,right:false});
+  const updateScrollEdges=useCallback(()=>{
+    const list=strip.current;
+    const left=!!list&&list.scrollLeft>1,right=!!list&&list.scrollWidth-list.clientWidth-list.scrollLeft>1;
+    setScrollEdges(previous=>previous.left===left&&previous.right===right?previous:{left,right});
+  },[]);
+  const alignActiveTab=useCallback(()=>{
+    const list=strip.current,tab=list?.querySelector<HTMLElement>('.enigma-dock-tab.active');
+    if(list&&tab&&list.clientWidth){
+      const a=list.getBoundingClientRect(),b=tab.getBoundingClientRect(),inset=28;
+      const delta=b.width>list.clientWidth-inset*2?b.left-a.left-inset:b.right>a.right-inset?b.right-a.right+inset:b.left<a.left+inset?b.left-a.left-inset:0;
+      if(delta)list.scrollLeft=Math.max(0,Math.min(list.scrollWidth-list.clientWidth,list.scrollLeft+delta));
+    }
+    updateScrollEdges();
+  },[updateScrollEdges]);
   const inline=new Set(view?.inlineIds||[]);
   const fileTabs=openTabs.map(id=>items.find(item=>item.id===id)).filter(item=>item&&item.type!=='browser'&&!inline.has(item.id));
   const inlineItem=previewOpen?items.find(item=>item.id===view?.directoryPreviewId):undefined;
@@ -73,21 +88,25 @@ export function RightDock(){
   useLayoutEffect(()=>{
     const previous=last.current;if(body.current){positions.current[`${previous.scope}:${previous.active}`]=body.current.scrollTop;body.current.scrollTop=positions.current[`${scope}:${resolved}`]||0;}
     last.current={scope,active:resolved||'files'};
-    const list=strip.current,tab=list?.querySelector<HTMLElement>('.enigma-dock-tab.active');
-    if(list&&tab){const a=list.getBoundingClientRect(),b=tab.getBoundingClientRect();if(b.right>a.right)list.scrollLeft+=b.right-a.right+8;else if(b.left<a.left)list.scrollLeft-=a.left-b.left+8;}
-  },[scope,resolved,tabs.length]);
+    alignActiveTab();
+  },[scope,resolved,tabs.length,alignActiveTab]);
   const stripObserver=useRef<ResizeObserver|null>(null);
   const bindStrip=useCallback((list:HTMLDivElement|null)=>{
-    stripObserver.current?.disconnect();stripObserver.current=null;strip.current=list;
+    stripObserver.current?.disconnect();stripObserver.current=null;strip.current?.removeEventListener('scroll',updateScrollEdges);strip.current=list;
     if(!list)return;
-    const align=()=>{const active=list.querySelector<HTMLElement>('.enigma-dock-tab.active');if(!active)return;const a=list.getBoundingClientRect(),b=active.getBoundingClientRect();if(!a.width)return;if(b.right>a.right)list.scrollLeft+=b.right-a.right+4;else if(b.left<a.left)list.scrollLeft-=a.left-b.left+4;};
-    align();
-    if(typeof ResizeObserver!=='undefined'){stripObserver.current=new ResizeObserver(align);stripObserver.current.observe(list);}
-  },[]);
+    list.addEventListener('scroll',updateScrollEdges,{passive:true});alignActiveTab();
+    if(typeof ResizeObserver!=='undefined'){stripObserver.current=new ResizeObserver(alignActiveTab);stripObserver.current.observe(list);}
+  },[alignActiveTab,updateScrollEdges]);
   useEffect(()=>()=>stripObserver.current?.disconnect(),[]);
+  const scrollTabs=(direction:-1|1)=>{
+    const list=strip.current;if(!list)return;
+    list.scrollTo({left:Math.max(0,Math.min(list.scrollWidth-list.clientWidth,list.scrollLeft+direction*Math.max(80,list.clientWidth*.7))),behavior:reduceMotion?'instant':'smooth'});
+  };
   const choose=(tab:DockTab)=>{
+    // Materialize restored tabs in their displayed order before preview actions
+    // select the file, so first selection cannot move it ahead of its siblings.
+    selectDockTab(scope,tab,tab==='browser'&&view?.browserSession===undefined?{browserSession:session}:{},availableIds);
     if(tab.startsWith('preview:')){useStore.getState().setPreviewOpen(true);setActiveTab(tab.slice(8));}
-    selectDockTab(scope,tab,tab==='browser'&&view?.browserSession===undefined?{browserSession:session}:{});
     if(tab==='changes')useChangesPanel.setState({session:session||'',connection,open:true});
     if(tab.startsWith('tool:'))void openProjectTool(tab.slice(5));
   };
@@ -126,6 +145,7 @@ export function RightDock(){
     {dragGhost&&createPortal(<div className="enigma-dock-drag-ghost" style={{left:dragGhost.x,top:dragGhost.y,width:dragGhost.width}} aria-hidden="true"><DockIcon name={dragGhost.tab.icon}/><span>{dragGhost.tab.label}</span></div>,document.body)}
     <OpenPreviewDocumentWatchBridge/>
     <HeaderSlot id="enigma-titlebar-workspace"><header className="enigma-dock-header">
+      <div className="enigma-dock-tabs-viewport" data-overflow-left={scrollEdges.left||undefined} data-overflow-right={scrollEdges.right||undefined}>
       <div className="enigma-dock-tabs" data-reordering={!!draftOrder||undefined} role="tablist" aria-label="工作面板" ref={bindStrip} data-glass-segmented="" onWheel={event=>{if(strip.current&&strip.current.scrollWidth>strip.current.clientWidth)strip.current.scrollLeft+=Math.abs(event.deltaX)>Math.abs(event.deltaY)?event.deltaX:event.deltaY;}}>
         <GlassSelection selection={`${resolved}:${ordered.join(',')}`} selector=".enigma-dock-tab.active" layoutCoordinates/>
         {tabs.map((tab,index)=><motion.div layout="position" key={tab.id} transition={{layout:{duration:reduceMotion?0:0.18}}} className={`enigma-dock-tab${resolved===tab.id?' active':''}`} data-dock-tab-id={tab.id} data-drag-placeholder={dragGhost?.tab.id===tab.id||undefined} onPointerDown={event=>startDrag(tab,event)} onDragStartCapture={event=>event.preventDefault()}>
@@ -135,6 +155,8 @@ export function RightDock(){
           }}><DockIcon name={tab.icon}/><span>{tab.label}</span></button>
           <button className="enigma-dock-tab-close" onPointerDown={event=>event.stopPropagation()} aria-label={`关闭${tab.id.startsWith('preview:')?'文件':'面板'} ${tab.label}`} data-tooltip="关闭标签；可通过＋重新添加" onClick={()=>hideDockTab(scope,tab.id,availableIds)}><AppIcon name="close" size={13}/></button>
         </motion.div>)}
+      </div>
+      {(['left','right'] as const).map(side=><button key={side} type="button" className={`enigma-dock-scroll enigma-dock-scroll-${side}`} data-visible={scrollEdges[side]||undefined} disabled={!scrollEdges[side]} aria-hidden={!scrollEdges[side]} tabIndex={scrollEdges[side]?0:-1} aria-label={side==='left'?'向左滚动工作标签':'向右滚动工作标签'} data-tooltip={side==='left'?'查看左侧标签；也可横向滚动':'查看右侧标签；也可横向滚动'} onClick={()=>scrollTabs(side==='left'?-1:1)}><AppIcon name={side==='left'?'chevronLeft':'chevronRight'} size={15}/></button>)}
       </div>
       <div className="enigma-dock-actions">
         <button aria-label="搜索文件" data-tooltip="搜索项目文件或对话附件" onClick={search}><DockIcon name="search"/></button>

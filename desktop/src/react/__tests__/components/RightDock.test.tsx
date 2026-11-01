@@ -22,6 +22,44 @@ vi.mock('../../components/right-workspace/AgentActivityCard',()=>({AgentActivity
 vi.mock('../../components/right-workspace/SessionStatusCard',()=>({SessionStatusCard:()=>null}));
 beforeEach(()=>{vi.stubGlobal('ResizeObserver',class{observe(){}disconnect(){}});useStore.setState({currentSessionPath:'/session/a',activeServerConnectionId:'local',deskBasePath:'/workspace',jianOpen:true,previewOpen:false,previewItems:[],openTabs:[],activeTabId:null});useRightDock.setState({views:{}});useEngineering.setState({snapshot:null,active:'',paneOpen:false});});
 afterEach(cleanup);
+it('reveals overflow in either direction without changing the selected panel',()=>{
+ const {container}=render(<RightDock/>),list=screen.getByRole('tablist',{name:'工作面板'}),viewport=container.querySelector('.enigma-dock-tabs-viewport')!;
+ Object.defineProperties(list,{clientWidth:{configurable:true,value:240},scrollWidth:{configurable:true,value:620}});
+ const scrollTo=vi.fn(({left})=>{list.scrollLeft=left;fireEvent.scroll(list)});Object.defineProperty(list,'scrollTo',{value:scrollTo});
+ fireEvent.scroll(list);
+ expect(viewport).toHaveAttribute('data-overflow-right');expect(viewport).not.toHaveAttribute('data-overflow-left');
+ expect(screen.queryByRole('button',{name:'向左滚动工作标签'})).toBeNull();
+ fireEvent.click(screen.getByRole('button',{name:'向右滚动工作标签'}));
+ expect(scrollTo).toHaveBeenCalledWith({left:168,behavior:'smooth'});
+ expect(viewport).toHaveAttribute('data-overflow-left');expect(viewport).toHaveAttribute('data-overflow-right');
+ expect(screen.getByRole('tab',{name:'文件'})).toHaveAttribute('aria-selected','true');
+ list.scrollLeft=380;fireEvent.scroll(list);
+ expect(screen.queryByRole('button',{name:'向右滚动工作标签'})).toBeNull();
+ fireEvent.click(screen.getByRole('button',{name:'向左滚动工作标签'}));expect(list.scrollLeft).toBe(212);
+ Object.defineProperty(list,'clientWidth',{value:700});list.scrollLeft=0;fireEvent.scroll(list);
+ expect(viewport).not.toHaveAttribute('data-overflow-left');expect(viewport).not.toHaveAttribute('data-overflow-right');
+});
+it('keeps keyboard-selected tabs inside the fade instead of underneath its arrow',()=>{
+ const {container}=render(<RightDock/>),list=screen.getByRole('tablist',{name:'工作面板'});
+ Object.defineProperties(list,{clientWidth:{configurable:true,value:240},scrollWidth:{configurable:true,value:480}});
+ vi.spyOn(list,'getBoundingClientRect').mockReturnValue({left:0,right:240,width:240} as DOMRect);
+ [...container.querySelectorAll<HTMLElement>('[data-dock-tab-id]')].forEach((element,i)=>vi.spyOn(element,'getBoundingClientRect').mockImplementation(()=>({left:i*120-list.scrollLeft,right:(i+1)*120-list.scrollLeft,width:120} as DOMRect)));
+ fireEvent.keyDown(screen.getByRole('tab',{name:'文件'}),{key:'ArrowRight'});
+ expect(list.scrollLeft).toBe(28);
+ fireEvent.keyDown(screen.getByRole('tab',{name:'变更'}),{key:'End'});
+ expect(list.scrollLeft).toBe(240);expect(screen.queryByRole('button',{name:'向右滚动工作标签'})).toBeNull();
+ fireEvent.keyDown(screen.getByRole('tab',{name:'任务'}),{key:'Home'});
+ expect(list.scrollLeft).toBe(0);expect(screen.queryByRole('button',{name:'向左滚动工作标签'})).toBeNull();
+});
+it('does not move restored file tabs when they are selected for the first time',()=>{
+ const scope=dockScope(useStore.getState());patchDockView(scope,{tab:'files',order:['files','changes','browser','tasks']});
+ useStore.setState({openTabs:['first','second','third'],previewItems:['first','second','third'].map(id=>({id,title:`${id}.md`,type:'markdown',content:id}))});
+ render(<RightDock/>);
+ const order=()=>screen.getAllByRole('tab').map(tab=>tab.textContent);
+ const before=order();fireEvent.click(screen.getByRole('tab',{name:'third.md'}));
+ expect(order()).toEqual(before);expect(screen.getByRole('tab',{name:'third.md'})).toHaveAttribute('aria-selected','true');
+ fireEvent.keyDown(screen.getByRole('tab',{name:'third.md'}),{key:'Home'});expect(order()).toEqual(before);
+});
 it('keeps browser form state when selecting another category and retains the last category for a conversation',()=>{
  render(<RightDock/>);fireEvent.click(screen.getByRole('tab',{name:'浏览器'}));fireEvent.change(screen.getByLabelText('Page form'),{target:{value:'keep page form'}});
  fireEvent.click(screen.getByRole('tab',{name:'任务'}));expect(screen.getByLabelText('Page form')).not.toBeVisible();fireEvent.click(screen.getByRole('tab',{name:'浏览器'}));expect(screen.getByLabelText('Page form')).toHaveValue('keep page form');

@@ -21,8 +21,8 @@ export function patchDockView(scope:string,patch:Partial<DockView>){
   useRightDock.setState(s=>({views:{...s.views,[scope]:{...s.views[scope]||fallback,...patch}}}));
   try{localStorage.setItem('enigma-right-tabs-v1',JSON.stringify(Object.entries(useRightDock.getState().views).slice(-60)));}catch{}
 }
-export function selectDockTab(scope:string,tab:DockTab,extras:Partial<DockView>={}){
-  const view=dockView(scope);patchDockView(scope,{...extras,tab,order:[...new Set([...(view.order?.length?view.order:defaultDockTabs),tab])],hidden:(view.hidden||[]).filter(id=>id!==tab),...(tab.startsWith('preview:')?{fileId:tab.slice(8),inlineIds:(view.inlineIds||[]).filter(id=>id!==tab.slice(8))}:{})});
+export function selectDockTab(scope:string,tab:DockTab,extras:Partial<DockView>={},available:DockTab[]=[]){
+  const view=dockView(scope);patchDockView(scope,{...extras,tab,order:[...new Set([...(view.order?.length?view.order:defaultDockTabs),...available,tab])],hidden:(view.hidden||[]).filter(id=>id!==tab),...(tab.startsWith('preview:')?{fileId:tab.slice(8),inlineIds:(view.inlineIds||[]).filter(id=>id!==tab.slice(8))}:{})});
 }
 export function expandDock(scope:string,expanded:boolean){patchDockView(scope,{expanded});}
 export function reorderDockTabs(scope:string,visible:DockTab[]){
