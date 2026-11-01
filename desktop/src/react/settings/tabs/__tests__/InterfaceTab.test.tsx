@@ -158,7 +158,7 @@ describe('InterfaceTab appearance state', () => {
     render(React.createElement(InterfaceTab));
 
     const hardwareSwitch = within(screen.getByText('settings.interface.hardwareAcceleration').parentElement!.parentElement!).getByRole('switch') as HTMLButtonElement;
-    expect(hardwareSwitch.getAttribute('aria-checked')).toBe('mixed');
+    expect(hardwareSwitch.getAttribute('aria-checked')).toBe('false');
     expect(hardwareSwitch.getAttribute('aria-busy')).toBe('true');
     expect(hardwareSwitch.disabled).toBe(true);
   });

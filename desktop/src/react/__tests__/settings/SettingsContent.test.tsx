@@ -120,7 +120,8 @@ describe('SettingsContent title placement', () => {
 
     const header = container.querySelector('.settings-header');
     expect(header).not.toBeNull();
-    expect(within(header as HTMLElement).getByRole('heading', { name: '设置' })).toBeInTheDocument();
+    expect(within(header as HTMLElement).getByText('设置')).toBeInTheDocument();
+    expect(within(header as HTMLElement).getAllByRole('heading')).toHaveLength(1);
     expect(within(header as HTMLElement).getByRole('heading', { name: 'settings.tabs.agent' })).toBeInTheDocument();
     expect(screen.getAllByRole('heading', { name: 'settings.tabs.agent' })).toHaveLength(1);
   });

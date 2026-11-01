@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useSettingsStore } from './store';
 import { t } from './helpers';
-import { buildSettingsSearchEntries, searchSettings } from './settings-search-index';
+import { buildSettingsSearchEntries, searchSettings, type SettingsSearchResult } from './settings-search-index';
 import styles from './Settings.module.css';
 import { GlassSelection } from '../ui/GlassSelection';
 
@@ -35,13 +35,14 @@ const TAB_ITEMS = [
 
 interface SettingsNavProps {
   onTabChange?: (tab: string) => void;
+  onSearchResult?: (result: SettingsSearchResult) => void;
 }
 
 function buildNavItems() {
   return TAB_ITEMS.map(item => ({ ...item, label: t(item.key) }));
 }
 
-export function SettingsNav({ onTabChange }: SettingsNavProps) {
+export function SettingsNav({ onTabChange, onSearchResult }: SettingsNavProps) {
   const { activeTab } = useSettingsStore(
     useShallow(s => ({ activeTab: s.activeTab }))
   );
@@ -111,6 +112,7 @@ export function SettingsNav({ onTabChange }: SettingsNavProps) {
               onClick={() => {
                 openTab(result.tabId);
                 setQuery('');
+                onSearchResult?.(result);
               }}
             >
               <span className={styles['settings-search-result-title']}>{result.title}</span>

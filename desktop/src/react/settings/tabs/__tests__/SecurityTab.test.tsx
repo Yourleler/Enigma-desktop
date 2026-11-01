@@ -130,7 +130,7 @@ describe('SecurityTab Windows sandbox network control', () => {
     const switches = screen.getAllByRole('switch') as HTMLButtonElement[];
     expect(switches).toHaveLength(4);
     for (const item of switches) {
-      expect(item.getAttribute('aria-checked')).toBe('mixed');
+      expect(item.getAttribute('aria-checked')).toBe('false');
       expect(item.getAttribute('aria-busy')).toBe('true');
       expect(item.disabled).toBe(true);
       fireEvent.click(item);

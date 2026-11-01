@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SettingsContent } from '../SettingsContent';
@@ -65,6 +65,14 @@ describe('SettingsContent tab heading', () => {
     await waitFor(() => {
       expect(screen.getByText('settings.experiments.empty')).toBeTruthy();
     });
+  });
+
+  it('opens a different category at its top instead of inheriting the previous scroll position', () => {
+    render(React.createElement(SettingsContent, { variant: 'window' }));
+    const main = document.querySelector<HTMLElement>('[data-settings-main]')!;
+    main.scrollTop = 480;
+    act(() => useSettingsStore.setState({activeTab:'sharing'}));
+    expect(main.scrollTop).toBe(0);
   });
 
   it('renders the built-in browser settings tab', async () => {

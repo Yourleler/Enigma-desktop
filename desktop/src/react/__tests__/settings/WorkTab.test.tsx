@@ -214,7 +214,8 @@ describe('WorkTab workspace persistence', () => {
 
     const switches = screen.getAllByRole('switch') as HTMLButtonElement[];
     expect(switches).toHaveLength(1);
-    expect(switches[0].getAttribute('aria-checked')).toBe('mixed');
+    expect(switches[0].getAttribute('aria-checked')).toBe('false');
+    expect(switches[0].getAttribute('aria-busy')).toBe('true');
     expect(switches[0].disabled).toBe(true);
     expect((screen.getByRole('button', { name: /common\.loading/ }) as HTMLButtonElement).disabled).toBe(true);
   });

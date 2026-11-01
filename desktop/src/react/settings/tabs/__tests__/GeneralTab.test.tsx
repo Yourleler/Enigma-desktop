@@ -48,7 +48,7 @@ vi.mock('@/ui', () => ({
       type="button"
       aria-label={ariaLabel || label}
       aria-busy={on === undefined ? 'true' : undefined}
-      aria-checked={on === undefined ? 'mixed' : on ? 'true' : 'false'}
+      aria-checked={on ? 'true' : 'false'}
       data-testid={`${ariaLabel || label}-${on === undefined ? 'loading' : on ? 'on' : 'off'}`}
       disabled={disabled || on === undefined}
       onClick={() => {
@@ -182,7 +182,8 @@ describe('GeneralTab', () => {
     render(<GeneralTab />);
 
     const keepAwakeSwitch = await screen.findByTestId('settings.general.keepAwake-loading');
-    expect(keepAwakeSwitch.getAttribute('aria-checked')).toBe('mixed');
+    expect(keepAwakeSwitch.getAttribute('aria-checked')).toBe('false');
+    expect(keepAwakeSwitch.getAttribute('aria-busy')).toBe('true');
     expect((keepAwakeSwitch as HTMLButtonElement).disabled).toBe(true);
     fireEvent.click(keepAwakeSwitch);
     expect(autoSaveConfig).not.toHaveBeenCalled();

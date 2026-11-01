@@ -110,7 +110,7 @@ describe('PluginsTab', () => {
     const switches = screen.getAllByRole('switch') as HTMLButtonElement[];
     expect(switches.slice(-2)).toHaveLength(2);
     for (const item of switches.slice(-2)) {
-      expect(item.getAttribute('aria-checked')).toBe('mixed');
+      expect(item.getAttribute('aria-checked')).toBe('false');
       expect(item.getAttribute('aria-busy')).toBe('true');
       expect(item.disabled).toBe(true);
     }

@@ -1,5 +1,7 @@
 import { UsageTab } from './tabs/UsageTab';
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { focusSettingsSearchResult } from './focus-search-result';
+import type { SettingsSearchResult } from './settings-search-index';
 import { useShallow } from 'zustand/react/shallow';
 import { useSettingsStore } from './store';
 import { hanaFetch } from './api';
@@ -133,6 +135,16 @@ export function SettingsContent({
   );
   const set = useSettingsStore(s => s.set);
   const lastReportedActiveTabRef = useRef<string | null>(null);
+  const mainRef = useRef<HTMLDivElement>(null);
+  const [searchTarget, setSearchTarget] = useState<SettingsSearchResult | null>(null);
+  useLayoutEffect(() => {
+    if (mainRef.current) mainRef.current.scrollTop = 0;
+    if (searchTarget && searchTarget.tabId !== activeTab) setSearchTarget(null);
+  }, [activeTab]);
+  useEffect(() => {
+    if (searchTarget?.tabId !== activeTab || !mainRef.current) return;
+    return focusSettingsSearchResult(mainRef.current, searchTarget.title);
+  }, [activeTab, searchTarget]);
 
   useEffect(() => {
     initSettings();
@@ -203,6 +215,8 @@ export function SettingsContent({
   const activeTabDescription = activeTabDescriptionKey ? t(activeTabDescriptionKey) : '';
   const reportActiveTabChange = useCallback((tab: string) => {
     const nextTab = normalizeSettingsTab(tab);
+    setSearchTarget(null);
+    if (mainRef.current) mainRef.current.scrollTop = 0;
     lastReportedActiveTabRef.current = nextTab;
     onActiveTabChange?.(nextTab);
   }, [onActiveTabChange]);
@@ -248,8 +262,8 @@ export function SettingsContent({
             )}
           </div>
           <div className={styles['settings-body']}>
-            <SettingsNav onTabChange={reportActiveTabChange} />
-            <div className={styles['settings-main']}>
+            <SettingsNav onTabChange={reportActiveTabChange} onSearchResult={result=>setSearchTarget({...result})} />
+            <div className={styles['settings-main']} ref={mainRef} data-settings-main="">
               {!isModal && (
                 <div className={styles['settings-tab-heading']}>
                   <h1 className={styles['settings-tab-title']}>{activeTabTitle}</h1>

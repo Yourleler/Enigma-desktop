@@ -627,6 +627,18 @@
       "reason": "Reached via esbuild source module graph, imported by core/computer-use/computer-host.ts (import-statement); core/engine.ts (import-statement); server/routes/preferences.ts (import-statement)."
     },
     {
+      "path": "core/context-handoff-presentation.ts",
+      "inputType": "source-graph",
+      "provenance": [
+        {
+          "root": "server-bootstrap",
+          "from": "core/message-utils.ts",
+          "kind": "import-statement"
+        }
+      ],
+      "reason": "Reached via esbuild source module graph, imported by core/message-utils.ts (import-statement)."
+    },
+    {
       "path": "core/conversation-change-capture.ts",
       "inputType": "source-graph",
       "provenance": [
@@ -77909,9 +77921,9 @@
     }
   ],
   "stats": {
-    "totalFiles": 6418,
+    "totalFiles": 6419,
     "byInputType": {
-      "source-graph": 714,
+      "source-graph": 715,
       "runtime-asset": 11,
       "nft-runtime-trace": 5693
     }

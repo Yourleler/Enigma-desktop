@@ -7354,3 +7354,10 @@ a.about-link:hover {
  .theme-card[data-design-theme] .theme-card-name { align-self:end; }
  .theme-card[data-design-theme] .theme-card-mode { align-self:start; }
 }
+.settings-main :global([data-settings-search-hit]) {
+    scroll-margin-block-start: 16px;
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+}

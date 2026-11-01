@@ -38,7 +38,7 @@ export function SettingsRow({
   return (
     <div {...rootProps} className={rootClass}>
       <div className={styles.rowText}>
-        <div id={labelId} className={styles.rowLabel}>{label}</div>
+        <div id={labelId} data-settings-label="" className={styles.rowLabel}>{label}</div>
         {hint && <div id={descriptionId} className={hintClass}>{hint}</div>}
       </div>
       <ControlLabelContext.Provider value={{labelId,descriptionId}}><div className={styles.rowControl}>{control}</div></ControlLabelContext.Provider>

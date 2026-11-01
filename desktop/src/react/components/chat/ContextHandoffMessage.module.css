@@ -1,11 +1,11 @@
 .context { font-family:var(--font-ui); min-width:0; }
-.goal { margin:0 0 8px; white-space:pre-wrap; overflow-wrap:anywhere; }
-.hint { color:var(--text-muted); font-size:var(--fs-caption); line-height:1.6; margin:6px 0; }
-.context details { margin-top:12px; }
+.goal { margin:0 0 var(--space-8); white-space:pre-wrap; overflow-wrap:anywhere; }
+.hint { color:var(--text-muted); font-size:var(--fs-caption); line-height:1.6; margin:var(--space-6) 0; }
+.context details { margin-top:var(--space-12); }
 .context summary { cursor:pointer; color:var(--text-muted); font-size:var(--fs-caption); line-height:1.6; }
 .context summary:hover {color:var(--text);}
 .context summary:focus-visible { outline:2px solid var(--accent); outline-offset:3px; border-radius:3px; }
-.context section {margin-top:12px;}
+.context section {margin-top:var(--space-12);}
 .context section small {color:var(--text-muted);font-size:var(--fs-hint);}
-.context section p {margin:4px 0;white-space:pre-wrap;overflow-wrap:anywhere;}
+.context section p {margin:var(--space-4) 0;white-space:pre-wrap;overflow-wrap:anywhere;}
 .full {font-size:var(--fs-caption);}
