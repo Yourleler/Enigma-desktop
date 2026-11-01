@@ -9,26 +9,27 @@
 .enigma-diff-attribution { margin:0; padding:var(--space-6) var(--space-12); color:var(--text-muted); font:11px/1.5 var(--font-ui); }
 .enigma-diff-side-labels { display:flex;color:var(--text-muted);font:10px/1.5 var(--font-ui);padding:var(--space-5, 5px) var(--space-12, 12px);border-bottom:1px solid var(--border); }
 .enigma-diff-side-labels > span { flex:1; }
-.enigma-diff-editor { flex:1;min-height:180px;min-width:0;overflow:hidden; }
+.enigma-diff-editor { flex:1;min-height:0;min-width:0;overflow:hidden; }
+.enigma-reading-diff-content > .enigma-diff-reader { flex:1;min-height:0;height:auto; }
 .enigma-diff-editor .cm-mergeView { height:100%;background:transparent; }
-.enigma-diff-editor .cm-mergeViewEditors { height:100%; }
+.enigma-diff-editor .cm-mergeViewEditors { min-height:100%; }
 .enigma-diff-editor .cm-mergeViewEditor { min-width:0;overflow:hidden; }
 .enigma-diff-editor .cm-editor { color:var(--text); }
 .enigma-diff-editor .cm-gutters { background:color-mix(in srgb,var(--eg-card) 45%,transparent);color:var(--text-muted);border-color:var(--border); }
 .enigma-diff-editor .cm-merge-a .cm-changedLine,.enigma-diff-editor .cm-deletedChunk { background:color-mix(in srgb,var(--diff-deleted-color) 15%,transparent); }
 .enigma-diff-editor .cm-merge-b .cm-changedLine { background:color-mix(in srgb,var(--diff-added-color) 16%,transparent); }
 .enigma-diff-editor .cm-changedText { background:color-mix(in srgb,var(--accent) 20%,transparent); }
-.enigma-diff-editor .cm-searchMatch { background:var(--diff-match-background);color:var(--diff-match-text); }
-.enigma-diff-editor .cm-searchMatch-selected { background:var(--diff-current-match-background);color:var(--diff-match-text);outline:1px solid var(--diff-current-match-border); }
+.enigma-diff-reader .cm-searchMatch { background:var(--diff-match-background);color:var(--diff-match-text); }
+.enigma-diff-reader .cm-searchMatch-selected { background:var(--diff-current-match-background);color:var(--diff-match-text);outline:1px solid var(--diff-current-match-border); }
 
 .enigma-diff-document > .enigma-diff-reader {height:min(65vh,700px);}
 
-.enigma-diff-editor .cm-panels {background:color-mix(in srgb,var(--eg-card) 60%,transparent);color:var(--text);border-color:var(--border);}
-.enigma-diff-editor .cm-search {display:flex;align-items:center;flex-wrap:wrap;gap:var(--space-4, 4px);padding:var(--space-7, 7px) var(--space-24, 24px) var(--space-7, 7px) var(--space-7, 7px);font:10px/1.5 var(--font-ui);}
-.enigma-diff-editor .cm-search label {display:inline-flex;align-items:center;gap:var(--space-2, 2px);}
-.enigma-diff-editor .cm-search .cm-textfield {width:100%;min-width:40px;flex:1 1 70px;background:var(--overlay-subtle);border:1px solid var(--border);color:var(--text);font:11px var(--font-ui);border-radius:6px;padding:var(--space-4, 4px) var(--space-6, 6px);}
-.enigma-diff-editor .cm-search button {font:10px/1.5 var(--font-ui);background:transparent;background-image:none;color:var(--text-muted);border:0;border-radius:4px;padding:var(--space-3, 3px);}
-.enigma-diff-editor .cm-search button:hover {background:var(--accent-light);color:var(--accent);}
+.enigma-diff-search .cm-panels {background:color-mix(in srgb,var(--eg-card) 60%,transparent);color:var(--text);border-color:var(--border);}
+.enigma-diff-reader .cm-search {display:flex;align-items:center;flex-wrap:wrap;gap:var(--space-4, 4px);padding:var(--space-7, 7px) var(--space-24, 24px) var(--space-7, 7px) var(--space-7, 7px);font:10px/1.5 var(--font-ui);}
+.enigma-diff-reader .cm-search label {display:inline-flex;align-items:center;gap:var(--space-2, 2px);}
+.enigma-diff-reader .cm-search .cm-textfield {width:100%;min-width:40px;flex:1 1 70px;background:var(--overlay-subtle);border:1px solid var(--border);color:var(--text);font:11px var(--font-ui);border-radius:6px;padding:var(--space-4, 4px) var(--space-6, 6px);}
+.enigma-diff-reader .cm-search button {font:10px/1.5 var(--font-ui);background:transparent;background-image:none;color:var(--text-muted);border:0;border-radius:4px;padding:var(--space-3, 3px);}
+.enigma-diff-reader .cm-search button:hover {background:var(--accent-light);color:var(--accent);}
 .enigma-diff-editor .cm-gutters .cm-activeLineGutter {background:var(--accent-light);color:var(--text);}
 .enigma-diff-controls > div {min-width:0;max-width:100%;}
 @container (max-width:540px) {
@@ -36,3 +37,6 @@
  .enigma-diff-controls > div {flex:1;}
  .enigma-diff-controls small {white-space:nowrap;}
 }
+
+.enigma-diff-search {flex-shrink:0;height:auto!important;min-height:0;}
+.enigma-diff-search .cm-panels {position:static;border-bottom:1px solid var(--border);}
