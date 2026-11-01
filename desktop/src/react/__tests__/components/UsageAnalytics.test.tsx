@@ -13,6 +13,25 @@ it('shows totals for the full scope and sends exact session/model filters',async
  fireEvent.click(screen.getByRole('tab',{name:'请求明细'}));fireEvent.click(screen.getByRole('button',{name:'下一页'}));await waitFor(()=>expect(fetcher.mock.calls.at(-1)![0]).toContain('offset=50'));
  expect(screen.getByText('1,600')).toBeVisible();
 });
+it('shows per-request duration and distinguishes unreported details',async()=>{
+ const row={requestId:'req-1',at:'2026-11-02T01:00:02Z',startedAt:'2026-11-02T01:00:00Z',endedAt:'2026-11-02T01:00:02Z',durationMs:2000,model:'test/fast',source:'session',operation:'reply',status:'ok',input:20,output:3,total:23,cacheRead:8,cacheWrite:0,cacheReported:true,reasoning:0,reasoningReported:0};
+ const fetcher=vi.fn(async()=>new Response(JSON.stringify({...report,records:[row]})));render(<UsageAnalytics fetcher={fetcher} sessionPath="/a"/>);await screen.findByText('1,600');
+ fireEvent.click(screen.getByRole('tab',{name:'请求明细'}));fireEvent.click(screen.getByRole('button',{name:'请求明细 req-1'}));
+ expect(screen.getByText('2 秒')).toBeVisible();expect(screen.getByText('8 / 0')).toBeVisible();expect(screen.getByText('未单独报告')).toBeVisible();
+ expect(screen.getByRole('button',{name:'复制编号'})).toBeVisible();
+});
+it('exports the full filter instead of the current page and rejects late downloads after a scope change',async()=>{
+ let resolveExport!:(response:Response)=>void;
+ const fetcher=vi.fn(async(path:string)=>path.startsWith('/api/usage/export')?new Promise<Response>(resolve=>{resolveExport=resolve;}):new Response(JSON.stringify(report)));
+ const {rerender}=render(<UsageAnalytics fetcher={fetcher} sessionPath="/a"/>);await screen.findByText('1,600');choose('模型筛选','test/fast');
+ await waitFor(()=>expect(fetcher.mock.calls.at(-1)?.[0]).toContain('model=test%2Ffast'));
+ fireEvent.click(screen.getByRole('tab',{name:'请求明细'}));fireEvent.click(screen.getByRole('button',{name:'下一页'}));await waitFor(()=>expect(fetcher.mock.calls.at(-1)?.[0]).toContain('offset=50'));
+ fireEvent.click(screen.getByText('导出'));fireEvent.click(screen.getByRole('button',{name:'JSON 完整统计'}));
+ const exportUrl=fetcher.mock.calls.at(-1)![0];expect(exportUrl).toContain('/api/usage/export?');expect(exportUrl).toContain('sessionPath=%2Fa');expect(exportUrl).toContain('model=test%2Ffast');expect(exportUrl).not.toContain('offset=');
+ rerender(<UsageAnalytics fetcher={fetcher} sessionPath="/b"/>);
+ await act(async()=>resolveExport(new Response('{"records":[]}',{headers:{'X-Enigma-Usage-Export':'1'}})));
+ expect(screen.queryByText(/已生成当前筛选/)).not.toBeInTheDocument();
+});
 it('does not replace new-session results with a late old-session response',async()=>{
  let resolve!:(value:Response)=>void;
  const fetcher=vi.fn().mockImplementationOnce(()=>new Promise(r=>{resolve=r;})).mockImplementation(async()=>new Response(JSON.stringify({...report,totals:{...report.totals,total:77}})));

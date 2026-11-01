@@ -309,6 +309,7 @@ function recordBridgeAssistantUsage({ ledger, event, sessionPath, agent, model, 
       model: modelMeta,
       usageContext,
       costRates: model?.cost,
+      timingSource: 'completion_only',
     });
     return ledger.recordError(request.requestId, new Error(errorMessage));
   }

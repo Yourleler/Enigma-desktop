@@ -55,6 +55,7 @@ export function createUsageLedger({
         requestId,
         startedMs,
         startedAt: toIso(startedMs),
+        timingSource: meta.timingSource === 'completion_only' ? 'completion_only' : 'request',
         source: usageContext.source,
         attribution: usageContext.attribution,
         metadata: isPlainObject(meta.metadata) ? { ...meta.metadata } : null,
@@ -83,6 +84,7 @@ export function createUsageLedger({
         startedAt: pendingEntry.startedAt,
         endedAt: toIso(endedMs),
         durationMs: Math.max(0, endedMs - pendingEntry.startedMs),
+        timingSource: pendingEntry.timingSource,
         status: usage ? "ok" : "usage_missing",
         source: pendingEntry.source,
         attribution: pendingEntry.attribution,
@@ -109,6 +111,7 @@ export function createUsageLedger({
         startedAt: pendingEntry.startedAt,
         endedAt: toIso(endedMs),
         durationMs: Math.max(0, endedMs - pendingEntry.startedMs),
+        timingSource: pendingEntry.timingSource,
         status: status === "aborted" ? "aborted" : "error",
         source: pendingEntry.source,
         attribution: pendingEntry.attribution,
@@ -121,7 +124,7 @@ export function createUsageLedger({
     },
 
     record(meta: Record<string, any> = {}) {
-      const request = this.start(meta);
+      const request = this.start({...meta,timingSource:'completion_only'});
       return this.finish(request.requestId, {
         usage: meta.usage,
         model: meta.model,
@@ -212,6 +215,7 @@ function normalizeEntry(entry, now) {
     startedAt,
     endedAt,
     durationMs: numberOrNull(entry.durationMs),
+    timingSource: entry.timingSource === 'request' || entry.timingSource === 'completion_only' ? entry.timingSource : 'unknown',
     status: normalizeStatus(entry.status),
     source: usageContext.source,
     attribution: usageContext.attribution,

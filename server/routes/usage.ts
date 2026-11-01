@@ -3,6 +3,7 @@ import {createRequestContext} from "../http/boundary.ts";
 import {queryUsageSummary} from "../usage-summary.ts";
 import { denyWithoutScope } from '../http/capability-guard.ts';
 import { isUsageRetention, MIN_USAGE_RETENTION, MAX_USAGE_RETENTION } from '../../shared/usage-retention.ts';
+import {formatUsageExport} from '../usage-export.ts';
 
 export function createUsageRoute(engine) {
   const route = new Hono();
@@ -53,8 +54,7 @@ export function createUsageRoute(engine) {
     return c.json(engine.usageLedger.list(filter));
   });
 
-  route.get('/usage/summary', c=>{
-    try {
+  const readSummary=(c,allRecords=false)=>{
       const query=c.req.query();let session;
       if(query.sessionPath||query.sessionId){
         const ref=engine.resolveSessionRef({sessionPath:query.sessionPath,sessionId:query.sessionId});
@@ -63,8 +63,23 @@ export function createUsageRoute(engine) {
         if(!createRequestContext(c,engine).authorize?.('sessions.read',{kind:'session',sessionId:ref.sessionId,sessionPath})?.allowed)return c.json({error:'无权读取该对话用量'},403);
         session={sessionId:ref.sessionId,sessionPath};
       }
-      return c.json(queryUsageSummary(engine.usageLedger,query,session));
+      return queryUsageSummary(engine.usageLedger,query,session,{allRecords});
+  };
+  route.get('/usage/summary', c=>{
+    try {
+      const result=readSummary(c);return result instanceof Response?result:c.json(result);
     }catch(error){return c.json({error:error instanceof Error?error.message:'用量统计读取失败'},400);}
+  });
+  route.get('/usage/export',c=>{
+    try{
+      const format=c.req.query('format');
+      if(format!=='csv'&&format!=='json')return c.json({error:'请选择 CSV 或 JSON 格式'},400);
+      const report=readSummary(c,true);if(report instanceof Response)return report;
+      const body=formatUsageExport(report,c.req.query(),format);
+      return new Response(body,{headers:{'Content-Type':format==='csv'?'text/csv; charset=utf-8':'application/json; charset=utf-8',
+        'Content-Disposition':`attachment; filename="enigma-usage-${new Date(report.sampledAt).toISOString().slice(0,10)}.${format}"`,
+        'Cache-Control':'no-store','X-Enigma-Usage-Export':'1'}});
+    }catch(error){return c.json({error:error instanceof Error?error.message:'用量导出失败'},400);}
   });
   return route;
 }

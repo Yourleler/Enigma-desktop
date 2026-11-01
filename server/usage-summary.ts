@@ -6,7 +6,7 @@ const summaries = new WeakMap<object, { revision: number; queries: Map<string, a
 const MAX_CACHED_QUERIES = 12;
 
 /** Aggregate the full retained set, never the first page of a request list. */
-export function queryUsageSummary(ledger:any,query:Record<string,string>,session?:{sessionId?:string|null;sessionPath:string}){
+export function queryUsageSummary(ledger:any,query:Record<string,string>,session?:{sessionId?:string|null;sessionPath:string},options:{allRecords?:boolean}={}){
   const dates:Record<string,string>={};
   for(const key of ['since','until'])if(query[key]){const ms=Date.parse(query[key]);if(!Number.isFinite(ms))throw new Error('请选择有效的日期范围');dates[key]=new Date(ms).toISOString();}
   if(dates.since&&dates.until&&dates.since>=dates.until)throw new Error('结束日期必须晚于开始日期');
@@ -15,8 +15,8 @@ export function queryUsageSummary(ledger:any,query:Record<string,string>,session
     session?.sessionId, session?.sessionPath,
     ...['since','until','model','source','agent','status','offset','timeZone'].map(key => query[key] || ''),
   ]);
-  let cache = Number.isSafeInteger(revision) ? summaries.get(ledger) : undefined;
-  if (Number.isSafeInteger(revision) && cache?.revision !== revision) {
+  let cache = !options.allRecords&&Number.isSafeInteger(revision) ? summaries.get(ledger) : undefined;
+  if (!options.allRecords&&Number.isSafeInteger(revision) && cache?.revision !== revision) {
     cache = { revision, queries: new Map() }; summaries.set(ledger, cache);
   }
   if (cache?.queries.has(cacheKey)) {
@@ -42,7 +42,7 @@ export function queryUsageSummary(ledger:any,query:Record<string,string>,session
   const result = {totals:summarizeUsage(entries),models:groupUsage(entries,e=>`${e.model?.provider||'unknown'}/${e.model?.modelId||'unknown'}`),
     daily:groupUsage(entries,e=>dayFormat.format(new Date(e.endedAt||e.startedAt))).sort((a,b)=>a.key.localeCompare(b.key)),
     sources:groupUsage(entries,e=>e.source?.subsystem||'unknown'),choices:{models,sources,agents},
-    records:recent.slice(offset,offset+limit).map(e=>({requestId:e.requestId,at:e.endedAt||e.startedAt,model:`${e.model?.provider||'unknown'}/${e.model?.modelId||'unknown'}`,source:e.source?.subsystem||'unknown',operation:e.source?.operation||'',status:e.status,...summarizeUsage([e])})),
+    records:(options.allRecords?recent:recent.slice(offset,offset+limit)).map(e=>({requestId:e.requestId,at:e.endedAt||e.startedAt,startedAt:e.timingSource==='request'?e.startedAt:null,endedAt:e.timingSource==='request'?e.endedAt:null,timingSource:e.timingSource||'unknown',durationMs:e.timingSource==='request'&&typeof e.durationMs==='number'&&Number.isFinite(e.durationMs)?Math.max(0,e.durationMs):null,model:`${e.model?.provider||'unknown'}/${e.model?.modelId||'unknown'}`,source:e.source?.subsystem||'unknown',operation:e.source?.operation||'',status:e.status,cacheReported:e.usage?.cache?.support==='reported',...summarizeUsage([e])})),
     pagination:{offset,limit,total:entries.length,hasMore:offset+limit<entries.length},
     coverage:ledger.coverage?.()||{retained:stored.length},scope:session?'session':'history',sampledAt:Date.now()};
   if (cache) {

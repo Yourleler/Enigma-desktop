@@ -11,6 +11,7 @@ import { AnchoredPortal } from '../../ui/AnchoredPortal';
 import { formatElapsed, formatTokenCount, METER_PHASE_LABEL, tokenMeterKey, useTokenMeterStore } from './token-meter-store';
 import styles from './TokenMeterPill.module.css';
 import {useAnimatedNumber} from '../../hooks/use-animated-number';
+import {AppIcon} from '../../ui/app-icons';
 
 /** Per-send usage stays available after completion. Raw usage and estimates
  * remain distinct; live updates do not make screen readers announce each tick. */
@@ -55,7 +56,7 @@ export function TokenMeterPill() {
       <span className={styles.side}><span>↑ 输入</span><strong>{counter('up')}</strong></span>
       <span className={styles.side}><span>↓ 输出</span><strong>{counter('down')}</strong></span>
       {meter && <span className={styles.extra}>{rateVisible ? `${Math.round(meter.rate)} token/s · ` : ''}{formatElapsed(meter.elapsedMs)}</span>}
-      <span className={styles.chevron} aria-hidden>⌃</span>
+      <AppIcon name="chevronDown" size={13} className={styles.chevron}/>
     </button>
     <AnchoredPortal open={open} anchorRef={anchor} onClose={close} align="end" viewportPadding={12} className={`${styles.popover} enigma-token-popover`} role="dialog" ariaLabel="本轮模型用量" focusOnOpen>
       <div ref={panel} aria-label="本轮模型用量" onKeyDown={event=>{if(event.key==='Tab'){const buttons=panel.current?.querySelectorAll<HTMLButtonElement>('button');if(buttons?.length===1){event.preventDefault();buttons[0].focus();}}}}>
@@ -78,7 +79,7 @@ export function TokenMeterPill() {
           <p className={styles.note}>输入包含每次请求携带的上下文及已报告的缓存 token；多轮工具调用会重复携带上下文。输出可能包含思考与工具参数。</p>
           <p className={styles.note}>≈ 表示流式估算，模型报告用量后会校正。这里是本轮用量，费用以供应商账单为准；上下文容量仍在输入框的上下文按钮中查看。</p>
           {!!meter.excludedStatusNotices&&<p className={styles.note}>已从实时估算中排除 {meter.excludedStatusNotices} 条排队状态提示；状态提示不表示模型已开始生成。</p>}
-          {!!meter.byModel?.length&&<details className={styles.modelDetails}><summary>本轮按模型 · {meter.byModel.length} 个</summary>{meter.byModel.map(row=><div className={styles.modelRow} key={row.model}><strong>{row.model}</strong><span>{row.requests} 次请求 · 输入 {row.inputEstimated?'≈':''}{row.input.toLocaleString()} · 输出 {row.outputEstimated?'≈':''}{row.output.toLocaleString()}</span></div>)}</details>}
+          {!!meter.byModel?.length&&<details className={styles.modelDetails}><summary>本轮按模型 · {meter.byModel.length} 个<AppIcon name="chevronRight" size={13}/></summary>{meter.byModel.map(row=><div className={styles.modelRow} key={row.model}><strong>{row.model}</strong><span>{row.requests} 次请求 · 输入 {row.inputEstimated?'≈':''}{row.input.toLocaleString()} · 输出 {row.outputEstimated?'≈':''}{row.output.toLocaleString()}</span></div>)}</details>}
         </>}
         </>}
       </div>

@@ -114,7 +114,7 @@ export function classifyHttpRoute({ method = "GET", path = "" } = {}) {
   }
   if (isDeskFileReadRoute(verb, routePath)) return scoped("files.read");
   if (isDeskFileWriteRoute(verb, routePath)) return scoped("files.write");
-  if (routePath === "/api/usage/llm" || routePath === "/api/usage/summary") return verb === "GET" ? STUDIO_OWNER : LOCAL_ONLY;
+  if (routePath === "/api/usage/llm" || routePath === "/api/usage/summary" || routePath === "/api/usage/export") return verb === "GET" ? STUDIO_OWNER : LOCAL_ONLY;
   if (routePath === '/api/usage/retention') return (verb === 'GET' || verb === 'PUT') ? STUDIO_OWNER : LOCAL_ONLY;
   if (routePath === "/api/session-projects" || routePath.startsWith("/api/session-projects/")) {
     return scoped("chat");

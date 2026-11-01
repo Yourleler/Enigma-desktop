@@ -14,3 +14,18 @@
 @media(max-width:600px){.totals{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .analytics.analytics button{font-size:12px;line-height:1.5}
 .analytics .select.select button{font:13px/1.5 var(--font-ui);border:1px solid var(--border);background:var(--bg-card);padding:var(--space-8) var(--space-10);min-height:36px}
+.inlineTotals{padding:var(--space-8) 0;gap:var(--space-12);border-top:0}.inlineTotals strong{font-size:15px;font-weight:500}.inlineTotals span{font-size:11px}
+.toolbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--space-8)}
+.exportMenu{position:relative;margin-left:auto;font-size:12px}.exportMenu summary{display:flex;align-items:center;gap:var(--space-4);cursor:pointer;list-style:none;color:var(--text-muted);padding:var(--space-6) 0}
+.exportMenu summary::-webkit-details-marker{display:none}.exportMenu summary::marker{content:''}
+.exportMenu summary:hover{color:var(--text)}.exportMenu summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+.exportMenu>div{display:flex;gap:var(--space-8);flex-wrap:wrap;padding-bottom:var(--space-8)}
+.exportMenu button,.requestId button{border:0;border-radius:5px;background:transparent;color:var(--accent);font:inherit;padding:var(--space-4);cursor:pointer}
+.exportMenu button:disabled{opacity:.5;cursor:wait}.exportMenu button:hover,.requestId button:hover{background:var(--accent-light)}
+.recordToggle{display:flex;align-items:center;justify-content:space-between;gap:var(--space-8);width:100%;text-align:left;color:inherit;background:transparent;border:0;padding:0;font:inherit;cursor:pointer}
+.recordToggle>span:first-child{min-width:0;overflow-wrap:anywhere}.recordToggle>span:last-child{flex:none;opacity:.65;transition:transform 160ms ease}.recordToggle[aria-expanded=true]>span:last-child{transform:rotate(90deg)}
+.recordToggle:hover{color:var(--accent)}.recordToggle:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+.requestDetails{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-12);text-align:left;margin:var(--space-8) 0}
+.requestDetails dt{color:var(--text-muted);font-size:11px}.requestDetails dd{margin:var(--space-4) 0 0;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.requestId{grid-column:1/-1}.requestId dd{display:flex;align-items:center;gap:var(--space-8);flex-wrap:wrap}.requestId code{font:11px/1.5 var(--font-mono)}
+@media(prefers-reduced-motion:reduce){.recordToggle>span:last-child{transition:none}}

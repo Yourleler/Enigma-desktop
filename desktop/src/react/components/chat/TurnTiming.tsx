@@ -1,6 +1,8 @@
 import type { ChatMessage } from '../../stores/chat-types';
 import { elapsedClock, timeMillis } from '../../../../../shared/session-timing';
 import styles from './TurnTiming.module.css';
+import {AppIcon} from '../../ui/app-icons';
+import {UsageTotalsView,UsageGroupTable} from '../usage/UsageAnalytics';
 
 const formatTime = (at: number) => new Date(at).toLocaleString('zh-CN', {
   month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
@@ -19,10 +21,10 @@ export function TurnTiming({ message, input }: { message: ChatMessage; input?: C
       <span>本轮历时 <strong>{elapsed === null ? '未记录' : elapsedClock(elapsed)}</strong></span>
       <span>开始 <time dateTime={startedAt ? new Date(startedAt).toISOString() : undefined}>{startedAt ? formatTime(startedAt) : '未记录'}</time></span>
       <span>最后回复 <time dateTime={endedAt ? new Date(endedAt).toISOString() : undefined}>{endedAt ? formatTime(endedAt) : '未记录'}</time></span>
-      {message.turnUsage&&<details className={styles.usage}><summary aria-label="查看此轮用量">{message.turnUsage.totals.reportedRequests?`↑ ${message.turnUsage.totals.input.toLocaleString()} · ↓ ${message.turnUsage.totals.output.toLocaleString()} token`:'用量未报告'}</summary>
-        <div>{message.turnUsage.models.map(row=><p key={row.key}>{row.label} · {row.requests} 次 · 输入 {row.input.toLocaleString()} · 输出 {row.output.toLocaleString()}</p>)}
-        <p>消息记录用量，包含工具调用期间的模型请求；分支沿用不重复计费。</p>
-        {!!message.turnUsage.totals.missingRequests&&<p>{message.turnUsage.totals.missingRequests} 次未保存用量，合计仅包括已记录部分。</p>}</div>
+      {message.turnUsage&&<details className={styles.usage}><summary aria-label="查看此轮用量" data-tooltip="展开或收起这轮的输入、输出、缓存和模型明细" title="展开或收起这轮的用量明细"><span>{message.turnUsage.totals.reportedRequests?`↑ ${message.turnUsage.totals.input.toLocaleString()} · ↓ ${message.turnUsage.totals.output.toLocaleString()} token`:'用量未报告'}</span><AppIcon name="chevronRight" size={13} className={styles.chevron}/></summary>
+        <div className={styles.breakdown}><UsageTotalsView value={message.turnUsage.totals} compact/>
+        <UsageGroupTable groups={message.turnUsage.models}/>
+        <p>来自这轮消息记录，包含工具调用期间的模型请求。输入含上下文，输出可能含思考与工具参数；分支沿用的旧消息不会重复计入请求账本。</p></div>
       </details>}
     </div>
   );

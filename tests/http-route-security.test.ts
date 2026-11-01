@@ -862,4 +862,6 @@ it('keeps global usage summaries limited to the studio owner',async()=>{
  const {authorizeHttpRoute}=await import('../server/http/route-security.ts');
  expect(authorizeHttpRoute({method:'GET',path:'/api/usage/summary',principal:mobilePrincipal()})).toMatchObject({allowed:false});
  expect(authorizeHttpRoute({method:'GET',path:'/api/usage/summary',principal:desktopOwnerPrincipal()})).toMatchObject({allowed:true});
+ expect(authorizeHttpRoute({method:'GET',path:'/api/usage/export',principal:mobilePrincipal()})).toMatchObject({allowed:false});
+ expect(authorizeHttpRoute({method:'GET',path:'/api/usage/export',principal:desktopOwnerPrincipal()})).toMatchObject({allowed:true});
 });

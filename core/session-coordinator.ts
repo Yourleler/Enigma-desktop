@@ -579,7 +579,7 @@ function recordAssistantUsage({ ledger, event, sessionPath, sessionId, agentId, 
   const reportedUsage = event.message.usage && ['input','output','cacheRead','cacheWrite','totalTokens','total_tokens','input_tokens','output_tokens','prompt_tokens','completion_tokens','reasoning_tokens'].some(key=>Number(event.message.usage[key])>0) ? event.message.usage : null;
   const errorMessage = event.message?.errorMessage || event.message?.error?.message || null;
   if (event.message?.stopReason === 'error' || event.message?.stopReason === 'aborted' || errorMessage) {
-    const request=ledger.start({model:modelMeta,usageContext,costRates});
+    const request=ledger.start({model:modelMeta,usageContext,costRates,timingSource:'completion_only'});
     return ledger.recordError(request.requestId,new Error(errorMessage||'request stopped'),event.message?.stopReason==='aborted'?'aborted':'error',{usage:reportedUsage,costRates});
   }
   return ledger.record({model:modelMeta,usage:reportedUsage,usageContext,costRates});

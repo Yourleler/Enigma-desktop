@@ -1,7 +1,18 @@
 import {expect,it,vi} from 'vitest';
 import {createUsageLedger} from '../lib/llm/usage-ledger';
 import {queryUsageSummary} from '../server/usage-summary';
+import {formatUsageExport} from '../server/usage-export';
 const context=(sessionId='a',sessionPath='/a')=>({source:{subsystem:'session',operation:'reply'},attribution:{kind:'session',sessionId,sessionPath}});
+it('only reports request duration when the ledger measured the actual start and end',()=>{
+ let now=1000;const ledger=createUsageLedger({now:()=>now});
+ const pending=ledger.start({usageContext:context()});now=2500;ledger.finish(pending.requestId,{usage:{input:2,output:1}});
+ ledger.record({usageContext:context(),usage:{input:1,output:1}});
+ const report=queryUsageSummary(ledger,{});
+ expect(report.records.find(row=>row.timingSource==='request')).toMatchObject({durationMs:1500,startedAt:new Date(1000).toISOString(),endedAt:new Date(2500).toISOString()});
+ expect(report.records.find(row=>row.timingSource==='completion_only')).toMatchObject({durationMs:null,startedAt:null,endedAt:null});
+ const legacy={list:()=>({entries:[{startedAt:new Date(1000).toISOString(),endedAt:new Date(2500).toISOString(),durationMs:1500,status:'ok',usage:null}]})};
+ expect(queryUsageSummary(legacy,{}).records[0]).toMatchObject({durationMs:null,timingSource:'unknown'});
+});
 it('reuses unchanged history but invalidates on append, retention changes and clear',()=>{
  const ledger=createUsageLedger(); const list=vi.spyOn(ledger,'list');
  ledger.record({usageContext:context(),usage:{input:2,output:1}});
@@ -31,6 +42,23 @@ it('sums all retained records before pagination, deduplicates grouping and count
  const report=queryUsageSummary(ledger,{}, {sessionId:'a',sessionPath:'/moved'});
  expect(report.totals).toMatchObject({requests:80,input:1440,output:160,total:1600,cacheRead:640});expect(report.records).toHaveLength(50);expect(report.models).toHaveLength(2);
  const second=queryUsageSummary(ledger,{offset:'50'},{sessionId:'a',sessionPath:'/a'});expect(second.records).toHaveLength(30);expect(second.totals).toEqual(report.totals);
+ const exported=queryUsageSummary(ledger,{offset:'50'},{sessionId:'a',sessionPath:'/a'},{allRecords:true});
+ expect(exported.records).toHaveLength(80);expect(exported.totals).toEqual(report.totals);
+ expect(queryUsageSummary(ledger,{}, {sessionId:'a',sessionPath:'/moved'}).records).toHaveLength(50);
+});
+it('exports a filtered snapshot without private payloads and leaves unknown usage empty',()=>{
+ const ledger=createUsageLedger();
+ ledger.record({usageContext:context(),model:{provider:'=provider',id:'model'},usage:{input:8,output:2,cacheRead:4},metadata:{prompt:'private-prompt',path:'/private-path'}});
+ ledger.record({usageContext:context(),model:{provider:'=provider',id:'model'},usage:null});
+ ledger.record({usageContext:context('b','/b'),model:{provider:'other',id:'model'},usage:{input:20,output:10}});
+ const query={model:'=provider/model',timeZone:'UTC',sessionPath:'/a'};
+ const report=queryUsageSummary(ledger,query,{sessionId:'a',sessionPath:'/a'},{allRecords:true});
+ const json=formatUsageExport(report,query,'json'),data=JSON.parse(json);
+ expect(data.records).toHaveLength(2);expect(data.records.find(r=>r.missingRequests).total).toBeNull();
+ expect(json).not.toContain('private-prompt');expect(json).not.toContain('/private-path');expect(json).not.toContain('sessionPath');
+ const csv=formatUsageExport(report,query,'csv');expect(csv).toContain('"\'=provider/model"');expect(csv).not.toContain('private-prompt');
+ expect(csv.trim().split('\r\n')).toHaveLength(3);
+ expect(report.records.find(r=>!r.missingRequests)).toMatchObject({cacheReported:true});
 });
 it('filters dates models session and status, preserving missing usage and failed usage',()=>{
  let now=Date.parse('2026-10-27T16:01:00Z');const ledger=createUsageLedger({now:()=>now++});
