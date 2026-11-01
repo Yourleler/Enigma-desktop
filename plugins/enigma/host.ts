@@ -1154,6 +1154,8 @@ export class EngineeringHost {
       modelSelection: binding.pendingModel,
       modelPolicy: binding.modelPolicy,
       kind: binding.kind || "engineering",
+      ...(binding.managedGrant?.managerPath && binding.managedGrant.managerPath !== sessionPath
+        ? {managerSessionPath: binding.managedGrant.managerPath} : {}),
       conductorSummary:
         binding.kind === "manager"
           ? await this.conductor(sessionPath).summary()

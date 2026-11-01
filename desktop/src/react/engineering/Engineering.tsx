@@ -122,7 +122,10 @@ export function EngineeringToolbar({compact=false}:{compact?:boolean}={}) {
   const operation = snapshot?.state?.operation;
   const busy =
     operation?.state === "running" || snapshot?.state?.idle === false;
+  const managerPath = snapshot?.sessionPath === sessionPath && snapshot?.managerSessionPath !== sessionPath
+    ? snapshot?.managerSessionPath : undefined;
   if (compact) return <div className="enigma-compact-tools" data-testid="engineering-toolbar" data-session-id={nativeSessionId||undefined} data-connection-id={connection||'local'}>
+    {managerPath && <button aria-label="返回任务管家" data-tooltip="返回安排这项工作的管家对话；当前任务继续运行" onClick={()=>void switchSession(managerPath)}><AppIcon name="chevronLeft" size={16}/><span>管家</span></button>}
     <SurfaceMenu label="项目工具" hint="仓库、任务、时光机、运行诊断与模型分工" icon={<><AppIcon name="skill" size={16}/><span>工具</span></>}>
       {snapshot?.connected ? <>
         {toolSections.map(section=><div className="enigma-feature-section" key={section.label}><div className="enigma-menu-section-title">{section.label}</div>{section.ids.filter(id=>snapshot.kind==='manager'||id!=='conductor').map(id=><button key={id} onClick={()=>openGroup(id)}>{groups.find(g=>g.id===id)?.label}<small>{featureHint(id)}</small></button>)}</div>)}

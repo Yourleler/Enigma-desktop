@@ -26,3 +26,12 @@ it('coalesces concurrent openings and retains an existing task binding',async()=
  vi.mocked(f.host.binding).mockResolvedValue({root:'/keep',memory:false,sessionPath:'a'});vi.spyOn(f.host,'snapshot').mockResolvedValue({root:'/keep'});
  expect(await f.host.connectProject('a')).toEqual({root:'/keep'});expect(f.connect).toHaveBeenCalledTimes(1);
 });
+it('exposes only the recorded manager navigation path, without the managed model grant',async()=>{
+ const {host}=await fixture();
+ vi.mocked(host.binding).mockResolvedValue({root:'/worker',memory:false,sessionPath:'child',managedGrant:{managerPath:'parent',root:'/worker',models:['private-grant']}});
+ vi.spyOn(host,'controller').mockResolvedValue({safeSnapshot:(value:unknown)=>value,snapshot:()=>({idle:true})} as any);
+ (host as any).overviews.set('child',{at:Date.now(),value:{repositories:[]}});
+ const result=await host.snapshot('child');expect(result.managerSessionPath).toBe('parent');expect(result.managedGrant).toBeUndefined();
+ vi.mocked(host.binding).mockResolvedValue({root:'/worker',memory:false,sessionPath:'child'});
+ expect((await host.snapshot('child')).managerSessionPath).toBeUndefined();
+});
