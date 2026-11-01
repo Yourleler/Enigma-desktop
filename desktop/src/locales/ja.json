@@ -678,6 +678,7 @@
     "running": "{n} 個のツール実行中"
   },
   "processFold": {
+    "unknown": "{n} 件の結果記録なし",
     "summary": "作業の詳細",
     "tools": "{n} 個のツール",
     "thinking": "{n} 回の思考",

@@ -1563,6 +1563,9 @@
 .toolStatusFailed {
     color: var(--coral);
 }
+.toolStatusUnknown {
+    color: var(--text-muted);
+}
 
 /* ── 思考折叠块 ── */
 

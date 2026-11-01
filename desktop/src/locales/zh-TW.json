@@ -678,6 +678,7 @@
     "running": "{n} 個工具運行中"
   },
   "processFold": {
+    "unknown": "{n} 項未記錄結果",
     "summary": "執行過程",
     "tools": "{n} 個工具",
     "thinking": "{n} 次思考",

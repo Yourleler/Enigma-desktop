@@ -39,6 +39,17 @@ function textBlock(html = '<p>完成</p>', source?: string): ContentBlock {
 }
 
 describe('process fold grouping', () => {
+  it('reports missing tool receipts separately from actual failures', () => {
+    const items = [user('u1'),
+      assistant('a1',[toolGroup([{name:'computer',done:true,success:false,status:'unknown'}])]),
+      assistant('a2',[toolGroup([{name:'read',done:true,success:false,status:'failed'}])]),
+      assistant('a3',[thinking()]),
+      assistant('a4',[textBlock('<p>本轮已停止</p>')])];
+    const group = buildTranscriptRenderItems(items,{isStreaming:false}).find(item=>item.type==='process_fold');
+    expect(group).toMatchObject({stats:{toolCount:2,unsuccessfulCount:1,unknownCount:1}});
+    if(group?.type!=='process_fold')throw Error('Expected process group');
+    expect(buildProcessFoldSummary(group.stats,'Enigma')).toBe('执行过程 · 2 个工具 · 1 次尝试未成功 · 1 项未记录结果');
+  });
   it('folds consecutive process-only assistant messages into one render item', () => {
     const items: ChatListItem[] = [
       user('u1'),

@@ -5,6 +5,7 @@ export interface ProcessFoldStats {
   toolCount: number;
   thinkingCount: number;
   unsuccessfulCount: number;
+  unknownCount?: number;
 }
 
 export interface SourceTranscriptRenderItem {
@@ -162,6 +163,7 @@ function collectStats(messages: ProcessFoldMessage[]): ProcessFoldStats {
   let toolCount = 0;
   let thinkingCount = 0;
   let unsuccessfulCount = 0;
+  let unknownCount = 0;
 
   for (const entry of messages) {
     for (const block of entry.item.data.blocks || []) {
@@ -172,11 +174,12 @@ function collectStats(messages: ProcessFoldMessage[]): ProcessFoldStats {
       if (block.type !== 'tool_group') continue;
       const tools = visibleToolCalls(block);
       toolCount += tools.length;
-      unsuccessfulCount += tools.filter((tool) => tool.done && !tool.success).length;
+      unsuccessfulCount += tools.filter((tool) => tool.status === 'failed' || (!tool.status && tool.done && !tool.success)).length;
+      unknownCount += tools.filter((tool) => tool.status === 'unknown').length;
     }
   }
 
-  return { toolCount, thinkingCount, unsuccessfulCount };
+  return { toolCount, thinkingCount, unsuccessfulCount, ...(unknownCount ? {unknownCount} : {}) };
 }
 
 function lastUserIndex(items: ChatListItem[]): number {
@@ -262,6 +265,7 @@ function fallbackTranslate(key: string, vars?: Record<string, string | number>):
     'processFold.tools': '{n} 个工具',
     'processFold.thinking': '{n} 次思考',
     'processFold.unsuccessful': '{n} 次尝试未成功',
+    'processFold.unknown': '{n} 项未记录结果',
   };
   return interpolate(table[key] || key, vars);
 }
@@ -279,5 +283,6 @@ export function buildProcessFoldSummary(
   if (stats.toolCount > 0) parts.push(translate('processFold.tools', { n: stats.toolCount }));
 
   if (stats.unsuccessfulCount > 0) parts.push(translate('processFold.unsuccessful', { n: stats.unsuccessfulCount }));
+  if (stats.unknownCount) parts.push(translate('processFold.unknown', { n: stats.unknownCount }));
   return parts.join(' · ');
 }

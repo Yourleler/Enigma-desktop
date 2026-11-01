@@ -162,8 +162,10 @@ const ToolIndicator = memo(function ToolIndicator({ tool, agentName }: { tool: T
         )}
         {tag && <span className={styles.toolTag}>{tag}</span>}
         {status !== 'running' ? (
-          <span className={`${styles.toolStatus} ${status === 'succeeded' ? styles.toolStatusDone : styles.toolStatusFailed}`}>
-            {status === 'succeeded' ? <AppIcon name="check" size={14}/> : status === 'failed' ? '失败' : '待确认'}
+          <span className={`${styles.toolStatus} ${status === 'succeeded' ? styles.toolStatusDone : status === 'failed' ? styles.toolStatusFailed : styles.toolStatusUnknown}`}
+            title={status === 'unknown' ? '历史中没有这次操作的最终回执。请核对实际结果后再重试。' : undefined}
+            data-tooltip={status === 'unknown' ? '历史中没有这次操作的最终回执。请核对实际结果后再重试。' : undefined}>
+            {status === 'succeeded' ? <AppIcon name="check" size={14}/> : status === 'failed' ? '失败' : '结果未记录'}
           </span>
         ) : (
           <ActivityWave/>

@@ -678,6 +678,7 @@
     "running": "{n}개 도구 실행 중"
   },
   "processFold": {
+    "unknown": "결과가 기록되지 않은 항목 {n}개",
     "summary": "작업 내역",
     "tools": "{n}개 도구",
     "thinking": "{n}번 생각",

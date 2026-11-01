@@ -678,6 +678,7 @@
     "running": "{n} tools running"
   },
   "processFold": {
+    "unknown": "{n} results not recorded",
     "summary": "Work details",
     "tools": "{n} tools",
     "thinking": "{n} thoughts",

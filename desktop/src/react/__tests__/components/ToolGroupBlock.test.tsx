@@ -30,7 +30,9 @@ describe('ToolGroupBlock', () => {
 
     expect(screen.getByText('file not found')).toBeInTheDocument();
     expect(screen.getByText('失败')).toBeInTheDocument();
-    expect(screen.getByText('待确认')).toBeInTheDocument();
+    expect(screen.getByText('结果未记录')).toBeInTheDocument();
+    expect(screen.getByText('结果未记录')).toHaveAttribute('title', '历史中没有这次操作的最终回执。请核对实际结果后再重试。');
+    expect(screen.queryByText('待确认')).not.toBeInTheDocument();
     expect(screen.queryByText('✓')).not.toBeInTheDocument();
   });
 
