@@ -2,7 +2,7 @@
   "dataEpoch": 1,
   "exemptions": [
     {
-      "expiresOn": "2026-10-31",
+      "expiresOn": "2026-12-01",
       "id": "character-card-copy-helper",
       "kinds": [
         "mkdir",
@@ -14,27 +14,18 @@
       "sourceFile": "lib/character-cards/service.ts"
     },
     {
-      "expiresOn": "2026-10-31",
+      "expiresOn": "2026-12-01",
       "id": "compat-directory-seeding",
       "kinds": [
-        "database-open",
-        "write-file",
-        "append-file",
-        "rename",
-        "copy-file",
-        "mkdir",
-        "remove-path",
-        "truncate-file",
-        "atomic-write",
-        "secret-write",
-        "persistent-store-constructor"
+        "mkdir"
       ],
+      "linePattern": "fs[.]mkdirSync\\(full",
       "ownerModule": "lib/compat/checks/dirs.ts",
       "reason": "Compatibility check creates a fixed set of registered HANA_HOME roots; flow attribution remains with the first-run coordinator.",
       "sourceFile": "lib/compat/checks/dirs.ts"
     },
     {
-      "expiresOn": "2026-10-31",
+      "expiresOn": "2026-12-01",
       "id": "conditional-plugin-install-cleanup",
       "kinds": [
         "remove-path"
@@ -45,7 +36,7 @@
       "sourceFile": "server/routes/plugins.ts"
     },
     {
-      "expiresOn": "2026-10-31",
+      "expiresOn": "2026-12-01",
       "id": "conditional-upload-target",
       "kinds": [
         "mkdir",
@@ -57,67 +48,49 @@
       "sourceFile": "server/routes/upload.ts"
     },
     {
-      "expiresOn": "2026-10-31",
+      "expiresOn": "2026-12-01",
       "id": "config-scope-migration-helper",
       "kinds": [
-        "database-open",
-        "write-file",
-        "append-file",
-        "rename",
-        "copy-file",
-        "mkdir",
-        "remove-path",
-        "truncate-file",
-        "atomic-write",
-        "secret-write",
-        "persistent-store-constructor"
+        "secret-write"
       ],
+      "linePattern": "(?:writeSecretFileSync\\(ac[.]path|writeSecretFileSync\\(backupPath)",
       "ownerModule": "shared/migrate-config-scope.ts",
       "reason": "Compatibility helper mutates a caller-supplied config file; concrete agent config ownership is registered at callers.",
       "sourceFile": "shared/migrate-config-scope.ts"
     },
     {
-      "expiresOn": "2026-10-31",
+      "expiresOn": "2026-12-01",
       "id": "cross-store-first-run-bootstrap",
       "kinds": [
-        "database-open",
-        "write-file",
-        "append-file",
-        "rename",
         "copy-file",
         "mkdir",
-        "remove-path",
-        "truncate-file",
-        "atomic-write",
+        "rename",
         "secret-write",
-        "persistent-store-constructor"
+        "write-file"
       ],
       "ownerModule": "core/first-run.ts",
       "reason": "First-run seeds several registered stores from packaged templates. Flow-sensitive attribution moves into the future coordinator; this exact composition file is not ignored by directory.",
       "sourceFile": "core/first-run.ts"
     },
     {
-      "expiresOn": "2026-10-31",
+      "expiresOn": "2026-12-01",
       "id": "cross-store-legacy-migrations",
       "kinds": [
-        "database-open",
-        "write-file",
-        "append-file",
-        "rename",
+        "atomic-write",
         "copy-file",
         "mkdir",
+        "persistent-store-constructor",
         "remove-path",
-        "truncate-file",
-        "atomic-write",
+        "rename",
         "secret-write",
-        "persistent-store-constructor"
+        "write-file"
       ],
       "ownerModule": "core/migrations.ts",
       "reason": "The legacy migration orchestrator mutates many registered targets. Each target is inventoried, while exact-site flow attribution remains prerequisite work for the coordinator.",
       "sourceFile": "core/migrations.ts"
     },
     {
-      "expiresOn": "2026-10-31",
+      "expiresOn": "2026-12-01",
       "id": "data-epoch-durable-json-primitive",
       "kinds": [
         "mkdir",
@@ -175,7 +148,7 @@
       "sourceFile": "desktop/file-text-io.cjs"
     },
     {
-      "expiresOn": "2026-10-31",
+      "expiresOn": "2026-12-01",
       "id": "desktop-gpu-json-primitive",
       "kinds": [
         "mkdir",
@@ -188,7 +161,7 @@
       "sourceFile": "desktop/src/shared/gpu-startup-policy.cjs"
     },
     {
-      "expiresOn": "2026-10-31",
+      "expiresOn": "2026-12-01",
       "id": "desktop-legacy-update-path-cleanup",
       "kinds": [
         "remove-path"
@@ -487,7 +460,7 @@
       "sourceFile": "server/index.ts"
     },
     {
-      "expiresOn": "2026-10-31",
+      "expiresOn": "2026-12-01",
       "id": "local-user-account-atomic-helper",
       "kinds": [
         "mkdir",
@@ -579,7 +552,7 @@
       "sourceFile": "lib/sandbox/win32-exec.ts"
     },
     {
-      "expiresOn": "2026-10-31",
+      "expiresOn": "2026-12-01",
       "id": "server-identity-atomic-helper",
       "kinds": [
         "mkdir",
@@ -691,7 +664,7 @@
     ],
     "version": 3
   },
-  "payloadFingerprint": "sha256:82f4d44a0eccaffa0c812cc91a8c2bf9a1cd9bf04f70c6b313ef55ff9b2636ff",
+  "payloadFingerprint": "sha256:cc3f9a4d18fb5b60631491e882d6381b242336be9b79926779a7be0104d20aa9",
   "registry": [
     {
       "affectedByEpochMigration": true,
@@ -1130,7 +1103,7 @@
         "source": "plugins/enigma/change-workbench.ts"
       },
       "schemaSource": {
-        "contract": "frozen source publications, analysis jobs, findings and generated read-only workspaces",
+        "contract": "frozen source publications, analysis jobs, findings and generated read-only workspaces; optional repo filter and unstaged source preserve prior working/staged/commit publications",
         "kind": "directory-contract",
         "module": "plugins/enigma/change-workbench.ts"
       }
@@ -3222,7 +3195,7 @@
         "source": "lib/llm/usage-ledger.ts"
       },
       "schemaSource": {
-        "contract": "UsageLedger reader and atomic serializer",
+        "contract": "version 1 usage records with optional timingSource; missing or unrecognized source is unknown, existing usage/model/status fields are retained",
         "kind": "runtime-contract",
         "module": "lib/llm/usage-ledger.ts"
       }
@@ -3441,8 +3414,8 @@
   ],
   "review": {
     "classification": "compatible",
-    "compatibilityReason": "Background task creation preserves source directory, project, permissions and existing policy counters. Optional enigma.handoff presentation v1 adds input identity and digest for display only; original input and native session schema remain intact. Old readers ignore metadata; no DATA_EPOCH migration is required.",
-    "payloadFingerprint": "sha256:82f4d44a0eccaffa0c812cc91a8c2bf9a1cd9bf04f70c6b313ef55ff9b2636ff"
+    "compatibilityReason": "Usage ledger version 1 adds optional timingSource: missing or unrecognized values remain unknown and existing usage, model, status and retention fields are retained. Bridge and native completion accounting label unmeasured durations without changing session JSONL or sidecar formats. Change publications add optional repo and unstaged source; existing frozen publications remain readable. Host parent navigation, browser keyboard handling and abort cleanup do not change persisted shapes. Reviewed helper exemptions retain explicit ownership debt and narrower operation kinds; no DATA_EPOCH migration is required.",
+    "payloadFingerprint": "sha256:cc3f9a4d18fb5b60631491e882d6381b242336be9b79926779a7be0104d20aa9"
   },
   "schemas": [
     {
@@ -3563,10 +3536,10 @@
       "storeId": "conversation-input-queue"
     },
     {
-      "contract": "frozen source publications, analysis jobs, findings and generated read-only workspaces",
+      "contract": "frozen source publications, analysis jobs, findings and generated read-only workspaces; optional repo filter and unstaged source preserve prior working/staged/commit publications",
       "kind": "directory-contract",
       "module": "plugins/enigma/change-workbench.ts",
-      "sourceHash": "sha256:25d05131e8d2b4026705554da612f4968b78902b3f39e304321dcea868dbf078",
+      "sourceHash": "sha256:060d6bc202bffe94e253c1f7dc7ad86ad67a56c9096075f6cc9bfe3a439f3ee6",
       "storeId": "conversation-review-workbench"
     },
     {
@@ -3667,7 +3640,7 @@
       "contract": "desktop window bounds, release announcement bookmark, and update cache version marker readers",
       "kind": "directory-contract",
       "module": "desktop/main.cjs",
-      "sourceHash": "sha256:1ff8604582c24da4da1e1d444f6951e893ce6daf10259ba30ac45a621fb52a32",
+      "sourceHash": "sha256:f7fe66f2b163db25563bc6cc2d0e9f4a0cd2cf8f845e329bf1df636fdd4b8ccd",
       "storeId": "desktop-window-version-state"
     },
     {
@@ -3702,7 +3675,7 @@
       "contract": "schema 1 native-session/workspace binding, absolute roots, explicit memory flag, validated source identity, manager model grants and bounded guardian configuration/usage",
       "kind": "runtime-contract",
       "module": "plugins/enigma/host.ts",
-      "sourceHash": "sha256:8d539a02f3d4541b89e2d237378fd5ae382c2f078382c9c64348971b1a9ba286",
+      "sourceHash": "sha256:9a4b0f63a13fede37fcf39d4f910065b908c759e3f960512527fb036918c84ec",
       "storeId": "enigma-session-bindings"
     },
     {
@@ -3925,7 +3898,7 @@
         {
           "contract": "core/session-coordinator.ts Hana metadata extensions",
           "module": "core/session-coordinator.ts",
-          "sourceHash": "sha256:752589d69c87cf3567a82c7b5dfcf56bb821ce280141e2ee8d4b1bcef0045c8d"
+          "sourceHash": "sha256:c785e1ad8730f675b888b673566d8cc689887320874c53ef18c2a65101a829a0"
         },
         {
           "contract": "core/session-jsonl-file.ts repair contract",
@@ -4023,7 +3996,7 @@
       "contract": "bridge index, legacy session metadata, title, and vision sidecar readers",
       "kind": "runtime-contract",
       "module": "core/bridge-session-manager.ts",
-      "sourceHash": "sha256:7ed05febd0506adb3cdc38c86a652f1c47a4e1a499f9308a7e940faaae1297ef",
+      "sourceHash": "sha256:d9dcc2aa7bd537451e21d2b3b006b781ffabe593bf20cea98a50d4cedad55160",
       "storeId": "session-sidecars"
     },
     {
@@ -4069,10 +4042,10 @@
       "storeId": "terminal-session-state"
     },
     {
-      "contract": "UsageLedger reader and atomic serializer",
+      "contract": "version 1 usage records with optional timingSource; missing or unrecognized source is unknown, existing usage/model/status fields are retained",
       "kind": "runtime-contract",
       "module": "lib/llm/usage-ledger.ts",
-      "sourceHash": "sha256:b3feefa4165a74e96820f0875d9f903e93df0efb4f51c85b5c7f457a06e952c8",
+      "sourceHash": "sha256:1f446b811a5bdd7ce1bb9259d6f608b2fa3dbe765ed1313c691a1fab42003cb5",
       "storeId": "usage-ledger"
     },
     {

@@ -114,7 +114,7 @@ export function EngineeringToolbar({compact=false}:{compact?:boolean}={}) {
     return (
       <>
         <div className="enigma-new-task-settings">
-          <button data-tooltip="设置新任务的规划、执行与复核模型" onClick={() => setModelsOpen(true)}>新任务模型分工</button>
+          <button aria-haspopup="dialog" aria-expanded={modelsOpen} data-tooltip="设置新任务的规划、执行与复核模型" onClick={() => setModelsOpen(true)}>新任务模型分工</button>
         </div>
         {modelsOpen && <ModelPolicyDialog close={() => setModelsOpen(false)} />}
       </>

@@ -29,6 +29,28 @@ describe("Usage ledger", () => {
     tmpDir = null;
   });
 
+  it('keeps legacy usage intact through a write and restart without inventing request timing', () => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'usage-compatibility-'));
+    const storagePath = path.join(tmpDir, 'usage-ledger.json');
+    const original = createUsageLedger({ now: () => 1_000, requestIdFactory: () => 'legacy' });
+    const recorded = original.record({ usage: { input: 11, output: 7 }, usageContext: sessionContext() });
+    const { timingSource: _timingSource, ...legacy } = recorded;
+    fs.writeFileSync(storagePath, JSON.stringify({ version: 1, maxEntries: 200, entries: [legacy] }));
+
+    let now = 2_000;
+    const ledger = createUsageLedger({ storagePath, now: () => now, requestIdFactory: () => 'measured' });
+    expect(ledger.list().entries[0]).toEqual({ ...legacy, timingSource: 'unknown' });
+    const request = ledger.start({ usageContext: sessionContext() });
+    now += 250;
+    ledger.finish(request.requestId, { usage: { input: 3, output: 5 } });
+
+    const reopened = createUsageLedger({ storagePath });
+    expect(reopened.coverage()).toMatchObject({ maximum: 200, retained: 2 });
+    expect(reopened.list().entries[0]).toEqual({ ...legacy, timingSource: 'unknown' });
+    expect(reopened.list().entries[1]).toMatchObject({ timingSource: 'request', durationMs: 250 });
+    expect(JSON.parse(fs.readFileSync(storagePath, 'utf8')).version).toBe(1);
+  });
+
   it('persists configurable retention, keeps the newest requests and preserves pending work', () => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'usage-retention-'));
     const storagePath = path.join(tmpDir, 'usage-ledger.json');

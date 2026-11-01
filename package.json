@@ -1,6 +1,6 @@
 {
   "name": "hanako",
-  "version": "0.452.235",
+  "version": "0.452.236",
   "type": "module",
   "description": "HanaAgent - a personal AI agent with memory and soul",
   "license": "Apache-2.0",
@@ -79,7 +79,8 @@
     "enigma:open": "node scripts/open-enigma-workbench.mjs",
     "enigma:pack": "node scripts/pack-enigma.mjs pack",
     "enigma:release-check": "node scripts/pack-enigma.mjs check",
-    "postbuild:renderer": "npm run build:theme"
+    "postbuild:renderer": "npm run build:theme",
+    "test:all": "npm test -- --maxWorkers=4 && npm test --workspace=enigma-next"
   },
   "dependencies": {
     "@codemirror/lang-markdown": "^6.5.0",

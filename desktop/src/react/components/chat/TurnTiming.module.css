@@ -19,7 +19,7 @@
 .usage summary::marker { content:''; }
 .usage summary:hover,.usage summary:focus-visible { color:var(--text-primary); }
 .usage summary:focus-visible { outline:2px solid var(--accent);outline-offset:3px;border-radius:4px; }
-.chevron { flex:none;opacity:.65;transition:transform 160ms ease,opacity 160ms ease; }
+.chevron { flex:none;opacity:.65;transition:transform var(--duration-fast) ease,opacity var(--duration-fast) ease; }
 .usage[open] .chevron { transform:rotate(90deg);opacity:1; }
 .breakdown { max-width:680px;padding:var(--space-8) 0; }
 .breakdown span {white-space:normal;}

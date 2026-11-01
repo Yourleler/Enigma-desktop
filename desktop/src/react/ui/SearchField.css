@@ -1,5 +1,5 @@
 .enigma-search-surface[data-field-surface="search"]{box-sizing:border-box;border:1px solid var(--border);border-radius:9px;background:var(--bg-card);color:var(--text);font:12px/1.5 var(--font-ui);}
-input.enigma-search-surface[data-field-surface="search"]{appearance:none;-webkit-appearance:none;height:32px;min-height:32px;padding:5px 10px;outline:none;}
+input.enigma-search-surface[data-field-surface="search"]{appearance:none;-webkit-appearance:none;height:32px;min-height:32px;padding:var(--space-5, 5px) var(--space-10, 10px);outline:none;}
 body.enigma-surface[data-enigma-tone] .enigma-search-surface[data-field-surface="search"]{
  background:color-mix(in srgb,var(--eg-card) var(--glass-control-mix,14%),var(--glass-clear-fill));
  border:1px solid var(--eg-stroke);border-radius:9px;color:var(--eg-text);
@@ -7,7 +7,7 @@ body.enigma-surface[data-enigma-tone] .enigma-search-surface[data-field-surface=
  backdrop-filter:blur(var(--glass-control-blur,1.5px)) saturate(1.18);-webkit-backdrop-filter:blur(var(--glass-control-blur,1.5px)) saturate(1.18);
  font:12px/1.5 var(--font-ui);
 }
-body.enigma-surface[data-enigma-tone] input.enigma-search-surface[data-field-surface="search"]{height:32px;min-height:32px;padding:5px 10px;}
+body.enigma-surface[data-enigma-tone] input.enigma-search-surface[data-field-surface="search"]{height:32px;min-height:32px;padding:var(--space-5, 5px) var(--space-10, 10px);}
 .enigma-search-surface[data-field-surface="search"]::placeholder{color:var(--text-muted);opacity:.8;}
 .enigma-search-surface[data-field-surface="search"]:focus-visible,.enigma-search-surface[data-field-surface="search"]:focus-within{border-color:var(--accent);outline:2px solid color-mix(in srgb,var(--accent) 40%,transparent);outline-offset:1px;}
 body.enigma-surface[data-enigma-tone] .enigma-search-surface[data-field-surface="search"]:is(:focus-visible,:focus-within){border-color:var(--accent);outline:2px solid color-mix(in srgb,var(--accent) 40%,transparent);outline-offset:1px;}
