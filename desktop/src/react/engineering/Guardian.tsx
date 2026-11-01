@@ -37,7 +37,7 @@ export function GuardianPanel() {
           },
         }) : engineeringRequest('/guardian/stop',sessionPath,{}),()=>{setNotice(action==='start'?'独立观察已启动':'独立观察已停止，主任务继续运行');return refresh();});
   };
-  const processLost=status && ['gone','changed'].includes(status.processState);
+  const processLost=status && status.phase!=='stopped' && ['gone','changed'].includes(status.processState);
   const running = status && status.phase !== "stopped" && !processLost && !!status.pid;
   return (
     <section className="enigma-welcome-card enigma-guardian">

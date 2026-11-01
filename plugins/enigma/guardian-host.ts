@@ -16,6 +16,7 @@ import { collectUserNotes } from "enigma-next/pi-session";
 import { callText } from "../../core/llm-client.ts";
 import { callTextConfigFromUtilityConfig } from "../../core/model-execution-config.ts";
 import { isReadOnlyPermissionMode } from '../../core/session-permission-mode.ts';
+import {SessionManager} from '../../lib/pi-sdk/index.ts';
 
 /** Keep valid JSON and essential result facts when traces exceed the prompt
  * budget. Truncating the serialized text can cut off the evidence entirely. */
@@ -148,6 +149,11 @@ export class EngineeringGuardian {
     if(process)return process.status();
     const binding=await this.host.binding(sessionPath);
     if(binding?.guardianEnabled)return {phase:'host-unavailable',processState:'unknown',updatedAt:new Date().toISOString(),interventions:binding.guardianInterventions||0,events:[{at:new Date().toISOString(),text:'已保存的独立管家尚未在当前宿主启动。请核对恢复错误或重新启动观察。'}]};
+    if(binding?.guardian){
+      // Guardian files use the transcript ID, not the host's stable locator ID.
+      const sessionId=this.host.engine.getSessionByPath(sessionPath)?.sessionManager.getSessionId()||SessionManager.open(sessionPath).getSessionId();
+      if(sessionId)return new GuardianProcess(binding.root,sessionId).status();
+    }
     return null;
   }
   async diagnose(sessionPath: string, question: string) {

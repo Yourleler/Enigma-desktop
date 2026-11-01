@@ -5,6 +5,7 @@ import path from 'node:path';
 import { Workspace,RunObserver,readObserverStatus } from 'enigma-next';
 import { EngineeringGuardian } from '../plugins/enigma/guardian-host.ts';
 import { EngineeringMemory } from '../plugins/enigma/memory-host.ts';
+import {SessionManager} from '../lib/pi-sdk/index.ts';
 const cleanup:(()=>Promise<any>)[]=[];
 afterEach(async()=>{for(const close of cleanup.reverse())await close();cleanup.length=0;});
 async function setup(){
@@ -88,6 +89,23 @@ it('restoration preserves prior intervention spending and does not bypass a disa
 it('saved but unrestored supervision is shown as unavailable rather than silently absent',async()=>{
   const {guardian}=await setup();
   expect(await guardian.status('/owned/main.jsonl')).toMatchObject({phase:'host-unavailable',processState:'unknown'});
+});
+it('retains a confirmed stop and its observations after the in-memory process handle is released',async()=>{
+ const {guardian,binding,workspace,engine}=await setup();binding.guardianEnabled=false;
+ (engine as any).getSessionIdForPath=()=> 'host-locator-id';
+ const directory=path.join(workspace.data,'guardians','main');await fs.mkdir(directory,{recursive:true});
+ const saved={phase:'stopped',updatedAt:'2026-11-02T00:00:00Z',pid:987654,interventions:0,events:[{at:'2026-11-02T00:00:00Z',text:'Observation ended'}]};
+ await fs.writeFile(path.join(directory,'status.json'),JSON.stringify(saved));
+ expect(await guardian.status('/owned/main.jsonl')).toMatchObject(saved);
+ const reopened=new EngineeringGuardian(guardian.host);expect(await reopened.status('/owned/main.jsonl')).toMatchObject(saved);
+});
+it('reads stopped supervision from the transcript identity without loading an agent runtime',async()=>{
+ const {guardian,binding,workspace,root,engine}=await setup();binding.guardianEnabled=false;
+ const manager=SessionManager.create(root,path.join(root,'sessions'));manager.appendMessage({role:'user',content:'Test status only',timestamp:Date.now()});
+ const sessionPath=manager.getSessionFile()!,directory=path.join(workspace.data,'guardians',manager.getSessionId());await fs.mkdir(directory,{recursive:true});
+ await fs.writeFile(path.join(directory,'status.json'),JSON.stringify({phase:'stopped',interventions:0,events:[],updatedAt:'2026-11-02T00:00:00Z'}));
+ (engine as any).getSessionByPath=()=>undefined;(engine as any).getSessionIdForPath=()=> 'stable-host-id';(engine as any).ensureSessionLoaded=vi.fn();
+ expect(await guardian.status(sessionPath)).toMatchObject({phase:'stopped',interventions:0});expect((engine as any).ensureSessionLoaded).not.toHaveBeenCalled();
 });
 it('a later read-only restriction prevents old guardian grants from launching another task',async()=>{
   const {guardian,binding,engine,native}=await setup();(engine as any).getSessionPermissionMode=()=> 'read_only';binding.guardian.allowedActions=['propose-repair'];

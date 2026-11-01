@@ -28,3 +28,8 @@ it('allows a pending start approval to be cancelled through the separate stop re
   fireEvent.click(await screen.findByRole('button',{name:'取消启动观察'}));await waitFor(()=>expect(engineeringRequest).toHaveBeenCalledWith('/guardian/stop','/a',{}));
   await act(async()=>reject(new Error('启动已取消')));expect(screen.getByRole('alert')).toHaveTextContent('启动已取消');
 });
+it('shows a confirmed stop and retained events rather than an exited-process warning',async()=>{
+ vi.mocked(engineeringRequest).mockResolvedValue({phase:'stopped',pid:123,processState:'gone',events:[{text:'Recorded observation'}]});
+ render(<GuardianPanel/>);await screen.findByText('已停止观察');expect(screen.queryByText('观察进程已退出')).toBeNull();
+ expect(screen.getByRole('button',{name:'启动独立观察'})).toBeEnabled();fireEvent.click(screen.getByText('观察与接管记录'));expect(screen.getByText('Recorded observation')).toBeVisible();
+});
