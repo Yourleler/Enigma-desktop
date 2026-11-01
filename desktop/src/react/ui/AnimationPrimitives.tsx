@@ -77,6 +77,8 @@ export const FadeIn = forwardRef<HTMLDivElement, FadeInProps>(function FadeIn(
 // ── Collapse ─────────────────────────────────────────
 
 interface CollapseProps {
+  /** Search navigation must measure the revealed content at its final height. */
+  instant?: boolean;
   /** 是否展开 */
   open: boolean;
   children: ReactNode;
@@ -95,17 +97,17 @@ interface CollapseProps {
  * </Collapse>
  * ```
  */
-export function Collapse({ open, children, preset = 'paper', className, style }: CollapseProps) {
+export function Collapse({ open, children, preset = 'paper', className, style, instant = false }: CollapseProps) {
   const enabled = useMotionEnabled();
   return (
     <AnimatePresence initial={false}>
       {open && (
         <motion.div
           key="collapse-body"
-          initial={{ height: 0, opacity: 0 }}
+          initial={instant ? false : { height: 0, opacity: 0 }}
           animate={{ height: 'auto', opacity: 1 }}
           exit={{ height: 0, opacity: 0 }}
-          transition={enabled ? spring[preset] : { duration: 0 }}
+          transition={enabled && !instant ? spring[preset] : { duration: 0 }}
           style={{ overflow: 'hidden', ...style }}
           className={className}
         >

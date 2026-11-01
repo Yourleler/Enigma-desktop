@@ -3,7 +3,7 @@
 import '@testing-library/jest-dom/vitest';
 import fs from 'node:fs';
 import path from 'node:path';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ToolGroupBlock } from '../../components/chat/ToolGroupBlock';
 
@@ -148,6 +148,17 @@ describe('ToolGroupBlock', () => {
 
     expect(screen.queryByText('toolGroup.count')).toBeNull();
     expect(screen.getByText('npm test')).toBeTruthy();
+  });
+
+  it('exposes a focusable disclosure button after the tools finish',async()=>{
+    const pending=[{id:'one',name:'read',args:{path:'one.txt'},done:true,success:true},{id:'two',name:'read',args:{path:'two.txt'},done:false,success:false}];
+    const {rerender}=render(<ToolGroupBlock tools={pending} collapsed={false}/>);
+    expect(screen.getByRole('button',{name:'toolGroup.running'})).toBeDisabled();
+    rerender(<ToolGroupBlock tools={pending.map(t=>({...t,done:true,success:true}))} collapsed={true}/>);
+    const trigger=screen.getByRole('button',{name:/toolGroup.count/});expect(trigger).toBeEnabled();expect(trigger).toHaveAttribute('aria-expanded','false');
+    trigger.focus();expect(trigger).toHaveFocus();fireEvent.click(trigger);expect(trigger).toHaveAttribute('aria-expanded','true');
+    await waitFor(()=>expect(screen.getByText('two.txt')).toBeVisible());
+    fireEvent.click(trigger);expect(trigger).toHaveAttribute('aria-expanded','false');
   });
 
   it('hides automation create/update tools because the suggestion card is the UI', () => {

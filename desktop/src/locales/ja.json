@@ -299,7 +299,10 @@
   "chat": {
     "find": {
       "locateFailed": "メッセージを特定できませんでした",
-      "placeholder": "会話内を検索"
+      "placeholder": "会話内を検索",
+      "previous": "前の一致",
+      "next": "次の一致",
+      "close": "会話内検索を閉じる"
     },
     "send": "送信",
     "steer": "操舵",

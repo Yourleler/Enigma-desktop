@@ -299,7 +299,10 @@
   "chat": {
     "find": {
       "locateFailed": "해당 메시지를 찾지 못했습니다",
-      "placeholder": "대화에서 찾기"
+      "placeholder": "대화에서 찾기",
+      "previous": "이전 일치 항목",
+      "next": "다음 일치 항목",
+      "close": "대화 검색 닫기"
     },
     "send": "보내기",
     "steer": "방향 전환",

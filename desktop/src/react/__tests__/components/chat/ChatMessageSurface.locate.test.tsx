@@ -23,7 +23,7 @@ vi.mock('../../../components/chat/ChatTranscript', () => ({
             registerMessageElement?.(item.data.id, el as HTMLDivElement | null);
           }}
         >
-          {item.data.id}
+          <p data-chat-search-body="">{item.data.id} {item.data.role==='user'?item.data.text:''}</p>
         </div>
       ) : null)}
     </div>
@@ -115,6 +115,18 @@ describe('ChatMessageSurface locate intent consumption', () => {
     cleanup();
     vi.restoreAllMocks();
     delete (window as unknown as { t?: unknown }).t;
+  });
+
+  it('scrolls to the matching text rather than only the beginning of a long message',()=>{
+    const {container}=render(<ChatMessageSurface sessionPath={SESSION}/>);
+    const panel=container.querySelector<HTMLElement>('[data-chat-selection-root]')!;
+    Object.defineProperties(panel,{scrollHeight:{configurable:true,value:1000},clientHeight:{configurable:true,value:400}});panel.scrollTop=100;
+    vi.spyOn(panel,'getBoundingClientRect').mockReturnValue({top:50} as DOMRect);
+    const scrollTo=vi.fn();panel.scrollTo=scrollTo;
+    const createRange=document.createRange.bind(document);
+    vi.spyOn(document,'createRange').mockImplementation(()=>Object.assign(createRange(),{getBoundingClientRect:()=>({top:250,height:20})}));
+    act(()=>useStore.getState().requestMessageLocate({sessionPath:SESSION,messageIndex:10,term:'msg-10'}));
+    expect(scrollTo).toHaveBeenCalledWith({top:284,behavior:'smooth'});
   });
 
   it('load-more 失败（oldestId 不前进、items 引用不动）→ 意图被 clear 且弹错误 toast，不留僵尸意图', async () => {

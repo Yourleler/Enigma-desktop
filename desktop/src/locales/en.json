@@ -299,7 +299,10 @@
   "chat": {
     "find": {
       "locateFailed": "Could not locate that message",
-      "placeholder": "Find in conversation"
+      "placeholder": "Find in conversation",
+      "previous": "Previous match",
+      "next": "Next match",
+      "close": "Close conversation find"
     },
     "send": "Send",
     "steer": "Steer",

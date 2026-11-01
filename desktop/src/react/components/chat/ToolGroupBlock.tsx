@@ -2,7 +2,8 @@
  * ToolGroupBlock — 工具调用组，含展开/折叠
  */
 
-import { memo, useState, useCallback, useEffect } from 'react';
+import { memo, useState, useCallback, useRef, useLayoutEffect } from 'react';
+import {useSearchReveal} from './use-search-reveal';
 import { Collapse } from '@/ui';
 import {AppIcon} from '../../ui/app-icons';
 import {toolPresentation} from '../../utils/tool-presentation';
@@ -23,15 +24,21 @@ interface Props {
   tools: ToolCall[];
   collapsed: boolean;
   agentName?: string;
+  sessionPath?: string;
+  messageId?: string;
 }
 
-export const ToolGroupBlock = memo(function ToolGroupBlock({ tools: rawTools, collapsed: initialCollapsed, agentName = 'Hanako' }: Props) {
+export const ToolGroupBlock = memo(function ToolGroupBlock({ tools: rawTools, collapsed: initialCollapsed, agentName = 'Hanako', sessionPath, messageId }: Props) {
   // 独立卡片或产物块承接状态的工具，不在工具组里重复显示。
   const tools = rawTools.filter(t => !isToolCallHiddenFromProcessUi(t));
   const [collapsed, setCollapsed] = useState(initialCollapsed);
-  useEffect(() => {
-    setCollapsed(initialCollapsed);
-  }, [initialCollapsed]);
+  const previousCollapsed=useRef(initialCollapsed);
+  const reveal=useSearchReveal(sessionPath,[messageId||'']);
+  useLayoutEffect(() => {
+    if(reveal)setCollapsed(false);
+    else if(previousCollapsed.current!==initialCollapsed)setCollapsed(initialCollapsed);
+    previousCollapsed.current=initialCollapsed;
+  }, [initialCollapsed,reveal]);
   const toggle = useCallback(() => setCollapsed(v => !v), []);
 
   if (tools.length === 0) return null;
@@ -55,10 +62,13 @@ export const ToolGroupBlock = memo(function ToolGroupBlock({ tools: rawTools, co
   }
 
   return (
-    <div className={`${styles.toolGroup}${isSingle ? ` ${styles.toolGroupSingle}` : ''}`}>
+    <div className={`${styles.toolGroup}${isSingle ? ` ${styles.toolGroupSingle}` : ''}`} data-search-reveal-pending={reveal&&collapsed||undefined}>
       {!isSingle && (
-        <div
+        <button
+          type="button"
           className={`${styles.toolGroupSummary}${allDone ? ` ${styles.toolGroupSummaryClickable}` : ''}`}
+          disabled={!allDone}
+          aria-expanded={!collapsed}
           onClick={allDone ? toggle : undefined}
         >
           <span className={styles.toolGroupTitle}>{summaryText}</span>
@@ -66,7 +76,7 @@ export const ToolGroupBlock = memo(function ToolGroupBlock({ tools: rawTools, co
           {!allDone && (
             <ActivityWave/>
           )}
-        </div>
+        </button>
       )}
       {isSingle ? (
         <div className={styles.toolGroupContent}>
@@ -75,7 +85,7 @@ export const ToolGroupBlock = memo(function ToolGroupBlock({ tools: rawTools, co
           ))}
         </div>
       ) : (
-        <Collapse open={!collapsed}>
+        <Collapse open={!collapsed} instant={!!reveal}>
           <div className={styles.toolGroupContent}>
             {tools.map((tool, i) => (
               <ToolIndicator key={tool.id || `${tool.name}-${i}`} tool={tool} agentName={agentName} />

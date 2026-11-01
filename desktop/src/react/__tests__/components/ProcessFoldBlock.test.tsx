@@ -3,7 +3,7 @@
 import '@testing-library/jest-dom/vitest';
 import fs from 'node:fs';
 import path from 'node:path';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChatTranscript } from '../../components/chat/ChatTranscript';
 import { useStore } from '../../stores';
@@ -83,6 +83,16 @@ describe('ProcessFoldBlock', () => {
   afterEach(() => {
     cleanup();
     vi.clearAllMocks();
+  });
+
+  it('reveals a search hit inside a collapsed successful process and its nested thinking block',()=>{
+    useStore.setState({currentSessionPath:sessionPath,pendingMessageLocate:null,chatFindBySession:{}});
+    render(<ChatTranscript items={[user('0'),assistant('1',[thinking('继续美化已有页面'),toolGroup([tool('read')])]),assistant('2',[thinking('其他过程'),toolGroup([tool('verify')])]),assistant('3',[toolGroup([tool('inspect')])]),assistant('4',[textBlock('<p>完成</p>','完成')])]} sessionPath={sessionPath} enableProcessFold/>);
+    expect(screen.getByRole('button',{name:/执行过程/})).toHaveAttribute('aria-expanded','false');
+    expect(screen.queryByText('继续美化已有页面')).toBeNull();
+    act(()=>useStore.getState().requestMessageLocate({sessionPath,messageIndex:1,term:'美化'}));
+    expect(screen.getByText('继续美化已有页面')).toBeVisible();
+    expect(screen.getByText('继续美化已有页面').closest('details')).toHaveAttribute('open');
   });
 
   it('exposes retry and fork on a collapsed process-only turn completion', () => {

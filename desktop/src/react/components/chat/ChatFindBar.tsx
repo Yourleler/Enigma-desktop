@@ -92,6 +92,8 @@ export function ChatFindBar() {
         query={findState.query}
         resultIndex={Math.max(0, findState.activePos)}
         resultCount={findState.total}
+        ariaLabel={t('chat.find.placeholder')}
+        labels={{previous:t('chat.find.previous'),next:t('chat.find.next'),close:t('chat.find.close')}}
         placeholder={t('chat.find.placeholder')}
         onQueryChange={handleQueryChange}
         onPrevious={() => handleStep(-1)}

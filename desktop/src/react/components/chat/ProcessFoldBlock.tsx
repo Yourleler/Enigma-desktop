@@ -1,4 +1,5 @@
-import { memo, useCallback, useId, useMemo, useState } from 'react';
+import { memo, useCallback, useId, useMemo, useState, useLayoutEffect } from 'react';
+import {useSearchReveal} from './use-search-reveal';
 import { Collapse } from '@/ui';
 import { AgentAvatar, type AgentDisplayInfo } from '../../utils/agent-display';
 import { AssistantMessage } from './AssistantMessage';
@@ -49,6 +50,8 @@ export const ProcessFoldBlock = memo(function ProcessFoldBlock({
   onForkCreated,
 }: Props) {
   const [open, setOpen] = useState(group.stats.unsuccessfulCount > 0 || !!group.stats.unknownCount);
+  const reveal=useSearchReveal(sessionPath,group.items.map(entry=>entry.item.data.id));
+  useLayoutEffect(()=>{if(reveal)setOpen(true);},[reveal]);
   const panelId = useId();
   const t = window.t ?? ((p: string) => p);
 
@@ -111,7 +114,7 @@ export const ProcessFoldBlock = memo(function ProcessFoldBlock({
             </span>
           </button>
         </div>
-        <Collapse open={open} className={styles.processFoldCollapse}>
+        <Collapse open={open} instant={!!reveal} className={styles.processFoldCollapse}>
           <div id={panelId} className={`${styles.message} ${styles.messageAssistant} ${styles.processFoldPanel}`}>
             {group.items.map((entry) => (
               <AssistantMessage

@@ -234,7 +234,17 @@ export const ChatMessageSurface = memo(function ChatMessageSurface({
       latest.clearMessageLocate();
       locateProgressRef.current = null;
     };
-    const finishScroll = (target: HTMLDivElement) => {
+    const finishScroll = (target: HTMLDivElement, revealed = false) => {
+      // Matching disclosures open in their layout effect. Measure after that
+      // commit, without waiting for or replaying an expansion animation.
+      if(!revealed&&target.querySelector('[data-search-reveal-pending]')){
+        let second=0;
+        const first=requestAnimationFrame(()=>{second=requestAnimationFrame(()=>{
+          if(useStore.getState().pendingMessageLocate===pendingLocate&&target.isConnected)finishScroll(target,true);
+        });});
+        cleanups.push(()=>{cancelAnimationFrame(first);cancelAnimationFrame(second);});
+        return;
+      }
       const scrollPanel = ref.current;
       if (!scrollPanel) {
         console.warn('[chat-find] locate scroll skipped: panel element missing');
@@ -245,9 +255,15 @@ export const ChatMessageSurface = memo(function ChatMessageSurface({
       // 退出贴底跟随，防止流式 ResizeObserver 立刻把视口拽回底部
       bottomScroll.cancelFollow();
       const panelRect = scrollPanel.getBoundingClientRect();
-      const rect = target.getBoundingClientRect();
+      const terms=[pendingLocate.term,...(findState?.tokens||[])].filter(Boolean);
+      const searchBody=target.querySelector<HTMLElement>('[data-chat-search-body]')||target;
+      const hit=terms.flatMap(term=>findTextRanges(searchBody,term,1,findState?.options?.caseSensitive))
+        .find(range=>typeof range.getBoundingClientRect==='function'&&range.getBoundingClientRect().height>0);
+      const rect = hit?.getBoundingClientRect()||target.getBoundingClientRect();
       const maxScroll = Math.max(0, scrollPanel.scrollHeight - scrollPanel.clientHeight);
-      const targetTop = Math.min(maxScroll, Math.max(0, scrollPanel.scrollTop + rect.top - panelRect.top - 16));
+      const findBar=document.querySelector<HTMLElement>(`.${styles.chatFindBarHost} [role="search"]`)?.getBoundingClientRect();
+      const topInset=findBar&&findBar.right>panelRect.left&&findBar.left<panelRect.right?Math.max(16,findBar.bottom-panelRect.top+12):16;
+      const targetTop = Math.min(maxScroll, Math.max(0, scrollPanel.scrollTop + rect.top - panelRect.top - topInset));
       const reduceMotion = typeof window.matchMedia === 'function'
         && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       scrollPanel.scrollTo({ top: targetTop, behavior: reduceMotion ? 'auto' : 'smooth' });

@@ -134,10 +134,10 @@ describe('ChatFindBar', () => {
     });
     render(<ChatFindBar />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Next match' }));
+    fireEvent.click(screen.getByRole('button', { name: 'chat.find.next' }));
     expect(stepChatFindMock).toHaveBeenCalledWith(SESSION, 1);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Previous match' }));
+    fireEvent.click(screen.getByRole('button', { name: 'chat.find.previous' }));
     expect(stepChatFindMock).toHaveBeenCalledWith(SESSION, -1);
   });
 
@@ -147,7 +147,7 @@ describe('ChatFindBar', () => {
     });
     render(<ChatFindBar />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Close find' }));
+    fireEvent.click(screen.getByRole('button', { name: 'chat.find.close' }));
 
     expect(useStore.getState().chatFindBySession[SESSION]).toBeUndefined();
   });
@@ -197,7 +197,7 @@ describe('ChatFindBar', () => {
     const input = document.querySelector('[data-classic-find-input]') as HTMLInputElement;
 
     fireEvent.change(input, { target: { value: 'ghost' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Close find' }));
+    fireEvent.click(screen.getByRole('button', { name: 'chat.find.close' }));
     expect(useStore.getState().chatFindBySession[SESSION]).toBeUndefined();
 
     act(() => {
@@ -217,7 +217,7 @@ describe('ChatFindBar', () => {
     const input = document.querySelector('[data-classic-find-input]') as HTMLInputElement;
 
     fireEvent.change(input, { target: { value: 'hi' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Next match' }));
+    fireEvent.click(screen.getByRole('button', { name: 'chat.find.next' }));
 
     expect(runChatFindMock).toHaveBeenCalledTimes(1);
     expect(runChatFindMock).toHaveBeenCalledWith(SESSION, 'hi');
@@ -230,7 +230,7 @@ describe('ChatFindBar', () => {
     expect(runChatFindMock).toHaveBeenCalledTimes(1);
 
     // timer 已不在途：再按下一条恢复正常步进
-    fireEvent.click(screen.getByRole('button', { name: 'Next match' }));
+    fireEvent.click(screen.getByRole('button', { name: 'chat.find.next' }));
     expect(stepChatFindMock).toHaveBeenCalledWith(SESSION, 1);
   });
 

@@ -263,11 +263,11 @@ const ContentBlockView = memo(function ContentBlockView({ block, agentName, agen
 }) {
   switch (block.type) {
     case 'thinking':
-      return <ThinkingBlock content={block.content} sealed={block.sealed} />;
+      return <ThinkingBlock content={block.content} sealed={block.sealed} sessionPath={sessionPath} messageId={messageId} />;
     case 'mood':
-      return <MoodBlock yuan={block.yuan} text={block.text} />;
+      return <MoodBlock yuan={block.yuan} text={block.text} sessionPath={sessionPath} messageId={messageId} />;
     case 'tool_group':
-      return <ToolGroupBlock tools={block.tools} collapsed={block.collapsed} agentName={agentName} />;
+      return <ToolGroupBlock tools={block.tools} collapsed={block.collapsed} agentName={agentName} sessionPath={sessionPath} messageId={messageId} />;
     case 'text':
       return <StreamingMarkdownContent html={block.html} source={block.source} active={isStreaming} linkContext={{ origin: 'session', sessionPath, messageId, blockIdx }} />;
     case 'file':
