@@ -6,6 +6,14 @@ import {EditorView} from '@codemirror/view';
 import {SearchQuery,getSearchQuery,setSearchQuery,openSearchPanel,searchPanelOpen} from '@codemirror/search';
 import {DiffReader} from '../DiffReader';
 afterEach(cleanup);
+it('shows frozen context as one source document with a line anchor rather than an unchanged comparison',()=>{
+ const view=render(<DiffReader sourceOnly version="context-source" line={2} change={{repo:'r',file:'context.ts',before:{content:'first\nsecond'},after:{content:'first\nsecond'}}}/>);
+ expect(screen.getByRole('region',{name:'源码 context.ts'})).toBeVisible();
+ expect(view.container.querySelectorAll('.cm-editor')).toHaveLength(1);
+ expect(screen.queryByRole('button',{name:'双栏'})).toBeNull();expect(screen.queryByRole('button',{name:'展开全文'})).toBeNull();
+ const editor=EditorView.findFromDOM(view.container.querySelector('.cm-editor') as HTMLElement)!;
+ expect(editor.state.doc.lineAt(editor.state.selection.main.head).number).toBe(2);
+});
 it('commits pasted search text before the first Enter without requiring a keyup or blur',()=>{
  const view=render(<DiffReader version="paste-search" change={{repo:'r',file:'file.ts',before:{content:'old value'},after:{content:'new needle'}}}/>);
  fireEvent.click(screen.getByRole('button',{name:'查找'}));
