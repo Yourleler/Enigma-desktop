@@ -5,6 +5,17 @@ import { useSideAction } from './useSideAction';
 import { useSideQuery } from './useSideQuery';
 import { displayTime, operationLabel,processResultLabel,executionHint } from './interaction-copy';
 import {BrowserChecks} from './BrowserChecks';
+import {AppIcon} from '../ui/app-icons';
+
+function RuntimeIndicator({status}:{status:string}) {
+  const tone = ['ready', 'passed'].includes(status) ? 'success'
+    : ['failed', 'timeout', 'readiness-timeout'].includes(status) ? 'error'
+    : ['unknown', 'source-changed', 'dependency-changed', 'configuration-changed'].includes(status) ? 'warning'
+    : ['running', 'starting', 'waiting'].includes(status) ? 'running' : 'idle';
+  return <span className="enigma-runtime-indicator" data-runtime-tone={tone} aria-hidden="true">
+    <AppIcon name={tone === 'success' ? 'check' : tone === 'error' ? 'close' : tone === 'warning' ? 'ask' : tone === 'running' ? 'activity' : 'monitor'} size={16}/>
+  </span>;
+}
 
 export function serviceEditAction(action:Action,item:any):Action {
   const service=item.service;
@@ -45,7 +56,7 @@ export function EnvironmentPanel({ initial, evidence }: { initial:any; evidence:
     {!services.length&&<p className="enigma-source-note">还没有登记服务。可先配置命令和就绪条件，保存不会自动启动。</p>}
     {services.map((item:any)=>{
       const running=item.run&&!item.executionTerminal,unknown=item.status==='unknown'&&!item.reconciled;
-      return <article className="enigma-step" key={item.service.id}><span aria-hidden="true">{item.ready?'●':'○'}</span><div>
+      return <article className="enigma-step" key={item.service.id}><RuntimeIndicator status={item.ready?'ready':item.status}/><div>
         <strong>{item.service.label}</strong><div className="enigma-chips"><span>{item.status==='cancelled'?'服务已停止':operationLabel(item.status)}</span><span>{item.service.repo}</span>{item.url&&<span>{item.executionTerminal?'上次地址：':''}{item.url}</span>}</div>
         {serviceHint(item)&&<p>{serviceHint(item)}</p>}
         <details className="enigma-result"><summary>启动命令、依赖与就绪条件</summary><pre className="enigma-runtime-log">{item.service.argv.join('\n')}</pre><p>参数逐项传递，不拼接成 shell。</p>{!!item.service.dependsOn?.length&&<p>启动前需要：{item.service.dependsOn.map(serviceName).join('、')}</p>}<p>就绪条件：{item.service.readiness?`${item.service.readiness.type.toUpperCase()} · ${item.service.readiness.path||''} ${item.service.readiness.includes||''} · 最长 ${(item.service.readiness.timeoutMs||30000)/1000} 秒`:'未配置'}</p>{item.service.portPrefix&&<p>从日志前缀读取端口：{item.service.portPrefix}</p>}{item.service.readiness?.port&&<p>固定端口：{item.service.readiness.port}</p>}</details>
@@ -59,7 +70,7 @@ export function EnvironmentPanel({ initial, evidence }: { initial:any; evidence:
     })}
     <h3 className="enigma-section-title">后台运行记录</h3>
     {!background.length&&<p className="enigma-source-note">暂无独立后台命令。当前服务的输出在上方卡片中。</p>}
-    {background.map((item:any)=><article className="enigma-step" key={item.spec.id}><span aria-hidden="true">{!item.terminal?'◌':'○'}</span><div><strong>{item.spec.label}</strong>
+    {background.map((item:any)=><article className="enigma-step" key={item.spec.id}><RuntimeIndicator status={item.state.status}/><div><strong>{item.spec.label}</strong>
       <div className="enigma-chips"><span>{processResultLabel(item.state.status)}</span><span>{item.spec.repo}</span>{item.spec.kind==='service'&&<span>历史服务运行</span>}{item.reconciled&&<span>实际效果已核对</span>}</div><small>{displayTime(item.spec.createdAt)}</small>
       <details className="enigma-result"><summary>命令与日志</summary><pre className="enigma-runtime-log">{item.spec.argv.join('\n')}</pre><RuntimeLog state={item.state}/>{item.reconciliation&&<p>核对说明：{item.reconciliation.observation}</p>}<details><summary>完整运行回执</summary>{evidence(item)}</details></details>
       {!item.terminal&&<button disabled={!!control.busy} data-tooltip="取消这条后台命令，不中断主对话" onClick={()=>void stop('background',item.spec.id)}>{stopping('background',item.spec.id)?'正在停止…':'取消此后台任务'}</button>}

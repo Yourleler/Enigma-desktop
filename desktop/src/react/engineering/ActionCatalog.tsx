@@ -5,6 +5,7 @@ import { SurfaceModal } from './SurfaceMenu';
 import {assistedOperations,composeTaskRequest} from './compose-task';
 import {ModelPolicyDialog} from './ModelPolicy';
 import {ConductorCreateDialog} from './ConductorCreate';
+import {AppIcon} from '../ui/app-icons';
 
 const dedicatedFeatures=[
   {id:'guardian',title:'托管与独立诊断',description:'持续观察、停止观察、查询进展，在允许范围内处理明确故障。',group:'observer'},
@@ -27,7 +28,7 @@ export function ActionCatalog({close}:{close:()=>void}) {
   if(dialog==='models')return <ModelPolicyDialog close={close}/>;
   if(dialog==='conductor')return <ConductorCreateDialog close={close}/>;
   return <SurfaceModal onClose={close} initialFocus="input"><div className="enigma-modal-backdrop"><section className="enigma-modal enigma-operation-catalog" role="dialog" data-glass-frame="sheet" data-glass-controls="" aria-modal="true" aria-label="全部工程操作">
-    <header><h2>全部工程操作</h2><button aria-label="关闭操作目录" onClick={close}>×</button></header>
+    <header><h2>全部工程操作</h2><button aria-label="关闭操作目录" data-tooltip="关闭操作目录" onClick={close}><AppIcon name="close" size={17}/></button></header>
     <p>按用途查找已有能力。需要先预览的操作会带你进入相应流程。</p>
     <input className="enigma-timeline-search" aria-label="搜索工程操作" placeholder="搜索功能、操作或用途…" value={query} onChange={e=>setQuery(e.target.value)}/>
     <div className="enigma-catalog-list">{dedicated.length>0&&<section><h3>专用功能与设置</h3>{dedicated.map(feature=><button key={feature.id} data-feature-id={feature.id} onClick={()=>{if(feature.dialog)setDialog(feature.dialog as 'models'|'conductor');else{close();openGroup(feature.group!);}}}><span>{feature.title}</span><small>{feature.description}</small></button>)}</section>}{assisted.length>0&&<section><h3>交给助手处理 · 先填入输入框</h3>{assisted.map(action=><button key={action.id} data-assisted-action={action.id} onClick={()=>{close();openGroup(action.group);composeTaskRequest(action.prompt);}}><span>{action.title}</span><small>{action.description}</small></button>)}</section>}{groups.map(group=>{const items=actions.filter((a:any)=>a.group===group.id);return items.length>0&&<section key={group.id}><h3>{group.label}</h3>{items.map((action:any)=><button key={action.id} data-action-id={action.id} disabled={busy&&action.id!=='observer-question'} onClick={()=>{close();openGroup(action.group);if(!['restore','observer-question'].includes(action.id))void showAction(action);}}><span>{action.title}{action.id==='restore'?' · 先选择快照并预览':action.id==='observer-question'?' · 不打断当前任务':''}</span><small>{action.description}</small></button>)}</section>})}</div>

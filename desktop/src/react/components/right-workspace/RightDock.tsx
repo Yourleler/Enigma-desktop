@@ -36,6 +36,12 @@ const fixed:TabInfo[]=[
   {id:'browser',label:'浏览器',icon:'browser',hint:'浏览网页，切换标签保留页面'},
   {id:'tasks',label:'任务',icon:'activity',hint:'进度、协作助手和任务详情'},
 ];
+const toolIcons: Record<string, AppIconName> = {
+  project: 'project', plan: 'diary', collaboration: 'team', conductor: 'team',
+  timeline: 'clock', observer: 'activity', reading: 'read', materials: 'layers',
+  artifacts: 'file', environment: 'command', review: 'shield', memory: 'memory',
+  skills: 'skill', handoff: 'arrowEnter', documents: 'file', acceptance: 'check',
+};
 export function RightDock(){
   const scope=useStore(dockScope),session=useStore(s=>s.currentSessionPath),connection=useStore(s=>s.activeServerConnectionId||'local');
   const previewOpen=useStore(s=>s.previewOpen),openTabs=useStore(s=>s.openTabs),items=useStore(s=>s.previewItems),activeFile=useStore(s=>s.activeTabId),visible=useStore(s=>s.jianOpen);
@@ -54,7 +60,7 @@ export function RightDock(){
   const fileId=active.startsWith('preview:')?active.slice(8):view?.fileId;
   const toolsLabel=groups.find(g=>`group:${g.id}`===engineeringActive)?.label||'工具';
   const customIds=[...new Set([...(view?.order||[]),active,...(view?.hidden||[])])].filter(id=>id.startsWith('tool:')&&groups.some(group=>group.id===id.slice(5)));
-  const available:TabInfo[]=[...fixed,...(active==='agents'||view?.order?.includes('agents')?[{id:'agents' as DockTab,label:'协作助手',icon:'team' as AppIconName,hint:'子任务、执行记录和父对话定位'}]:[]),...customIds.map(id=>({id,label:id==='tool:reading'?'代码阅读':groups.find(g=>g.id===id.slice(5))!.label,icon:'skill' as AppIconName,hint:id==='tool:reading'?'浏览仓库源码、符号与调用关系':'打开项目工具'})),...(active==='tools'&&engineering?.connected&&engineeringActive?[{id:'tools' as DockTab,label:toolsLabel,icon:'skill' as AppIconName,hint:'已打开的项目工具'}]:[]),...fileTabs.map(item=>({id:`preview:${item!.id}` as DockTab,label:item!.title,icon:'file' as AppIconName,hint:item!.filePath||item!.title}))];
+  const available:TabInfo[]=[...fixed,...(active==='agents'||view?.order?.includes('agents')?[{id:'agents' as DockTab,label:'协作助手',icon:'team' as AppIconName,hint:'子任务、执行记录和父对话定位'}]:[]),...customIds.map(id=>({id,label:id==='tool:reading'?'代码阅读':groups.find(g=>g.id===id.slice(5))!.label,icon:toolIcons[id.slice(5)] || 'layers',hint:id==='tool:reading'?'浏览仓库源码、符号与调用关系':'打开项目工具'})),...(active==='tools'&&engineering?.connected&&engineeringActive?[{id:'tools' as DockTab,label:toolsLabel,icon:toolIcons[engineeringTabs.find(tab=>tab.id===engineeringActive)?.group || ''] || 'layers',hint:'已打开的项目工具'}]:[]),...fileTabs.map(item=>({id:`preview:${item!.id}` as DockTab,label:item!.title,icon:'file' as AppIconName,hint:item!.filePath||item!.title}))];
   const availableIds=available.map(t=>t.id),ordered=(draftOrder||orderedDockTabs(view,availableIds)).filter(id=>availableIds.includes(id)),tabs=ordered.map(id=>available.find(t=>t.id===id)!);
   const resolved=tabs.some(t=>t.id===active)?active:tabs[0]?.id||null;
   useEffect(()=>{
@@ -137,7 +143,7 @@ export function RightDock(){
           {fixed.map(tab=><button key={tab.id} onClick={()=>choose(tab.id)}><DockIcon name={tab.icon}/>{tab.label}<small>{tabs.some(t=>t.id===tab.id)?'切换到此面板':'重新添加'}</small></button>)}
           <button onClick={()=>choose('agents')}><AppIcon name="team" size={16}/>协作助手<small>查看子任务及执行记录</small></button>
           {fileTabs.filter(item=>(view?.hidden||[]).includes(`preview:${item!.id}`)).map(item=><button key={item!.id} onClick={()=>choose(`preview:${item!.id}`)}>重新打开 {item!.title}</button>)}
-          {toolSections.map(section=><div key={section.label} className="enigma-feature-section"><div className="enigma-menu-section-title">{section.label}</div>{section.ids.filter(id=>id!=='reading'&&id!=='conductor').map(id=><button key={id} onClick={()=>choose(`tool:${id}`)}>{groups.find(group=>group.id===id)?.label}</button>)}</div>)}
+          {toolSections.map(section=><div key={section.label} className="enigma-feature-section"><div className="enigma-menu-section-title">{section.label}</div>{section.ids.filter(id=>id!=='reading'&&id!=='conductor').map(id=><button key={id} onClick={()=>choose(`tool:${id}`)}><AppIcon name={toolIcons[id] || 'layers'} size={16}/>{groups.find(group=>group.id===id)?.label}</button>)}</div>)}
         </SurfaceMenu>
         <button aria-label={view?.expanded?'还原面板宽度':'展开工作面板'} data-tooltip={view?.expanded?'恢复聊天与工作面板并排':'展开阅读区域'} onClick={()=>expandDock(scope,!view?.expanded)}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">{view?.expanded?<path d="M9 3v6H3m12 12v-6h6M3 9l6-6m6 18 6-6"/>:<path d="M14 4h6v6M20 4l-7 7M10 20H4v-6M4 20l7-7"/>}</svg></button>
       </div>

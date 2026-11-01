@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
-import {cleanup,fireEvent,render,screen,within} from '@testing-library/react';
+import {act,cleanup,fireEvent,render,screen,within} from '@testing-library/react';
 import {afterEach,beforeEach,expect,it,vi} from 'vitest';
 import {SurfaceMenu,SurfaceModal} from '../SurfaceMenu';
 beforeEach(()=>{vi.stubGlobal('ResizeObserver',class{observe(){}disconnect(){}});});
@@ -28,4 +28,19 @@ it('does not intercept text editing or select navigation keys inside an open men
   screen.getByRole('combobox').focus();
   expect(fireEvent.keyDown(screen.getByRole('combobox'),{key:'ArrowDown'})).toBe(true);
   expect(screen.getByRole('combobox')).toHaveFocus();
+});
+it('focuses the first available action when the leading menu action is disabled',()=>{
+  render(<SurfaceMenu label="操作"><button disabled>暂不可用</button><button>查看日志</button><button>复制结果</button></SurfaceMenu>);
+  fireEvent.click(screen.getByRole('button',{name:'操作'}));
+  expect(screen.getByRole('button',{name:'查看日志'})).toHaveFocus();
+  fireEvent.keyDown(document,{key:'ArrowDown'});
+  expect(screen.getByRole('button',{name:'复制结果'})).toHaveFocus();
+});
+it('dismisses a portal when responsive layout hides its owning panel',async()=>{
+  const {container}=render(<aside><SurfaceMenu label="面板操作"><button>查看日志</button></SurfaceMenu></aside>);
+  fireEvent.click(screen.getByRole('button',{name:'面板操作'}));
+  expect(screen.getByRole('group',{name:'面板操作'})).toBeVisible();
+  await act(async()=>{container.querySelector('aside')!.setAttribute('inert','');});
+  expect(screen.queryByRole('group',{name:'面板操作'})).not.toBeInTheDocument();
+  expect(document.activeElement).not.toBe(screen.getByRole('button',{name:'面板操作'}));
 });

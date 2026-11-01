@@ -281,6 +281,11 @@
 }
 .enigma-step > span:first-child,
 .enigma-checkpoint > span:first-child { opacity: 0.6; font-size: var(--fs-title); }
+.enigma-step > .enigma-runtime-indicator { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 20px; min-height: 22px; opacity: 1; color: var(--text-muted); }
+.enigma-step > .enigma-runtime-indicator[data-runtime-tone="success"] { color: var(--green); }
+.enigma-step > .enigma-runtime-indicator[data-runtime-tone="error"] { color: var(--danger); }
+.enigma-step > .enigma-runtime-indicator[data-runtime-tone="warning"],
+.enigma-step > .enigma-runtime-indicator[data-runtime-tone="running"] { color: var(--accent); }
 .enigma-step > div,
 .enigma-checkpoint > div { flex: 1; min-width: 0; }
 .enigma-step strong { font-weight: 500; }
@@ -976,6 +981,7 @@
 .enigma-panel-head > div { min-width: 0; }
 .enigma-panel-head-actions { display: flex; align-items: center; gap: var(--space-4); flex: 0 0 auto; }
 .enigma-panel-head-actions > button { width: 30px; height: 30px; padding: var(--space-4); display: grid; place-items: center; }
+.enigma-panel-head-actions > .enigma-panel-action-trigger { width: auto; min-height: 30px; display: inline-flex; align-items: center; gap: var(--space-4); padding-inline: var(--space-8); font: var(--fs-caption)/1.5 var(--font-ui); color: var(--text-muted); }
 .enigma-panel-head h2 { font-size: 19px; letter-spacing: -0.025em; overflow-wrap: anywhere; }
 .enigma-panel-head small { color: var(--text-muted); letter-spacing: 0; }
 .enigma-panel-controls { padding: 0 var(--space-24) var(--space-12); min-width: 0; }

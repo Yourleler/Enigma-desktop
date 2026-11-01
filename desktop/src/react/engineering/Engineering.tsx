@@ -307,6 +307,8 @@ export function EngineeringPanel({embedded=false}:{embedded?:boolean}={}) {
     (action: Action) => action.group === active.group,
   );
   const searchable=['materials','memory','skills'].includes(active.group)&&!(active.group==='skills'&&state.sections?.skills==='recipes');
+  const showControls = !active.file && !active.resource && !active.artifact &&
+    !['conductor', 'observer', 'documents', 'acceptance', 'timeline', ...(!active.repo ? ['reading'] : [])].includes(active.group);
   const close = (id: string) => {
     const tabs = state.tabs.filter((tab) => tab.id !== id),
       next = state.active === id ? tabs.at(-1) : active;
@@ -394,6 +396,11 @@ export function EngineeringPanel({embedded=false}:{embedded?:boolean}={}) {
           {active.file&&<small className="enigma-source-path">{active.repo} / {active.file}</small>}
         </div>
         <div className="enigma-panel-head-actions">
+        {showControls && actions.length > 0 && <SurfaceMenu label="可用操作" triggerClassName="enigma-panel-action-trigger" icon={<><span>操作</span><AppIcon name="chevronDown" size={14}/></>}>
+          {actions.map(action => <button key={action.id} onClick={() => void showAction(action)}>
+            {action.title}<small>{action.description}</small>
+          </button>)}
+        </SurfaceMenu>}
         {embedded&&state.tabs.filter(t=>t.group===active.group).length>1&&<SurfaceMenu label="相关页面" hint="切换当前功能中已打开的页面" icon={<AppIcon name="layers" size={17}/>}>{state.tabs.filter(t=>t.group===active.group).map(tab=><button key={tab.id} onClick={()=>switchTab(tab)}>{tab.group==='reading'&&!tab.file&&!tab.repo?'代码阅读':tab.title}</button>)}</SurfaceMenu>}
         <button
           aria-label="刷新当前内容"
@@ -405,19 +412,8 @@ export function EngineeringPanel({embedded=false}:{embedded?:boolean}={}) {
         </button>
         </div>
       </div>
-      {!active.file &&
-        !active.resource &&
-        !active.artifact &&
-        ![
-          "conductor",
-          "observer",
-          "documents",
-          "acceptance",
-          "timeline",
-          ...(!active.repo ? ["reading"] : []),
-        ].includes(active.group) && (
+      {showControls && searchable && (
           <div className="enigma-panel-controls">
-            {searchable&&<>
             <input
               aria-label="查询当前内容"
               placeholder="按关键词查找"
@@ -431,21 +427,6 @@ export function EngineeringPanel({embedded=false}:{embedded?:boolean}={}) {
             <button onClick={() => void loadEngineeringTab(active, query)}>
               查询
             </button>
-            </>}
-            {actions.length>0&&
-            <SurfaceMenu label="可用操作">
-                {actions.map((action) => (
-                  <button
-                    key={action.id}
-                    data-tooltip={action.description}
-                    onClick={() => void showAction(action)}
-                  >
-                    {action.title}
-                    <small>{action.description}</small>
-                  </button>
-                ))}
-            </SurfaceMenu>
-            }
           </div>
         )}
       <div
