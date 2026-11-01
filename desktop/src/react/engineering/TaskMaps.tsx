@@ -1,3 +1,4 @@
+import {ReadingCoverage} from './ReadingCoverage';
 import {SearchField} from '../ui/SearchField';
 import {useState,useRef,useEffect,type ReactNode} from 'react';
 import {useStore} from '../stores';
@@ -39,7 +40,7 @@ function TaskMapCard({item,blocked,busy}:{item:any;blocked:boolean;busy:boolean}
     <div className="enigma-inline-actions">{coverage&&<button disabled={busy} onClick={()=>void showRecordAction('map-coverage',{id:report.id},{id:report.goal})} data-tooltip={busy?'等待当前操作结束或重新读取状态':'选择当前检查证据，将源码判断与实际测试分别核对'}>核对这份地图的覆盖</button>}{annotate&&<button disabled={blocked} data-tooltip={blocked?'只读、执行中或来源已变化时不能补充当前地图':'选择源码节点作为依据，补充解释、风险或需求判断'} onClick={()=>void showAction(mapAnnotationAction(annotate,report))}>补充说明与风险</button>}</div>
     {!!report.architecture?.length&&<details className="enigma-result"><summary>仓库职责与依赖</summary><p className="enigma-source-note">职责与仓库依赖来自项目登记；下方源码节点才是本次实际展开的范围。</p>{report.architecture.map((repo:any)=><p key={repo.repo}><strong>{repo.repo}</strong> · {repo.responsibility||'职责待补充'}{repo.dependsOn.length?` · 依赖 ${repo.dependsOn.join('、')}`:''} · {repo.nodes.length} 个源码节点</p>)}</details>}
     {!!report.edges.length&&<details className="enigma-result"><summary>源码连接关系 · {report.edges.length} 条</summary>{report.edges.map((edge:any,index:number)=><div key={index}><p>{edge.kind==='outgoing-call'?'向下调用':edge.kind==='call-site'?'调用位置':edge.kind==='import-binding'?'导入引用':'静态源码关系'} · {edge.confidence==='confirmed'?'静态绑定已确认':'待核对'}（不代表已执行）</p>{references([edge.from,edge.to])}</div>)}</details>}
-    <h4>建议阅读顺序</h4><p className="enigma-source-note">顺序是阅读建议；连接关系来自静态解析，运行行为还需要实际验证。</p>
+    <ReadingCoverage reading={report}/><h4>建议阅读顺序</h4><p className="enigma-source-note">顺序是阅读建议；连接关系来自静态解析，运行行为还需要实际验证。</p>
     {ordered.length>6&&<SearchField className="enigma-timeline-search" aria-label="筛选地图源码节点" placeholder="按符号、路径、仓库或职责筛选" value={filter} onChange={event=>{setFilter(event.target.value);setLimit(30);}}/>}
     <p className="enigma-source-note">显示 {Math.min(limit,nodes.length)} / {nodes.length} 个匹配节点</p>
     {nodes.slice(0,limit).map((node:any,index:number)=><details className="enigma-reading-chapter" key={node.id} ref={element=>{if(element)sourceElements.current.set(node.id,element);else sourceElements.current.delete(node.id);}}><summary>{index+1}. {roles[node.role]||node.role} · {sourceLabel(node)}</summary><pre>{node.source.snippet}</pre>{node.source.truncated&&<p>片段已截断，不能视为完整源码。</p>}<button data-tooltip="打开仓库当前文件；上方片段仍是地图生成时的版本" onClick={()=>openEngineering({id:`file:${node.source.repo}:${node.source.file}`,title:node.source.file,group:'reading',repo:node.source.repo,file:node.source.file})}>打开当前源码</button><p className="enigma-source-note">保存的版本：{node.source.hash?.slice(0,12)}</p></details>)}
@@ -51,10 +52,8 @@ function TaskMapCard({item,blocked,busy}:{item:any;blocked:boolean;busy:boolean}
       {requirement.explanation&&<p>{requirement.explanation}</p>}
       {references(requirement.anchors||[])}
     </div></article>)}</>}
-    {!!report.gaps?.length&&<details className="enigma-result"><summary>未展开范围与诊断 · {report.gaps.length} 项</summary><p>静态阅读仍有以下限制。它们没有被当作已检查内容。</p>{report.gaps.map((gap:string,index:number)=><p key={index}>{mapGap(gap)}</p>)}</details>}
   </div>;
 }
-function mapGap(value:string){return value.replace('No explicit expected change scope; nonexpected changes cannot be decided from goal wording alone.','没有给出明确的预期修改范围，不能仅凭目标措辞判断哪些改动越界。').replace('Further source expansion remains outside the query budget.','还有源码关系未在本次查询额度内展开。').replace('No source query could be derived; provide entry symbols or a diff baseline.','未能从目标提取源码入口，请提供起始符号或差异基线。').replace('Call target not resolved statically:','无法静态确定调用目标：').replace('No resolved source definition for','没有找到可确定的源码定义：');}
 export function MapCoverageResult({value,details}:{value:any;details:ReactNode}){
   return <section className="enigma-result"><h3>地图需求覆盖：{value.goal}</h3><p>{value.current?'本次核对时，地图来源有效。':'本次核对时，地图来源已变化，源码判断需要重新核对。'}源码判断与检查执行分别展示。</p><p className="enigma-source-note">这是一次核对结果；后续代码、资料或检查变化后，需要重新核对。</p><button onClick={()=>void showRecordAction('map-coverage',{id:value.map},{id:value.goal})}>重新核对这份地图</button>{value.evidenceIssue&&<p className="enigma-error">{value.evidenceIssue}</p>}{value.requirements.length?value.requirements.map((item:any)=><article className="enigma-step" key={item.id}><div><strong>{item.text}</strong><p>{statuses[item.status]||item.status} · {item.checksPassed?'关联检查已实际通过':'尚无本次有效的关联检查'}</p>{item.explanation&&<p>{item.explanation}</p>}</div></article>):<p>这份地图未登记需求与测试点，不能据此评估任务覆盖。</p>}<details><summary>完整覆盖证据</summary>{details}</details></section>;
 }

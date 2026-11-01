@@ -6,6 +6,32 @@ import { fixture } from './fixtures.js';
 import { ProjectContext } from '../src/project-context.js';
 import { TaskReadingStore } from '../src/task-reading.js';
 
+test('records every changed file beyond 80 and distinguishes clipped, binary, deleted and budgeted sources', {timeout:60_000}, async()=>{
+  const {root,workspace}=await fixture();
+  try{
+    const files=Array.from({length:85},(_,i)=>`note-${i}.txt`);
+    for(const file of files)await writeFile(join(root,'library',file),`Document ${file}\n`);
+    await writeFile(join(root,'library','long-line.txt'),'x'.repeat(7000));
+    await writeFile(join(root,'library','large.txt'),'x'.repeat(512001));
+    await writeFile(join(root,'library','binary.dat'),Buffer.from([0,1,2]));
+    const changes=[...files.map(file=>({repo:'library',file,change:'added'})),
+      ...['long-line.txt','large.txt','binary.dat'].map(file=>({repo:'library',file,change:'added'})),
+      {repo:'library',file:'removed.txt',change:'deleted'},
+      {repo:'library',file:'not-retained.txt',change:'added',after:{omitted:'Binary or source reading budget exceeded'}}];
+    const report=await new TaskReadingStore(workspace).build({goal:'Read every changed document',changes,maxQueries:1});
+    assert.equal(report.sourceCoverage?.files.length,90);
+    assert.equal(report.sourceCoverage?.outlineFiles.total,90);assert.equal(report.sourceCoverage?.outlineFiles.examined,24);
+    assert(report.nodes.some(n=>n.source.file==='note-84.txt'));
+    const long=report.nodes.find(n=>n.source.file==='long-line.txt')!;assert.equal(long.source.truncated,true);assert.equal(long.source.snippet.length,6000);assert.equal(long.role,'documentation');
+    assert.equal(report.sourceCoverage?.files.find(f=>f.file==='large.txt')?.status,'budget');
+    assert.equal(report.sourceCoverage?.files.find(f=>f.file==='binary.dat')?.status,'unavailable');
+    assert.equal(report.sourceCoverage?.files.find(f=>f.file==='removed.txt')?.status,'deleted');
+    assert(report.sourceCoverage?.files.find(f=>f.file==='not-retained.txt')?.reason?.includes('冻结版本未保存文本'));
+    assert(report.gaps.some(gap=>gap.startsWith('3 changed files')));
+    const reopened=await new TaskReadingStore(workspace).open(report.id);assert.deepEqual(reopened.report.sourceCoverage,report.sourceCoverage);
+  }finally{await rm(root,{recursive:true,force:true});}
+});
+
 test('a single application entry expands upstream calls across all three repositories', { timeout: 60_000 }, async () => {
   const { root, workspace } = await fixture();
   try {

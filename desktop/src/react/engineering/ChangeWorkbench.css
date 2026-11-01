@@ -115,3 +115,13 @@
  .enigma-change-tree-backdrop{display:block;position:absolute;inset:0;z-index:7;border:0!important;border-radius:0!important;background:var(--scrim-15)!important;}
  .enigma-reading-source>.enigma-reading-tabs{flex-basis:100%;justify-content:space-between;}.enigma-reading-source-controls{margin-left:0;}
 }
+
+.enigma-reading-coverage{padding:var(--space-8) 0;border-bottom:1px solid var(--border);font:11px/1.6 var(--font-ui);}
+.enigma-reading-coverage>summary{cursor:pointer;color:var(--text);}
+.enigma-reading-coverage p{margin:var(--space-6) 0;color:var(--text-muted);}
+.enigma-reading-coverage ul{list-style:none;margin:var(--space-8) 0;padding:0;}
+.enigma-reading-coverage li{padding:var(--space-6) 0;display:flex;gap:var(--space-8);flex-wrap:wrap;border-bottom:1px solid var(--border);}
+.enigma-reading-coverage li>span{flex:1;min-width:100px;overflow-wrap:anywhere;}
+.enigma-reading-coverage li small{color:var(--text-muted);}
+.enigma-reading-coverage li p{flex-basis:100%;margin:0;}
+body.enigma-surface .enigma-reading-coverage button{border:0;background:transparent;box-shadow:none;font:inherit;color:var(--accent);padding:0;min-height:24px;text-align:left;}

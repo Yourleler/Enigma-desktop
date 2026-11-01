@@ -1,4 +1,4 @@
-import { readFile,readdir } from 'node:fs/promises';
+import { readFile,readdir,stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import ts from 'typescript';
 import type { Workspace } from './workspace.js';
@@ -13,11 +13,12 @@ import type {Observation,Evidence} from './types.js';
 import {emitActivity} from './telemetry.js';
 
 type Role = 'entry' | 'contract' | 'implementation' | 'consumer' | 'test' | 'configuration' | 'documentation';
+type ReadingChange={repo:string;file:string;change:string;patch?:string;after?:{omitted?:string}};
 export interface TaskReadingInput {
   goal: string; queries?: { symbol: string; repo?: string }[]; baseline?: string; task?: string;
   resources?: string[]; expectedRepos?: string[]; expectedFiles?: { repo: string; file: string }[];
   requirements?: { id: string; text: string; checks?: string[] }[]; maxQueries?: number; maxFiles?: number;
-  changes?: { repo: string; file: string; change: string; patch?: string }[];
+  changes?: ReadingChange[];
 }
 export interface TaskReading {
   schema: 1; id: string; revision: number; goal: string; task?: string; createdAt: string; evidence: string; reader?: string;
@@ -33,12 +34,17 @@ export interface TaskReading {
   requirements: { id: string; text: string; checks: string[]; status: 'unassessed' | 'supported' | 'conflict' | 'insufficient'; anchors: string[]; explanation?: string }[];
   insights: { title: string; text: string; anchors: string[]; kind: 'explanation' | 'risk'; authority: 'model-inference' }[];
   unexpected: { repo: string; file: string; reason: string }[];
+  sourceCoverage?: {
+    files: {repo:string;file:string;status:'symbols'|'excerpt'|'deleted'|'unavailable'|'budget';reason?:string;partial?:boolean}[];
+    outlineFiles: {examined:number;total:number};
+    symbolQueries: {completed:number;limit:number;pending:number};
+  };
   gaps: string[]; truncated: boolean;
 }
 
 function sourceRole(source: SourceLocation): Role {
   if (/(^|[/_.-])(test|tests|spec)([/_.-]|$)|_test\.go$/.test(source.file) || source.kind === 'test-reference') return 'test';
-  if (/\.md$/.test(source.file)) return 'documentation';
+  if (/\.(md|txt|rst|adoc)$/i.test(source.file)) return 'documentation';
   if (/Interface|TypeAlias|go-symbol-11|\.proto$|\.thrift$/.test(source.kind + source.file)) return 'contract';
   if (/config|settings|\.json$|\.ya?ml$/.test(source.file)) return 'configuration';
   if (/route|handler|controller|main|entry|server/.test(`${source.file} ${source.symbol}`)) return 'entry';
@@ -86,15 +92,18 @@ export class TaskReadingStore {
         if (read.current === null) gaps.push(`Imported material ${id} has not been revalidated against its remote source.`);
         return { id, revision: read.resource.revision, current: read.current };
       }));
-      let changes: { repo: string; file: string; change: string; patch?: string }[] = input.changes ?? [];
+      let changes: ReadingChange[] = input.changes ?? [];
       for (const change of changes) await this.workspace.path(change.repo, change.file);
       if (input.baseline) {
         const baseline = await this.workspace.loadCheckpoint(input.baseline), target = await this.workspace.checkpoint('task reading target');
         changes = await this.workspace.compare(baseline.id, target.id);
       }
       const queue = [...input.queries ?? []];
+      const outlineFiles={examined:0,total:0};
       if (!queue.length) {
         const candidates = changes.length ? changes : (await new SourceIndex(this.workspace).select(input.goal, { maxFiles: 12, signal })).files.filter(file => file.score > 0);
+        outlineFiles.total=candidates.length;outlineFiles.examined=Math.min(24,candidates.length);
+        if(candidates.length>24){truncated=true;gaps.push(`Symbol outlines examined 24 of ${candidates.length} candidate files; remaining changes retain per-file coverage.`);}
         for (const item of candidates.slice(0, 24)) {
           try {
             const bytes = await readFile(await this.workspace.path(item.repo, item.file)); if (bytes.length > 512000) { gaps.push(`Outline budget exceeded: ${item.repo}:${item.file}`); continue; }
@@ -127,16 +136,32 @@ export class TaskReadingStore {
       }
       // Documents and small configuration edits may have no language symbol.
       // Keep a literal, versioned excerpt rather than dropping them from reading.
-      for(const change of changes.slice(0,80)){
-        if([...nodes.values()].some(n=>n.source.repo===change.repo&&n.source.file===change.file))continue;
+      const coverageFiles:NonNullable<TaskReading['sourceCoverage']>['files']=[];
+      const locatedFiles=new Set([...nodes.values()].map(n=>`${n.source.repo}:${n.source.file}`));
+      let excerptBytes=0;
+      for(const change of changes){
+        signal?.throwIfAborted();
+        const identity={repo:change.repo,file:change.file};
+        if(locatedFiles.has(`${change.repo}:${change.file}`)){coverageFiles.push({...identity,status:'symbols'});continue;}
+        if(change.change==='deleted'){coverageFiles.push({...identity,status:'deleted',reason:'文件已删除，请在全量 Diff 查看保存的旧版本。'});continue;}
+        if(change.after?.omitted){coverageFiles.push({...identity,status:'unavailable',reason:change.after.omitted==='Binary or source reading budget exceeded'?'冻结版本未保存文本：二进制或超出源码读取预算。':`冻结版本未保存文本：${change.after.omitted}`});continue;}
+        if(excerptBytes>=64_000_000){coverageFiles.push({...identity,status:'budget',reason:'本次文件片段读取已达到64MB预算。'});truncated=true;continue;}
         try{
-          const bytes=await readFile(await this.workspace.path(change.repo,change.file));if(bytes.length>512000||bytes.includes(0))continue;
+          const filePath=await this.workspace.path(change.repo,change.file),info=await stat(filePath);
+          if(info.size>512000){coverageFiles.push({...identity,status:'budget',reason:'文件超过512KB片段读取预算。'});truncated=true;continue;}
+          const bytes=await readFile(filePath);excerptBytes+=bytes.length;
+          if(bytes.length>512000){coverageFiles.push({...identity,status:'budget',reason:'文件超过512KB片段读取预算。'});truncated=true;continue;}
+          if(bytes.includes(0)){coverageFiles.push({...identity,status:'unavailable',reason:'二进制文件没有文本源码片段。'});continue;}
           const text=new TextDecoder('utf-8',{fatal:true}).decode(bytes),lines=text.split('\n');
           const start=Math.max(1,Math.min(lines.length,Number(/@@ -\d+(?:,\d+)? \+(\d+)/.exec(change.patch||'')?.[1])||1));
-          const source:SourceLocation={repo:change.repo,file:change.file,line:start,endLine:Math.min(lines.length,start+39),hash:hash(bytes),symbol:change.file,kind:'file-excerpt',snippet:lines.slice(start-1,start+39).join('\n').slice(0,6000),truncated:lines.length>40};
+          const excerpt=lines.slice(start-1,start+39).join('\n'),partial=start>1||lines.length>40||excerpt.length>6000;
+          const source:SourceLocation={repo:change.repo,file:change.file,line:start,endLine:Math.min(lines.length,start+39),hash:hash(bytes),symbol:change.file,kind:'file-excerpt',snippet:excerpt.slice(0,6000),truncated:partial};
           const nodeId=`file-${hash(`${change.repo}:${change.file}`).slice(0,20)}`;nodes.set(nodeId,{id:nodeId,source,role:sourceRole(source),responsibility:'固定版本文件片段；未推断调用关系'});
-        }catch{gaps.push(`Unavailable file excerpt: ${change.repo}/${change.file}`);}
+          coverageFiles.push({...identity,status:'excerpt',partial});
+        }catch{coverageFiles.push({...identity,status:'unavailable',reason:'文件片段无法读取或不是UTF-8文本。'});gaps.push(`Unavailable file excerpt: ${change.repo}/${change.file}`);}
       }
+      const omittedCoverage=coverageFiles.filter(file=>file.status==='unavailable'||file.status==='budget');
+      if(omittedCoverage.length)gaps.push(`${omittedCoverage.length} changed files have no readable source excerpt; inspect the per-file coverage and full diff.`);
       const ordered = [...nodes.values()].sort((a, b) => roles.indexOf(a.role) - roles.indexOf(b.role) || `${a.source.repo}:${a.source.file}:${a.source.line}`.localeCompare(`${b.source.repo}:${b.source.file}:${b.source.line}`, undefined, { numeric: true }));
       const changedFiles = changes.map(change => ({ ...change,
         classification: /\.(md|txt|rst)$/.test(change.file) ? 'documentation' : /_test\.go$|(^|\/)test[s]?\/|\.(test|spec)\./.test(change.file) ? 'test' : /\.gen\.|lock\.(json|yaml)$|\.lock$/.test(change.file) ? 'mechanical-candidate' : 'behavioral-or-unknown',
@@ -144,7 +169,13 @@ export class TaskReadingStore {
       // Connected components group files only when actual source relations connect them.
       const fileKey = (source: SourceLocation) => `${source.repo}:${source.file}`;
       const groups = new Map<string, string>();
-      const root = (key: string): string => { const parent = groups.get(key); if (!parent) { groups.set(key, key); return key; } return parent === key ? key : root(parent); };
+      const root = (key: string): string => {
+        if(!groups.has(key)){groups.set(key,key);return key;}
+        let current=key;const trail:string[]=[];
+        while(groups.get(current)!==current){trail.push(current);current=groups.get(current)!;}
+        for(const item of trail)groups.set(item,current);
+        return current;
+      };
       for (const file of changedFiles) root(`${file.repo}:${file.file}`);
       for (const edge of edges.values()) {
         const from = nodes.get(edge.from), to = nodes.get(edge.to); if (!from || !to || edge.confidence !== 'confirmed') continue;
@@ -180,7 +211,7 @@ export class TaskReadingStore {
           classification: files.every(file => file.classification === 'mechanical-candidate') ? 'mechanical-candidate' : 'requires-reading' })),
         chapters: roles.map(role => ({ id: `read-${role}`, title: role, summary: `Source-backed ${role} locations; expand each node for actual code.`, nodes: ordered.filter(node => node.role === role).map(node => node.id), authority: 'navigation-hint' as const })).filter(chapter => chapter.nodes.length),
         layers: graph.repos.map(repo => ({ id: `repo-${repo.id}`, title: repo.role, summary: 'Repository responsibility declared by the workspace; not an inferred runtime architecture.', nodes: ordered.filter(node => node.source.repo === repo.id).map(node => node.id), authority: 'navigation-hint' as const })),
-        contracts, resources, requirements, insights: [], unexpected, gaps: [...new Set(gaps)], truncated };
+        contracts, resources, requirements, insights: [], unexpected, sourceCoverage:{files:coverageFiles,outlineFiles,symbolQueries:{completed:readings.length,limit:maxQueries,pending:new Set(queue.map(q=>`${q.repo??'*'}:${q.symbol}`).filter(key=>!seen.has(key))).size}},gaps: [...new Set(gaps)], truncated };
       await this.directory(); await this.publish(report); return report;
     });
   }
