@@ -264,7 +264,7 @@ export function createChannelsRoute(engine: any, hub: any) {
         });
       }
       c.header("Content-Type", archive.mediaType);
-      c.header("Content-Disposition", `attachment; filename="${archive.filename}"; filename*=UTF-8''${encodeURIComponent(archive.filename)}`);
+      c.header("Content-Disposition", `attachment; filename="enigma-chat-archive.md"; filename*=UTF-8''${encodeURIComponent(archive.filename)}`);
       c.header("Cache-Control", "private, no-store");
       return c.body(archive.markdown);
     } catch (error) {

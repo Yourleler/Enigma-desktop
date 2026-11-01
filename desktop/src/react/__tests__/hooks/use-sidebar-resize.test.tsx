@@ -143,19 +143,6 @@ describe('useSidebarResize', () => {
     expect(removeDocumentSpy).toHaveBeenCalledWith('mouseup', expect.any(Function));
   });
 
-  it('频道 inspector 使用独立宽度和独立拖拽持久化 key', () => {
-    const handle = document.getElementById('channelInspectorResizeHandle') as HTMLElement;
-    const storage = window.localStorage as unknown as { setItem: ReturnType<typeof vi.fn> };
-
-    render(<Harness />);
-    fireEvent.mouseDown(handle, { clientX: 500, clientY: 80 });
-    fireEvent.mouseMove(document, { clientX: 470, clientY: 82 });
-    fireEvent.mouseUp(document);
-
-    expect(document.documentElement.style.getPropertyValue('--channel-inspector-width')).toBe('310px');
-    expect(document.documentElement.style.getPropertyValue('--jian-sidebar-width')).not.toBe('310px');
-    expect(storage.setItem).toHaveBeenCalledWith('hana-channel-inspector-width', '310');
-  });
 
   it('拖拽时创建透明事件盾牌，避免 iframe 吞掉后续 mousemove/mouseup', () => {
     const handle = document.getElementById('previewResizeHandle') as HTMLElement;

@@ -1201,3 +1201,18 @@
     background: rgba(47, 111, 143, 0.1);
     color: var(--accent);
 }
+
+.channelInputWrapper:has(.channelSendError){flex-wrap:wrap;}
+.channelSendError{flex-basis:100%;margin:0;padding:var(--space-4) var(--space-8);color:var(--danger);font:var(--fs-hint)/1.5 var(--font-ui);overflow-wrap:anywhere;}
+
+:global(body.enigma-surface) .createInput{background:color-mix(in srgb,var(--eg-card) var(--glass-control-mix,14%),var(--glass-clear-fill));border:1px solid var(--eg-stroke);box-shadow:none;backdrop-filter:blur(var(--glass-control-blur,1.5px));color:var(--eg-text);}
+:global(body.enigma-surface) .createInput:focus{outline:2px solid var(--accent);outline-offset:1px;}
+:global(body.enigma-surface) .channelInputWrapper{background:color-mix(in srgb,var(--eg-card) var(--glass-composer-mix,38%),var(--glass-clear-fill));backdrop-filter:blur(var(--glass-composer-blur,5.35px));border-color:var(--eg-stroke);transition:border-color var(--duration-fast),box-shadow var(--duration-fast);}
+:global(body.enigma-glass-off) :is(.createInput,.channelInputWrapper){background:var(--eg-card);backdrop-filter:none;}
+@media(prefers-reduced-transparency:reduce),(prefers-contrast:more){:global(body.enigma-surface) :is(.createInput,.channelInputWrapper){background:var(--eg-card);backdrop-filter:none;}}
+
+:global(.enigma-channel-details){width:min(440px,calc(100vw - 32px));max-height:calc(100vh - 64px);display:flex;flex-direction:column;padding:var(--space-16);background:var(--bg-card);color:var(--text);border:1px solid var(--border);border-radius:16px;box-sizing:border-box;}
+:global(.enigma-channel-details)>header{display:flex;justify-content:space-between;align-items:center;gap:var(--space-8);margin-bottom:var(--space-12);}
+:global(.enigma-channel-details)>header button{border:0;background:transparent;color:var(--text-muted);display:grid;place-items:center;width:28px;height:28px;cursor:pointer;}
+:global(.enigma-channel-details-content){min-height:0;overflow:auto;overscroll-behavior:contain;}
+:global(.enigma-channel-details-content .channel-info-stack){padding:0;}

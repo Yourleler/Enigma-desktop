@@ -3,6 +3,7 @@
  */
 
 import { useCallback, useState } from 'react';
+import {AppIcon} from '../../ui/app-icons';
 import { useStore } from '../../stores';
 import { useI18n } from '../../hooks/use-i18n';
 import { deleteChannel } from '../../stores/channel-actions';
@@ -17,7 +18,7 @@ function confirmDeleteChannel(channelId: string) {
   deleteChannel(channelId);
 }
 
-export function ChannelHeader() {
+export function ChannelHeader({onDetails,detailsOpen=false}:{onDetails?:()=>void;detailsOpen?:boolean}={}) {
   const { t } = useI18n();
   const headerName = useStore(s => s.channelHeaderName);
   const headerMembers = useStore(s => s.channelHeaderMembersText);
@@ -51,6 +52,7 @@ export function ChannelHeader() {
         <span className={styles.channelHeaderMembers}>{headerMembers}</span>
       </div>
       <div className={styles.channelHeaderActions}>
+        {onDetails&&<button className={styles.channelHeaderActionBtn} aria-label="群聊设置与动态" aria-haspopup="dialog" aria-expanded={detailsOpen} title="成员、工具权限、回复设置、运行动态与导出" onClick={onDetails}><AppIcon name="settings" size={16}/></button>}
         {currentChannel && !isDM && (
           <button
             className={styles.channelHeaderActionBtn}

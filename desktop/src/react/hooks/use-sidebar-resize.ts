@@ -21,7 +21,7 @@ export function useSidebarResize(): void {
   // Web panes load lazily. Bind when their real handles replace the fallback,
   // including when a saved preview was already open before the module loaded.
   useEffect(() => {
-    const ids = ['sidebarResizeHandle','jianResizeHandle','channelInspectorResizeHandle','previewResizeHandle'];
+    const ids = ['sidebarResizeHandle','jianResizeHandle','previewResizeHandle'];
     let handles = ids.map(id => document.getElementById(id));
     const observer = new MutationObserver(() => {
       const next = ids.map(id => document.getElementById(id));
@@ -35,15 +35,12 @@ export function useSidebarResize(): void {
     const root = document.documentElement;
     const sidebarEl = document.getElementById('sidebar');
     const jianSidebarEl = document.getElementById('jianSidebar');
-    const channelInspectorEl = document.getElementById('channelInspector');
     const leftHandle = document.getElementById('sidebarResizeHandle');
     const rightHandle = document.getElementById('jianResizeHandle');
-    const channelInspectorHandle = document.getElementById('channelInspectorResizeHandle');
     const previewPanel = document.getElementById('previewPanel');
 
     const LEFT_MIN = 200, LEFT_MAX = 400;
     const RIGHT_MIN = 320, RIGHT_MAX = 900;
-    const CHANNEL_INSPECTOR_MIN = 220, CHANNEL_INSPECTOR_MAX = 620;
     const PREVIEW_MIN = PREVIEW_MIN_WIDTH;
 
     const leftInner = sidebarEl?.querySelector('.sidebar-inner') as HTMLElement | null;
@@ -95,15 +92,6 @@ export function useSidebarResize(): void {
       updateJianColumns(w);
     }
 
-    function applyChannelInspectorWidth(w: number): void {
-      const px = w + 'px';
-      root.style.setProperty('--channel-inspector-width', px);
-      if (channelInspectorEl) {
-        channelInspectorEl.style.width = px;
-        channelInspectorEl.style.minWidth = px;
-      }
-    }
-
     function applyPreviewWidth(w: number): void {
       const px = w + 'px';
       root.style.setProperty('--preview-preferred-width', px);
@@ -114,11 +102,9 @@ export function useSidebarResize(): void {
     // 恢复保存的宽度
     const savedLeft = localStorage.getItem('hana-sidebar-width');
     const savedRight = localStorage.getItem('enigma-dock-width');
-    const savedChannelInspector = localStorage.getItem('hana-channel-inspector-width');
     const savedPreview = localStorage.getItem('hana-preview-width');
     if (savedLeft) applySidebarWidth(Number(savedLeft));
     if (savedRight) applyJianWidth(Number(savedRight));
-    if (savedChannelInspector) applyChannelInspectorWidth(Number(savedChannelInspector));
     if (savedPreview) {
       const savedPreviewWidth = Number(savedPreview);
       if (Number.isFinite(savedPreviewWidth)) {
@@ -235,14 +221,6 @@ export function useSidebarResize(): void {
       () => jianSidebarEl?.offsetWidth || 260,
       (w) => applyJianWidth(w),
       RIGHT_MIN, RIGHT_MAX, 'hana-jian-width', true,
-    );
-
-    setupHandle(
-      channelInspectorHandle,
-      () => channelInspectorEl,
-      () => channelInspectorEl?.offsetWidth || 280,
-      (w) => applyChannelInspectorWidth(w),
-      CHANNEL_INSPECTOR_MIN, CHANNEL_INSPECTOR_MAX, 'hana-channel-inspector-width', true,
     );
 
     const previewHandle = document.getElementById('previewResizeHandle');

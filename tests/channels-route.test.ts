@@ -103,6 +103,16 @@ describe("channels route membership contract", () => {
     expect(data.error).toMatch(/at least 2/i);
   });
 
+  it('exports a Chinese group name using a valid ASCII header with UTF-8 filename metadata',async()=>{
+    const group=await createChannel(engine.channelsDir,{id:'unicode',name:'中文验收群',description:'',members:['alice','bob'],intro:''});
+    await appendMessage(group.filePath,'alice','保留零和 false。');
+    const response=await app.request('/api/conversations/ch_unicode/export');
+    expect(response.status).toBe(200);expect(response.headers.get('content-type')).toContain('text/markdown');
+    const disposition=response.headers.get('content-disposition')!;
+    expect(disposition).not.toMatch(/[^\x00-\x7f]/);expect(decodeURIComponent(disposition.split("filename*=UTF-8''")[1])).toContain('中文验收群');
+    expect(await response.text()).toContain('保留零和 false。');
+  });
+
   it("downloads only the selected group conversation", async () => {
     const selected = await createChannel(engine.channelsDir, {
       id: "family",
@@ -125,7 +135,7 @@ describe("channels route membership contract", () => {
 
     expect(res.status).toBe(200);
     expect(res.headers.get("content-type")).toContain("text/markdown");
-    expect(res.headers.get("content-disposition")).toMatch(/^attachment; filename="hana-channel-Family-/);
+    expect(res.headers.get("content-disposition")).toMatch(/^attachment; filename="enigma-chat-archive.md"; filename\*=UTF-8''hana-channel-Family-/);
     const markdown = await res.text();
     expect(markdown).toContain("selected group hello");
     expect(markdown).not.toContain("other group hello");
@@ -141,7 +151,7 @@ describe("channels route membership contract", () => {
     const res = await app.request("/api/conversations/dm%3Abob/export?agentId=alice");
 
     expect(res.status).toBe(200);
-    expect(res.headers.get("content-disposition")).toMatch(/^attachment; filename="hana-dm-alice-bob-/);
+    expect(res.headers.get("content-disposition")).toMatch(/^attachment; filename="enigma-chat-archive.md"; filename\*=UTF-8''hana-dm-alice-bob-/);
     const markdown = await res.text();
     expect(markdown).toContain("selected private hello");
     expect(markdown).not.toContain("other private hello");

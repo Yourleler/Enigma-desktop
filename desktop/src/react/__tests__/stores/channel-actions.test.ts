@@ -75,6 +75,35 @@ describe('channel-actions', () => {
     mockFetch.mockReset();
   });
 
+  it('ignores a delayed first group after another group is opened',async()=>{
+    vi.stubGlobal('window',{t:(key:string)=>key});
+    let first!:(value:Response)=>void;
+    mockFetch.mockImplementation(async url=>{
+      if(url==='/api/channels/slow')return new Promise(resolve=>{first=resolve;});
+      if(url==='/api/channels/current')return new Response(JSON.stringify({name:'Current',members:['alice','bob'],messages:[]}));
+      return new Response(JSON.stringify({}));
+    });
+    const {openChannel}=await import('../../stores/channel-actions');
+    const pending=openChannel('slow');await openChannel('current');
+    first(new Response(JSON.stringify({name:'Wrong old group',members:['old'],messages:[{sender:'old',body:'Old reply',timestamp:'yesterday'}]})));await pending;
+    expect(mockState.currentChannel).toBe('current');expect(mockState.channelHeaderName).toBe('# Current');expect(mockState.channelMessages).toEqual([]);
+    expect(mockFetch).not.toHaveBeenCalledWith('/api/channels/slow/read',expect.anything());vi.unstubAllGlobals();
+  });
+
+  it('cannot apply a previous group setting response to the current group',async()=>{
+    const {loadConversationAgentPhoneSettings}=await import('../../stores/channel-actions');mockState.currentChannel='old';
+    let done!:(value:Response)=>void;mockFetch.mockImplementationOnce(()=>new Promise(resolve=>{done=resolve;}));const pending=loadConversationAgentPhoneSettings('old');
+    mockState.currentChannel='new';mockState.channelAgentPhoneToolMode='read_only';done(new Response(JSON.stringify({mode:'write'})));await pending;
+    expect(mockState.channelAgentPhoneToolMode).toBe('read_only');
+  });
+
+  it('does not publish an old server channel catalog after switching connections',async()=>{
+    const {loadChannels}=await import('../../stores/channel-actions');let done!:(value:Response)=>void;
+    mockFetch.mockImplementation(async url=>url==='/api/channels'?new Promise(resolve=>{done=resolve;}):new Response(JSON.stringify({dms:[]})));
+    const pending=loadChannels();const oldPort=mockState.serverPort;mockState.serverPort='9999';mockState.channels=[{id:'new-server'}];
+    done(new Response(JSON.stringify({channels:[{id:'old-server'}]})));await pending;expect(mockState.channels).toEqual([{id:'new-server'}]);mockState.serverPort=oldPort;
+  });
+
   describe('loadChannels', () => {
     it('加载频道和 DM 列表', async () => {
       mockFetch
@@ -460,6 +489,7 @@ describe('channel-actions', () => {
 
   describe('exportCurrentConversation', () => {
     it('downloads the Markdown response using the server-provided filename', async () => {
+      vi.useFakeTimers();
       mockState.currentChannel = 'ch_family';
       const blob = new Blob(['# Archive'], { type: 'text/markdown' });
       mockFetch.mockResolvedValueOnce({
@@ -474,11 +504,11 @@ describe('channel-actions', () => {
       Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: createObjectURL });
       Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: revokeObjectURL });
       const click = vi.fn();
-      const anchor = { href: '', download: '', rel: '', click };
+      const anchor = { href: '', download: '', rel: '', click,remove:vi.fn() };
       const originalDocument = globalThis.document;
       Object.defineProperty(globalThis, 'document', {
         configurable: true,
-        value: { createElement: vi.fn(() => anchor) },
+        value: { createElement: vi.fn(() => anchor),body:{append:vi.fn()} },
       });
 
       try {
@@ -486,8 +516,9 @@ describe('channel-actions', () => {
         await expect(exportCurrentConversation()).resolves.toBe('hana-chat-archive.md');
         expect(mockFetch).toHaveBeenCalledWith('/api/conversations/ch_family/export');
         expect(click).toHaveBeenCalledOnce();
-        expect(revokeObjectURL).toHaveBeenCalledWith('blob:archive');
+        expect(revokeObjectURL).not.toHaveBeenCalled();vi.advanceTimersByTime(30000);expect(revokeObjectURL).toHaveBeenCalledWith('blob:archive');
       } finally {
+        vi.useRealTimers();
         if (originalDocument) {
           Object.defineProperty(globalThis, 'document', { configurable: true, value: originalDocument });
         } else {

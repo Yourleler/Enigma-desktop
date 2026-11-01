@@ -27,7 +27,7 @@ export function updateLayout(intent?:LayoutIntent):void {
     const result=resolveWorkspaceLayout({width,
       sidebarWidth:preferredWidth('--sidebar-preferred-width','hana-sidebar-width',240),
       workspaceWidth:preferredWidth('--right-dock-preferred-width','enigma-dock-width',520),
-      inspectorWidth:s.currentTab==='channels'&&s.currentChannel?preferredWidth('--channel-inspector-width','hana-channel-inspector-width',280):0,
+      inspectorWidth:0,
       sidebarWanted:!String(s.currentTab).startsWith('plugin:')&&(s.sidebarOpen||s.sidebarAutoCollapsed),
       workspaceWanted:s.jianOpen||s.jianAutoCollapsed,
       priority:s.layoutPriority,expanded,drawer:s.layoutDrawer,intent,

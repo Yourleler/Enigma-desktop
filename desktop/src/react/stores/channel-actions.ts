@@ -8,14 +8,22 @@
 
 import { useStore } from './index';
 import { hanaFetch } from '../hooks/use-hana-fetch';
-import { hasServerConnection } from '../services/server-connection';
+import { hasServerConnection,resolveServerConnection,type ServerConnectionSource } from '../services/server-connection';
 import type { AgentPhoneActivity, AgentPhoneSettings, AgentPhoneToolMode, Channel, ChannelAgentActivities, ChannelMessage } from '../types';
+
+export function channelConnectionKey(source:ServerConnectionSource=useStore.getState()):string {
+  const connection=resolveServerConnection(source);
+  return JSON.stringify([source.activeServerConnectionId,connection?.connectionId,connection?.baseUrl,connection?.serverId,connection?.studioId,connection?.userId]);
+}
+let listGeneration=0,openGeneration=0,settingsGeneration=0;
+const sameConnection=(key:string)=>channelConnectionKey()===key;
 
 // ══════════════════════════════════════════════════════
 // 加载频道列表
 // ══════════════════════════════════════════════════════
 
 export async function loadChannels(): Promise<void> {
+  const generation=++listGeneration,connection=channelConnectionKey();
   const s = useStore.getState();
   if (!hasServerConnection(s)) return;
   try {
@@ -27,6 +35,7 @@ export async function loadChannels(): Promise<void> {
     const chData = chRes.ok ? await chRes.json() : { channels: [] };
     const dmData = dmRes.ok ? await dmRes.json() : { dms: [] };
 
+    if(generation!==listGeneration||!sameConnection(connection))return;
     const channels: Channel[] = (chData.channels || []).map((ch: any) => ({
       ...ch,
       isDM: false,
@@ -68,12 +77,14 @@ function keyActivities(activities: AgentPhoneActivity[]): Record<string, AgentPh
 }
 
 export async function loadConversationAgentActivities(conversationId: string): Promise<void> {
+  const connection=channelConnectionKey();
   const s = useStore.getState();
   if (!conversationId || !hasServerConnection(s)) return;
   try {
     const res = await hanaFetch(`/api/conversations/${encodeURIComponent(conversationId)}/agent-activities`);
     if (!res.ok) return;
     const data = await res.json();
+    if(!sameConnection(connection))return;
     const activities = keyActivities(data.activities || []);
     const latestState = useStore.getState();
     const current = (latestState.channelAgentActivities || {}) as ChannelAgentActivities;
@@ -184,10 +195,13 @@ export async function loadConversationAgentPhoneToolMode(conversationId: string)
 }
 
 export async function loadConversationAgentPhoneSettings(conversationId: string): Promise<void> {
+  const connection=channelConnectionKey(),generation=++settingsGeneration,current=useStore.getState().currentChannel;
+  const valid=()=>sameConnection(connection)&&generation===settingsGeneration&&useStore.getState().currentChannel===current;
   const s = useStore.getState();
   if (!conversationId || !hasServerConnection(s)) return;
   try {
     const res = await hanaFetch(conversationPhoneSettingsUrl(conversationId));
+    if(!valid())return;
     if (!res.ok) {
       applyAgentPhoneSettings({
         mode: 'read_only',
@@ -202,8 +216,9 @@ export async function loadConversationAgentPhoneSettings(conversationId: string)
       return;
     }
     const data = await res.json();
-    applyAgentPhoneSettings(normalizeAgentPhoneSettings(data));
+    if(valid())applyAgentPhoneSettings(normalizeAgentPhoneSettings(data));
   } catch (err) {
+    if(!valid())return;
     console.error('[channels] load phone settings failed:', err);
     applyAgentPhoneSettings({
       mode: 'read_only',
@@ -223,6 +238,7 @@ export async function setConversationAgentPhoneToolMode(mode: AgentPhoneToolMode
 }
 
 export async function saveConversationAgentPhoneSettings(patch: Partial<AgentPhoneSettings>): Promise<void> {
+  const connection=channelConnectionKey(),generation=++settingsGeneration;
   const s = useStore.getState();
   const conversationId = s.currentChannel;
   if (!conversationId || !hasServerConnection(s)) return;
@@ -242,7 +258,7 @@ export async function saveConversationAgentPhoneSettings(patch: Partial<AgentPho
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = await res.json();
-  applyAgentPhoneSettings(normalizeAgentPhoneSettings(data));
+  if(sameConnection(connection)&&generation===settingsGeneration&&useStore.getState().currentChannel===s.currentChannel)applyAgentPhoneSettings(normalizeAgentPhoneSettings(data));
 }
 
 // ══════════════════════════════════════════════════════
@@ -250,6 +266,8 @@ export async function saveConversationAgentPhoneSettings(patch: Partial<AgentPho
 // ══════════════════════════════════════════════════════
 
 export async function openChannel(channelId: string, isDM?: boolean): Promise<void> {
+  const generation=++openGeneration,connection=channelConnectionKey();
+  const valid=()=>generation===openGeneration&&sameConnection(connection)&&useStore.getState().currentChannel===channelId;
   const s = useStore.getState();
   const ch = s.channels.find((c: Channel) => c.id === channelId);
   const isThisDM = isDM ?? ch?.isDM ?? false;
@@ -277,6 +295,7 @@ export async function openChannel(channelId: string, isDM?: boolean): Promise<vo
       const res = await hanaFetch(`/api/dm/${encodeURIComponent(peerId)}${ownerQuery}`);
       if (res.ok) {
         const data = await res.json();
+        if(!valid())return;
         const responseOwnerId = data.ownerAgentId || dmOwnerId;
         const messages = data.messages || [];
         const fresh = useStore.getState();
@@ -303,6 +322,7 @@ export async function openChannel(channelId: string, isDM?: boolean): Promise<vo
       const res = await hanaFetch(`/api/channels/${encodeURIComponent(channelId)}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
+        if(!valid())return;
       const members = data.members || [];
       const displayMembers = [useStore.getState().userName || 'user', ...members];
       const messages = data.messages || [];
@@ -346,6 +366,7 @@ export async function openChannel(channelId: string, isDM?: boolean): Promise<vo
         }
       }
     }
+    if(!valid())return;
     loadConversationAgentActivities(channelId).catch((err: unknown) =>
       console.warn('[channel-actions] load agent activities failed', err));
     loadConversationAgentPhoneToolMode(channelId).catch((err: unknown) =>
@@ -487,6 +508,7 @@ export function appendChannelMessage(
 // ══════════════════════════════════════════════════════
 
 export async function sendChannelMessage(text: string): Promise<void> {
+  const connection=channelConnectionKey();
   const s = useStore.getState();
   const channelId = s.currentChannel;
   const body = text.trim();
@@ -501,6 +523,8 @@ export async function sendChannelMessage(text: string): Promise<void> {
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
+    if(!data.ok||!data.timestamp)throw new Error(data.error||'发送未确认，请查看历史后再决定是否重试');
+    if (!sameConnection(connection))return;
     if (data.ok && data.timestamp) {
       appendChannelMessage(channelId, {
         sender,
@@ -510,6 +534,7 @@ export async function sendChannelMessage(text: string): Promise<void> {
     }
   } catch (err) {
     console.error('[channels] send failed:', err);
+    throw err;
   }
 }
 
@@ -522,7 +547,7 @@ function exportedArchiveFilename(disposition: string | null): string {
   return plain || 'hana-chat-archive.md';
 }
 
-export async function exportCurrentConversation(): Promise<string> {
+export async function exportCurrentConversation(onPrepared?:(blob:Blob,filename:string)=>void): Promise<string> {
   const conversationId = useStore.getState().currentChannel;
   if (!conversationId) throw new Error('No active conversation');
   const ownerQuery = conversationOwnerQuery(conversationId);
@@ -534,15 +559,18 @@ export async function exportCurrentConversation(): Promise<string> {
 
   const blob = await res.blob();
   const filename = exportedArchiveFilename(res.headers.get('content-disposition'));
+  if(onPrepared){onPrepared(blob,filename);return filename;}
   const downloadUrl = URL.createObjectURL(blob);
   try {
     const anchor = document.createElement('a');
     anchor.href = downloadUrl;
     anchor.download = filename;
     anchor.rel = 'noopener';
+    document.body.append(anchor);
     anchor.click();
+    anchor.remove();
   } finally {
-    URL.revokeObjectURL(downloadUrl);
+    setTimeout(()=>URL.revokeObjectURL(downloadUrl),30000);
   }
   return filename;
 }
@@ -552,6 +580,7 @@ export async function exportCurrentConversation(): Promise<string> {
 // ══════════════════════════════════════════════════════
 
 export async function deleteChannel(channelId: string): Promise<void> {
+  const connection=channelConnectionKey();
   const s = useStore.getState();
   try {
     const res = await hanaFetch(`/api/channels/${encodeURIComponent(channelId)}`, {
@@ -559,8 +588,9 @@ export async function deleteChannel(channelId: string): Promise<void> {
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
+    if(!sameConnection(connection))return;
     if (data.ok) {
-      if (s.currentChannel === channelId) {
+      if (useStore.getState().currentChannel === channelId) {
         useStore.setState({
           currentChannel: null,
           channelMessages: [],
@@ -584,6 +614,7 @@ export async function deleteChannel(channelId: string): Promise<void> {
 // ══════════════════════════════════════════════════════
 
 export async function addChannelMember(channelId: string, memberId: string): Promise<void> {
+  const connection=channelConnectionKey();
   const res = await hanaFetch(`/api/channels/${encodeURIComponent(channelId)}/members`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -593,10 +624,11 @@ export async function addChannelMember(channelId: string, memberId: string): Pro
   if (!res.ok || data.error) {
     throw new Error(data.error || `HTTP ${res.status}`);
   }
-  applyChannelMembers(channelId, data.members || []);
+  if(sameConnection(connection))applyChannelMembers(channelId, data.members || []);
 }
 
 export async function removeChannelMember(channelId: string, memberId: string): Promise<void> {
+  const connection=channelConnectionKey();
   const res = await hanaFetch(`/api/channels/${encodeURIComponent(channelId)}/members/${encodeURIComponent(memberId)}`, {
     method: 'DELETE',
   });
@@ -604,7 +636,7 @@ export async function removeChannelMember(channelId: string, memberId: string): 
   if (!res.ok || data.error) {
     throw new Error(data.error || `HTTP ${res.status}`);
   }
-  applyChannelMembers(channelId, data.members || []);
+  if(sameConnection(connection))applyChannelMembers(channelId, data.members || []);
 }
 
 // ══════════════════════════════════════════════════════
@@ -612,6 +644,7 @@ export async function removeChannelMember(channelId: string, memberId: string): 
 // ══════════════════════════════════════════════════════
 
 export async function toggleChannelsEnabled(): Promise<boolean | undefined> {
+  const connection=channelConnectionKey();
   const s = useStore.getState();
   if (s.channelsEnabled === undefined) return undefined;
   const previousEnabled = s.channelsEnabled;
@@ -625,6 +658,7 @@ export async function toggleChannelsEnabled(): Promise<boolean | undefined> {
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json().catch(() => ({}));
+    if(!sameConnection(connection))return;
     const enabled = typeof data.enabled === 'boolean' ? data.enabled : newEnabled;
     useStore.setState({ channelsEnabled: enabled });
 
@@ -649,7 +683,7 @@ export async function toggleChannelsEnabled(): Promise<boolean | undefined> {
     return enabled;
   } catch (err) {
     console.error('[channels] toggle backend failed:', err);
-    useStore.setState({ channelsEnabled: previousEnabled });
+    if(sameConnection(connection))useStore.setState({ channelsEnabled: previousEnabled });
     return previousEnabled;
   }
 }
@@ -659,6 +693,7 @@ export async function toggleChannelsEnabled(): Promise<boolean | undefined> {
 // ══════════════════════════════════════════════════════
 
 export async function createChannel(name: string, members: string[], intro?: string): Promise<string | null> {
+  const connection=channelConnectionKey();
   try {
     const res = await hanaFetch('/api/channels', {
       method: 'POST',
@@ -674,7 +709,9 @@ export async function createChannel(name: string, members: string[], intro?: str
     if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
     if (data.error) throw new Error(data.error);
 
+    if(!sameConnection(connection))return data.id||null;
     await loadChannels();
+    if(!sameConnection(connection))return data.id||null;
     if (data.id) {
       await openChannel(data.id);
     }

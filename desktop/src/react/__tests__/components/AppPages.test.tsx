@@ -2,7 +2,7 @@
 
 import '@testing-library/jest-dom/vitest';
 import React from 'react';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup,fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useStore } from '../../stores';
 import { AppPages } from '../../components/app/AppPages';
@@ -47,7 +47,7 @@ vi.mock('../../components/ChannelsPanel', () => ({
 }));
 
 vi.mock('../../components/channels/ChannelHeader', () => ({
-  ChannelHeader: () => <section data-testid="channel-header" />,
+  ChannelHeader: ({onDetails}:any) => <section data-testid="channel-header"><button onClick={onDetails}>Group settings</button></section>,
 }));
 
 vi.mock('../../components/ActivityPanel', () => ({
@@ -107,7 +107,7 @@ describe('AppPages page ownership', () => {
     expect(screen.getByTestId('right-workspace-panel')).toBeInTheDocument();
   });
 
-  it('keeps channel inspector and workspace companion as separate right-side panels', () => {
+  it('keeps group details on demand without a second permanent sidebar', () => {
     useStore.setState({
       currentTab: 'channels',
       currentChannel: 'ch_crew',
@@ -118,6 +118,9 @@ describe('AppPages page ownership', () => {
     render(<AppPages />);
 
     expect(screen.getByTestId('channel-messages')).toBeInTheDocument();
+    expect(screen.queryByTestId('channel-members')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button',{name:'Group settings'}));
+    expect(screen.getByRole('dialog',{name:'群聊设置与动态'})).toBeInTheDocument();
     expect(screen.getByTestId('channel-members')).toBeInTheDocument();
     expect(screen.getByTestId('channel-agent-activity')).toBeInTheDocument();
     expect(screen.getByTestId('channel-agent-settings')).toBeInTheDocument();

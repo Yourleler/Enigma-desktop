@@ -1,6 +1,7 @@
 import type { AgentPhoneToolMode, Channel, ChannelAgentActivities, ChannelMessage, ChannelTickerStatusMap } from '../types';
 
 export interface ChannelSlice {
+  channelDrafts: Record<string,string>;
   channels: Channel[];
   currentChannel: string | null;
   channelMessages: ChannelMessage[];
@@ -33,6 +34,7 @@ export interface ChannelSlice {
 export const createChannelSlice = (
   set: (partial: Partial<ChannelSlice>) => void,
 ): ChannelSlice => ({
+  channelDrafts: {},
   channels: [],
   currentChannel: null,
   channelMessages: [],

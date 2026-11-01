@@ -10,6 +10,7 @@ import { renderMarkdown } from '../utils/markdown';
 import { findOpenToolIndex, toolCallFromStartEvent, toolCallIdFromEvent } from '../utils/tool-call-identity';
 import { MarkdownContent } from './chat/MarkdownContent';
 import {
+  channelConnectionKey,
   addChannelMember,
   exportCurrentConversation,
   loadChannels,
@@ -66,24 +67,29 @@ export function ChannelsPanel() {
   const channelsEnabled = useStore(s => s.channelsEnabled);
   const activeServerConnection = useStore(s => s.activeServerConnection);
   const activeServerConnectionId = useStore(s => s.activeServerConnectionId);
+  const connectionKey=useStore(channelConnectionKey),previousConnection=useRef<string|undefined>(undefined);
 
   // 启动时从后端读频道开关状态；开启时加载频道列表
   useEffect(() => {
     if (!activeServerConnection) return;
+    if(previousConnection.current!==connectionKey){previousConnection.current=connectionKey;useStore.setState({channels:[],currentChannel:null,channelMessages:[],channelMessageCache:{},channelMessageCacheDirty:{},channelMembers:[],channelAgentActivities:{},channelTickerStatus:{},channelTotalUnread:0,channelHeaderName:'',channelInfoName:'',channelHeaderMembersText:''});}
     const cacheKey = activeServerConnectionId || activeServerConnection.connectionId || 'local';
     useStore.getState().setChannelsEnabled(undefined);
+    let alive=true;
     fetchConfig({ cacheKey }).then(cfg => {
+      if(!alive)return;
       // 默认关：只有显式 true 才算启用
       const enabled = cfg?.channels?.enabled === true;
       useStore.getState().setChannelsEnabled(enabled);
       if (enabled) loadChannels();
     }).catch(err => console.warn('[channels] init failed:', err));
-  }, [activeServerConnection, activeServerConnectionId]);
+    return()=>{alive=false;};
+  }, [connectionKey,!!activeServerConnection]);
 
   // 开关变化后加载频道列表
   useEffect(() => {
     if (channelsEnabled === true && activeServerConnection) loadChannels();
-  }, [channelsEnabled, activeServerConnection]);
+  }, [channelsEnabled,connectionKey,!!activeServerConnection]);
 
   return null;
 }
@@ -731,23 +737,28 @@ export function ChannelAgentActivityPanel() {
 }
 
 export function ChannelExportPanel() {
+  const currentChannel=useStore(s=>s.currentChannel),connection=useStore(channelConnectionKey),identity=JSON.stringify([connection,currentChannel]);
+  const identityRef=useRef(identity);identityRef.current=identity;
+  const [exportError,setExportError]=useState('');
+  useEffect(()=>setExportError(''),[identity]);
+  const [prepared,setPrepared]=useState<{url:string;filename:string;identity:string}|null>(null);
+  useEffect(()=>()=>{if(prepared)URL.revokeObjectURL(prepared.url);},[prepared]);
   const { t } = useI18n();
-  const addToast = useStore(s => s.addToast);
   const [exporting, setExporting] = useState(false);
 
   const handleExport = useCallback(async () => {
     if (exporting) return;
-    setExporting(true);
+    setExporting(true);setExportError('');
     try {
-      const filename = await exportCurrentConversation();
-      addToast(t('channel.exportSuccess', { filename }), 'success');
+      const requested=identity;
+      await exportCurrentConversation((blob,filename)=>{if(identityRef.current===requested)setPrepared({url:URL.createObjectURL(blob),filename,identity:requested});});
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      addToast(t('channel.exportFailed', { message }), 'error');
+      if(identityRef.current===identity)setExportError(t('channel.exportFailed', { message }));
     } finally {
       setExporting(false);
     }
-  }, [addToast, exporting, t]);
+  }, [exporting, t,identity]);
 
   return (
     <div className="universal-card">
@@ -762,6 +773,8 @@ export function ChannelExportPanel() {
         >
           {exporting ? t('channel.exporting') : t('channel.exportAction')}
         </Button>
+        {exportError&&<p role="alert" className={styles.channelSendError}>{exportError}</p>}
+        {prepared?.identity===identity&&<p role="status" className={styles.channelExportDescription}>文件已准备好：<a href={prepared.url} download={prepared.filename}>下载 Markdown</a></p>}
       </div>
     </div>
   );
@@ -1084,8 +1097,13 @@ export function ChannelInput() {
   const currentAgentId = useStore(s => s.currentAgentId);
 
   const agentMap = useMemo(() => buildAgentMap(agents), [agents]);
-  const [inputValue, setInputValue] = useState('');
-  const [sending, setSending] = useState(false);
+  const connectionKey=useStore(channelConnectionKey),draftKey=JSON.stringify([connectionKey,currentChannel]);
+  const inputValue=useStore(s=>s.channelDrafts[draftKey]||'');
+  const revisions=useRef(new Map<string,number>()),inFlight=useRef(new Set<string>());
+  const [pending,setPending]=useState<string[]>([]),[errors,setErrors]=useState<Record<string,string>>({});
+  const sending=pending.includes(draftKey);
+  const setInputValue=useCallback((value:string)=>{revisions.current.set(draftKey,(revisions.current.get(draftKey)||0)+1);useStore.setState(s=>({channelDrafts:{...s.channelDrafts,[draftKey]:value}}));setErrors(e=>({...e,[draftKey]:''}));},[draftKey]);
+  useEffect(()=>{setMentionActive(false);},[draftKey]);
   const [mentionActive, setMentionActive] = useState(false);
   const [mentionItems, setMentionItems] = useState<MemberInfo[]>([]);
   const [mentionSelectedIdx, setMentionSelectedIdx] = useState(0);
@@ -1093,11 +1111,15 @@ export function ChannelInput() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const handleSend = useCallback(async () => {
-    if (sending || !inputValue.trim()) return;
-    setSending(true);
-    try { await sendChannelMessage(inputValue.trim()); setInputValue(''); }
-    finally { setSending(false); }
-  }, [sending, inputValue]);
+    if (inFlight.current.has(draftKey) || !inputValue.trim()) return;
+    const revision=revisions.current.get(draftKey)||0;
+    inFlight.current.add(draftKey);setPending([...inFlight.current]);setErrors(e=>({...e,[draftKey]:''}));
+    try {
+      await sendChannelMessage(inputValue.trim());
+      if((revisions.current.get(draftKey)||0)===revision)useStore.setState(s=>s.channelDrafts[draftKey]===inputValue?{channelDrafts:{...s.channelDrafts,[draftKey]:''}}:{});
+    } catch(error) {const raw=error instanceof Error?error.message:String(error),status=/[: ]([45]\d{2})(?: |$)/.exec(raw)?.[1];const detail=status?`服务返回 HTTP ${status}，请恢复连接并核对历史后再重发。`:/fetch|network|abort|timeout/i.test(raw)?'连接中断或超时，请核对历史后再重发。':raw;setErrors(e=>({...e,[draftKey]:`发送未成功确认，输入已保留。${detail}`}));}
+    finally {inFlight.current.delete(draftKey);setPending([...inFlight.current]);}
+  }, [draftKey, inputValue]);
 
   const checkMention = useCallback(() => {
     if (!inputRef.current) return;
@@ -1134,7 +1156,7 @@ export function ChannelInput() {
       inputRef.current.setSelectionRange(c, c);
       inputRef.current.focus();
     });
-  }, [mentionStartPos]);
+  }, [mentionStartPos,setInputValue]);
 
   useEffect(() => {
     const handleComposerFocus = (event: Event) => {
@@ -1168,7 +1190,7 @@ export function ChannelInput() {
   const handleInput = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInputValue(e.target.value);
     requestAnimationFrame(() => checkMention());
-  }, [checkMention]);
+  }, [checkMention,setInputValue]);
 
   if (isDM || !currentChannel) return null;
 
@@ -1196,6 +1218,7 @@ export function ChannelInput() {
       )}
       <textarea
         ref={inputRef}
+        aria-label="群聊消息"
         className={styles.channelInputBox}
         placeholder={window.t?.('channel.inputPlaceholder') || 'Send a message...'}
         rows={1}
@@ -1205,6 +1228,8 @@ export function ChannelInput() {
         onKeyDown={handleKeyDown}
       />
       <button
+        aria-label={sending?'正在发送群聊消息':'发送群聊消息'}
+        title="发送消息（Enter），换行用 Shift+Enter"
         className={styles.channelSendBtn}
         disabled={!inputValue.trim() || sending}
         onClick={handleSend}
@@ -1214,6 +1239,7 @@ export function ChannelInput() {
           <polygon points="22 2 15 22 11 13 2 9 22 2" />
         </svg>
       </button>
+      {errors[draftKey]&&<p className={styles.channelSendError} role="alert">{errors[draftKey]}</p>}
     </div>
   );
 }

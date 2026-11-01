@@ -1,4 +1,6 @@
-import type { ReactNode } from 'react';
+import {useState,type ReactNode} from 'react';
+import {Overlay} from '../../ui/Overlay';
+import {AppIcon} from '../../ui/app-icons';
 import { useStore } from '../../stores';
 import { ActivityPanel } from '../ActivityPanel';
 import { AutomationPanel } from '../AutomationPanel';
@@ -36,10 +38,9 @@ function ChannelInputArea() {
 
 function ChannelInspectorShell({ children }: { children: ReactNode }) {
   return (
-    <aside className="channel-inspector-rail" id="channelInspector" data-channel-inspector="">
-      <div className="resize-handle resize-handle-left" id="channelInspectorResizeHandle"></div>
+    <div className="enigma-channel-details-content">
       {children}
-    </aside>
+    </div>
   );
 }
 
@@ -94,6 +95,7 @@ function ChannelInspectorPanel() {
 }
 
 function ChannelPage() {
+  const [detailsOpen,setDetailsOpen]=useState(false);
   const currentChannel = useStore(s => s.currentChannel);
 
   return (
@@ -101,7 +103,7 @@ function ChannelPage() {
       <div className="channel-view active">
         {currentChannel ? (
           <>
-            <ChannelHeader />
+            <ChannelHeader onDetails={()=>setDetailsOpen(true)} detailsOpen={detailsOpen}/>
             <div className="channel-messages">
               <ChannelMessages />
             </div>
@@ -113,7 +115,10 @@ function ChannelPage() {
           </div>
         )}
       </div>
-      <ChannelInspectorPanel />
+      <Overlay open={detailsOpen&&!!currentChannel} scope="window" onClose={()=>setDetailsOpen(false)} className="enigma-channel-details" contentProps={{role:'dialog','aria-modal':true,'aria-label':'群聊设置与动态'}}>
+        <header><strong>群聊设置与动态</strong><button aria-label="关闭群聊设置" onClick={()=>setDetailsOpen(false)}><AppIcon name="close" size={16}/></button></header>
+        <ChannelInspectorPanel />
+      </Overlay>
     </div>
   );
 }

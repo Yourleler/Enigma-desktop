@@ -46,20 +46,22 @@ export function ChannelCreateOverlay() {
   const [nameError, setNameError] = useState(false);
   const [membersError, setMembersError] = useState(false);
   const [submitError, setSubmitError] = useState('');
-  const nameRef = useRef<HTMLInputElement>(null);
+  const nameRef = useRef<HTMLInputElement>(null),formGeneration=useRef(0);
 
-  // When overlay becomes visible, reset form and select all agents
+  // Refreshing avatar/model metadata must not erase a form the user is editing.
+  const wasVisible=useRef(false),knownMembers=useRef<string[]>([]);
   useEffect(() => {
-    if (visible) {
-      setName('');
-      setIntro('');
-      setSelectedMembers(agents.map((a) => a.id));
-      setNameError(false);
-      setMembersError(false);
-      setSubmitError('');
-      requestAnimationFrame(() => nameRef.current?.focus());
+    const ids=agents.map(a=>a.id);
+    if(visible!==wasVisible.current)formGeneration.current++;
+    if(visible&&!wasVisible.current){
+      setCreating(false);setName('');setIntro('');setSelectedMembers(ids);setNameError(false);setMembersError(false);setSubmitError('');
+      requestAnimationFrame(()=>nameRef.current?.focus());
+    }else if(visible){
+      const available=new Set(ids),before=knownMembers.current;
+      if(before.length!==ids.length||before.some(id=>!available.has(id)))setSelectedMembers(selected=>selected.filter(id=>available.has(id)));
     }
-  }, [visible, agents]);
+    knownMembers.current=ids;wasVisible.current=visible;
+  },[visible,agents]);
 
   const toggleMember = useCallback((agentId: string) => {
     setSelectedMembers((prev) =>
@@ -88,12 +90,14 @@ export function ChannelCreateOverlay() {
       return;
     }
 
+    const epoch=formGeneration.current;
     setCreating(true);
     setSubmitError('');
     try {
       await createChannel(name.trim(), selectedMembers, intro.trim() || undefined);
-      setVisible(false);
+      if(epoch===formGeneration.current)setVisible(false);
     } catch (err: any) {
+      if(epoch!==formGeneration.current)return;
       const msg = String(err?.message || err || '');
       if (msg.includes('409') || msg.toLowerCase().includes('already exists') || msg.includes('已存在')) {
         setNameError(true);
@@ -103,7 +107,7 @@ export function ChannelCreateOverlay() {
         setSubmitError(msg || t('channel.createFailed'));
       }
     } finally {
-      setCreating(false);
+      if(epoch===formGeneration.current)setCreating(false);
     }
   }, [creating, name, selectedMembers, intro, setVisible, t]);
 
@@ -117,6 +121,7 @@ export function ChannelCreateOverlay() {
       onClose={handleCancel}
       backdrop="blur"
       zIndex={110}
+      contentProps={{role:'dialog','aria-modal':true,'aria-label':t('channel.createTitle')}}
       className={styles.createCard}
       disableContainerAnimation
     >
@@ -124,6 +129,7 @@ export function ChannelCreateOverlay() {
       <div className={styles.createField}>
         <label className={styles.createFieldLabel}>{t('channel.createName')}</label>
         <input
+          aria-label={t('channel.createName')}
           ref={nameRef}
           className={styles.createInput}
           type="text"
@@ -147,6 +153,7 @@ export function ChannelCreateOverlay() {
               <button
                 key={agent.id}
                 type="button"
+                aria-pressed={isSelected}
                 className={`${styles.channelCreateMemberChip}${isSelected ? ` ${styles.channelCreateMemberChipSelected}` : ''}`}
                 onClick={() => toggleMember(agent.id)}
               >
@@ -166,6 +173,7 @@ export function ChannelCreateOverlay() {
           </span>
         </label>
         <textarea
+          aria-label={t('channel.createIntro')}
           className={`${styles.createInput} ${styles.channelCreateIntro}`}
           rows={2}
           placeholder={t('channel.createIntroPlaceholder')}

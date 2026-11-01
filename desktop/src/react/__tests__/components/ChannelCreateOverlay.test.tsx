@@ -89,4 +89,15 @@ describe('ChannelCreateOverlay', () => {
     });
     expect(setVisible).not.toHaveBeenCalledWith(false);
   });
+
+  it('keeps entered details and deselected members when the agent catalog refreshes',()=>{
+    const view=render(<ChannelCreateOverlay/>);
+    fireEvent.change(screen.getByPlaceholderText('channel.createNamePlaceholder'),{target:{value:'My group'}});
+    fireEvent.change(screen.getByPlaceholderText('channel.createIntroPlaceholder'),{target:{value:'Keep this purpose'}});
+    fireEvent.click(screen.getByRole('button',{name:'Bob'}));
+    storeState.agents=storeState.agents.map(agent=>({...agent}));view.rerender(<ChannelCreateOverlay/>);
+    expect((screen.getByPlaceholderText('channel.createNamePlaceholder') as HTMLInputElement).value).toBe('My group');
+    expect((screen.getByPlaceholderText('channel.createIntroPlaceholder') as HTMLTextAreaElement).value).toBe('Keep this purpose');
+    expect(screen.getByRole('button',{name:'Bob'}).getAttribute('aria-pressed')).toBe('false');
+  });
 });
