@@ -3125,6 +3125,24 @@ function createBrowserViewerWindow(opts = {}) {
   attachRendererArtifactCrashSentinel(browserViewerWindow, "browser-viewer");
   applyWindowThemeColors(browserViewerWindow, _browserViewerTheme);
 
+  // Cmd+T returns focus to the chrome while the new page is still blank.
+  // Handle its next shortcut before Electron's window-close accelerator.
+  browserViewerWindow.webContents.on('before-input-event', (event, input) => {
+    const modifier = process.platform === 'darwin' ? input.meta : input.control;
+    if (input.type !== 'keyDown' || !modifier || input.alt) return;
+    const key = input.key.toLowerCase();
+    const tab = _activeBrowserTabRecord(_getBrowserWorkspace(_currentBrowserSession));
+    if (!tab || tab.view !== _browserWebView || _sidebarBrowser.hasView(tab.view)) return;
+    if (['f', 'l', 't', 'w'].includes(key)) {
+      event.preventDefault();
+      browserViewerWindow.webContents.send('browser-shortcut', {surfaceId:null,sessionPath:_currentBrowserSession,tabId:tab.tabId,key});
+    } else if (['+', '=', '-', '0'].includes(key)) {
+      event.preventDefault();
+      const zoomFactor = key === '0' ? 1 : Math.min(3,Math.max(.25,tab.view.webContents.getZoomFactor() * (key === '-' ? 1 / 1.1 : 1.1)));
+      browserReading.get(tab.view.webContents)?.command('zoom', {zoomFactor});
+    }
+  });
+
   loadWindowURL(browserViewerWindow, "browser-viewer");
 
   // HTML 加载完成后，若浏览器已在运行则附加 WebContentsView
