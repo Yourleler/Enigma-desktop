@@ -301,7 +301,7 @@ describe('ToolGroupBlock', () => {
     expect(toolGroupRule).toContain('box-sizing: border-box');
   });
 
-  it('fuses consecutive subagent cards into one rounded block', () => {
+  it('does not join unframed subagent rows with a divider', () => {
     const css = fs.readFileSync(
       path.join(process.cwd(), 'desktop/src/react/components/chat/Chat.module.css'),
       'utf8',
@@ -309,13 +309,8 @@ describe('ToolGroupBlock', () => {
     const leading = css.match(/\.subagentResourceCard\[data-chat-resource-card\]:has\(\+ \.subagentResourceCard\[data-chat-resource-card\]\)\s*\{(?<body>[^}]*)\}/)?.groups?.body || '';
     const trailing = css.match(/\.subagentResourceCard\[data-chat-resource-card\]\s*\+\s*\.subagentResourceCard\[data-chat-resource-card\]\s*\{(?<body>[^}]*)\}/)?.groups?.body || '';
 
-    expect(leading).toContain('margin-bottom: 0');
-    expect(leading).toContain('border-bottom-left-radius: 0');
-    expect(leading).toContain('border-bottom-right-radius: 0');
-    expect(trailing).toContain('margin-top: 0');
-    expect(trailing).toContain('border-top-left-radius: 0');
-    expect(trailing).toContain('border-top-right-radius: 0');
-    expect(trailing).toContain('border-top: 1px solid var(--overlay-light');
+    expect(leading).toBe('');
+    expect(trailing).toBe('');
   });
 
   it('renders the task-family container: four-corner radius, no accent quote bar', () => {

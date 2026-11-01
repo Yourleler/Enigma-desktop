@@ -1318,7 +1318,7 @@
     position: relative;
     margin: var(--space-4) 0;
     border-radius: var(--radius-sm);
-    background: var(--tool-bg);
+    background: transparent;
     overflow: hidden;
     width: var(--chat-task-block-width);
     max-width: 100%;
@@ -1484,13 +1484,15 @@
     font-size: 12px;
     padding: 8px 10px;
     border-radius: 10px;
-    background: color-mix(in srgb, var(--bg-card) 32%, transparent);
-    border: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+    background: transparent;
+    border: 0;
+    box-shadow: none;
 }
 
 .toolIndicator > svg { flex-shrink: 0; color: var(--text-muted); }
 .toolIndicator[data-status="running"] { border-color: color-mix(in srgb,var(--accent) 25%,transparent); }
-.toolGroupSingle .toolIndicator:hover { background: color-mix(in srgb,var(--bg-card) 60%,transparent); }
+.toolGroupSingle .toolIndicator:hover,
+.toolGroupSingle .toolIndicator:focus-within { background: color-mix(in srgb,var(--accent) 6%,transparent); }
 
 .toolDesc {
     flex: 0 1 auto;
@@ -2163,21 +2165,6 @@
 
 .subagentResourceCard {
     --subagent-preview-height: 260px;
-}
-
-/* 连续并列的 Subagent 卡融合为一个整块：零间隙、只留外圈圆角、内部细分隔线。
-   [data-chat-resource-card] 属性提高特异性，确保盖过 ChatResourceCard.module.css 的 .card 圆角与 margin */
-.subagentResourceCard[data-chat-resource-card]:has(+ .subagentResourceCard[data-chat-resource-card]) {
-    margin-bottom: 0;
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
-}
-
-.subagentResourceCard[data-chat-resource-card] + .subagentResourceCard[data-chat-resource-card] {
-    margin-top: 0;
-    border-top-left-radius: 0;
-    border-top-right-radius: 0;
-    border-top: 1px solid var(--overlay-light, rgba(0, 0, 0, 0.08));
 }
 
 .subagent-running .subagentAvatar {
