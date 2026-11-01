@@ -35,6 +35,8 @@ contextBridge.exposeInMainWorld("hana", {
   getServerToken: () => ipcRenderer.invoke("get-server-token"),
   runEditCommand: (command) => ipcRenderer.invoke("run-edit-command", command),
   getAppVersion: () => ipcRenderer.invoke("get-app-version"),
+  getVisualActivity: () => ipcRenderer.invoke('get-visual-activity'),
+  onVisualActivity: (callback) => { const listener=(_event,value)=>callback(value);ipcRenderer.on('visual-activity',listener);return()=>ipcRenderer.removeListener('visual-activity',listener); },
   getPendingAnnouncement: () => ipcRenderer.invoke("get-pending-announcement"),
   ackAnnouncement: () => ipcRenderer.invoke("ack-announcement"),
   // Auto-update (Windows)

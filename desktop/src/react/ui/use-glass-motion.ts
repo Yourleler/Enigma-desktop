@@ -1,3 +1,4 @@
+import {visualsSuspended} from './visual-activity';
 import { useEffect, useRef, type RefObject } from 'react';
 
 /** A short optical stretch on the moving selection, without animating layout or text. */
@@ -8,7 +9,7 @@ export function useGlassMotion(ref: RefObject<HTMLElement | null>, selection: st
     previous.current = selection;
     const element = ref.current;
     const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)');
-    const disabled = () => document.hidden || reduced?.matches || document.body.matches('.enigma-motion-off,.enigma-glass-off');
+    const disabled = () => visualsSuspended() || reduced?.matches || document.body.matches('.enigma-motion-off,.enigma-glass-off');
     if (!element?.animate || disabled()) return;
     const distance = Number(element.style.getPropertyValue('--glass-travel-distance')) || 60;
     const stretch = Math.min(.12, .035 + distance / 1800);
@@ -25,7 +26,7 @@ export function useGlassMotion(ref: RefObject<HTMLElement | null>, selection: st
     const cancel = () => { if (disabled()) { animation.cancel(); finish(); } };
     reduced?.addEventListener('change', cancel);
     const observer = new MutationObserver(cancel);
-    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    observer.observe(document.body, { attributes: true, attributeFilter: ['class','data-enigma-visual-activity'] });
     return () => { animation.cancel(); finish(); observer.disconnect(); reduced?.removeEventListener('change', cancel); };
   }, [selection, ref]);
 }

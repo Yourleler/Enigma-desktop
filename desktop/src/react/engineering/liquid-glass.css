@@ -346,3 +346,11 @@ body.enigma-surface .enigma-window-material {
 }
 body.enigma-surface.enigma-glass-off .enigma-window-material {background:var(--eg-sidebar);backdrop-filter:none;-webkit-backdrop-filter:none;}
 @media(prefers-reduced-transparency:reduce),(prefers-contrast:more){body.enigma-surface .enigma-window-material {background:var(--eg-sidebar);backdrop-filter:none;-webkit-backdrop-filter:none;}}
+
+/* Preserve the current material frame while nobody can see the window. */
+body.enigma-surface[data-enigma-visual-activity="suspended"],
+body.enigma-surface[data-enigma-visual-activity="suspended"] *,
+body.enigma-surface[data-enigma-visual-activity="suspended"]::before,
+body.enigma-surface[data-enigma-visual-activity="suspended"]::after,
+body.enigma-surface[data-enigma-visual-activity="suspended"] *::before,
+body.enigma-surface[data-enigma-visual-activity="suspended"] *::after {animation-play-state:paused!important;}

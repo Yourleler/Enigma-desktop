@@ -629,6 +629,8 @@ export interface PlatformApi {
 
   // ── Window controls (Windows/Linux) ──
   getPlatform?(): Promise<string>;
+  getVisualActivity?(): Promise<{suspended:boolean;reason?:string;revision?:number}>;
+  onVisualActivity?(callback:(state:{suspended:boolean;reason?:string;revision?:number})=>void):()=>void;
   windowMinimize?(): void;
   windowMaximize?(): void;
   windowClose?(): void;

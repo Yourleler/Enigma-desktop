@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
 import { afterEach, expect, it, vi } from 'vitest';
 import { installAnimatedBackground } from '../../ui/AnimatedBackground';
+import {VISUAL_ACTIVITY_EVENT} from '../../ui/visual-activity';
 const mock = vi.hoisted(() => ({draw:vi.fn(),dispose:vi.fn(),available:true}));
 vi.mock('../../ui/background-painter',()=>({createBackgroundPainter:()=>mock.available?{draw:mock.draw,dispose:mock.dispose}:undefined}));
 let dispose: (() => void) | undefined;
-afterEach(() => { dispose?.(); dispose=undefined;vi.useRealTimers();vi.unstubAllGlobals();vi.restoreAllMocks();document.body.className='';for(const key of ['enigmaTone','darkBackground','lightBackground','backgroundReady'])delete document.body.dataset[key]; });
+afterEach(() => { dispose?.(); dispose=undefined;vi.useRealTimers();vi.unstubAllGlobals();vi.restoreAllMocks();document.body.className='';for(const key of ['enigmaTone','darkBackground','lightBackground','backgroundReady','enigmaVisualActivity'])delete document.body.dataset[key]; });
 function setup(reducedMotion=false) {
   vi.useFakeTimers();mock.draw.mockClear();mock.dispose.mockClear();mock.available=true;
   const pending=new Map<number,FrameRequestCallback>();let id=0;
@@ -25,6 +26,20 @@ it('bounds GPU cadence and pauses without clearing the last visible frame',async
   vi.spyOn(document,'hidden','get').mockReturnValue(true);document.dispatchEvent(new Event('visibilitychange'));
   expect(pending.size).toBe(0);expect(host.dataset.backgroundState).toBe('paused');
   expect(host.querySelector<HTMLElement>('.enigma-background-layer')!.style.opacity).toBe('1');
+});
+it('stops GPU wakeups on native lock even when the document remains visible, then resumes the same scene',async()=>{
+ const {host,step,pending}=setup();step(100);const count=mock.draw.mock.calls.length;
+ document.body.dataset.enigmaVisualActivity='suspended';window.dispatchEvent(new Event(VISUAL_ACTIVITY_EVENT));
+ await vi.advanceTimersByTimeAsync(1000);expect(pending.size).toBe(0);expect(mock.draw).toHaveBeenCalledTimes(count);expect(host.dataset.backgroundState).toBe('paused');
+ expect(host.querySelector<HTMLElement>('.enigma-background-layer')!.style.opacity).toBe('1');
+ document.body.dataset.enigmaVisualActivity='active';window.dispatchEvent(new Event(VISUAL_ACTIVITY_EVENT));step(1200);
+ expect(host.dataset.backgroundScene).toBe('aurora');expect(host.dataset.backgroundState).toBe('running');expect(mock.draw.mock.calls.length).toBeGreaterThan(count);
+});
+it('does not start painting when launched locked and prepares the requested scene after unlock',()=>{
+ document.body.dataset.enigmaVisualActivity='suspended';const {host,step,pending}=setup();
+ expect(mock.draw).not.toHaveBeenCalled();expect(pending.size).toBe(0);expect(host.dataset.backgroundState).toBe('paused');
+ document.body.dataset.enigmaVisualActivity='active';window.dispatchEvent(new Event(VISUAL_ACTIVITY_EVENT));step(100);
+ expect(host.dataset.backgroundScene).toBe('aurora');expect(mock.draw).toHaveBeenCalled();expect(document.body.classList.contains('enigma-motion-off')).toBe(false);
 });
 it('prepares a new scene before fading it above an opaque previous scene',async()=>{
   const {host,step}=setup();step(100);

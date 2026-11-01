@@ -8,7 +8,7 @@
  * 4. 关闭 splash，显示主窗口
  * 5. 优雅关闭
  */
-const { app, BrowserWindow, WebContentsView, globalShortcut, ipcMain, dialog, session, shell, nativeTheme, Tray, Menu, nativeImage, systemPreferences, Notification, webContents, screen, powerSaveBlocker } = require("electron");
+const { app, BrowserWindow, WebContentsView, globalShortcut, ipcMain, dialog, session, shell, nativeTheme, Tray, Menu, nativeImage, systemPreferences, Notification, webContents, screen, powerSaveBlocker, powerMonitor } = require("electron");
 const os = require("os");
 const path = require("path");
 const crypto = require("crypto");
@@ -22,6 +22,8 @@ const {
   getAutoLaunchStatus,
   setAutoLaunchEnabled,
 } = require("./login-item-settings.cjs");
+const { createVisualActivityMonitor } = require('./src/shared/visual-activity.cjs');
+let visualActivity = null;
 const { createKeepAwakeManager } = require("./keep-awake.cjs");
 const { createFileWatchRegistry } = require("./file-watch-registry.cjs");
 const { createStableFileWatcher } = require("./file-watch-adapter.cjs");
@@ -6031,6 +6033,7 @@ wrapIpcHandler("onboarding-complete", async () => {
 
 // ── 窗口控制 IPC（Windows/Linux 自绘标题栏用）──
 wrapIpcHandler("get-platform", () => process.platform);
+wrapIpcHandler("get-visual-activity", () => visualActivity?.getState() || { suspended:false, reason:'unknown', revision:0 });
 wrapIpcBestEffortHandler("window-minimize", (event) => {
   BrowserWindow.fromWebContents(event.sender)?.minimize();
 });
@@ -6091,6 +6094,15 @@ wrapIpcBestEffortHandler("app-ready", (event) => {
 // ── App 生命周期 ──
 app.whenReady().then(async () => {
   try {
+    visualActivity=createVisualActivityMonitor(powerMonitor, state=>{
+      console.log(`[desktop] visual activity: ${state.suspended?'suspended':'active'} (${state.reason})`);
+      for(const win of BrowserWindow.getAllWindows())if(!win.isDestroyed()&&!win.webContents.isDestroyed())win.webContents.send('visual-activity',state);
+    }, {probeSession:process.platform==='darwin'?()=>new Promise(resolve=>{
+      const helper=app.isPackaged?path.join(process.resourcesPath,'computer-use','macos','hana-computer-use-helper'):path.join(__dirname,'..','dist-computer-use',`mac-${process.arch}`,'hana-computer-use-helper');
+      execFile(helper,['session-state'],{timeout:3000,maxBuffer:4096},(error,output)=>{if(error){resolve(null);return;}try{resolve(JSON.parse(output));}catch{resolve(null);}});
+    }):undefined});
+    const initialVisualState=visualActivity.getState();
+    console.log(`[desktop] visual activity: ${initialVisualState.suspended?'suspended':'active'} (${initialVisualState.reason})`);
     // Explicit runtime icon also replaces a stale macOS Dock icon cache after
     // updating a locally built app at the same path.
     if(process.platform==='darwin'&&PRODUCT_NAME==='Enigma'){
@@ -6278,6 +6290,7 @@ app.on("activate", () => {
 
 // ── 优雅关闭 ──
 app.on("will-quit", () => {
+  visualActivity?.dispose();
   keepAwakeManager.dispose();
   globalShortcut.unregisterAll();
   // 销毁托盘图标

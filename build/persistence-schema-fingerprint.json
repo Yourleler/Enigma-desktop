@@ -664,7 +664,7 @@
     ],
     "version": 3
   },
-  "payloadFingerprint": "sha256:3517a474868d57e0ef7c95eb370487340dfd45e5c0a2a8e0f1be5d630a27a4d3",
+  "payloadFingerprint": "sha256:94d88e6361d13dadf8f8f135da935dbfc105381cfa7dd32d741becc4a0abcc25",
   "registry": [
     {
       "affectedByEpochMigration": true,
@@ -3414,8 +3414,8 @@
   ],
   "review": {
     "classification": "compatible",
-    "compatibilityReason": "Reading jobs add optional sourceCoverage/modelCoverage and retain only source-validated partial results on failure or cancellation without changing terminal status. Each reading batch uses an existing version-1 usage ledger request entry; Pi reasoning remains a subset of output, reported zero is retained and missing reasoning stays unknown. Existing publication, verdict, conversation and file shapes remain readable; older readers ignore added metadata. No existing records are rewritten; DATA_EPOCH remains 1.",
-    "payloadFingerprint": "sha256:3517a474868d57e0ef7c95eb370487340dfd45e5c0a2a8e0f1be5d630a27a4d3"
+    "compatibilityReason": "Desktop power monitoring and a host-only read-only native session probe add in-memory visual suspension. They do not change window bounds, preferences, task state or any persisted format, do not alter sleep policy, and leave existing reading/usage metadata intact. No data migration or DATA_EPOCH change is required.",
+    "payloadFingerprint": "sha256:94d88e6361d13dadf8f8f135da935dbfc105381cfa7dd32d741becc4a0abcc25"
   },
   "schemas": [
     {
@@ -3640,7 +3640,7 @@
       "contract": "desktop window bounds, release announcement bookmark, and update cache version marker readers",
       "kind": "directory-contract",
       "module": "desktop/main.cjs",
-      "sourceHash": "sha256:f7fe66f2b163db25563bc6cc2d0e9f4a0cd2cf8f845e329bf1df636fdd4b8ccd",
+      "sourceHash": "sha256:6390d0a8f576a668a3976565309eb65be7bb5e18cd35a9aa60ac9495c6ac0bec",
       "storeId": "desktop-window-version-state"
     },
     {

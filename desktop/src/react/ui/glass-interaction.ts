@@ -1,10 +1,11 @@
+import {visualsSuspended} from './visual-activity';
 /** Surface lighting and local control highlights have separate lifetimes.
  * Moving between child buttons never resets a sheet's glow to a fallback corner. */
 export function installGlassInteractions() {
   const controlQuery = '[data-glass-interactive],[data-glass-controls] button';
   const surfaceQuery = '[data-liquid-surface],[data-glass-frame]';
   const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)');
-  const disabled = () => document.hidden || reduced?.matches || document.body.matches('.enigma-glass-off,.enigma-motion-off');
+  const disabled = () => visualsSuspended() || reduced?.matches || document.body.matches('.enigma-glass-off,.enigma-motion-off');
   type Light = { element: HTMLElement; x: number; y: number; tx: number; ty: number; previous: number; frame: number };
   let surface: Light | null = null, control: Light | null = null, pressed: HTMLElement | null = null;
   const clearLight = (light: Light | null) => {
@@ -76,7 +77,7 @@ export function installGlassInteractions() {
   };
   const preference = () => { if (disabled()) clear(); };
   const observer = new MutationObserver(preference);
-  observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+  observer.observe(document.body, { attributes: true, attributeFilter: ['class','data-enigma-visual-activity'] });
   document.addEventListener('pointermove', move, { passive: true });
   document.addEventListener('pointerdown', down, { passive: true });
   document.addEventListener('pointerup', release); document.addEventListener('pointercancel', clear);

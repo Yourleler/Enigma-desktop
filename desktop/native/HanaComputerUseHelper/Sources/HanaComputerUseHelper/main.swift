@@ -50,6 +50,12 @@ struct HanaComputerUseHelper {
         args.removeFirst()
 
         switch command {
+        case "session-state":
+            // Read-only host probe: no daemon, screen capture, permission prompt or input.
+            let state = readSessionState()
+            let result: [String: Any] = ["suspended": state.suspended, "reason": state.reason]
+            let data = try JSONSerialization.data(withJSONObject: result)
+            print(String(decoding: data, as: UTF8.self))
         case "status":
             guard DaemonClient.isDaemonListening(socketPath: socketPath) else {
                 throw HelperError(code: ExitCode.toolError, message: "hana-computer-use-helper daemon is not running on \(socketPath).")
@@ -81,6 +87,16 @@ struct HanaComputerUseHelper {
             }
             Foundation.exit(exitCode)
         }
+    }
+
+    private static func readSessionState() -> (suspended: Bool, reason: String) {
+        let session = CGSessionCopyCurrentDictionary() as? [String: Any]
+        let onConsole = session?[kCGSessionOnConsoleKey as String] as? Bool ?? false
+        let loggedIn = session?[kCGSessionLoginDoneKey as String] as? Bool ?? false
+        let locked = session?["CGSSessionScreenIsLocked"] as? Bool ?? false
+        let loginWindow = NSWorkspace.shared.frontmostApplication?.bundleIdentifier == "com.apple.loginwindow"
+        let suspended = !onConsole || !loggedIn || locked || loginWindow
+        return (suspended, locked || loginWindow ? "locked" : suspended ? "session-unavailable" : "active")
     }
 
     private static func runToolProcess(_ name: String, args: [String], raw: Bool, compact: Bool, socketPath: String) async -> Int32 {
@@ -119,14 +135,7 @@ struct HanaComputerUseHelper {
         // its AX tree is incomplete and input cannot reach the target. Do not
         // advertise that capture as an interactive state or dispatch input.
         if name != "check_permissions" && !name.contains("agent_cursor") {
-            let unavailable = await MainActor.run { () -> Bool in
-                guard let session = CGSessionCopyCurrentDictionary() as? [String: Any] else { return true }
-                let onConsole = session[kCGSessionOnConsoleKey as String] as? Bool ?? false
-                let loggedIn = session[kCGSessionLoginDoneKey as String] as? Bool ?? false
-                let locked = session["CGSSessionScreenIsLocked"] as? Bool ?? false
-                let loginWindow = NSWorkspace.shared.frontmostApplication?.bundleIdentifier == "com.apple.loginwindow"
-                return !onConsole || !loggedIn || locked || loginWindow
-            }
+            let unavailable = await MainActor.run { readSessionState().suspended }
             if unavailable {
                 throw HelperError(code: ExitCode.toolError, message: "SCREEN_LOCKED: The Mac is locked or its interactive session is unavailable. Ask the user to unlock it, then obtain a fresh window state before continuing. No input was dispatched.")
             }

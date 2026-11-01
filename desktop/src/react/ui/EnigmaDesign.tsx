@@ -1,4 +1,5 @@
 import { useLayoutEffect } from 'react';
+import { installVisualActivity } from './visual-activity';
 import {createPortal} from 'react-dom';
 import './workspace-tokens.css';
 import { isDarkTheme, STORAGE_KEY, resolveSavedTheme, type ThemeId } from '../../shared/theme-registry';
@@ -9,6 +10,7 @@ import { applyMaterialPreferences, readMaterialPreferences } from './material-pr
 
 /** Keep standalone windows on the same palette as the main workbench. */
 export function EnigmaDesign({surface='window'}:{surface?:'window'|'floating'}={}) {
+  useLayoutEffect(() => installVisualActivity(), []);
   useLayoutEffect(() => {
     document.body.classList.add('enigma-surface');
     const previousSurface=document.body.dataset.enigmaWindow;

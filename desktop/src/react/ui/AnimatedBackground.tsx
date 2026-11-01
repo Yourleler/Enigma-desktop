@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { visualsSuspended, VISUAL_ACTIVITY_EVENT } from './visual-activity';
 import { createPortal } from 'react-dom';
 import { createBackgroundPainter, type PaintedBackground } from './background-painter';
 
@@ -42,7 +43,7 @@ export function installAnimatedBackground(host: HTMLElement): () => void {
   };
   const tick = (at: number) => {
     frame = 0;
-    if (document.hidden || !moving || active < 0 || !isPainted(layers[active].scene)) return;
+    if (visualsSuspended() || !moving || active < 0 || !isPainted(layers[active].scene)) return;
     const interval = 1000 / (focused ? 24 : 12);
     if (!previous || at - previous >= interval) {
       if (previous) elapsed += Math.min((at - previous) / 1000, .1);
@@ -54,14 +55,14 @@ export function installAnimatedBackground(host: HTMLElement): () => void {
   const schedule = () => {
     cancelAnimationFrame(frame); clearTimeout(wake); wake=undefined; previous = 0;
     const animated = active >= 0 && isPainted(layers[active].scene) && !!layers[active].painter;
-    host.dataset.backgroundState = document.hidden ? 'paused' : moving && animated ? 'running' : 'still';
-    if (!document.hidden && moving && animated) frame = requestAnimationFrame(tick);
+    host.dataset.backgroundState = visualsSuspended() ? 'paused' : moving && animated ? 'running' : 'still';
+    if (!visualsSuspended() && moving && animated) frame = requestAnimationFrame(tick);
   };
   const sync = () => {
     const wasMoving = moving;
     moving = !reduced.matches && !document.body.classList.contains('enigma-motion-off');
     host.dataset.motion = moving ? 'on' : 'off';
-    if (document.hidden) { cancelAnimationFrame(frame);clearTimeout(wake);wake=undefined; frame = 0; host.dataset.backgroundState = 'paused'; return; }
+    if (visualsSuspended()) { cancelAnimationFrame(frame);clearTimeout(wake);wake=undefined; frame = 0; host.dataset.backgroundState = 'paused'; return; }
     if (transitioning && moving) return;
     if (transitioning) { clearTimeout(transitionTimer); transitioning = false; }
     const scene = requestedScene();
@@ -96,7 +97,7 @@ export function installAnimatedBackground(host: HTMLElement): () => void {
     document.body.dataset.backgroundReady = 'managed';
     schedule();
   };
-  const resize = () => { if (active >= 0 && !document.hidden) draw(active); };
+  const resize = () => { if (active >= 0 && !visualsSuspended()) draw(active); };
   const focusChanged = () => { focused=document.hasFocus();schedule(); };
   const contextCleanups = layers.map((layer, index) => {
     const lost = (event: Event) => { event.preventDefault(); layer.painter = undefined; layer.canvas.style.opacity = '0'; layer.element.dataset.rendering = 'fallback'; if (index === active) schedule(); };
@@ -106,12 +107,12 @@ export function installAnimatedBackground(host: HTMLElement): () => void {
   });
   const observer = new MutationObserver(sync);
   observer.observe(document.body, {attributes:true, attributeFilter:['data-enigma-tone','data-dark-background','data-light-background','class']});
-  document.addEventListener('visibilitychange', sync); reduced.addEventListener('change', sync); window.addEventListener('resize', resize);
+  document.addEventListener('visibilitychange', sync); window.addEventListener(VISUAL_ACTIVITY_EVENT, sync); reduced.addEventListener('change', sync); window.addEventListener('resize', resize);
   window.addEventListener('focus',focusChanged);window.addEventListener('blur',focusChanged);
   sync();
   return () => {
     cancelAnimationFrame(frame); cancelAnimationFrame(reveal); clearTimeout(wake); clearTimeout(transitionTimer); observer.disconnect();
-    document.removeEventListener('visibilitychange', sync); reduced.removeEventListener('change', sync); window.removeEventListener('resize', resize);
+    document.removeEventListener('visibilitychange', sync); window.removeEventListener(VISUAL_ACTIVITY_EVENT, sync); reduced.removeEventListener('change', sync); window.removeEventListener('resize', resize);
     window.removeEventListener('focus',focusChanged);window.removeEventListener('blur',focusChanged);
     contextCleanups.forEach(cleanup => cleanup()); layers.forEach(layer => { layer.painter?.dispose(true); layer.element.remove(); });
     delete document.body.dataset.backgroundReady;
