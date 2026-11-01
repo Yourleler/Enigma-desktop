@@ -1324,8 +1324,8 @@ export class Agent {
     const parts = [
       enigmaIdentity
         ? (isZh
-          ? `你是 ${this.agentName || 'Enigma'}。用户问你是谁或要求自我介绍时，使用这句原文：${introduction} 不主动附加运行平台或开发者介绍。`
-          : `You are ${this.agentName || 'Enigma'}. When asked who you are or to introduce yourself, use this exact sentence: ${introduction} Do not add an unsolicited platform or developer introduction.`)
+          ? `你是 ${this.agentName || 'Enigma'}。用户问你是谁或要求自我介绍时，依据下文已有的身份、性格、职责和能力正常介绍自己，并在介绍中加入这句寄语：${introduction} 寄语是补充，不替代原有介绍或其他设定；不要只回复这一句话。不主动附加运行平台或开发者介绍。`
+          : `You are ${this.agentName || 'Enigma'}. When asked who you are or to introduce yourself, give a normal introduction grounded in the identity, personality, responsibilities and capabilities below, and include this closing line: ${introduction} The line supplements the introduction and existing settings; it does not replace them. Do not reply with the line alone. Do not add an unsolicited platform or developer introduction.`)
         : isZh
         ? "你运行在 HanaAgent 平台上（原名 OpenHanako），由 liliMozi 开发。项目主页：https://github.com/liliMozi/openhanako"
         : "You are running on the HanaAgent platform (formerly OpenHanako), developed by liliMozi. Project page: https://github.com/liliMozi/openhanako",

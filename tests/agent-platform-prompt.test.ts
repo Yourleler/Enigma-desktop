@@ -48,10 +48,20 @@ afterEach(() => {
 });
 
 describe("Agent platform prompt identity", () => {
-  it.each(['zh-CN','en'])('uses the requested Enigma introduction in %s without the upstream platform introduction',locale=>{
+  it.each(['zh-CN','en'])('adds the Enigma line to the normal introduction in %s while preserving persona sources',locale=>{
     vi.stubEnv('ENIGMA_DESKTOP_PRODUCT','1');const agent=makeAgent(locale);agent.agentName='Enigma';
+    const identity='# {{agentName}}\nA patient project collaborator who explains decisions.';
+    const rules='Keep the user’s existing work. Explain capabilities and limitations clearly.';
+    fs.writeFileSync(path.join(agent.agentDir,'identity.md'),identity);
+    fs.writeFileSync(path.join(agent.agentDir,'AGENTS.md'),rules);
+    writeUserProfile(agent,'Prefers practical examples.');
     const prompt=agent.buildSystemPrompt({forceMemoryEnabled:false,forceExperienceEnabled:false});
     expect(prompt).toContain("I'll be your enigma,We could be anything you want.");
+    expect(prompt).toContain('A patient project collaborator who explains decisions.');
+    expect(prompt).toContain(rules);expect(prompt).toContain('Yuan prompt');expect(prompt).toContain('Prefers practical examples.');
+    expect(prompt).toContain(locale==='zh-CN'?'不要只回复这一句话':'Do not reply with the line alone');
+    expect(fs.readFileSync(path.join(agent.agentDir,'identity.md'),'utf8')).toBe(identity);
+    expect(fs.readFileSync(path.join(agent.agentDir,'AGENTS.md'),'utf8')).toBe(rules);
     expect(prompt).not.toContain('你运行在 HanaAgent 平台上');
     expect(prompt).not.toContain('You are running on the HanaAgent platform');
   });
