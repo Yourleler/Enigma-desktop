@@ -28,10 +28,12 @@ import {
   pickQuickChatRuntimeAgent,
   resolveQuickChatPermissionMode,
   shouldAdoptRuntimeAgentForQuickChat,
+  waitForQuickChatSocket,
   type QuickChatRuntimeAgent,
 } from './quick-chat-runtime';
 import { useQuickChatAutoScroll } from './use-quick-chat-auto-scroll';
 import styles from './QuickChatApp.module.css';
+import {AppIcon} from '../ui/app-icons';
 
 interface AgentOption extends QuickChatRuntimeAgent {
   name: string;
@@ -43,6 +45,7 @@ interface QuickAttachment {
   name: string;
   mimeType: string;
   base64Data?: string;
+  uploaded?: {sessionPath:string; path:string; fileId?:string; name:string};
 }
 
 interface DetachedSessionResponse {
@@ -56,24 +59,6 @@ interface DetachedSessionResponse {
 }
 
 const EMPTY_SESSION_ITEMS: never[] = [];
-
-function PlusIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M12 5v14" />
-      <path d="M5 12h14" />
-    </svg>
-  );
-}
-
-function CloseIcon() {
-  return (
-    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M18 6 6 18" />
-      <path d="m6 6 12 12" />
-    </svg>
-  );
-}
 
 function classNames(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(' ');
@@ -162,6 +147,7 @@ export function QuickChatApp() {
   const [sessionPath, setSessionPath] = useState<string | null>(null);
   const [reuseTimeoutMinutes, setReuseTimeoutMinutes] = useState(DEFAULT_QUICK_CHAT_REUSE_TIMEOUT_MINUTES);
   const [sending, setSending] = useState(false);
+  const [sendPhase, setSendPhase] = useState<'preparing' | 'connecting' | 'waitingReply' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -180,6 +166,10 @@ export function QuickChatApp() {
   const isStreamingRef = useRef(false);
   const sendingRef = useRef(false);
   const isComposingRef = useRef(false);
+  const hasUnsentInputRef = useRef(false);
+  const pendingSendRef = useRef<AbortController | null>(null);
+  useLayoutEffect(() => { hasUnsentInputRef.current = draft.length > 0 || attachments.length > 0; }, [draft, attachments.length]);
+  useEffect(() => () => { pendingSendRef.current?.abort(); }, []);
 
   const selectedAgent = useMemo(
     () => agents.find((agent) => agent.id === selectedAgentId) || agents[0] || null,
@@ -396,13 +386,11 @@ export function QuickChatApp() {
   }, []);
 
   const resetDetachedSession = useCallback(() => {
-    if (isStreamingRef.current || sendingRef.current) return;
+    if (isStreamingRef.current || sendingRef.current || hasUnsentInputRef.current) return;
     wsRef.current?.close();
     wsRef.current = null;
     sessionPathRef.current = null;
     setSessionPath(null);
-    setDraft('');
-    setAttachments([]);
     setSending(false);
     setError(null);
     lastResizeRef.current = null;
@@ -422,6 +410,7 @@ export function QuickChatApp() {
           now: Date.now(),
           reuseTimeoutMinutes: runtime?.prefs?.reuseTimeoutMinutes ?? reuseTimeoutMinutesRef.current,
           isStreaming: isStreamingRef.current || sendingRef.current,
+          hasUnsentInput: hasUnsentInputRef.current,
         });
         lastHiddenAtRef.current = null;
         if (shouldReset) {
@@ -475,21 +464,35 @@ export function QuickChatApp() {
         if (!acceptQuickChatServerMessage(msg, activeSessionPath)) return;
         handleServerMessage(msg);
         if (msg.type === 'status') {
-          setSending(msg.isStreaming === true);
+          if (!pendingSendRef.current || msg.isStreaming === true) {
+            sendingRef.current = msg.isStreaming === true;
+            setSending(msg.isStreaming === true);
+          }
         } else if (msg.type === 'turn_end') {
+          sendingRef.current = false;
           setSending(false);
+          setSendPhase(null);
           if (activeSessionPath) void loadMessages(activeSessionPath);
         } else if (msg.type === 'error') {
           const text = typeof msg.message === 'string' ? msg.message : t('quickChat.sendFailed');
           setError(text);
+          sendingRef.current = false;
           setSending(false);
+          setSendPhase(null);
         }
       } catch (err) {
         console.warn('[quick-chat] ws message ignored:', err);
       }
     };
     ws.onclose = () => {
-      if (wsRef.current === ws) wsRef.current = null;
+      if (wsRef.current !== ws) return;
+      wsRef.current = null;
+      if (!pendingSendRef.current && sendingRef.current) {
+        sendingRef.current = false;
+        setSending(false);
+        setSendPhase(null);
+        setError(t('quickChat.connectionLost'));
+      }
     };
     return ws;
   }, [connection, t]);
@@ -570,53 +573,79 @@ export function QuickChatApp() {
 
   const send = useCallback(async () => {
     const text = draft.trim();
-    if ((!text && attachments.length === 0) || sending) return;
+    if ((!text && attachments.length === 0) || sendingRef.current || isStreamingRef.current) return;
+    const controller = new AbortController();
+    pendingSendRef.current = controller;
+    sendingRef.current = true;
     setSending(true);
+    setSendPhase('preparing');
     setError(null);
     try {
       const nextSessionPath = await ensureDetachedSession();
+      controller.signal.throwIfAborted();
       const outgoingAttachments = attachments;
-      const encodedAttachments = await Promise.all(outgoingAttachments.map(async (item) => ({
-        item,
-        data: item.base64Data || await fileToBase64(item.file),
-      })));
+      const encodedAttachments = await Promise.all(outgoingAttachments.map(async (item) => {
+        const data = item.base64Data || await fileToBase64(item.file);
+        controller.signal.throwIfAborted();
+        let uploaded = item.uploaded?.sessionPath === nextSessionPath ? item.uploaded : undefined;
+        if (!uploaded) {
+          const response = await apiFetch('/api/upload-blob', {
+            method: 'POST', signal: controller.signal, headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({name:item.name,base64Data:data,mimeType:item.mimeType,sessionPath:nextSessionPath}),
+          });
+          const result = await response.json();
+          controller.signal.throwIfAborted();
+          const file = result?.uploads?.[0];
+          if (!file?.dest) throw new Error(t('quickChat.attachmentFailed'));
+          uploaded = {sessionPath:nextSessionPath,path:file.dest,fileId:file.fileId,name:file.name || item.name};
+          setAttachments(current => current.map(attachment => attachment.id === item.id ? {...attachment,uploaded} : attachment));
+        }
+        return {item,data,uploaded};
+      }));
       const images = encodedAttachments.map(({ item, data }) => ({
         type: 'image',
         data,
         mimeType: item.mimeType,
       }));
-      setDraft('');
-      setAttachments([]);
-      window.hana?.quickChatResize?.('chat');
-
+      controller.signal.throwIfAborted();
+      setSendPhase('connecting');
       const ws = ensureSocket();
-      const sendPayload = () => ws.send(JSON.stringify({
+      await waitForQuickChatSocket(ws, controller.signal);
+      controller.signal.throwIfAborted();
+      ws.send(JSON.stringify({
         type: 'prompt',
         text,
         sessionPath: nextSessionPath,
         images,
         displayMessage: {
           text,
-          attachments: encodedAttachments.map(({ item, data }) => ({
-            path: item.id,
-            name: item.name,
+          attachments: encodedAttachments.map(({ item, uploaded }) => ({
+            path: uploaded.path,
+            fileId: uploaded.fileId,
+            name: uploaded.name,
             isDir: false,
             mimeType: item.mimeType,
-            base64Data: data,
           })),
         },
       }));
-      if (ws.readyState === WebSocket.OPEN) {
-        sendPayload();
-      } else {
-        ws.addEventListener('open', sendPayload, { once: true });
-      }
+      // Only retire this submitted snapshot; typing during preparation is a new draft.
+      setDraft(current => current === draft ? '' : current);
+      const submitted = new Set(outgoingAttachments.map(item => item.id));
+      setAttachments(current => current.filter(item => !submitted.has(item.id)));
+      setSendPhase('waitingReply');
+      window.hana?.quickChatResize?.('chat');
     } catch (err) {
-      const text = err instanceof Error ? err.message : t('quickChat.sendFailed');
+      if (controller.signal.aborted) return;
+      const text = err instanceof Error && err.message.startsWith('quick-chat-connection-')
+        ? t('quickChat.connectionFailed') : err instanceof Error ? err.message : t('quickChat.sendFailed');
       setError(text);
+      sendingRef.current = false;
       setSending(false);
+      setSendPhase(null);
+    } finally {
+      if (pendingSendRef.current === controller) pendingSendRef.current = null;
     }
-  }, [attachments, draft, ensureDetachedSession, ensureSocket, sending, t]);
+  }, [apiFetch, attachments, draft, ensureDetachedSession, ensureSocket, t]);
 
   const handlePaste = useCallback((event: React.ClipboardEvent<HTMLTextAreaElement>) => {
     const files: File[] = [];
@@ -667,8 +696,18 @@ export function QuickChatApp() {
     window.hana?.quickChatHide?.();
   }, [markHidden]);
 
+  const stop = useCallback(() => {
+    const path = sessionPathRef.current, ws = wsRef.current;
+    if (!path || !isStreamingRef.current) return;
+    if (ws?.readyState !== WebSocket.OPEN) { setError(t('quickChat.connectionLost')); return; }
+    const state = useStore.getState();
+    const active = sessionScopedValue(state,state.activeSessionStreams,path);
+    if (state.currentSessionPath !== path || !state.currentSessionId) return;
+    ws.send(JSON.stringify({type:'abort',sessionId:state.currentSessionId,sessionPath:path,...(active?.streamId?{streamId:active.streamId}:{})}));
+  }, [t]);
+
   const canSend = (!!draft.trim() || attachments.length > 0) && !sending && !isStreaming && !!connection;
-  const expanded = sessionItems.length > 0 || isStreaming;
+  const expanded = !!sessionPath || sessionItems.length > 0 || isStreaming;
   // 快捷面板只有一行的位置，显示人话正文；详情留给主窗口的错误条展开区。
   const displayError = error || inlineError?.text || null;
   const title = sessionTitle || t('quickChat.title');
@@ -714,9 +753,11 @@ export function QuickChatApp() {
                   type="button"
                   className={styles.closeButton}
                   aria-label={t('quickChat.close')}
+                  title={t('quickChat.close')}
+                  data-tooltip={t('quickChat.close')}
                   onClick={closeQuickChat}
                 >
-                  <CloseIcon />
+                  <AppIcon name="close" size={14}/>
                 </button>
                 <div className={styles.threadTitle}>{title}</div>
               </div>
@@ -750,7 +791,7 @@ export function QuickChatApp() {
           </>
         )}
 
-        <div className={classNames(styles.composer, inputStyles['input-wrapper'])}>
+        <div className={classNames(styles.composer, inputStyles['input-wrapper'])} data-liquid="composer">
           {attachments.length > 0 && (
             <div className={styles.attachmentRow}>
               <AttachedFilesBar
@@ -783,14 +824,15 @@ export function QuickChatApp() {
             onCompositionStart={() => { isComposingRef.current = true; }}
             onCompositionEnd={() => { isComposingRef.current = false; }}
             placeholder={t('input.placeholder')}
+            aria-label={t('quickChat.messageInput')}
             spellCheck={false}
             rows={expanded ? 2 : 3}
           />
 
           <div className={classNames(inputStyles['input-bottom-bar'], styles.dragBottomBar)}>
             <div className={inputStyles['input-actions']}>
-              <button className={inputStyles['attach-btn']} title={t('quickChat.attachImage')} onClick={() => fileInputRef.current?.click()}>
-                <PlusIcon />
+              <button className={inputStyles['attach-btn']} aria-label={t('quickChat.attachImage')} title={t('quickChat.attachImage')} data-tooltip={t('quickChat.attachImage')} onClick={() => fileInputRef.current?.click()}>
+                <AppIcon name="add" size={16}/>
               </button>
               <span className={styles.lockedPlanMode}>
                 <PlanModeButton mode={permissionMode} onChange={() => {}} locked />
@@ -814,17 +856,18 @@ export function QuickChatApp() {
               </div>
 
               <SendButton
-                isStreaming={false}
-                hasInput={!!draft.trim() || attachments.length > 0}
-                disabled={!canSend}
+                isStreaming={isStreaming}
+                hasInput={!isStreaming && (!!draft.trim() || attachments.length > 0)}
+                disabled={!isStreaming && !canSend}
                 onSend={() => void send()}
                 onSteer={() => {}}
-                onStop={() => {}}
+                onStop={stop}
               />
             </div>
           </div>
 
-          {displayError && <div className={styles.errorLine}>{displayError}</div>}
+          {sending && !isStreaming && sendPhase && <div className={styles.sendStatus} role="status">{t(`quickChat.${sendPhase}`)}</div>}
+          {displayError && <div className={styles.errorLine} role="alert">{displayError}</div>}
           <input
             ref={fileInputRef}
             className={styles.fileInput}

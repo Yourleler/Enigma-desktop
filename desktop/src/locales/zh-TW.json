@@ -34,6 +34,12 @@
     "copySource": "複製原始碼"
   },
   "quickChat": {
+    "attachmentFailed": "圖片上傳失敗，文字和圖片仍在輸入框中，請重試。",
+    "messageInput": "訊息輸入框",
+    "preparing": "正在準備訊息…",
+    "connecting": "正在連接服務…",
+    "connectionFailed": "連線尚未建立，文字和圖片仍在輸入框中，請重試。",
+    "connectionLost": "連線已中斷，回覆狀態尚不確定。請開啟完整對話確認，未自動重送。",
     "title": "快速聊天",
     "close": "關閉快速聊天",
     "openFullSession": "打開完整會話",

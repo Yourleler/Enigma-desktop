@@ -17,7 +17,7 @@ import { selectSelectedIdsBySession } from '../../stores/session-selectors';
 import { extractSelectedTexts } from '../../utils/message-text';
 import { openFilePreview } from '../../utils/file-preview';
 import { isImageOrSvgExt, extOfName, kindOfFileName } from '../../utils/file-kind';
-import { getUserAttachmentImageSrc } from '../../utils/user-attachment-media';
+import { useUserAttachmentImageSrc } from '../../utils/user-attachment-media';
 import { AgentAvatar, resolveAgentDisplayInfo } from '../../utils/agent-display';
 import {
   retrySessionTurn,
@@ -304,7 +304,6 @@ const UserAttachmentsView = memo(function UserAttachmentsView({ attachments, des
       {attachments.map((att, i) => {
         const expired = att.status === 'expired';
         const expiredLabel = t('chat.fileExpired');
-        const imageSrc = !expired && isImage(att) ? getUserAttachmentImageSrc(att) : null;
         const kind = att.isDir ? 'directory' : kindOfFileName(att.name || att.path, att.mimeType);
         if (!expired && kind === 'audio') {
           const isVoiceInput = att.presentation === 'voice-input';
@@ -345,32 +344,8 @@ const UserAttachmentsView = memo(function UserAttachmentsView({ attachments, des
             />
           );
         }
-        if (imageSrc) {
-          return (
-            <div key={att.name || `att-${i}`} className={styles.attachImageWrap}>
-              <img
-                className={styles.attachImage}
-                src={imageSrc}
-                alt={att.name}
-                loading="lazy"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  const ext = att.name.split('.').pop()?.toLowerCase() || '';
-                  openFilePreview(att.path, att.name, ext, {
-                    origin: 'session',
-                    sessionPath,
-                    messageId,
-                  });
-                }}
-                style={{ cursor: 'default' }}
-              />
-              {att.visionAuxiliary && (
-                <div className={styles.visionAuxiliaryLabel}>
-                  {t('chat.visionAuxiliary')}
-                </div>
-              )}
-            </div>
-          );
+        if (!expired && isImage(att)) {
+          return <UserImageAttachment key={att.fileId || att.path || i} attachment={att} sessionPath={sessionPath} messageId={messageId}/>;
         }
         return (
           <AttachmentChip
@@ -390,6 +365,19 @@ const UserAttachmentsView = memo(function UserAttachmentsView({ attachments, des
     </div>
   );
 });
+
+function UserImageAttachment({attachment,sessionPath,messageId}:{attachment:UserAttachment;sessionPath:string;messageId:string}) {
+  const source=useUserAttachmentImageSrc(attachment);
+  return <div className={styles.attachImageWrap}>
+    <button className={styles.attachImageButton} aria-label={`预览图片 ${attachment.name}`} onClick={event=>{
+      event.stopPropagation();
+      void openFilePreview(attachment.path,attachment.name,attachment.name.split('.').pop()||'',{origin:'session',sessionPath,messageId,fileId:attachment.fileId});
+    }}>
+      {source?<img className={styles.attachImage} src={source} alt={attachment.name} loading="lazy"/>:<AttachmentChip name={attachment.name} icon={<FileKindIcon kind="image" size={14}/>}/>}
+    </button>
+    {attachment.visionAuxiliary&&<div className={styles.visionAuxiliaryLabel}>{window.t?.('chat.visionAuxiliary')}</div>}
+  </div>;
+}
 
 // ── Icons ──
 

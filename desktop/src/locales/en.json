@@ -34,6 +34,12 @@
     "copySource": "Copy source"
   },
   "quickChat": {
+    "attachmentFailed": "Image upload failed. Your text and images remain in the input. Please retry.",
+    "messageInput": "Message input",
+    "preparing": "Preparing message…",
+    "connecting": "Connecting to the service…",
+    "connectionFailed": "Could not connect. Your text and images remain in the input. Please retry.",
+    "connectionLost": "Connection lost; the reply status is unknown. Open the full chat to check. Nothing was resent automatically.",
     "title": "Quick Chat",
     "close": "Close Quick Chat",
     "openFullSession": "Open full chat",

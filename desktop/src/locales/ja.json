@@ -34,6 +34,12 @@
     "copySource": "ソースをコピー"
   },
   "quickChat": {
+    "attachmentFailed": "画像のアップロードに失敗しました。テキストと画像は入力欄に残っています。再試行してください。",
+    "messageInput": "メッセージ入力",
+    "preparing": "メッセージを準備中…",
+    "connecting": "サービスに接続中…",
+    "connectionFailed": "接続できませんでした。テキストと画像は入力欄に残っています。再試行してください。",
+    "connectionLost": "接続が切れ、応答状況を確認できません。会話を開いて確認してください。自動再送はしていません。",
     "title": "クイックチャット",
     "close": "クイックチャットを閉じる",
     "openFullSession": "完全な会話を開く",

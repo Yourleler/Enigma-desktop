@@ -306,6 +306,7 @@
     align-items: flex-start;
     gap: var(--space-4);
 }
+.attachImageButton { display: block; padding: 0; border: 0; background: transparent; color: inherit; border-radius: inherit; cursor: pointer; }
 
 .visionAuxiliaryLabel {
     font-size: 11px;

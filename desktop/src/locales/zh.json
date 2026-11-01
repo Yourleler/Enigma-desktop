@@ -34,6 +34,12 @@
     "copySource": "复制源码"
   },
   "quickChat": {
+    "attachmentFailed": "图片上传失败，文字和图片仍在输入框中，请重试。",
+    "messageInput": "消息输入框",
+    "preparing": "正在准备消息…",
+    "connecting": "正在连接服务…",
+    "connectionFailed": "连接未建立，文字和图片仍在输入框中，请重试。",
+    "connectionLost": "连接已断开，回复状态暂不确定。请打开完整会话核对，未自动重发。",
     "title": "快速聊天",
     "close": "关闭快速聊天",
     "openFullSession": "打开完整会话",

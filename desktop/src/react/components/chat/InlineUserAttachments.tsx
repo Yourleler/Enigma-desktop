@@ -1,8 +1,7 @@
 import type {UserAttachment} from '../../stores/chat-types';
-import {useEffect,useState} from 'react';
 import {MarkdownContent} from './MarkdownContent';
 import {renderMarkdown} from '../../utils/markdown';
-import {getUserAttachmentImageSrc} from '../../utils/user-attachment-media';
+import {useUserAttachmentImageSrc} from '../../utils/user-attachment-media';
 import {openFilePreview} from '../../utils/file-preview';
 import {AppIcon} from '../../ui/app-icons';
 import './InlineUserAttachments.css';
@@ -10,9 +9,8 @@ import {kindOfFileName} from '../../utils/file-kind';
 
 function InlineThumbnail({file}:{file:UserAttachment}){
   const kind=kindOfFileName(file.name,file.mimeType),image=kind==='image'||kind==='svg';
-  const source=getUserAttachmentImageSrc(file),[fallback,setFallback]=useState('');
-  useEffect(()=>{let active=true;setFallback('');if(image&&!source&&file.status!=='expired'&&window.platform?.readFileBase64)void window.platform.readFileBase64(file.path).then(data=>{if(active&&data)setFallback(`data:${file.mimeType||'image/png'};base64,${data}`);}).catch(()=>{});return()=>{active=false;};},[file.path,file.mimeType,file.status,image,source]);
-  return image&&(source||fallback)?<img src={source||fallback} alt={file.name}/>:<AppIcon name="file" size={17}/>;
+  const source=useUserAttachmentImageSrc(file,image);
+  return image&&source?<img src={source} alt={file.name}/>:<AppIcon name="file" size={17}/>;
 }
 
 const markerPattern=/\[(?:图片|文件) (\d+)\]/g;
