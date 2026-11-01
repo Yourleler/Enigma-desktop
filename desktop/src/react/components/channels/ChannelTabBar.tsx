@@ -211,7 +211,7 @@ export function ChannelTabBar({rail=false}:{rail?:boolean}={}) {
             className={cls}
             data-tab={tab}
             aria-label={getTabLabel(tab,pluginPages,locale)}
-            data-tooltip={tab === 'channels' ? '多个助手参与的群聊，与普通工作对话分开' : tab === 'chat' ? '个人工作对话与项目' : undefined}
+            data-tooltip={tab === 'channels' ? '多个助手参与的群聊，与普通工作对话分开' : tab === 'chat' ? '返回聊天与项目' : undefined}
             aria-pressed={isActive}
             draggable={tab !== 'chat'}
             onClick={() => handleTabClick(tab)}
@@ -222,7 +222,7 @@ export function ChannelTabBar({rail=false}:{rail?:boolean}={}) {
             onDrop={(e) => onDrop(e, tab)}
             onDragEnd={onDragEnd}
           >
-            {rail?<AppIcon name={tab==='chat'?'newChat':tab==='channels'?'team':'layers'} size={18}/>:getTabLabel(tab, pluginPages, locale)}
+            {rail?<AppIcon name={tab==='chat'?'chat':tab==='channels'?'team':'layers'} size={18}/>:getTabLabel(tab, pluginPages, locale)}
             {tab === 'channels' && channelTotalUnread > 0 && <span className={styles.tbTabBadge} />}
           </button>
         );

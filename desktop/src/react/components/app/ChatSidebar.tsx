@@ -45,7 +45,7 @@ export function AppNavigationRail({showSettingsButton=true,showActivityBars=true
   const t=window.t??((p:string)=>p);
   return <>
       <nav className="enigma-sidebar-rail" aria-label="应用导航">
-        {includeChannels?<ChannelTabBar rail/>:<button aria-label="聊天" data-tooltip="返回聊天" onClick={()=>useStore.getState().setActivePanel(null)}><AppIcon name="newChat" size={19}/></button>}
+        {includeChannels?<ChannelTabBar rail/>:<button aria-label="聊天" data-tooltip="返回聊天与项目" onClick={()=>useStore.getState().setActivePanel(null)}><AppIcon name="chat" size={19}/></button>}
         {showActivityBars&&!engineering&&<>
           <button aria-label={t('sidebar.bridgeShort')} data-tooltip="消息连接" onClick={()=>onTogglePanel?.('bridge')}><AppIcon name="link" size={18}/><BridgeDot/></button>
           <button aria-label={t('sidebar.activity')} data-tooltip="运行记录" onClick={()=>onTogglePanel?.('activity')}><AppIcon name="activity" size={18}/></button>
