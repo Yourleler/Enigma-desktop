@@ -143,7 +143,7 @@ export const PERSISTENT_STORES: readonly StoreDescriptor[] = Object.freeze([
   defineStore({
     id: 'conversation-review-workbench', ownerModule: 'plugins/enigma/change-workbench.ts',
     pathPatterns: ['change-workbench/**'], pathKind: 'tree', format: 'json',
-    schemaSource: directorySource('plugins/enigma/change-workbench.ts', 'frozen source publications, analysis jobs, findings and generated read-only workspaces; optional repo filter and unstaged source preserve prior working/staged/commit publications'),
+    schemaSource: directorySource('plugins/enigma/change-workbench.ts', 'frozen source publications, analysis jobs, findings and generated read-only workspaces; optional repo filter and unstaged source preserve prior publications; optional sourceCoverage and modelCoverage record file and request scope, while failed jobs may retain validated partial reading results'),
     openEntry: ['ChangeWorkbench'], firstPossibleOpenPhase: 'runtime_ready', firstPossibleWritePhase: 'runtime_ready',
     identityContract: 'Session digest, publication UUID and job UUID; source access is revalidated before use.',
     checkpointPolicy: 'Preserve sources and verdicts; running processes are not captured as completed work.',
@@ -988,7 +988,7 @@ export const PERSISTENT_STORES: readonly StoreDescriptor[] = Object.freeze([
     ownerModule: "lib/llm/usage-ledger.ts",
     pathPatterns: ["usage-ledger.json"],
     format: "json",
-    schemaSource: runtimeSource("lib/llm/usage-ledger.ts", "version 1 usage records with optional timingSource; missing or unrecognized source is unknown, existing usage/model/status fields are retained"),
+    schemaSource: runtimeSource("lib/llm/usage-ledger.ts", "version 1 usage records with optional timingSource; unknown timing and unreported reasoning remain unknown, Pi reasoning is a subset of output, each reading batch retains its own existing request record"),
     openEntry: ["new UsageLedger"],
     identityContract: "Usage buckets are keyed by their runtime dimensions inside one HANA_HOME ledger.",
     siteRules: rules(["lib/llm/usage-ledger.ts"], "Writes the usage ledger."),

@@ -56,12 +56,13 @@ function cacheSupport(options) {
 }
 
 function reasoningTokens(usage) {
-  return maybeNumber(
+  return maybeNumber(...[
+    usage?.reasoning,
     usage?.reasoningTokens,
     usage?.reasoning_tokens,
     usage?.completion_tokens_details?.reasoning_tokens,
     usage?.output_tokens_details?.reasoning_tokens
-  );
+  ].filter(value=>value!==null&&value!==''));
 }
 
 /**

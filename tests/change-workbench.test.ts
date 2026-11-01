@@ -4,6 +4,7 @@ import {SessionManager,ModelRuntime} from '../lib/pi-sdk/index.ts';
 import {fauxProvider,fauxAssistantMessage} from '@earendil-works/pi-ai';
 import {conversationChanges} from '../core/conversation-change-capture.ts';
 import {ChangeWorkbench} from '../plugins/enigma/change-workbench.ts';
+import {createUsageLedger} from '../lib/llm/usage-ledger.ts';
 const roots:string[]=[];afterEach(async()=>{for(const r of roots.splice(0))await fs.rm(r,{recursive:true,force:true});});
 async function fixture(){
  const root=await fs.mkdtemp(path.join(os.tmpdir(),'review-workbench-'));roots.push(root);const work=path.join(root,'files');await fs.mkdir(work);const home=path.join(root,'profile');await fs.mkdir(home);const manager=SessionManager.create(work,path.join(home,'agents','test','sessions'));manager.appendMessage({role:'user',content:[{type:'text',text:'Keep the API stable'}],timestamp:Date.now()});const session=manager.getSessionFile()!;
@@ -32,6 +33,36 @@ it('supports document source anchors for model reading',async()=>{
  const f=await fixture();const turn=await f.capture.begin(f.session,'Write note',null);await fs.writeFile(path.join(f.work,'note.md'),'# Result\nA documented decision.');await f.capture.end(f.session,turn);const source=await f.api.capture(f.session,{source:'conversation'});
  f.faux.setResponses([context=>{const text=JSON.stringify(context);const nodeId=/file-[a-f0-9]{20}/.exec(text)?.[0];expect(nodeId).toBeTruthy();return fauxAssistantMessage(JSON.stringify({chapters:[{id:'note',title:'记录决策',summary:'文档保存了一项决定。',nodes:[nodeId]}],insights:[]}));}]);
  const job=await f.api.analyze(f.session,source.id,'reading');const result=await untilDone(f.api,f.session,job.id);expect(result.status,result.error).toBe('completed');expect(result.result.nodes[0].source.file).toBe('note.md');
+});
+
+function readingMaterial(context:any):any{
+ const find=(value:any):string|undefined=>typeof value==='string'&&value.startsWith('用中文解释以下固定版本变更的第')?value:value&&typeof value==='object'?Object.values(value).map(find).find(Boolean):undefined;
+ const text=find(context);expect(text).toBeTruthy();return JSON.parse(text!.slice(text!.indexOf('\n')+1));
+}
+async function largeReadingFixture(){
+ const f=await fixture(),turn=await f.capture.begin(f.session,'Explain all documents',null);
+ for(let i=0;i<14;i++)await fs.writeFile(path.join(f.work,`note-${i}.md`),'"quoted" 中文 '.repeat(600));
+ await f.capture.end(f.session,turn);return {...f,source:await f.api.capture(f.session,{source:'conversation'})};
+}
+it('sends complete JSON batches covering all published nodes and changes and persists their scope',async()=>{
+ const f=await largeReadingFixture(),sent:any[]=[];
+ f.engine.usageLedger=createUsageLedger();
+ f.faux.setResponses(Array.from({length:12},()=>context=>{const batch=readingMaterial(context);sent.push(batch);const message=fauxAssistantMessage(JSON.stringify({chapters:batch.nodes.length?[{id:'note',title:'本批文档',summary:'所提供文档包含相同测试材料。',nodes:[batch.nodes[0].id]}]:[],insights:[]}));return message;}));
+ const started=await f.api.analyze(f.session,f.source.id,'reading'),job=await untilDone(f.api,f.session,started.id);
+ expect(job.status,job.error).toBe('completed');expect(sent.length).toBeGreaterThan(1);
+ expect(new Set(sent.flatMap(batch=>batch.nodes.map((n:any)=>n.id))).size).toBe(14);
+ expect(new Set(sent.flatMap(batch=>batch.changes.map((c:any)=>c.file))).size).toBe(14);
+ expect(job.result.modelCoverage).toMatchObject({status:'complete',requests:sent.length,completedRequests:sent.length,nodes:14,totalNodes:14,changes:14,totalChanges:14});
+ const usage=f.engine.usageLedger.list().entries;expect(usage).toHaveLength(sent.length);expect(usage.map((entry:any)=>entry.metadata.batch)).toEqual(sent.map((_,i)=>i+1));for(const entry of usage){expect(entry.usage.totalTokens).toBeGreaterThan(0);expect(entry.usage.output.reasoningTokens).toBeNull();}
+ const restored=await new ChangeWorkbench(f.engine,{binding:async()=>null}).job(f.session,job.id);expect(restored.result.modelCoverage).toEqual(job.result.modelCoverage);
+});
+it('keeps source analysis and earlier valid batches when a later model response is malformed',async()=>{
+ const f=await largeReadingFixture();
+ f.faux.setResponses([context=>{const batch=readingMaterial(context);return fauxAssistantMessage(JSON.stringify({chapters:[{id:'first',title:'已取得的说明',summary:'第一批材料的说明。',nodes:[batch.nodes[0].id]}],insights:[]}));},fauxAssistantMessage('{broken')]);
+ const started=await f.api.analyze(f.session,f.source.id,'reading'),job=await untilDone(f.api,f.session,started.id);
+ expect(job.status).toBe('failed');expect(job.error).toContain('未返回有效JSON');expect(job.result.nodes).toHaveLength(14);
+ expect(job.result.modelCoverage).toMatchObject({status:'partial',requests:2,completedRequests:1});
+ expect(job.result.chapters[0].title).toBe('已取得的说明');
 });
 it('requires explicit independent recheck evidence before resolving an earlier finding',async()=>{
  const f=await fixture();await fs.writeFile(path.join(f.work,'main.ts'),'export const answer = 1;');let turn=await f.capture.begin(f.session,'Change answer',null);await fs.writeFile(path.join(f.work,'main.ts'),'export const answer = 2;');await f.capture.end(f.session,turn);

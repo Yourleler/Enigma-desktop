@@ -465,7 +465,7 @@
       "schemaSource": {
         "kind": "directory-contract",
         "module": "plugins/enigma/change-workbench.ts",
-        "contract": "frozen source publications, analysis jobs, findings and generated read-only workspaces; optional repo filter and unstaged source preserve prior working/staged/commit publications"
+        "contract": "frozen source publications, analysis jobs, findings and generated read-only workspaces; optional repo filter and unstaged source preserve prior publications; optional sourceCoverage and modelCoverage record file and request scope, while failed jobs may retain validated partial reading results"
       },
       "schemaContract": {
         "kind": "protocol",
@@ -2557,7 +2557,7 @@
       "schemaSource": {
         "kind": "runtime-contract",
         "module": "lib/llm/usage-ledger.ts",
-        "contract": "version 1 usage records with optional timingSource; missing or unrecognized source is unknown, existing usage/model/status fields are retained"
+        "contract": "version 1 usage records with optional timingSource; unknown timing and unreported reasoning remain unknown, Pi reasoning is a subset of output, each reading batch retains its own existing request record"
       },
       "schemaContract": {
         "kind": "runtime-source",

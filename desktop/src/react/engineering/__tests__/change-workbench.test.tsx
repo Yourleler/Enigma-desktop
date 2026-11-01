@@ -36,6 +36,13 @@ it('does not apply a late source response after switching conversations',async()
 it('does not expose analysis writes in read-only mode',async()=>{
  useStore.setState({sessionPermissionMode:'read_only'});render(<ChangeWorkbench/>);await screen.findByText('2 个文件 · 版本 version');expect(screen.getByRole('button',{name:'开始审查'})).toBeDisabled();expect(screen.getByRole('button',{name:'生成解读'})).toBeDisabled();
 });
+it('keeps valid earlier reading batches visible and shows the saved failure when reopening history',async()=>{
+ const job={id:'partial-reading',publication:'source',kind:'reading',status:'failed',createdAt:'2026-11-01T02:00:00Z',error:'第二批解读失败',result:{nodes:[{id:'n',source:{repo:'repo',file:'docs/note.md',line:1,snippet:'note'}}],chapters:[{id:'b1',title:'第一批有效说明',summary:'依据当前片段。',nodes:['n'],authority:'model-inference'}],gaps:[],modelCoverage:{status:'partial',requests:2,completedRequests:1,plannedRequests:3,nodes:2,totalNodes:3,changes:2,totalChanges:3,edges:0,totalEdges:0,clippedNodes:0,clippedPatches:0}}};
+ vi.mocked(hanaFetch).mockImplementation(async url=>new Response(JSON.stringify(String(url).includes('/source')?publication:String(url).includes('/job?')?job:{turns:[],repositories:[],jobs:[job]})));
+ render(<ChangeWorkbench/>);fireEvent.click(await screen.findByLabelText('之前的分析'));fireEvent.click(await screen.findByRole('button',{name:/阅读 ·/}));
+ expect(await screen.findByText('第一批有效说明')).toBeVisible();expect(screen.getByRole('alert')).toHaveTextContent('第二批解读失败');
+ expect(screen.getByText(/源码展开范围.*模型解读 1\/3 批/)).toBeVisible();
+});
 it('supports comma-separated include globs without evaluating regular expressions from users',()=>{
  expect(changeMatches('repo/src/a.ts','src/**')).toBe(true);expect(changeMatches('repo/docs/a.md','src/**,docs/*.md')).toBe(true);expect(changeMatches('repo/docs/a.md','src/**')).toBe(false);expect(changeMatches('repo/a[1].ts','a[1].ts')).toBe(true);
 });

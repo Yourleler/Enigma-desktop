@@ -39,6 +39,11 @@ export interface TaskReading {
     outlineFiles: {examined:number;total:number};
     symbolQueries: {completed:number;limit:number;pending:number};
   };
+  modelCoverage?: {
+    status:'pending'|'partial'|'complete';requests:number;completedRequests:number;plannedRequests:number;
+    nodes:number;totalNodes:number;changes:number;totalChanges:number;edges:number;totalEdges:number;
+    characters:number;clippedNodes:number;clippedPatches:number;
+  };
   gaps: string[]; truncated: boolean;
 }
 
@@ -257,7 +262,7 @@ export class TaskReadingStore {
     requirements?: { id: string; status: 'supported' | 'conflict' | 'insufficient'; anchors: string[]; explanation: string }[];
     chapters?: { id: string; title: string; summary: string; nodes: string[] }[];
     layers?: { id: string; title: string; summary: string; nodes: string[] }[];
-  }, task?: string) {
+  }, task?: string,modelCoverage?:TaskReading['modelCoverage']) {
     return await this.workspace.exclusive(async () => {
       const opened = await this.open(reportId, task); if (!opened.current || opened.report.revision !== expectedRevision) throw new Error('Task reading source or revision changed; read the current map before annotation');
       const report = structuredClone(opened.report), nodes = new Set(report.nodes.map(node => node.id));
@@ -286,6 +291,10 @@ export class TaskReadingStore {
         });
         const covered = new Set(report[kind]!.flatMap(group => group.nodes)), omitted = [...nodes].filter(node => !covered.has(node));
         if (omitted.length) report.gaps.push(`${kind}: ${omitted.length} published source nodes are not included in the chosen grouping; they remain available in the full map.`);
+      }
+      if(modelCoverage){
+        if(Object.entries(modelCoverage).some(([key,value])=>key!=='status'&&(!Number.isSafeInteger(value)||Number(value)<0))||modelCoverage.nodes>modelCoverage.totalNodes||modelCoverage.changes>modelCoverage.totalChanges||modelCoverage.edges>modelCoverage.totalEdges||modelCoverage.completedRequests>modelCoverage.requests||modelCoverage.requests>modelCoverage.plannedRequests||modelCoverage.status!=='complete'||modelCoverage.completedRequests!==modelCoverage.plannedRequests)throw new Error('Invalid model material coverage');
+        report.modelCoverage={...modelCoverage};
       }
       report.revision++; await this.publish(report); return report;
     });

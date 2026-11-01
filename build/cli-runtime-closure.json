@@ -73994,6 +73994,18 @@
       "reason": "Reached via esbuild source module graph, imported by plugins/enigma/conductor.ts (import-statement); plugins/enigma/host.ts (import-statement)."
     },
     {
+      "path": "plugins/enigma/reading-material.ts",
+      "inputType": "source-graph",
+      "provenance": [
+        {
+          "root": "server-bootstrap",
+          "from": "plugins/enigma/change-workbench.ts",
+          "kind": "import-statement"
+        }
+      ],
+      "reason": "Reached via esbuild source module graph, imported by plugins/enigma/change-workbench.ts (import-statement)."
+    },
+    {
       "path": "plugins/enigma/session-changes.ts",
       "inputType": "source-graph",
       "provenance": [
@@ -77938,9 +77950,9 @@
     }
   ],
   "stats": {
-    "totalFiles": 6420,
+    "totalFiles": 6421,
     "byInputType": {
-      "source-graph": 716,
+      "source-graph": 717,
       "runtime-asset": 11,
       "nft-runtime-trace": 5693
     }

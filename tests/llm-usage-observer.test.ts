@@ -6,6 +6,14 @@ import {
 } from "../lib/llm/usage-observer.ts";
 
 describe("LLM usage observer", () => {
+  it('retains Pi reasoning as a subset of output, including reported zero but not missing values',()=>{
+    const base={input:10,output:20,cacheRead:0,cacheWrite:0,totalTokens:30};
+    expect(normalizeLlmUsage({...base,reasoning:7}).output).toEqual({totalTokens:20,reasoningTokens:7});
+    expect(normalizeLlmUsage({...base,reasoning:7}).totalTokens).toBe(30);
+    expect(normalizeLlmUsage({...base,reasoning:0}).output.reasoningTokens).toBe(0);
+    expect(normalizeLlmUsage({...base,reasoning:null}).output.reasoningTokens).toBeNull();
+    expect(normalizeLlmUsage(base).output.reasoningTokens).toBeNull();
+  });
   // Providers disagree on what "input" counts. OpenAI's prompt_tokens is the
   // whole prompt with the cached part folded in; Pi SDK and Anthropic report
   // input as the remainder that was NOT served from cache. Reading the second

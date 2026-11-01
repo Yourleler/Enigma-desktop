@@ -664,7 +664,7 @@
     ],
     "version": 3
   },
-  "payloadFingerprint": "sha256:cc3f9a4d18fb5b60631491e882d6381b242336be9b79926779a7be0104d20aa9",
+  "payloadFingerprint": "sha256:3517a474868d57e0ef7c95eb370487340dfd45e5c0a2a8e0f1be5d630a27a4d3",
   "registry": [
     {
       "affectedByEpochMigration": true,
@@ -1103,7 +1103,7 @@
         "source": "plugins/enigma/change-workbench.ts"
       },
       "schemaSource": {
-        "contract": "frozen source publications, analysis jobs, findings and generated read-only workspaces; optional repo filter and unstaged source preserve prior working/staged/commit publications",
+        "contract": "frozen source publications, analysis jobs, findings and generated read-only workspaces; optional repo filter and unstaged source preserve prior publications; optional sourceCoverage and modelCoverage record file and request scope, while failed jobs may retain validated partial reading results",
         "kind": "directory-contract",
         "module": "plugins/enigma/change-workbench.ts"
       }
@@ -3195,7 +3195,7 @@
         "source": "lib/llm/usage-ledger.ts"
       },
       "schemaSource": {
-        "contract": "version 1 usage records with optional timingSource; missing or unrecognized source is unknown, existing usage/model/status fields are retained",
+        "contract": "version 1 usage records with optional timingSource; unknown timing and unreported reasoning remain unknown, Pi reasoning is a subset of output, each reading batch retains its own existing request record",
         "kind": "runtime-contract",
         "module": "lib/llm/usage-ledger.ts"
       }
@@ -3414,8 +3414,8 @@
   ],
   "review": {
     "classification": "compatible",
-    "compatibilityReason": "Usage ledger version 1 adds optional timingSource: missing or unrecognized values remain unknown and existing usage, model, status and retention fields are retained. Bridge and native completion accounting label unmeasured durations without changing session JSONL or sidecar formats. Change publications add optional repo and unstaged source; existing frozen publications remain readable. Host parent navigation, browser keyboard handling and abort cleanup do not change persisted shapes. Reviewed helper exemptions retain explicit ownership debt and narrower operation kinds; no DATA_EPOCH migration is required.",
-    "payloadFingerprint": "sha256:cc3f9a4d18fb5b60631491e882d6381b242336be9b79926779a7be0104d20aa9"
+    "compatibilityReason": "Reading jobs add optional sourceCoverage/modelCoverage and retain only source-validated partial results on failure or cancellation without changing terminal status. Each reading batch uses an existing version-1 usage ledger request entry; Pi reasoning remains a subset of output, reported zero is retained and missing reasoning stays unknown. Existing publication, verdict, conversation and file shapes remain readable; older readers ignore added metadata. No existing records are rewritten; DATA_EPOCH remains 1.",
+    "payloadFingerprint": "sha256:3517a474868d57e0ef7c95eb370487340dfd45e5c0a2a8e0f1be5d630a27a4d3"
   },
   "schemas": [
     {
@@ -3536,10 +3536,10 @@
       "storeId": "conversation-input-queue"
     },
     {
-      "contract": "frozen source publications, analysis jobs, findings and generated read-only workspaces; optional repo filter and unstaged source preserve prior working/staged/commit publications",
+      "contract": "frozen source publications, analysis jobs, findings and generated read-only workspaces; optional repo filter and unstaged source preserve prior publications; optional sourceCoverage and modelCoverage record file and request scope, while failed jobs may retain validated partial reading results",
       "kind": "directory-contract",
       "module": "plugins/enigma/change-workbench.ts",
-      "sourceHash": "sha256:060d6bc202bffe94e253c1f7dc7ad86ad67a56c9096075f6cc9bfe3a439f3ee6",
+      "sourceHash": "sha256:5610bc7836a7a74c5331eb2fc0381fb170ecd9881089d3747aefe72ca3da9f23",
       "storeId": "conversation-review-workbench"
     },
     {
@@ -4042,7 +4042,7 @@
       "storeId": "terminal-session-state"
     },
     {
-      "contract": "version 1 usage records with optional timingSource; missing or unrecognized source is unknown, existing usage/model/status fields are retained",
+      "contract": "version 1 usage records with optional timingSource; unknown timing and unreported reasoning remain unknown, Pi reasoning is a subset of output, each reading batch retains its own existing request record",
       "kind": "runtime-contract",
       "module": "lib/llm/usage-ledger.ts",
       "sourceHash": "sha256:1f446b811a5bdd7ce1bb9259d6f608b2fa3dbe765ed1313c691a1fab42003cb5",
