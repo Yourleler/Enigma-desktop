@@ -6,6 +6,13 @@ import {EditorView} from '@codemirror/view';
 import {SearchQuery,getSearchQuery,setSearchQuery,openSearchPanel,searchPanelOpen} from '@codemirror/search';
 import {DiffReader} from '../DiffReader';
 afterEach(cleanup);
+it('commits pasted search text before the first Enter without requiring a keyup or blur',()=>{
+ const view=render(<DiffReader version="paste-search" change={{repo:'r',file:'file.ts',before:{content:'old value'},after:{content:'new needle'}}}/>);
+ fireEvent.click(screen.getByRole('button',{name:'查找'}));
+ fireEvent.input(screen.getByRole('textbox',{name:'查找'}),{target:{value:'needle'}});
+ const editor=EditorView.findFromDOM(view.container.querySelector('.cm-merge-b') as HTMLElement)!;
+ expect(getSearchQuery(editor.state).search).toBe('needle');
+});
 it('does not offer text controls or a stale chunk count when the body was not retained',()=>{
   render(<DiffReader version="v" change={{repo:'r',file:'large.txt',change:'added',after:{size:520000,omitted:'文件超过512KB，仅保留变化标记'}}}/>);
   expect(screen.getByText(/520,000 字节/)).toBeVisible();

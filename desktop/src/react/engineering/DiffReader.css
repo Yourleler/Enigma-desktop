@@ -22,6 +22,7 @@
 .enigma-diff-editor .cm-changedText { background:color-mix(in srgb,var(--accent) 20%,transparent); }
 .enigma-diff-reader .cm-searchMatch { background:var(--diff-match-background);color:var(--diff-match-text); }
 .enigma-diff-reader .cm-searchMatch-selected { background:var(--diff-current-match-background);color:var(--diff-match-text);outline:1px solid var(--diff-current-match-border); }
+.enigma-diff-reader :is(.cm-searchMatch,.cm-searchMatch-selected),.enigma-diff-reader :is(.cm-searchMatch,.cm-searchMatch-selected) * {color:var(--diff-match-text)!important;}
 
 .enigma-diff-document > .enigma-diff-reader {height:min(65vh,700px);}
 

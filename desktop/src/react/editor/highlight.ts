@@ -1,3 +1,4 @@
+import './code-colors.css';
 import { HighlightStyle } from '@codemirror/language';
 import { tags } from '@lezer/highlight';
 

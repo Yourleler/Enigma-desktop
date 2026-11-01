@@ -22,8 +22,6 @@
 ::highlight(enigma-document-results){background:var(--search-match-bg);color:var(--search-match-text);}
 ::highlight(enigma-document-current){background:var(--search-active-bg);color:var(--search-active-text);text-decoration:underline;}
 
-[data-preview-root]{--enigma-code-keyword:#714494;--enigma-code-string:#4e6900;--enigma-code-number:#a94a10;--enigma-code-operator:#26767a;--enigma-code-function:#356196;--enigma-code-type:#aa292f;}
-[data-theme="midnight"] [data-preview-root],[data-theme="midnight-contrast"] [data-preview-root]{--enigma-code-keyword:#c7a7f2;--enigma-code-string:#bed98b;--enigma-code-number:#f4b782;--enigma-code-operator:#89d4d8;--enigma-code-function:#a6c8f8;--enigma-code-type:#f0a4ae;}
 
 .enigma-document-navigation { container-type:inline-size; }
 .enigma-document-leading { flex:1; min-width:0; }
