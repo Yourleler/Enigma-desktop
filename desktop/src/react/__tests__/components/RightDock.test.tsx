@@ -20,7 +20,7 @@ vi.mock('../../components/right-workspace/SessionTodoCard',()=>({SessionTodoCard
 vi.mock('../../components/right-workspace/WorkflowCard',()=>({WorkflowCard:()=>null}));
 vi.mock('../../components/right-workspace/AgentActivityCard',()=>({AgentActivityCard:()=>null}));
 vi.mock('../../components/right-workspace/SessionStatusCard',()=>({SessionStatusCard:()=>null}));
-beforeEach(()=>{vi.stubGlobal('ResizeObserver',class{observe(){}disconnect(){}});useStore.setState({currentSessionPath:'/session/a',activeServerConnectionId:'local',deskBasePath:'/workspace',jianOpen:true,previewOpen:false,previewItems:[],openTabs:[],activeTabId:null});useRightDock.setState({views:{}});useEngineering.setState({snapshot:null,active:'',paneOpen:false});});
+beforeEach(()=>{vi.stubGlobal('ResizeObserver',class{observe(){}disconnect(){}});useStore.setState({currentSessionPath:'/session/a',pendingSessionSwitchPath:null,activeServerConnectionId:'local',deskBasePath:'/workspace',jianOpen:true,previewOpen:false,previewItems:[],openTabs:[],activeTabId:null});useRightDock.setState({views:{}});useEngineering.setState({snapshot:null,active:'',paneOpen:false});});
 afterEach(cleanup);
 it('reveals overflow in either direction without changing the selected panel',()=>{
  const {container}=render(<RightDock/>),list=screen.getByRole('tablist',{name:'工作面板'}),viewport=container.querySelector('.enigma-dock-tabs-viewport')!;
@@ -77,6 +77,16 @@ it('isolates active tabs across conversation and connection boundaries',()=>{
  expect(screen.getByRole('tab',{name:'任务'})).toHaveAttribute('aria-selected','true');
  act(()=>useStore.setState({currentSessionPath:'/session/b'}));expect(screen.getByRole('tab',{name:'文件'})).toHaveAttribute('aria-selected','true');
  act(()=>useStore.setState({currentSessionPath:'/session/a'}));expect(screen.getByRole('tab',{name:'任务'})).toHaveAttribute('aria-selected','true');
+});
+it('applies a panel choice during a pending switch to the incoming conversation only',()=>{
+ const oldScope=dockScope(useStore.getState());selectDockTab(oldScope,'tasks');render(<RightDock/>);
+ act(()=>useStore.setState({pendingSessionSwitchPath:'/session/b'}));
+ fireEvent.click(screen.getByRole('tab',{name:'变更'}));
+ expect(dockView(oldScope).tab).toBe('tasks');
+ act(()=>useStore.setState({currentSessionPath:'/session/b',pendingSessionSwitchPath:null}));
+ expect(screen.getByRole('tab',{name:'变更'})).toHaveAttribute('aria-selected','true');
+ act(()=>useStore.setState({currentSessionPath:'/session/a'}));
+ expect(screen.getByRole('tab',{name:'任务'})).toHaveAttribute('aria-selected','true');
 });
 it('restores an older open preview after delayed document hydration without overriding a user tab choice',()=>{
  render(<RightDock/>);

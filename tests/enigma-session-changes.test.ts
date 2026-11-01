@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { afterEach, expect, it } from 'vitest';
-import { SessionChanges, summarizeRepository, parseGitFileStatuses } from '../plugins/enigma/session-changes';
+import { SessionChanges, summarizeRepository, parseGitFileStatuses,parseGitStatusGroups } from '../plugins/enigma/session-changes';
 
 const roots: string[] = [];
 afterEach(async () => { for (const root of roots.splice(0)) await fs.rm(root, { recursive: true, force: true }); });
@@ -28,6 +28,16 @@ it('reports staged, unstaged, new and binary files with actual line counts', asy
   expect(status).toMatchObject({ files: 3, added: 4, removed: 1, untracked: 2, binary: 1 });
   expect(status.error).toBeUndefined();
 });
+it('separates staged and unstaged paths without counting rename sources twice',()=>{
+ expect(parseGitStatusGroups('MM same.ts\0R  next.ts\0old.ts\0?? new.ts\0UU conflict.ts\0?? .env\0')).toEqual({staged:['same.ts','next.ts'],unstaged:['same.ts'],untracked:['new.ts'],conflicts:['conflict.ts']});
+});
+it('captures a selected repository and its first commit without changing the source index',async()=>{
+ const f=await fixture(),head=f.git('rev-parse','HEAD').trim(),before=f.git('status','--porcelain');
+ const result=await f.changes.read('session','commit',undefined,{base:{main:''},target:{main:head}},{analyze:false,repo:'main'});
+ expect(result.changeReading.record.changes).toHaveLength(1);expect(result.changeReading.record.changes[0].change).toBe('added');
+ expect(f.git('status','--porcelain')).toBe(before);
+ await expect(f.changes.read('session','working',undefined,undefined,{analyze:false,repo:'unknown'})).rejects.toThrow('所选仓库');
+});
 it('opens ordinary conversation changes without engineering binding or writing source metadata, and freezes both views', async () => {
   const f = await fixture();
   await fs.writeFile(path.join(f.repo, 'main.ts'), 'export const value = 2;\n'); f.git('add', 'main.ts');
@@ -43,6 +53,14 @@ it('opens ordinary conversation changes without engineering binding or writing s
   await expect(fs.stat(path.join(f.repo, '.enigma-next'))).rejects.toMatchObject({ code: 'ENOENT' });
   await fs.writeFile(path.join(f.repo, 'main.ts'), 'export const value = 4;\n');
   expect(publication.record.changes[0].after.content).toContain('value = 2');
+});
+it('compares unstaged content with the index and includes new files without mixing staged edits',async()=>{
+ const f=await fixture();await fs.writeFile(path.join(f.repo,'main.ts'),'export const value = 2;\n');f.git('add','main.ts');
+ await fs.writeFile(path.join(f.repo,'main.ts'),'export const value = 3;\n');await fs.writeFile(path.join(f.repo,'new.txt'),'new');
+ const before=f.git('diff','--cached');const result=await f.changes.read('session','unstaged',undefined,undefined,{analyze:false});
+ const file=result.changeReading.record.changes.find(f=>f.file==='main.ts');
+ expect(file).toMatchObject({before:{content:'export const value = 2;\n'},after:{content:'export const value = 3;\n'}});
+ expect(result.changeReading.record.changes.find(f=>f.file==='new.txt')?.change).toBe('added');expect(f.git('diff','--cached')).toBe(before);
 });
 it('handles a repository before its first commit and distinguishes a non-repository', async () => {
   const f = await fixture();

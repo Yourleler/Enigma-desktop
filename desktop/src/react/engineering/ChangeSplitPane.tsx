@@ -1,0 +1,20 @@
+import {useEffect,useRef,useState,type CSSProperties,type ReactNode} from 'react';
+import {AppIcon} from '../ui/app-icons';
+export const clampChangeTreeWidth=(width:number,total:number)=>Math.max(156,Math.min(width,Math.max(156,total-260)));
+export function ChangeSplitPane({tree,children}:{tree:ReactNode;children:ReactNode}){
+ const root=useRef<HTMLDivElement>(null),cleanup=useRef(()=>{}),openButton=useRef<HTMLButtonElement>(null);
+ const [width,setWidth]=useState(()=>{try{return Math.max(156,Math.min(420,Number(localStorage.getItem('enigma-change-tree-width'))||200));}catch{return 200;}});
+ const [closed,setClosed]=useState(false),[drawer,setDrawer]=useState(false),[resizing,setResizing]=useState(false),[narrow,setNarrow]=useState(false);
+ useEffect(()=>()=>cleanup.current(),[]);
+ useEffect(()=>{if(!root.current||typeof ResizeObserver==='undefined')return;const observer=new ResizeObserver(()=>{const value=(root.current?.clientWidth||600)<=480;setNarrow(value);if(!value)setDrawer(false);});observer.observe(root.current);return()=>observer.disconnect();},[]);
+ useEffect(()=>{if(!drawer)return;const key=(e:KeyboardEvent)=>{if(e.key==='Escape'){e.preventDefault();setDrawer(false);openButton.current?.focus();}};window.addEventListener('keydown',key);return()=>window.removeEventListener('keydown',key);},[drawer]);
+ const save=(value:number)=>{setWidth(value);try{localStorage.setItem('enigma-change-tree-width',String(value));}catch{}};
+ return <div className="enigma-change-split" ref={root} data-tree-closed={closed||undefined} data-tree-drawer={drawer||undefined} style={{'--change-tree-width':`${width}px`} as CSSProperties}>
+  <aside className="enigma-change-tree-pane" onClick={e=>{if((e.target as HTMLElement).closest('.enigma-change-tree-file,.enigma-change-tree-scope,.enigma-change-tree-commit'))setDrawer(false);}}><button className="enigma-change-tree-close" aria-label="收起变更文件列表" title="收起文件列表，扩大代码阅读区域" onClick={()=>{setClosed(true);setDrawer(false);}}><AppIcon name="panelLeft" size={15}/></button>{tree}</aside>
+  <div className="enigma-change-splitter" role="separator" aria-label="调整变更文件列表宽度" aria-orientation="vertical" aria-valuemin={156} aria-valuemax={Math.max(156,(root.current?.clientWidth||600)-260)} aria-valuenow={width} tabIndex={closed?-1:0} title="拖动调整目录与 Diff 宽度；双击还原；方向键微调" onDoubleClick={()=>save(200)} onKeyDown={e=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;e.preventDefault();const total=root.current?.clientWidth||600;save(clampChangeTreeWidth(e.key==='Home'?156:e.key==='End'?total:width+(e.key==='ArrowLeft'?-16:16),total));}}
+   onPointerDown={e=>{if(e.button!==0||!root.current)return;e.preventDefault();cleanup.current();const rect=root.current.getBoundingClientRect(),original=width;let next=width;setResizing(true);const move=(event:PointerEvent)=>{next=clampChangeTreeWidth(event.clientX-rect.left,rect.width);setWidth(next);};const finish=()=>{save(next);cleanup.current();};const cancel=()=>{setWidth(original);cleanup.current();};const key=(event:KeyboardEvent)=>{if(event.key==='Escape'){event.preventDefault();cancel();}};cleanup.current=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',finish);window.removeEventListener('pointercancel',cancel);window.removeEventListener('blur',cancel);window.removeEventListener('keydown',key);setResizing(false);};window.addEventListener('pointermove',move);window.addEventListener('pointerup',finish);window.addEventListener('pointercancel',cancel);window.addEventListener('blur',cancel);window.addEventListener('keydown',key);}}/>
+  <div className="enigma-reading-diff-content"><button ref={openButton} className="enigma-change-tree-open" aria-label="显示变更文件列表" aria-expanded={narrow?drawer:!closed} onClick={()=>{setClosed(false);setDrawer(!drawer);}}><AppIcon name="panelLeft" size={14}/>文件列表</button>{children}</div>
+  {drawer&&<button className="enigma-change-tree-backdrop" aria-label="关闭变更文件列表" onClick={()=>setDrawer(false)}/>}
+  {resizing&&<div className="enigma-split-drag-cover" data-native-browser-occluder=""/>}
+ </div>;
+}

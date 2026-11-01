@@ -6,12 +6,12 @@ import {runPiReview} from 'enigma-next/pi-review';
 import {SessionManager} from '../../lib/pi-sdk/index.ts';
 import {conversationChanges} from '../../core/conversation-change-capture.ts';
 import {desktopInputQueue} from '../../core/desktop-input-queue.ts';
-import {SessionChanges} from './session-changes.ts';
+import {SessionChanges,parseGitStatusGroups} from './session-changes.ts';
 import {redact} from 'enigma-next/storage';
 
 const hash=(v:string|Buffer)=>createHash('sha256').update(v).digest('hex');
 const safe=(v:string)=>{if(!/^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,100}$/.test(v)||['__proto__','constructor','prototype'].includes(v))throw Error('记录标识无效');return v;};
-export interface WorkbenchSource {source:'conversation'|'git';from?:string;to?:string;all?:boolean;kind?:'working'|'staged'|'commit';base?:Record<string,string>;target?:Record<string,string>}
+export interface WorkbenchSource {source:'conversation'|'git';from?:string;to?:string;all?:boolean;kind?:'working'|'staged'|'unstaged'|'commit';repo?:string;base?:Record<string,string>;target?:Record<string,string>}
 interface Publication {id:string;session:string;version:string;createdAt:string;input:WorkbenchSource;scopeGoal?:string;roots:any[];changes:any[];gaps:string[];reading?:any;context?:any;gitContext?:string;gitView?:{root:string;record:string};checks?:any[];requirements:{text:string;reference:string}[]}
 interface Job {id:string;session:string;publication:string;kind:'reading'|'review';status:'running'|'completed'|'failed'|'cancelled';createdAt:string;endedAt?:string;model?:string;error?:string;result?:any;previous?:string}
 
@@ -33,8 +33,12 @@ export class ChangeWorkbench {
     for(const repo of repos){
       const run=async(args:string[])=>{const r=await runProcess(['git','-c','core.fsmonitor=false',...args],repo.root,{internalGit:true,timeoutMs:5000,limit:60000});return r.status==='passed'?r.output:'';};
       const branches=(await run(['for-each-ref','--format=%(refname:short)','refs/heads','refs/remotes'])).trim().split('\n').filter(Boolean);
-      const commits=(await run(['log','-40','--format=%H%x09%s'])).trim().split('\n').filter(Boolean).map(row=>{const [id,...title]=row.split('\t');return {id,title:title.join('\t')};});
-      repositories.push({id:repo.id,name:path.basename(repo.root),branches,commits});
+      const commits=(await run(['log','-40','--format=%H%x09%P%x09%s'])).trim().split('\n').filter(Boolean).map(row=>{const [id,parents,...title]=row.split('\t');return {id,parents:parents.split(' ').filter(Boolean),title:title.join('\t')};});
+      const status=await runProcess(['git','-c','core.fsmonitor=false','status','--porcelain=v1','-z','--untracked-files=all'],repo.root,{internalGit:true,timeoutMs:5000,limit:200000,env:{GIT_OPTIONAL_LOCKS:'0'}});
+      const currentBranch=(await run(['symbolic-ref','--short','-q','HEAD'])).trim();
+      repositories.push({id:repo.id,name:path.basename(repo.root),branches,commits,branch:currentBranch||'分离 HEAD',
+        state:status.status==='passed'&&!status.truncated?parseGitStatusGroups(status.output):null,
+        ...(status.status!=='passed'||status.truncated?{stateError:'无法完整读取仓库状态'}:{})});
     }
     let names:string[]=[];try{names=await fs.readdir(this.directory(session));}catch{}
     const jobs:Job[]=[];for(const n of names.filter(n=>n.startsWith('job-')&&n.endsWith('.json'))){try{const job=JSON.parse(await fs.readFile(path.join(this.directory(session),n),'utf8'));if(job.session===session)jobs.push({...job,...(job.status==='running'&&!this.jobs.has(job.id)?{status:'failed',error:'应用重启时分析中断，请重新发起'}:{})});}catch{}}
@@ -53,10 +57,10 @@ export class ChangeWorkbench {
       result.scopeGoal=all.slice(all.findIndex(t=>t.id===from),all.findIndex(t=>t.id===to)+1).map(t=>t.prompt).join('\n').slice(-3000);
       input={...input,from,to};
     }else if(input.source==='git'){
-      if(!['working','staged','commit'].includes(input.kind||''))throw Error('请选择仓库差异来源');
-      const resultGit=await this.git.read(session,input.kind!,undefined,{base:input.base,target:input.target},{analyze:false});
-      result={...resultGit.changeReading.record,roots:await this.git.repositories(session),gitContext:resultGit.changeReading.record.sourceRoot,gitView:{root:resultGit.changeReadingRoot,record:resultGit.changeReading.record.id}};
-      input={...input,base:Object.fromEntries(result.repositories.map((r:any)=>[r.id,r.base]))};
+      if(!['working','staged','unstaged','commit'].includes(input.kind||''))throw Error('请选择仓库差异来源');
+      const resultGit=await this.git.read(session,input.kind!,undefined,{base:input.base,target:input.target},{analyze:false,repo:input.repo});
+      result={...resultGit.changeReading.record,roots:(await this.git.repositories(session)).filter(repo=>!input.repo||repo.id===input.repo),gitContext:resultGit.changeReading.record.sourceRoot,gitView:{root:resultGit.changeReadingRoot,record:resultGit.changeReading.record.id}};
+      if(input.kind==='commit')input={...input,base:Object.fromEntries(result.repositories.map((r:any)=>[r.id,r.base]))};
     }else throw Error('变更来源无效');
     const requirements=branch.filter(e=>e.type==='message'&&e.message.role==='user').slice(-12).map((e:any)=>({text:(typeof e.message.content==='string'?e.message.content:e.message.content.filter((c:any)=>c.type==='text').map((c:any)=>c.text).join('\n')).slice(0,1200),reference:e.id}));
     const binding=await this.host.binding(session);const checks:any[]=[];
@@ -186,7 +190,7 @@ export class ChangeWorkbench {
       const job=await this.storedJob(session,jobId);if(action==='cancel'){this.jobs.get(jobId)?.abort();return {ok:true};}
       if(action==='recheck'){
         if(job.status!=='completed'||job.kind!=='review')throw Error('只有已完成的审查可以复查');
-        const old=await this.source(session,job.publication),pub=await this.capture(session,old.input.source==='git'?{source:'git',kind:'working',base:old.input.base}:{...old.input,to:undefined});
+        const old=await this.source(session,job.publication),pub=await this.capture(session,old.input.source==='git'?{source:'git',kind:'working',repo:old.input.repo,base:old.input.base}:{...old.input,to:undefined});
         return this.analyze(session,pub.id,'review',undefined,job.id);
       }
       await this.source(session,job.publication);

@@ -33,6 +33,20 @@ export function parseGitFileStatuses(output:string){
   }
   return files;
 }
+/** Keep index and working-tree states separate; one path may occur in both. */
+export function parseGitStatusGroups(output:string){
+  const tokens=output.split('\0'),staged:string[]=[],unstaged:string[]=[],untracked:string[]=[],conflicts:string[]=[];
+  for(let i=0;i<tokens.length;i++){
+    const token=tokens[i];if(!token)continue;
+    const xy=token.slice(0,2),file=token.slice(3);if(/[RC]/.test(xy))i++;
+    if(!file||!included(file))continue;
+    if(xy==='??'){untracked.push(file);continue;}
+    if(xy==='!!')continue;
+    if(xy.includes('U')||xy==='AA'||xy==='DD'){conflicts.push(file);continue;}
+    if(xy[0]!==' ')staged.push(file);if(xy[1]!==' ')unstaged.push(file);
+  }
+  return {staged,unstaged,untracked,conflicts};
+}
 async function git(root: string, args: string[], signal?: AbortSignal) {
   const result = await runProcess(['git', '-c', 'core.fsmonitor=false', '-c', 'core.hooksPath=/dev/null', ...args], root,
     { signal, internalGit: true, timeoutMs: 8000, limit: 2_000_000, env: { GIT_OPTIONAL_LOCKS: '0' } });
@@ -153,17 +167,19 @@ export class SessionChanges {
     return {repositories,git:repos.length>0};
   }
 
-  async read(sessionPath: string, kind: 'working' | 'staged' | 'commit', signal?: AbortSignal, revisions?:{base?:Record<string,string>;target?:Record<string,string>}, options: { analyze?: boolean } = {}) {
-    const key = `${sessionPath}:${kind}:${JSON.stringify(revisions)}:${options.analyze !== false}`;
+  async read(sessionPath: string, kind: 'working' | 'staged' | 'unstaged' | 'commit', signal?: AbortSignal, revisions?:{base?:Record<string,string>;target?:Record<string,string>}, options: { analyze?: boolean; repo?:string } = {}) {
+    const key = `${sessionPath}:${kind}:${JSON.stringify(revisions)}:${options.analyze !== false}:${options.repo||'all'}`;
     const pending = this.pending.get(key);
     if (pending) return pending;
-    const task = this.capture(sessionPath, kind, signal,revisions, options.analyze !== false);
+    const task = this.capture(sessionPath, kind, signal,revisions, options.analyze !== false,options.repo);
     this.pending.set(key, task);
     try { return await task; } finally { if (this.pending.get(key) === task) this.pending.delete(key); }
   }
 
-  private async capture(sessionPath: string, kind: 'working' | 'staged' | 'commit', signal?: AbortSignal,revisions?:{base?:Record<string,string>;target?:Record<string,string>}, analyze = true) {
-    const repos = await this.repositories(sessionPath);
+  private async capture(sessionPath: string, kind: 'working' | 'staged' | 'unstaged' | 'commit', signal?: AbortSignal,revisions?:{base?:Record<string,string>;target?:Record<string,string>}, analyze = true,repoId?:string) {
+    const allRepos = await this.repositories(sessionPath);
+    const repos=repoId?allRepos.filter(repo=>repo.id===repoId):allRepos;
+    if(repoId&&!repos.length)throw new Error('所选仓库不在当前对话范围内');
     if (!repos.length) throw new Error('当前文件夹不是 Git 仓库，暂无版本差异');
     const root = path.join(this.engine.hanakoHome, 'plugin-data', 'enigma', 'change-previews', hash(`${sessionPath}:${kind}:${JSON.stringify(repos)}`));
     await fs.mkdir(root, { recursive: true });
@@ -171,7 +187,7 @@ export class SessionChanges {
     if (!workspace.config.repos.length) {
       await workspace.exclusive(async () => {
         for (const repo of repos) await workspace.addRepo(repo.id, repo.root, { access: 'read', role: repo.role });
-        for (const repo of repos) await workspace.setDependencies(repo.id, repo.dependsOn);
+        for (const repo of repos) await workspace.setDependencies(repo.id, repo.dependsOn.filter(id=>repos.some(r=>r.id===id)));
       });
     }
     nativeEngineeringPolicy(this.engine, workspace, sessionPath);
@@ -183,7 +199,7 @@ export class SessionChanges {
       const record = analyze ? await readings.build(input, { signal }) : await readings.capture(input, signal);
       const checked = await readings.latest('sidebar');
       // Recheck assigned roots before exposing a completed asynchronous result.
-      if (JSON.stringify(repos) !== JSON.stringify(await this.repositories(sessionPath))) throw new Error('对话工作区已变化，请重新打开变更');
+      if (JSON.stringify(repos) !== JSON.stringify((await this.repositories(sessionPath)).filter(repo=>!repoId||repo.id===repoId))) throw new Error('对话工作区已变化，请重新打开变更');
       return { changeReadingRoot:root, changeReading: checked || { record, matchesWorkspace: false }, repositories: repos.map(({ id, root }) => ({ id, root })) };
     });
   }

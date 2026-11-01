@@ -1,6 +1,7 @@
 .enigma-diff-reader { display:flex;flex-direction:column;min-width:0;min-height:200px;height:100%;color:var(--text); }
 .enigma-diff-controls { display:flex;flex-wrap:wrap;gap:var(--space-8, 8px);align-items:center;padding:var(--space-10, 10px) var(--space-12, 12px);border-bottom:1px solid var(--border); }
 .enigma-diff-controls > span { flex:1;min-width:120px;overflow-wrap:anywhere;font:12px/1.5 var(--font-mono); }
+.enigma-diff-path{display:block;color:var(--text-muted);font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
 .enigma-diff-controls > div { display:flex;align-items:center;gap:var(--space-4, 4px);flex-wrap:wrap; }
 .enigma-diff-controls button { background:transparent;color:var(--text-muted);font:11px/1.5 var(--font-ui);padding:var(--space-4, 4px) var(--space-6, 6px);border:0;border-radius:5px;cursor:pointer; }
 .enigma-diff-controls button:hover,.enigma-diff-controls button[aria-pressed=true] { background:var(--accent-light);color:var(--accent); }

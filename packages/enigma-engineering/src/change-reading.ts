@@ -10,7 +10,7 @@ import { readGitBlobs } from './git-blobs.js';
 import {emitActivity,measured} from './telemetry.js';
 
 export interface ChangeReadingInput {
-  kind: 'working' | 'staged' | 'commit' | 'merge-request';
+  kind: 'working' | 'staged' | 'unstaged' | 'commit' | 'merge-request';
   goal: string; task: string; base?: Record<string, string>; target?: Record<string, string>; url?: string;
 }
 interface FileContent { hash: string; mode: string; content?: string; omitted?: string }
@@ -32,6 +32,8 @@ export class ChangeReadings {
   private async directory() { return ensureDir(join(this.workspace.data, 'change-readings')); }
   private async path(record: string) { return join(await this.directory(), `${safeId(record)}.json`); }
   private async revision(repo: Repo, value: string | undefined, fallback: string) {
+    // Explicit empty base is used when inspecting a repository's first commit.
+    if(value==='')return '';
     const ref = value || fallback;
     if (ref.length > 160 || ref.startsWith('-') || ref.includes('\0')) throw new Error('Invalid Git revision');
     const result = await runProcess(['git', 'rev-parse', '--verify', '--end-of-options', `${ref}^{commit}`], repo.root, { internalGit: true, timeoutMs: 5000 });
@@ -84,7 +86,7 @@ export class ChangeReadings {
     return files;
   }
   async capture(input: ChangeReadingInput, signal?: AbortSignal) {
-    if (!input.goal?.trim() || input.goal.length > 4000 || !['working', 'staged', 'commit', 'merge-request'].includes(input.kind)) throw new Error('Provide a change source and goal');
+    if (!input.goal?.trim() || input.goal.length > 4000 || !['working', 'staged', 'unstaged', 'commit', 'merge-request'].includes(input.kind)) throw new Error('Provide a change source and goal');
     safeId(input.task);
     if (input.kind === 'merge-request' && (!input.url || !input.base || !input.target)) throw new Error('MR reading needs its URL and exact per-repository base/target revisions');
     return measured('reading.capture',{detail:'正在冻结变更来源与源码版本'},()=>this.workspace.exclusive(async () => {
@@ -94,8 +96,8 @@ export class ChangeReadings {
         emitActivity({kind:'update',stage:'reading.capture',repo:repo.id,detail:`正在读取 ${repo.id} 的前后版本`},this.workspace.activity);
         const base = await this.revision(repo, input.base?.[repo.id], input.kind === 'commit' ? 'HEAD^' : 'HEAD');
         const target = input.kind === 'commit' || input.kind === 'merge-request' ? await this.revision(repo, input.target?.[repo.id], 'HEAD') : undefined;
-        const before = await this.tree(repo, base, false, gaps, signal), after = await this.tree(repo, target, input.kind === 'working', gaps, signal);
-        repositories.push({ id: repo.id, base, target: target ?? (input.kind === 'staged' ? 'index' : 'working') }); trees.push({ repo, files: after });
+        const before = await this.tree(repo, input.kind==='unstaged'?undefined:base, false, gaps, signal), after = await this.tree(repo, target, (input.kind === 'working'||input.kind==='unstaged'), gaps, signal);
+        repositories.push({ id: repo.id, base:input.kind==='unstaged'?'index':base, target: target ?? (input.kind === 'staged' ? 'index' : 'working') }); trees.push({ repo, files: after });
         for (const file of new Set([...Object.keys(before), ...Object.keys(after)])) {
           const a = before[file], b = after[file];
           if (a?.content !== undefined && b?.content !== undefined ? a.content === b.content && a.mode === b.mode : a?.hash === b?.hash && a?.mode === b?.mode) continue;

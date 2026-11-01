@@ -103,6 +103,15 @@ export function RightDock(){
     list.scrollTo({left:Math.max(0,Math.min(list.scrollWidth-list.clientWidth,list.scrollLeft+direction*Math.max(80,list.clientWidth*.7))),behavior:reduceMotion?'instant':'smooth'});
   };
   const choose=(tab:DockTab)=>{
+    const state=useStore.getState(),incoming=state.pendingSessionSwitchPath;
+    // Switching loads history before changing currentSessionPath. Remember a
+    // category choice for that incoming conversation, not the still-visible one.
+    // File tabs belong to their existing workspace and must not be transferred.
+    if(incoming&&incoming!==session&&!tab.startsWith('preview:')){
+      const target=dockScope({...state,currentSessionPath:incoming});
+      selectDockTab(target,tab,tab==='browser'&&dockView(target).browserSession===undefined?{browserSession:incoming}:{});
+      return;
+    }
     // Materialize restored tabs in their displayed order before preview actions
     // select the file, so first selection cannot move it ahead of its siblings.
     selectDockTab(scope,tab,tab==='browser'&&view?.browserSession===undefined?{browserSession:session}:{},availableIds);

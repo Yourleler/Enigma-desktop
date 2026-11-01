@@ -42,11 +42,13 @@ function saveReading(id:string,state:ReadingPair){
 export function DiffReader({change,version,line,side='target'}:{change:any;version:string;line?:number;side?:'baseline'|'target'}){
  const root=useRef<HTMLDivElement>(null),editor=useRef<EditorView|null>(null),baseline=useRef<EditorView|null>(null);
  const searchRoot=useRef<HTMLDivElement>(null);
+ const manualSplit=useRef(false);
  const lastAnchor=useRef<{id:string;line:number;side:string;doc:Text}|null>(null);
  const [split,setSplit]=useState(true),[wrap,setWrap]=useState(true),[collapse,setCollapse]=useState(true),[chunks,setChunks]=useState(0);
  const a=change?.before?.content??'',b=change?.after?.content??'';
  const omitted=change?.change==='unknown'?'范围不完整，不能判定新增或删除':change?.before?.omitted||change?.after?.omitted;
  const id=JSON.stringify([version,change?.repo,change?.file]);
+ useEffect(()=>{const element=root.current;if(!element||typeof ResizeObserver==='undefined')return;const observer=new ResizeObserver(()=>{if(!manualSplit.current&&element.clientWidth>0)setSplit(element.clientWidth>=460);});observer.observe(element);return()=>observer.disconnect();},[omitted]);
  useEffect(()=>{
   if(!root.current||!searchRoot.current||!change||omitted){setChunks(0);return;}
   const extensions=[EditorState.readOnly.of(true),EditorState.phrases.of({"Find":"查找","next":"下一个","previous":"上一个","all":"选中全部","match case":"区分大小写","regexp":"正则","by word":"整词","close":"关闭查找","$ unchanged lines":"$ 行相同内容"}),EditorView.editable.of(false),lineNumbers(),highlightActiveLineGutter(),search({top:true}),panels({topContainer:searchRoot.current}),keymap.of(searchKeymap),syntaxHighlighting(defaultHighlightStyle,{fallback:true}),codeTheme,EditorView.theme({'&':{height:'100%',backgroundColor:'transparent'},'.cm-scroller':{fontFamily:'var(--font-mono)',fontSize:'12px',lineHeight:'1.7',overflow:'auto',padding:'0'},'.cm-content':{padding:'8px 0'}}),...(wrap?[EditorView.lineWrapping]:[])];
@@ -68,15 +70,16 @@ export function DiffReader({change,version,line,side='target'}:{change:any;versi
   const oldAnchor=lastAnchor.current;
   const content=side==='baseline'?a:b;
   if(oldAnchor?.id===id&&oldAnchor.line===line&&oldAnchor.side===side&&oldAnchor.doc.toString()===content)return;
-  if(side==='baseline'&&!split){setSplit(true);return;}
+  if(side==='baseline'&&!split){manualSplit.current=true;setSplit(true);return;}
   const view=side==='baseline'?baseline.current:editor.current;
   if(view){const pos=view.state.doc.line(Math.min(Math.max(1,line),view.state.doc.lines)).from;view.dispatch({selection:{anchor:pos},effects:EditorView.scrollIntoView(pos,{y:'center'})});lastAnchor.current={id,line,side,doc:view.state.doc};}
  },[id,line,split,side,a,b,omitted]);
  if(!change)return <p>选择一个变更文件。</p>;
  const size=(value:any)=>!value?'无此文件':typeof value.size==='number'?`${value.size.toLocaleString()} 字节`:'大小未记录';
  return <section className="enigma-diff-reader" aria-label={`差异 ${change.file}`}>
-  <div className="enigma-diff-controls"><span>{change.previousPath?`${change.previousPath} → ${change.file}`:change.file}</span>{!omitted&&<div><button aria-pressed={split} title={split?'当前双栏，点击切换单栏':'当前单栏，点击切换双栏'} onClick={()=>setSplit(!split)}>{split?'双栏':'单栏'}</button><button aria-pressed={wrap} onClick={()=>setWrap(!wrap)}>换行</button><button onClick={()=>setCollapse(!collapse)}>{collapse?'展开全文':'折叠相同内容'}</button><button onClick={()=>editor.current&&openSearchPanel(editor.current)}>查找</button><button aria-label="上一处变化" disabled={!chunks} onClick={()=>editor.current&&goToPreviousChunk(editor.current)}>↑</button><button aria-label="下一处变化" disabled={!chunks} onClick={()=>editor.current&&goToNextChunk(editor.current)}>↓</button><small>{chunks} 处</small></div>}</div>
+  <div className="enigma-diff-controls"><span title={change.previousPath?`${change.previousPath} → ${change.file}`:change.file}>{change.file.split('/').at(-1)}{change.file.includes('/')&&<small className="enigma-diff-path">{change.file.slice(0,change.file.lastIndexOf('/'))}</small>}</span>{!omitted&&<div><button aria-pressed={split} title={split?'当前双栏，点击切换单栏':'当前单栏，点击切换双栏'} onClick={()=>{manualSplit.current=true;setSplit(!split);}}>{split?'双栏':'单栏'}</button><button aria-pressed={wrap} onClick={()=>setWrap(!wrap)}>换行</button><button onClick={()=>setCollapse(!collapse)}>{collapse?'展开全文':'折叠相同内容'}</button><button onClick={()=>editor.current&&openSearchPanel(editor.current)}>查找</button><button aria-label="上一处变化" disabled={!chunks} onClick={()=>editor.current&&goToPreviousChunk(editor.current)}>↑</button><button aria-label="下一处变化" disabled={!chunks} onClick={()=>editor.current&&goToNextChunk(editor.current)}>↓</button><small>{chunks} 处</small></div>}</div>
+  {change.previousPath&&<p className="enigma-diff-attribution">{change.previousPath} → {change.file}</p>}
   {change.attribution&&<p className="enigma-diff-attribution">{change.attribution==='verified-write'?'已核对工具写入':change.attribution==='unattributed'?'归属待确认：仅观察到文件变化，不代表由助手写入。':'工具执行期间观察到变化，未逐项确认写入归属。'}</p>}
-  {omitted?<div className="enigma-diff-omitted"><p>{omitted}。保留了文件变化记录，无法展示完整文本差异。</p><p>修改前：{size(change.before)}<br/>修改后：{size(change.after)}</p></div>:<><div ref={searchRoot} className="enigma-diff-search"/><div className="enigma-diff-side-labels"><span>{split?'修改前':'文件差异'}</span>{split&&<span>修改后</span>}</div><div ref={root} className="enigma-diff-editor"/></>}
+  {omitted?<div className="enigma-diff-omitted"><p>{omitted}。保留了文件变化记录，无法展示完整文本差异。</p><p>修改前：{size(change.before)}<br/>修改后：{size(change.after)}</p></div>:<><div ref={searchRoot} className="enigma-diff-search"/><div className="enigma-diff-side-labels"><span>{split?'修改前':'全量 Diff'}</span>{split&&<span>修改后</span>}</div><div ref={root} className="enigma-diff-editor"/></>}
  </section>;
 }
