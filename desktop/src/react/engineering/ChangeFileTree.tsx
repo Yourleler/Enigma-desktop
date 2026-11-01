@@ -1,3 +1,4 @@
+import {SearchField} from '../ui/SearchField';
 import {useState} from 'react';
 import {AppIcon} from '../ui/app-icons';
 
@@ -25,7 +26,7 @@ export function ChangeFileTree({files,roots,repositories,input,selected,reviewed
  const git=input?.source==='git';
  return <nav className="enigma-change-tree" aria-label="变更文件列表">
   <header><strong>变更文件</strong><button aria-label={flat?'切换目录树':'切换平铺列表'} title={flat?'按目录层级浏览':'按完整路径平铺'} onClick={onFlat}><AppIcon name={flat?'project':'layers'} size={15}/></button></header>
-  <input aria-label="搜索变更文件" placeholder="搜索文件或路径" value={query} onChange={e=>onQuery(e.target.value)}/>
+  <SearchField aria-label="搜索变更文件" placeholder="搜索文件或路径" value={query} onChange={e=>onQuery(e.target.value)}/>
   <div className="enigma-change-tree-scroll">
    {(git?repositories:roots).map(repo=>{const isSelected=!input?.repo||input.repo===repo.id;const matches=files.filter(file=>file.repo===repo.id);const open=expandedRepos[repo.id]??(isSelected||repositories.length<4);
     return <details key={repo.id} className="enigma-change-tree-repo" open={open} onToggle={e=>{const value=e.currentTarget.open;setExpandedRepos(previous=>previous[repo.id]===value?previous:{...previous,[repo.id]:value});}}>

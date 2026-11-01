@@ -1,3 +1,4 @@
+import {SearchField} from '../ui/SearchField';
 import {useState,type ReactNode} from 'react';
 import {openEngineering,readRecordAction,useEngineering} from './state';
 import {useSideAction} from './useSideAction';
@@ -14,7 +15,7 @@ export function CodeTraceResult({value,details,published=false}:{value:any;detai
  return <section className="enigma-source-reading" data-testid="code-trace-result"><h3>「{value.query}」的源码关系</h3><div className="enigma-chips"><span>{value.symbols.length} 个定义</span><span>{value.references.length} 个引用</span><span>扫描 {value.scannedFiles||0} 个文件</span></div>
  <p className="enigma-source-note">显示本次保存的源码片段和静态关系。它们不是运行结果；打开文件时读取当前版本。</p>
  {!published&&value.map?.nodes&&<button disabled={!!control.busy} onClick={()=>void control.run('open',()=>readRecordAction('reading-open',{query:value.query,repo:value.queryRepo}))}>核对已保存的阅读版本</button>}
- {nodes.length>8&&<input className="enigma-timeline-search" aria-label="筛选源码关系" placeholder="按仓库、路径或符号筛选" value={filter} onChange={event=>{setFilter(event.target.value);setLimit(24);}}/>}
+ {nodes.length>8&&<SearchField className="enigma-timeline-search" aria-label="筛选源码关系" placeholder="按仓库、路径或符号筛选" value={filter} onChange={event=>{setFilter(event.target.value);setLimit(24);}}/>}
  <p className="enigma-source-note">显示 {Math.min(limit,shown.length)} / {shown.length} 个匹配节点</p>
  {shown.slice(0,limit).map((node:any)=><article className="enigma-trace-entry" key={node.id}><strong>{role(node.source.kind)}</strong><button onClick={()=>openSource(node.source)}>{node.source.repo} / {node.source.file}:{node.source.line}</button><p>{node.source.owner?`${node.source.owner} → `:''}{node.source.symbol}</p>{node.source.snippet&&<pre>{node.source.snippet}</pre>}{node.source.truncated&&<p className="enigma-source-note">保存的片段有截断，不能视为完整源码。</p>}
  {node.source.confidence&&<small>{node.source.confidence==='confirmed'?'静态绑定已确认':'候选关系，需核对源码'}</small>}

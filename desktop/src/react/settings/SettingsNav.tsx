@@ -5,6 +5,7 @@ import { t } from './helpers';
 import { buildSettingsSearchEntries, searchSettings, type SettingsSearchResult } from './settings-search-index';
 import styles from './Settings.module.css';
 import { GlassSelection } from '../ui/GlassSelection';
+import '../ui/SearchField.css';
 
 function TabIcon({ d }: { d: string }) {
   return (
@@ -69,7 +70,7 @@ export function SettingsNav({ onTabChange, onSearchResult }: SettingsNavProps) {
         {navItems.map(item=><option key={item.id} value={item.id}>{item.label}</option>)}
       </select>
       <GlassSelection selection={`${activeNavTab}:${query}`} selector="button[aria-current='page']"/>
-      <div className={styles['settings-search-shell']}>
+      <div className={`enigma-search-surface ${styles['settings-search-shell']}`} data-field-surface="search">
         <svg className={styles['settings-search-icon']} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <circle cx="11" cy="11" r="7" />
           <path d="m20 20-3.5-3.5" />

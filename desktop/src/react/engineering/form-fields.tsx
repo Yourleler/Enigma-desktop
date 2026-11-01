@@ -1,3 +1,4 @@
+import {SearchField} from '../ui/SearchField';
 import {useState,useEffect,useRef} from 'react';
 import type {Field} from './state';
 
@@ -49,7 +50,7 @@ export function MultiChoice({label,options,value,change}:{label:string;options:{
   const [query,setQuery]=useState('');
   const visible=options.filter(option=>option.label.toLowerCase().includes(query.toLowerCase()));
   return <fieldset className="enigma-multi-choice"><legend>{label} · 已选 {value.length}</legend>
-    {options.length>6&&<input type="search" aria-label={`筛选${label}`} placeholder="筛选选项" value={query} onChange={e=>setQuery(e.target.value)}/>}
+    {options.length>6&&<SearchField type="search" aria-label={`筛选${label}`} placeholder="筛选选项" value={query} onChange={e=>setQuery(e.target.value)}/>}
     <div>{visible.map(option=><label key={option.value}><input type="checkbox" checked={value.includes(option.value)} onChange={e=>change(e.target.checked?[...value,option.value]:value.filter(id=>id!==option.value))}/><span>{option.label}</span></label>)}{!visible.length&&<p>{options.length?'没有匹配项':'暂无可选记录，请先创建相关内容'}</p>}</div>
   </fieldset>;
 }

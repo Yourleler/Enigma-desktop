@@ -783,7 +783,7 @@ describe('DeskSection workspace watching', () => {
 
     fireEvent.click(screen.getByText('DeskTree.tsx'));
 
-    expect(mocks.searchDeskFiles).toHaveBeenCalledWith('Desk');
+    expect(mocks.searchDeskFiles).toHaveBeenCalledWith('Desk',{throwOnError:true});
     expect(mocks.jumpToDeskSearchResult).toHaveBeenCalledWith({
       name: 'DeskTree.tsx',
       relativePath: 'src/DeskTree.tsx',

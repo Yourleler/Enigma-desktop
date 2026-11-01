@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import './SearchField.css';
 import styles from './ClassicFindBox.module.css';
 
 function iconPath(kind: 'search' | 'up' | 'down' | 'close'): string {
@@ -55,7 +56,7 @@ export function ClassicFindBox({
   if (!open) return null;
   const countLabel = query ? `${resultCount ? resultIndex + 1 : 0}/${resultCount}${truncated?'+':''}` : '0/0';
   return (
-    <div className={`${styles.findBox} ${inline?styles.findBoxInline:''}`} role="search">
+    <div data-field-surface="search" className={`enigma-search-surface ${styles.findBox} ${inline?styles.findBoxInline:''}`} role="search">
       <Icon kind="search" />
       <input
         ref={inputRef}

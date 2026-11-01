@@ -727,7 +727,7 @@ export async function loadDeskTreeFiles(subdir = '', options: { force?: boolean;
   }
 }
 
-export async function searchDeskFiles(query: string): Promise<DeskSearchResult[]> {
+export async function searchDeskFiles(query: string,options:{throwOnError?:boolean}={}): Promise<DeskSearchResult[]> {
   const s = useStore.getState();
   if (!hasServerConnection(s)) return [];
   const trimmed = query.trim();
@@ -749,6 +749,7 @@ export async function searchDeskFiles(query: string): Promise<DeskSearchResult[]
     return Array.isArray(data.results) ? data.results : [];
   } catch (err) {
     console.error('[desk] search failed:', err);
+    if(options.throwOnError)throw err;
     return [];
   }
 }

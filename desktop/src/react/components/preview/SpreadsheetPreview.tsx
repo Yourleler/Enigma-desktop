@@ -15,7 +15,7 @@ export default function SpreadsheetPreview({previewItem}:{previewItem:PreviewIte
   const [sheetTotal,setSheetTotal]=useState(0),[hiddenCount,setHiddenCount]=useState(0);
   const [copying,setCopying]=useState(false),[cellCount,setCellCount]=useState(0);
   const channel=useMemo(()=>crypto.randomUUID(),[key,attempt,previewItem.content]);
-  const url=useMemo(()=>new URL(`assets/spreadsheet-viewer-${version}/index.html#${channel}`,document.baseURI).href,[channel]);
+  const url=useMemo(()=>new URL(`${(import.meta as ImportMeta&{env:{DEV:boolean}}).env.DEV?'spreadsheet-viewer.html':`assets/spreadsheet-viewer-${version}/index.html`}#${channel}`,document.baseURI).href,[channel]);
   const frame=useRef<HTMLIFrameElement>(null),raw=useRef<Uint8Array|null>(null),noticeTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
   const post=(type:string,data:Record<string,unknown>={})=>frame.current?.contentWindow?.postMessage({channel,type,...data},'*');
   useEffect(()=>{

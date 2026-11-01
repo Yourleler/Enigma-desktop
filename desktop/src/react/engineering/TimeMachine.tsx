@@ -1,3 +1,4 @@
+import {SearchField} from '../ui/SearchField';
 import { GlassSelection } from '../ui/GlassSelection';
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { useStore } from '../stores';
@@ -62,7 +63,7 @@ export function TimeMachine({ value, details }: { value: any; details: ReactNode
       </div>
       <p className="enigma-source-note">快照只包含已登记仓库中的可管理文件；依赖目录、密钥文件等不在恢复范围内。</p>
       {!!points.length && <p className="enigma-time-steps" aria-label="恢复步骤"><span>1 选择快照</span><span aria-hidden="true">→</span><span>2 查看差异</span><span aria-hidden="true">→</span><span>3 确认恢复</span></p>}
-      {points.length > 4 && <input className="enigma-timeline-search" aria-label="筛选代码快照" placeholder="按名称、时间或仓库筛选" value={filter} onChange={e => setFilter(e.target.value)}/>}
+      {points.length > 4 && <SearchField className="enigma-timeline-search" aria-label="筛选代码快照" placeholder="按名称、时间或仓库筛选" value={filter} onChange={e => setFilter(e.target.value)}/>}
       {!points.length && <div className="enigma-empty-feature"><h3>先保存一个可以回来的位置</h3><p>保存当前代码快照，或在助手完成工作后查看自动记录。历史对话本身不等于代码备份。</p></div>}
       {!!points.length && !visible.length && <p>没有匹配的快照，试试其他名称或清空筛选。</p>}
       {visible.map(point => <article className="enigma-checkpoint" key={point.id}>

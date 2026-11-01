@@ -1,3 +1,4 @@
+import {SearchField} from '../ui/SearchField';
 import { useId, useState } from 'react';
 import { SelectWidget, type SelectOption } from '../ui/SelectWidget';
 import styles from './FormLayout.module.css';
@@ -27,7 +28,7 @@ export function FormMultiChoice({label,options,value,onChange,empty}:{label:stri
   const [query,setQuery]=useState('');
   const shown=options.filter(option=>option.label.toLocaleLowerCase().includes(query.toLocaleLowerCase()));
   return <fieldset className={styles.choices}><legend>{label} · 已选 {value.length}</legend>
-    {options.length>6&&<input className={styles.input} type="search" aria-label={`筛选${label}`} placeholder="按名称或供应商筛选" value={query} onChange={event=>setQuery(event.target.value)}/>}
+    {options.length>6&&<SearchField className={styles.input} type="search" aria-label={`筛选${label}`} placeholder="按名称或供应商筛选" value={query} onChange={event=>setQuery(event.target.value)}/>}
     <div className={styles.choiceList}>{shown.map(option=><label className={styles.check} key={option.value}><input type="checkbox" checked={value.includes(option.value)} onChange={event=>onChange(event.target.checked?[...value,option.value]:value.filter(item=>item!==option.value))}/><span>{option.label}</span></label>)}</div>
     {!shown.length&&<p className={styles.hint}>{options.length?'没有匹配项':empty||'暂无可选项'}</p>}
   </fieldset>;

@@ -1,3 +1,4 @@
+import {SearchField} from '../../ui/SearchField';
 import {openWorkbenchFilePreview} from '../../utils/remote-file-preview';
 /**
  * DeskToolbar — 面包屑导航、排序按钮、Finder 打开按钮
@@ -209,29 +210,34 @@ export function DeskFilterButton({ filters, onFiltersChange, onShowMenu }: {
 
 export function DeskSearchBox() {
   const hasDesk = useStore(s => !!s.deskBasePath);
+  const scope=useStore(s=>JSON.stringify([s.activeServerConnectionId,s.deskBasePath,s.deskWorkspaceMountId,s.currentSessionPath]));
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<DeskSearchResult[]>([]);
   const [open, setOpen] = useState(false);
+  const [error,setError]=useState(''),[loading,setLoading]=useState(false),[retry,setRetry]=useState(0);
   const versionRef = useRef(0);
   const t = window.t ?? ((p: string) => p);
+  useEffect(()=>{versionRef.current++;setQuery('');setResults([]);setOpen(false);setError('');setLoading(false);},[scope]);
 
   useEffect(() => {
     const trimmed = query.trim();
     const version = ++versionRef.current;
+    setResults([]);setError('');setLoading(false);setOpen(false);
     if (!trimmed || !hasDesk) {
       setResults([]);
       setOpen(false);
       return undefined;
     }
     const timer = setTimeout(() => {
-      void searchDeskFiles(trimmed).then((items) => {
+      setLoading(true);setOpen(true);
+      void searchDeskFiles(trimmed,{throwOnError:true}).then((items) => {
         if (versionRef.current !== version) return;
         setResults(items);
         setOpen(true);
-      });
+      }).catch(()=>{if(versionRef.current===version)setError('文件搜索暂时失败，请重试。');}).finally(()=>{if(versionRef.current===version)setLoading(false);});
     }, 180);
-    return () => clearTimeout(timer);
-  }, [hasDesk, query]);
+    return () => {clearTimeout(timer);if(versionRef.current===version)versionRef.current++;};
+  }, [hasDesk, query,scope,retry]);
 
   const handlePick = useCallback(async (result: DeskSearchResult) => {
     setOpen(false);
@@ -243,7 +249,7 @@ export function DeskSearchBox() {
 
   return (
     <div className={s.searchWrap}>
-      <input
+      <SearchField
         className={s.searchInput}
         value={query}
         placeholder={t('desk.search.placeholder')}
@@ -251,15 +257,15 @@ export function DeskSearchBox() {
         disabled={!hasDesk}
         onChange={(event) => setQuery(event.target.value)}
         onFocus={() => {
-          if (results.length > 0) setOpen(true);
+          if (results.length > 0||error) setOpen(true);
         }}
         onKeyDown={(event) => {
           if (event.key === 'Escape') setOpen(false);
         }}
       />
       {open && query.trim() && (
-        <div className={s.searchResults} role="listbox" aria-label={t('desk.search.results')}>
-          {results.length === 0 ? (
+        <div className={s.searchResults} data-menu-surface="" data-menu-position="absolute" data-liquid="menu" role="listbox" aria-label={t('desk.search.results')}>
+          {error?<div className={s.searchEmpty} role="alert">{error}<button type="button" onClick={()=>setRetry(n=>n+1)}>重试搜索</button></div>:loading?<div className={s.searchEmpty} role="status">正在搜索…</div>:results.length === 0 ? (
             <div className={s.searchEmpty}>{t('desk.search.empty')}</div>
           ) : (
             results.map(result => (

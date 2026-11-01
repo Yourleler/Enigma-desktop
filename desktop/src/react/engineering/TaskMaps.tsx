@@ -1,3 +1,4 @@
+import {SearchField} from '../ui/SearchField';
 import {useState,useRef,useEffect,type ReactNode} from 'react';
 import {useStore} from '../stores';
 import {useEngineering,showAction,showRecordAction,openEngineering,type Action,type Field} from './state';
@@ -39,7 +40,7 @@ function TaskMapCard({item,blocked,busy}:{item:any;blocked:boolean;busy:boolean}
     {!!report.architecture?.length&&<details className="enigma-result"><summary>仓库职责与依赖</summary><p className="enigma-source-note">职责与仓库依赖来自项目登记；下方源码节点才是本次实际展开的范围。</p>{report.architecture.map((repo:any)=><p key={repo.repo}><strong>{repo.repo}</strong> · {repo.responsibility||'职责待补充'}{repo.dependsOn.length?` · 依赖 ${repo.dependsOn.join('、')}`:''} · {repo.nodes.length} 个源码节点</p>)}</details>}
     {!!report.edges.length&&<details className="enigma-result"><summary>源码连接关系 · {report.edges.length} 条</summary>{report.edges.map((edge:any,index:number)=><div key={index}><p>{edge.kind==='outgoing-call'?'向下调用':edge.kind==='call-site'?'调用位置':edge.kind==='import-binding'?'导入引用':'静态源码关系'} · {edge.confidence==='confirmed'?'静态绑定已确认':'待核对'}（不代表已执行）</p>{references([edge.from,edge.to])}</div>)}</details>}
     <h4>建议阅读顺序</h4><p className="enigma-source-note">顺序是阅读建议；连接关系来自静态解析，运行行为还需要实际验证。</p>
-    {ordered.length>6&&<input className="enigma-timeline-search" aria-label="筛选地图源码节点" placeholder="按符号、路径、仓库或职责筛选" value={filter} onChange={event=>{setFilter(event.target.value);setLimit(30);}}/>}
+    {ordered.length>6&&<SearchField className="enigma-timeline-search" aria-label="筛选地图源码节点" placeholder="按符号、路径、仓库或职责筛选" value={filter} onChange={event=>{setFilter(event.target.value);setLimit(30);}}/>}
     <p className="enigma-source-note">显示 {Math.min(limit,nodes.length)} / {nodes.length} 个匹配节点</p>
     {nodes.slice(0,limit).map((node:any,index:number)=><details className="enigma-reading-chapter" key={node.id} ref={element=>{if(element)sourceElements.current.set(node.id,element);else sourceElements.current.delete(node.id);}}><summary>{index+1}. {roles[node.role]||node.role} · {sourceLabel(node)}</summary><pre>{node.source.snippet}</pre>{node.source.truncated&&<p>片段已截断，不能视为完整源码。</p>}<button data-tooltip="打开仓库当前文件；上方片段仍是地图生成时的版本" onClick={()=>openEngineering({id:`file:${node.source.repo}:${node.source.file}`,title:node.source.file,group:'reading',repo:node.source.repo,file:node.source.file})}>打开当前源码</button><p className="enigma-source-note">保存的版本：{node.source.hash?.slice(0,12)}</p></details>)}
     {nodes.length>limit&&<button onClick={()=>setLimit(value=>value+30)}>继续显示节点</button>}

@@ -1,3 +1,4 @@
+import {SearchField} from '../ui/SearchField';
 import { GlassSelection } from '../ui/GlassSelection';
 import { useEffect, useRef, useState } from 'react';
 import { engineeringRequest, openEngineering, useEngineering } from './state';
@@ -29,7 +30,7 @@ export function FileTree({repo}:{repo?:string}){
   const search=(event:React.FormEvent)=>{event.preventDefault();if(query===draft.trim())setRefresh(n=>n+1);else setQuery(draft.trim());};
   return <section className="enigma-files">
     <div className="enigma-repo-picker" aria-label="代码仓库" data-glass-segmented=""><GlassSelection selection={selected}/>{repositories.map((item:any)=><button key={item.id} aria-pressed={item.id===selected} data-active={item.id===selected} data-tooltip={`浏览 ${item.id} 的当前文件`} onClick={()=>{setSelected(item.id);setDraft('');setQuery('');}}>{item.id}</button>)}</div>
-    <form className="enigma-file-search" onSubmit={search}><input aria-label="按路径查找文件" placeholder="按完整路径或文件名查找" value={draft} maxLength={500} onChange={event=>setDraft(event.target.value)}/><button disabled={!selected||loading}>查找</button><button type="button" disabled={!selected||loading} data-tooltip="重新读取文件路径，回到第一页" onClick={()=>setRefresh(n=>n+1)}>刷新文件列表</button></form>
+    <form className="enigma-file-search" onSubmit={search}><SearchField aria-label="按路径查找文件" placeholder="按完整路径或文件名查找" value={draft} maxLength={500} onChange={event=>setDraft(event.target.value)}/><button disabled={!selected||loading}>查找</button><button type="button" disabled={!selected||loading} data-tooltip="重新读取文件路径，回到第一页" onClick={()=>setRefresh(n=>n+1)}>刷新文件列表</button></form>
     <p className="enigma-source-note">搜索覆盖当前仓库的全部可管理文件，每页最多 500 个。依赖、凭证等路径按原规则排除。</p>
     {loading&&<p role="status">正在读取文件路径…</p>}
     {error&&<div className="enigma-error" role="alert">{error}<button onClick={()=>setRefresh(n=>n+1)}>重新读取列表</button></div>}

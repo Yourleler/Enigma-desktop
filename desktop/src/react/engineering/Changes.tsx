@@ -1,3 +1,4 @@
+import {SearchField} from '../ui/SearchField';
 import { GlassSelection } from '../ui/GlassSelection';
 import {DiffReader} from './DiffReader';
 import { useState, useId, useRef, useEffect } from "react";
@@ -131,7 +132,7 @@ export function Changes({
           {changes.length === 0 && <p className="enigma-source-note">这个版本没有代码变更。</p>}
           {view === "diff" ? (
             <div className="enigma-diff-layout">
-              {changes.length>8&&<input className="enigma-timeline-search enigma-diff-filter" value={filter} aria-label="筛选变更文件" placeholder="按路径查找文件" onChange={e=>setFilter(e.target.value)}/>}
+              {changes.length>8&&<SearchField className="enigma-timeline-search enigma-diff-filter" value={filter} aria-label="筛选变更文件" placeholder="按路径查找文件" onChange={e=>setFilter(e.target.value)}/>}
               <nav aria-label="变更文件">
                 {!matching.length&&<p className="enigma-source-note">没有匹配的变更文件。</p>}
                 {matching.map((item: any) => (

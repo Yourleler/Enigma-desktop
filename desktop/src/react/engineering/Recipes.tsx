@@ -1,3 +1,4 @@
+import {SearchField} from '../ui/SearchField';
 import {useState,type ReactNode} from 'react';
 import {useStore} from '../stores';
 import {engineeringRequest,showAction,showRecordAction,readRecordAction,openGroup,useEngineering,type Action} from './state';
@@ -32,7 +33,7 @@ export function RecipesPanel({initial,evidence}:{initial:any;evidence:(value:any
     {query.receivedAt>0&&<p className="enigma-source-note">运行记录每 5 秒更新 · 最近读取：{displayTime(query.receivedAt)}</p>}
     {query.error&&<p className="enigma-error" role="status">配方信息未更新，以下为最近记录。<button onClick={()=>void query.refresh()}>重新读取配方</button></p>}
     {canStop&&<button disabled={!!control.busy} data-tooltip="停止当前工作台发起的配方，已完成步骤的实际效果保留，后续步骤不再启动" onClick={()=>void control.run('stop',()=>engineeringRequest('/cancel',sessionPath,{}),()=>query.refresh())}>{control.busy?'正在停止…':'停止当前配方'}</button>}
-    {value.recipes?.length>4&&<input className="enigma-timeline-search" aria-label="筛选配方" placeholder="按配方名称或编号筛选" value={filter} onChange={event=>setFilter(event.target.value)}/>}
+    {value.recipes?.length>4&&<SearchField className="enigma-timeline-search" aria-label="筛选配方" placeholder="按配方名称或编号筛选" value={filter} onChange={event=>setFilter(event.target.value)}/>}
     {(value.recipes||[]).filter((recipe:any)=>`${recipe.label} ${recipe.id}`.toLowerCase().includes(filter.trim().toLowerCase())).map((recipe:any)=><article className="enigma-recipe-card" key={recipe.id}><strong>{recipe.label}</strong><div className="enigma-chips"><span>修订 {recipe.revision}</span><span>{recipe.steps.length} 个步骤</span><span>最长 {Math.ceil((recipe.timeoutMs||300000)/1000)} 秒</span></div>
       {!!Object.keys(recipe.parameters||{}).length&&<dl>{Object.entries(recipe.parameters).map(([name,spec]:[string,any])=><div key={name}><dt>{name}</dt><dd>{spec.description||'未填写说明'}{spec.default!==undefined?` · 默认：${spec.default===''?'空文本':spec.default}`:' · 运行时必填'}</dd></div>)}</dl>}
       <details className="enigma-result"><summary>查看步骤与命令</summary><ol>{recipe.steps.map((step:any)=><li key={step.id}><strong>{step.id} · {({command:'运行命令',service:'项目服务',browser:'浏览器验证',verify:'项目原检查'} as Record<string,string>)[step.kind]||step.kind}</strong>{step.argv&&<><p>仓库：{step.repo}</p><pre>{step.argv.join('\n')}</pre></>}{step.kind==='service'&&<p>{step.action==='start'?'启动':'停止'}：{step.service}</p>}{step.kind==='browser'&&<p>已登记场景：{step.scenario}</p>}{step.kind==='verify'&&<p>执行当前登记的全部仓库与联合检查。</p>}</li>)}</ol></details>

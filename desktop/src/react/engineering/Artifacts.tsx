@@ -1,3 +1,4 @@
+import {SearchField} from '../ui/SearchField';
 import { useEffect, useState, type ReactNode } from 'react';
 import { hanaFetch } from '../hooks/use-hana-fetch';
 import { openEngineering, showAction, useEngineering } from './state';
@@ -18,7 +19,7 @@ export function ArtifactsPanel({value}:{value:any}) {
   const add=snapshot?.actions?.find((item:any)=>item.id==='artifact-add'),busy=snapshot?.state?.idle===false||snapshot?.state?.operation?.state==='running';
   return <section><h3>任务成果与保存的版本</h3><p className="enigma-feature-intro">查看本任务保存的报告、文档、截图和代码。打开后可以预览或下载，历史版本会保留。</p>
     {add&&<button disabled={readOnly||busy} data-tooltip={readOnly?'当前对话只读，不能登记成果':busy?'等待当前操作结束':'选择仓库文件或运行产物，保存一份可核对的版本'} onClick={()=>void showAction(add)}>登记已有成果</button>}
-    {records.length>5&&<input className="enigma-timeline-search" aria-label="筛选任务成果" placeholder="按名称或类型筛选" value={query} onChange={event=>setQuery(event.target.value)}/>}
+    {records.length>5&&<SearchField className="enigma-timeline-search" aria-label="筛选任务成果" placeholder="按名称或类型筛选" value={query} onChange={event=>setQuery(event.target.value)}/>}
     {!!value.unavailable?.length&&<div className="enigma-error" role="status"><p>{value.unavailable.length} 份成果暂不可用，其他记录仍可查看。</p>{value.unavailable.map((item:any,index:number)=><p key={item.id||index}>{item.title}：{item.reason}</p>)}</div>}
     {!records.length&&!value.unavailable?.length&&<p className="enigma-empty-feature">还没有保存成果。可以让助手登记本轮产物，或从这里选择已有文件。</p>}
     {records.length>0&&!visible.length&&<p>没有匹配的成果，请换个关键词。</p>}

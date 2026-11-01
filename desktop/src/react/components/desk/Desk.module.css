@@ -174,7 +174,7 @@
 
 .rightWorkspaceSection {
     --right-workspace-list-toolbar-height: 25px;
-    --right-workspace-search-height: 30px;
+    --right-workspace-search-height: 44px;
     position: relative;
     flex: 1 1 0;
     height: 100%;
@@ -419,32 +419,10 @@
 .searchWrap {
     position: relative;
     flex: 0 0 auto;
-    margin: var(--space-2) var(--space-8) 0;
+    margin: 6px var(--space-8) 0;
 }
 
-.searchInput {
-    box-sizing: border-box;
-    width: 100%;
-    height: 24px;
-    padding: var(--space-2) var(--space-8);
-    border: 1px solid var(--overlay-light);
-    border-radius: var(--radius-sm);
-    background: var(--bg-card);
-    color: var(--text);
-    font-family: inherit;
-    font-size: var(--fs-hint);
-    line-height: 1;
-    outline: none;
-}
-
-.searchInput::placeholder {
-    color: var(--text-muted);
-    opacity: 0.55;
-}
-
-.searchInput:focus {
-    border-color: rgba(var(--accent-rgb), 0.42);
-}
+.searchInput { width:100%; }
 
 .searchResults {
     position: absolute;

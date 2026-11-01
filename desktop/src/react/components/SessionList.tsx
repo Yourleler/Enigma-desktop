@@ -47,6 +47,7 @@ import { cwdFromAutoProjectId } from '../../../../shared/session-projects.ts';
 import type { SidebarSessionListRowMode } from '../../../../shared/sidebar-ui-state.ts';
 import { FolderIcon } from './shared/FolderIcon';
 import styles from './SessionList.module.css';
+import '../ui/SearchField.css';
 
 const SESSION_DRAG_MIME = 'application/x-hana-session-path';
 const PROJECT_DRAG_MIME = 'application/x-hana-project-id';
@@ -1273,7 +1274,7 @@ function SessionSearchBox({
 }) {
   const { t } = useI18n();
   return (
-    <div className={styles.sessionSearchBox}>
+    <div className={`enigma-search-surface ${styles.sessionSearchBox}`} data-field-surface="search">
       <svg className={styles.sessionSearchIcon} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <circle cx="11" cy="11" r="8" />
         <path d="m21 21-4.3-4.3" />

@@ -1,3 +1,4 @@
+import {SearchField} from '../../ui/SearchField';
 import {FileStatusProvider,DeletedFiles} from './FileStatus';
 import { deskNativeRootDir, loadDeskFiles } from '../../stores/desk-actions';
 import { canUseNativeResourcePath } from '../../services/resource-access';
@@ -68,7 +69,7 @@ function JianDrawer() {
 
 function TabContent({ activeTab,filesOnly }: { activeTab: RightWorkspaceTab;filesOnly?:boolean }) {
   const [query,setQuery]=useState('');
-  if (activeTab === 'session-files') return <><input className="enigma-attachment-search" aria-label="搜索附件" placeholder="搜索附件名称或路径" value={query} onChange={event=>setQuery(event.target.value)}/><SessionRegistryFilesPanel query={query} placement={filesOnly?'files':undefined}/></>;
+  if (activeTab === 'session-files') return <><SearchField className="enigma-attachment-search" aria-label="搜索附件" placeholder="搜索附件名称或路径" value={query} onChange={event=>setQuery(event.target.value)}/><SessionRegistryFilesPanel query={query} placement={filesOnly?'files':undefined}/></>;
   return <><DeskSection framed={false} showHeader={false} rightWorkspaceLayout /><DeletedFiles/></>;
 }
 
