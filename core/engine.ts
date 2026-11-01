@@ -580,6 +580,7 @@ export class HanaEngine {
       getUsageLedger: () => this._usageLedger,
       sessionManifestStore: this._sessionManifestStore,
       closeTerminalsForSession: (sessionPath) => this._terminalSessions.closeForSession(sessionPath),
+      abortComputerForSession: (sessionPath) => this._computerHost?.abortSession(this._sessionRefForPathSafe(sessionPath)),
       closeAllTerminals: () => this._terminalSessions.closeAll(),
       onSessionRuntimeDiscarded: (sessionPath, reason) => this.clearSessionRuntimeState(sessionPath, reason),
       onBeforeSessionCreate: async (cwd, { agent = null, agentId = null } = {}) => {
@@ -1213,7 +1214,7 @@ export class HanaEngine {
       this._sessionFiles.unloadSession(sessionPath);
     }
     if (typeof this._computerHost?.abortSession === "function") {
-      this._computerHost.abortSession(sessionRef);
+      Promise.resolve(this._computerHost.abortSession(sessionRef)).catch(error => moduleLog.warn(`computer runtime cleanup failed: ${error.message}`));
     }
     return true;
   }

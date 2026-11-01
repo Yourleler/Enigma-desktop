@@ -3546,7 +3546,7 @@
   "computerUse": {
     "overlay": {
       "foregroundTakeover": "フォアグラウンド取得",
-      "foregroundMessage": "対象アプリはバックグラウンド操作をサポートしていません。フォアグラウンド取得が有効です。Esc で強制終了できます。"
+      "foregroundMessage": "この操作は前面で実行され、システムのポインターを動かします。Escキーかポインターの移動で中断できます。"
     }
   },
   "plugin": {

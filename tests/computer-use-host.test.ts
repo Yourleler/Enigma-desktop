@@ -24,6 +24,22 @@ const ctx = {
 };
 
 describe("ComputerHost", () => {
+  it('releases only the cancelled session and stops its provider before a new lease starts',async()=>{
+    const provider=createMockComputerProvider({providerId:'mock'}),events:string[]=[];
+    const original=provider.createLease;
+    provider.createLease=async(...args)=>{events.push('create');return original(...args);};
+    provider.stop=vi.fn(async()=>{events.push('stop');return {ok:true};});
+    const {host}=makeHost(provider);
+    const owner={...ctx,sessionId:'owner'};
+    await host.createLease(owner,{appId:'app.notes'});
+    await host.abortSession({sessionId:'other',sessionPath:ctx.sessionPath});
+    expect(provider.stop).not.toHaveBeenCalled();expect(host.getActiveLease(owner)).toBeTruthy();
+    const stop=host.abortSession({sessionId:'owner',sessionPath:ctx.sessionPath});
+    expect(host.getActiveLease(owner)).toBeNull();
+    const next=host.createLease({...ctx,sessionId:'next',sessionPath:'/next'},{appId:'app.notes'});
+    await stop;await next;expect(events).toEqual(['create','stop','create']);
+    await host.dispose();
+  });
   it('waits for an active foreground gesture to release before settling cancellation',async()=>{
     const provider=createMockComputerProvider({providerId:'mock'});
     provider.capabilities.drag='pidScoped';

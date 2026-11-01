@@ -34,6 +34,23 @@ function makeTool(
   return { tool, ctx, emitted };
 }
 
+it('reports read-only status text and escapes multiline input values in the model observation',async()=>{
+  const provider=createMockComputerProvider({providerId:'mock'});
+  const original=provider.getAppState.bind(provider);
+  provider.getAppState=async(ctx,lease)=>({...await original(ctx,lease),elements:[{elementId:'3',role:'AXTextArea',label:'备注',value:'第一行\n第二行',enabled:true}],readableText:['回执已保存到新建测试目录']}) as any;
+  const providers=new ComputerProviderRegistry();providers.register(provider);
+  const host=new ComputerHost({providers,defaultProviderId:'mock',getSettings:()=>({enabled:true})});
+  const tool=createComputerUseTool({getComputerHost:()=>host});
+  const ctx={sessionManager:{getSessionFile:()=>'/test/observation'},model:{input:['text','image']}};
+  try {
+    await tool.execute('start',{action:'start',appId:'app.notes'},undefined,undefined,ctx);
+    const result=await tool.execute('read',{action:'get_app_state'},undefined,undefined,ctx);
+    const text=result.content.filter(item=>item.type==='text').map(item=>item.text).join('\n');
+    expect(text).toContain('回执已保存到新建测试目录');
+    expect(text).toContain('no action ids');expect(text).toContain('第一行\\n第二行');
+  }finally{await host.dispose();}
+});
+
 function makeForegroundTool() {
   const provider = createMockComputerProvider({ providerId: "windows:uia" });
   provider.capabilities.pointClick = "foreground";

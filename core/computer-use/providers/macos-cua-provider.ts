@@ -374,15 +374,26 @@ function keyboardPayload(action: any, pid: number, windowId: number) {
     ...(action.elementId?{window_id:windowId,element_index:requireElementIndex(action)}:{})};
 }
 
+function nativeTreeRows(markdown: any): string[] {
+  const rows: string[] = [];
+  for (const line of String(markdown || '').split(/\r?\n/)) {
+    if (/^\s*-\s+(?:\[\d+\]\s+)?AX\w+\b/.test(line)) rows.push(line);
+    else if (rows.length) rows[rows.length - 1] += `\n${line}`;
+  }
+  return rows;
+}
+
 function parseElementsFromMarkdown(markdown: any) {
   const elements = [];
-  const lines = String(markdown || "").split(/\r?\n/);
+  const lines = nativeTreeRows(markdown);
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index];
-    const match = line.match(/^(\s*)-\s+\[(\d+)\]\s+([A-Za-z0-9_]+)(.*)$/);
+    const match = line.match(/^(\s*)-\s+\[(\d+)\]\s+([A-Za-z0-9_]+)([\s\S]*)$/);
     if (!match) continue;
     const indent = match[1].length;
     const rest = match[4] || "";
+    const valueMatch = rest.match(/=\s*"((?:\\.|[^"\\])*)"/s);
+    const labelFragment = valueMatch ? rest.replace(valueMatch[0], '') : rest;
     const childLabels = [];
     for (let childIndex = index + 1; childIndex < lines.length; childIndex += 1) {
       const child = lines[childIndex];
@@ -396,13 +407,20 @@ function parseElementsFromMarkdown(markdown: any) {
     elements.push({
       elementId: match[2],
       role: match[3],
-      label: labelFromMarkdownFragment(rest) || uniqueLabelParts(childLabels).join(" "),
+      label: labelFromMarkdownFragment(labelFragment) || uniqueLabelParts(childLabels).join(" "),
+      ...(valueMatch ? {value:valueMatch[1]} : {}),
       actions: actionsFromMarkdownFragment(rest),
       enabled: !/\bDISABLED\b/.test(rest),
       bounds: null,
     });
   }
   return elements;
+}
+
+function readableNativeText(markdown: any): string[] {
+  return uniqueLabelParts(nativeTreeRows(markdown).filter(row =>
+    /^\s*-\s+AX(?:StaticText|Heading|TextField|TextArea|ValueIndicator)\b/.test(row),
+  ).map(labelFromMarkdownFragment));
 }
 
 function actionsFromMarkdownFragment(fragment: any) {
@@ -454,6 +472,7 @@ function normalizeWindowState(result: any, lease: any) {
     data: image.data,
   };
   const display = normalizeScreenshotDisplay(structured);
+  const tree = structured.tree_markdown || structured.treeMarkdown || text;
 
   const elements = Array.isArray(structured.elements)
     ? structured.elements.map((el, index) => ({
@@ -465,7 +484,7 @@ function normalizeWindowState(result: any, lease: any) {
         bounds: el.bounds || null,
         enabled: el.enabled !== false,
       }))
-    : parseElementsFromMarkdown(structured.tree_markdown || structured.treeMarkdown || text);
+    : parseElementsFromMarkdown(tree);
 
   return {
     mode: "vision-native",
@@ -475,6 +494,7 @@ function normalizeWindowState(result: any, lease: any) {
     display,
     focusedElementId: structured.focusedElementId || null,
     elements,
+    readableText: readableNativeText(tree),
     providerState: lease.providerState,
   };
 }

@@ -3519,7 +3519,7 @@
   "computerUse": {
     "overlay": {
       "foregroundTakeover": "Foreground Takeover",
-      "foregroundMessage": "The target app does not support background operation; foreground takeover is active. Press Esc to force quit."
+      "foregroundMessage": "This action uses foreground control and moves the system pointer. Press Esc or move the pointer to interrupt."
     }
   },
   "plugin": {

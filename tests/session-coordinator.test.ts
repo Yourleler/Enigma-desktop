@@ -4496,6 +4496,7 @@ Continue the restored transcript.
     const deferredStore = { suppressBySession: vi.fn() };
     const confirmStore = { abortBySession: vi.fn() };
     const closeTerminalsForSession = vi.fn();
+    const abortComputerForSession = vi.fn(async()=>true);
     const closeBrowserForSession = vi.fn(async () => undefined);
     const browserSpy = vi.spyOn(BrowserManager, "instance").mockReturnValue({
       closeBrowserForSession,
@@ -4536,6 +4537,7 @@ Continue the restored transcript.
       getDeferredResultStore: () => deferredStore,
       getConfirmStore: () => confirmStore,
       closeTerminalsForSession,
+      abortComputerForSession,
     });
     coordinator.sessions.set(sessionFile, {
       session: stuckSession,
@@ -4553,6 +4555,7 @@ Continue the restored transcript.
       expect(deferredStore.suppressBySession).toHaveBeenCalledWith(sessionFile, "abort");
       expect(confirmStore.abortBySession).toHaveBeenCalledWith(sessionFile);
       expect(closeTerminalsForSession).toHaveBeenCalledWith(sessionFile);
+      expect(abortComputerForSession).toHaveBeenCalledWith(sessionFile);
       expect(closeBrowserForSession).toHaveBeenCalledWith(sessionFile);
     } finally {
       browserSpy.mockRestore();

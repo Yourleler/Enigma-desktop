@@ -3546,7 +3546,7 @@
   "computerUse": {
     "overlay": {
       "foregroundTakeover": "전면 제어",
-      "foregroundMessage": "대상 앱이 백그라운드 동작을 지원하지 않아 전면 제어가 활성화되었어요. Esc를 눌러 강제 종료할 수 있어요."
+      "foregroundMessage": "이번 작업은 전경 제어를 사용하며 시스템 포인터를 움직입니다. Esc 키를 누르거나 포인터를 움직여 중단할 수 있습니다."
     }
   },
   "plugin": {

@@ -5238,6 +5238,13 @@ export class SessionCoordinator {
       log.warn(`abort cleanup ${shortPath}: terminal cleanup failed: ${err.message}`);
     }
     try {
+      Promise.resolve(this._d.abortComputerForSession?.(sessionPath)).catch(err =>
+        log.warn(`abort cleanup ${shortPath}: computer cleanup failed: ${err.message}`),
+      );
+    } catch (err) {
+      log.warn(`abort cleanup ${shortPath}: computer cleanup failed: ${err.message}`);
+    }
+    try {
       const closeBrowser = BrowserManager.instance().closeBrowserForSession(sessionPath);
       Promise.resolve(closeBrowser).catch((err) =>
         log.warn(`abort cleanup ${shortPath}: browser cleanup failed: ${err.message}`),

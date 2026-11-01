@@ -332,7 +332,17 @@ export class ComputerHost {
   }
 
   abortSession(sessionRef) {
-    this._leases.releaseBySession(sessionRef);
+    const ref = typeof sessionRef === 'string' ? {sessionPath:sessionRef} : sessionRef || {};
+    const lease = this._leases.getActiveLease?.();
+    if (!lease || !sameLeaseOwner(lease, {...ref,agentId:lease.agentId})) return Promise.resolve(false);
+    const provider = this._providers.require(lease.providerId);
+    this._leases.releaseBySession(ref);
+    // The execution abort signal releases any held input first. Queue teardown
+    // behind it and ahead of future leases, so a late stop cannot kill a new user.
+    return this._exclusive({},async()=>{
+      await provider.stop?.({...ref,agentId:lease.agentId},lease);
+      return true;
+    });
   }
 
   async requestPermissions( ctx: any = {}, providerId = null) {

@@ -3397,7 +3397,7 @@
   "computerUse": {
     "overlay": {
       "foregroundTakeover": "前台接管",
-      "foregroundMessage": "目标应用不支持后台操作，正在由前台接管。按 Esc 强制退出。"
+      "foregroundMessage": "本次使用前台接管，会移动系统鼠标。按 Esc 或移动鼠标可中断。"
     }
   },
   "plugin": {

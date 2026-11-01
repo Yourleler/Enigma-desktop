@@ -29,6 +29,16 @@ function makeRunner(handler: any) {
 }
 
 describe("macos Cua provider", () => {
+  it('preserves multiline field values and read-only result text without inventing clickable ids', async () => {
+    const {runner}=makeRunner(()=>rawResult({tree_markdown:'- [1] AXTextArea = "第一行\n第二行" (备注) actions=[AXShowMenu]\n- AXStaticText = "回执已保存到新建测试目录"\n- [4] AXButton "保存"'},[{type:'image',mimeType:'image/png',data:'image'}]));
+    const provider=createMacosCuaProvider({platform:'darwin',command:'/tmp/cua-driver',runner});
+    const state=await provider.getAppState({}, {leaseId:'one',appId:'app.test',windowId:'9',providerState:{pid:7,windowId:9}});
+    expect(state.elements).toEqual([
+      expect.objectContaining({elementId:'1',label:'备注',value:'第一行\n第二行'}),
+      expect.objectContaining({elementId:'4',label:'保存'}),
+    ]);
+    expect(state.readableText).toEqual(['回执已保存到新建测试目录']);
+  });
   it.each(['No window with window_id 123 exists.','App with pid 123 is not running or not accessible.'])('reports a disappeared target without calling it a driver crash: %s',async(message)=>{
     const {runner}=makeRunner(()=>({stdout:JSON.stringify({isError:true,content:[{type:'text',text:message}]}),stderr:'',exitCode:1}));
     const provider=createMacosCuaProvider({platform:'darwin',command:'/tmp/cua-driver',runner});
