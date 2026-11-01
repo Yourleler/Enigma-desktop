@@ -27,7 +27,7 @@ export default function DocxPreview({previewItem}:{previewItem:PreviewItem}) {
   const source=useMemo(()=>new URL(`assets/docx-viewer-${appVersion}/index.html#${channel}`,document.baseURI).href,[channel]);
   const post=(type:string,extra:Record<string,unknown>={})=>frame.current?.contentWindow?.postMessage({channel,type,...extra},'*');
   useEffect(()=>{
-    if(textKey.current!==key){textKey.current=key;setTextContent(previewItem.content);setTextError('');}
+    if(textKey.current!==key){textKey.current=key;setTextContent(previewItem.content);setTextError('');setQuery('');setMatches({count:0,index:0,truncated:false});}
     if(mode!=='text'||previewItem.content)return;
     const controller=new AbortController();let current=true;setTextLoading(true);setTextError('');
     void loadOfficePreviewText(previewItem,controller.signal).then(html=>{if(current)setTextContent(html);}).catch(error=>{if(current)setTextError(officePreviewErrorMessage(error));}).finally(()=>{if(current)setTextLoading(false);});
@@ -36,7 +36,7 @@ export default function DocxPreview({previewItem}:{previewItem:PreviewItem}) {
   useEffect(()=>{
     if(mode==='text')return;
     const saved=positions.get(key)||{top:0,zoom:'fit'};
-    const abort=new AbortController();let alive=true,frameReady=false,sent=false;setStatus('loading');setMessage('');setPageCount(0);setQuery('');setMatches({count:0,index:0,truncated:false});bytes.current=null;
+    const abort=new AbortController();let alive=true,frameReady=false,sent=false;setStatus('loading');setMessage('');setPageCount(0);setMatches({count:0,index:0,truncated:false});bytes.current=null;
     const dark=()=>isDarkTheme(document.documentElement.dataset.theme);
     const send=()=>{if(!alive||!frameReady||!bytes.current||sent)return;sent=true;post('theme',{dark:dark()});post('render',{bytes:bytes.current});};
     const receive=(event:MessageEvent)=>{

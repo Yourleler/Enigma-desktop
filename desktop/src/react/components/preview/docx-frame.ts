@@ -1,16 +1,21 @@
 import {completeDocxPageGeometry} from './docx-page-geometry';
+import {refitDocxReading} from './docx-reading-position';
 /** Self-contained runtime executed only in an opaque sandboxed iframe. */
-function docxRuntime(channel:string,completePages:(root:HTMLElement)=>number) {
+function docxRuntime(channel:string,completePages:(root:HTMLElement)=>number,refit:typeof refitDocxReading) {
   const root=document.getElementById('document')!,styles=document.getElementById('document-styles')!;
-  let ready=false,scale='fit',marks:HTMLElement[]=[],ranges:Range[]=[],match=0,truncated=false;
+  let ready=false,laidOut=false,fitFrame=0,scale='fit',marks:HTMLElement[]=[],ranges:Range[]=[],match=0,truncated=false;
   const highlightApi=(CSS as unknown as {highlights?:Map<string,unknown>}).highlights,HighlightClass=(window as unknown as {Highlight?:new(...ranges:Range[])=>unknown}).Highlight;
   const send=(type:string,value:Record<string,unknown>={})=>parent.postMessage({channel,type,...value},'*');
   const pages=()=>Array.from(root.querySelectorAll<HTMLElement>('section.docx'));
   const fit=()=>{
+   const apply=()=>{
     const width=Math.max(1,...pages().map(page=>page.offsetWidth));
     root.style.width=`${width+24}px`;root.style.minWidth='0';
     const zoom=scale==='fit'?Math.min(1,(document.documentElement.clientWidth-2)/(width+24)):Number(scale);
     root.style.zoom=String(Math.max(.1,zoom));
+   };
+   if(laidOut)refit(root,apply,ranges[match]||marks[match]);else apply();
+   laidOut=true;
   };
   const find=(query:string)=>{
     marks.forEach(mark=>mark.replaceWith(...mark.childNodes));root.normalize();marks=[];ranges=[];match=0;truncated=false;highlightApi?.delete('docx-results');highlightApi?.delete('docx-current');
@@ -65,7 +70,7 @@ function docxRuntime(channel:string,completePages:(root:HTMLElement)=>number) {
     else if(data.type==='restore')scrollTo(0,Math.max(0,Number(data.top)||0));
     else if(data.type==='theme')document.documentElement.dataset.theme=data.dark?'dark':'light';
   });
-  addEventListener('resize',fit);
+  addEventListener('resize',()=>{cancelAnimationFrame(fitFrame);fitFrame=requestAnimationFrame(fit);});
   addEventListener('scroll',()=>{if(ready)send('position',{top:scrollY});},{passive:true});
   addEventListener('keydown',event=>{if((event.metaKey||event.ctrlKey)&&event.key.toLowerCase()==='f'){event.preventDefault();send('focus-find');}});
   root.addEventListener('click',event=>{const link=(event.target as Element).closest('a[href]');if(!link)return;const href=link.getAttribute('href')||'';if(href.startsWith('#'))return;event.preventDefault();if(/^https?:\/\//i.test(href))send('link',{href});});
@@ -73,7 +78,7 @@ function docxRuntime(channel:string,completePages:(root:HTMLElement)=>number) {
 }
 const escapeScript=(script:string)=>script.replace(/<\/script/gi,'<\\/script');
 export function docxFrameHtml({nonce,zipScript,docxScript}:{nonce:string;zipScript:string;docxScript:string}):string {
-  const runtime=`(${docxRuntime.toString()})(location.hash.slice(1),${completeDocxPageGeometry.toString()});`;
+  const runtime=`(${docxRuntime.toString()})(location.hash.slice(1),${completeDocxPageGeometry.toString()},${refitDocxReading.toString()});`;
   return `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-${nonce}'; style-src 'unsafe-inline'; img-src data: blob:; font-src data: blob:; connect-src 'none'; base-uri 'none'; form-action 'none'"><style>
 html{background:#efecf5;color-scheme:light}html[data-theme=dark]{background:#0e1820}body{margin:0;overflow:auto;font:14px system-ui}.docx-wrapper{background:transparent!important;padding:12px!important;min-width:max-content}.docx-wrapper>section.docx{box-shadow:0 2px 12px #0002;margin-bottom:16px!important}#document{width:fit-content;min-width:100%;transform-origin:top left}mark{background:#e8d5ff;color:inherit}mark.current-match{background:#cab0ff;outline:2px solid #815ec2}::highlight(docx-results){background:#e8d5ff;color:inherit}::highlight(docx-current){background:#cab0ff;color:inherit}::selection{background:#cab0ff80}a{cursor:pointer}
 </style><div id="document-styles"></div><div id="document"></div><script nonce="${nonce}">addEventListener("error",()=>parent.postMessage({channel:location.hash.slice(1),type:"error",message:"文档预览组件未能启动，请重试或切换文本阅读。"},"*"));</script><script nonce="${nonce}">${escapeScript(zipScript)}</script><script nonce="${nonce}">${escapeScript(docxScript)}</script><script nonce="${nonce}">${escapeScript(runtime)}</script></html>`;
