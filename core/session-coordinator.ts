@@ -118,6 +118,7 @@ import {
   normalizeStringArray,
 } from "./session-prompt-snapshot.ts";
 import { buildTurnInputPresentationEvent } from "../lib/turn-input-presentation.ts";
+import {repairEnigmaIntroductionSnapshot} from '../shared/enigma-introduction.ts';
 import { ensureSessionRefForPath } from "./session-manifest/ref.ts";
 import { resolveSessionNodeTarget } from "./session-turn-actions.ts";
 import { acquireSessionOperation } from "./session-operation-lock.ts";
@@ -1827,12 +1828,15 @@ export class SessionCoordinator {
     }
     // #1624 refreshCapabilitySnapshots：跳过冻结 promptSnapshot，下游 fresh-build
     // 路径会按当前配置重建并在 metaPatch 持久化（与 !restoredPromptSnapshot 同一条路）。
-    const restoredPromptSnapshot = restore && sessionPathForMeta && !refreshCapabilitySnapshots
+    const originalPromptSnapshot = restore && sessionPathForMeta && !refreshCapabilitySnapshots
       ? (
         normalizeSessionPromptSnapshot(restoredCapabilitySnapshot?.promptSnapshot)
         || await this._readSessionPromptSnapshot(agent, sessionPathForMeta)
       )
       : null;
+    const restoredPromptSnapshot = repairEnigmaIntroductionSnapshot(originalPromptSnapshot,
+      process.env.ENIGMA_DESKTOP_PRODUCT === '1' || agent.config?.agent?.yuan === 'enigma');
+    const repairedIntroduction = restoredPromptSnapshot !== originalPromptSnapshot;
     let restoredSessionModelRef = null;
     let restoredSessionModelAvailability: SessionModelAvailability | null = null;
     let unavailableSessionModel = null;
@@ -2633,7 +2637,7 @@ export class SessionCoordinator {
       if (restoredProviderCacheAffinityKey !== sessionEntry.providerCacheAffinityKey) {
         metaPatch.providerCacheAffinityKey = sessionEntry.providerCacheAffinityKey;
       }
-      if (!restoredPromptSnapshot) metaPatch.promptSnapshot = promptSnapshotToWrite;
+      if (!restoredPromptSnapshot || repairedIntroduction) metaPatch.promptSnapshot = promptSnapshotToWrite;
       if (restoredThinkingLevel !== initialThinkingLevel) {
         metaPatch.thinkingLevel = initialThinkingLevel;
       }

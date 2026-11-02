@@ -2285,7 +2285,7 @@
       "schemaContract": {
         "kind": "runtime-source",
         "source": "core/bridge-session-manager.ts",
-        "compatibility": "The named runtime reader is canonical; this inventory does not imply stricter validation than runtime currently performs."
+        "compatibility": "Session prompt snapshot version 1 is unchanged. Enigma cold restore replaces only the exact obsolete host introduction prefix in systemPrompt and finalSystemPrompt, retaining all subsequent bytes, append prompts, persona files, tool/skill snapshots and message JSONL. The existing serialized metadata writer and manifest snapshot persist the correction once; custom or non-Enigma prefixes are not rewritten."
       },
       "openEntry": [
         "SessionCoordinator",

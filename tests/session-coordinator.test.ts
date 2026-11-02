@@ -2194,16 +2194,18 @@ describe("SessionCoordinator", () => {
     expect(appendPrompt.join("\n")).toContain("DeepSeek 输出契约");
   });
 
-  it("restores the original prompt snapshot instead of rebuilding from current agent state", async () => {
+  it.each([false,true])("restores the frozen prompt without losing persona when repairing a legacy Enigma introduction: %s", async (legacyEnigma) => {
     const sessionFile = path.join(tempDir, "agents", "hana", "sessions", "frozen-prompt.jsonl");
-    let currentAgentPrompt = "SYSTEM PROMPT V1";
+    const oldIdentity="你是 Enigma。用户问你是谁或要求自我介绍时，使用这句原文：I'll be your enigma,We could be anything you want. 不主动附加运行平台或开发者介绍。";
+    let currentAgentPrompt = legacyEnigma?oldIdentity+'\nPERSONA AND CAPABILITIES V1':"SYSTEM PROMPT V1";
+    const finalPrompt=legacyEnigma?oldIdentity+'\nFINAL PERSONAL SETTINGS V1':"FINAL PROMPT V1";
     const agent = {
       id: "hana",
       agentDir: path.join(tempDir, "agents", "hana"),
       sessionDir: path.join(tempDir, "agents", "hana", "sessions"),
       sessionMemoryEnabled: true,
       memoryMasterEnabled: true,
-      config: { locale: "zh-CN" },
+      config: { locale: "zh-CN",agent:{yuan:legacyEnigma?"enigma":"hanako"} },
       setMemoryEnabled: vi.fn(),
       buildSystemPrompt: vi.fn(() => currentAgentPrompt),
       tools: [],
@@ -2213,8 +2215,8 @@ describe("SessionCoordinator", () => {
       sessionManager: { getSessionFile: () => sessionFile },
       subscribe: vi.fn(() => vi.fn()),
       setActiveToolsByName: vi.fn(),
-      _baseSystemPrompt: "FINAL PROMPT V1",
-      agent: { state: { systemPrompt: "FINAL PROMPT V1" } },
+      _baseSystemPrompt: finalPrompt,
+      agent: { state: { systemPrompt: finalPrompt } },
     };
     const restoredSession = {
       sessionManager: { getSessionFile: () => sessionFile },
@@ -2277,14 +2279,23 @@ describe("SessionCoordinator", () => {
     );
 
     const restoreOptions = createAgentSessionMock.mock.calls[1][0];
-    expect(restoreOptions.resourceLoader.getSystemPrompt()).toBe("SYSTEM PROMPT V1");
+    if(legacyEnigma){
+      expect(restoreOptions.resourceLoader.getSystemPrompt()).toContain('不要只回复这一句话');
+      expect(restoreOptions.resourceLoader.getSystemPrompt()).toContain('PERSONA AND CAPABILITIES V1');
+      expect(restoredSession.agent.state.systemPrompt).toContain('FINAL PERSONAL SETTINGS V1');
+      expect(restoredSession.agent.state.systemPrompt).not.toContain('使用这句原文：');
+    }else expect(restoreOptions.resourceLoader.getSystemPrompt()).toBe("SYSTEM PROMPT V1");
     const restoredAppend = restoreOptions.resourceLoader.getAppendSystemPrompt().join("\n");
     expect(restoredAppend).toContain("BASE APPEND V1");
     expect(restoredAppend).not.toContain("BASE APPEND V2");
     expect(restoreOptions.resourceLoader.getSkills()).toEqual({ skills: [{ name: "skill-v1" }], diagnostics: [] });
     expect(restoreOptions.resourceLoader.getAgentsFiles()).toEqual({ agentsFiles: [{ path: "/AGENTS.md", content: "rules v1" }] });
-    expect(restoredSession._baseSystemPrompt).toBe("FINAL PROMPT V1");
-    expect(restoredSession.agent.state.systemPrompt).toBe("FINAL PROMPT V1");
+    if(!legacyEnigma){expect(restoredSession._baseSystemPrompt).toBe("FINAL PROMPT V1");expect(restoredSession.agent.state.systemPrompt).toBe("FINAL PROMPT V1");}
+    if(legacyEnigma){
+      const persisted=await coordinator._readSessionPromptSnapshot(agent,sessionFile);
+      expect(persisted.systemPrompt).toContain('不要只回复这一句话');
+      expect(persisted.finalSystemPrompt).toBe(restoredSession.agent.state.systemPrompt);
+    }
     // context ring refresh keeps restore cheap: old sessions keep frozen prompt snapshots,
     // while explicit refresh/fresh compact is responsible for rebuilding capability snapshots.
     expect(agent.buildSystemPrompt).toHaveBeenCalledTimes(1);

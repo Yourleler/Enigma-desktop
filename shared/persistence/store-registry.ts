@@ -741,6 +741,7 @@ export const PERSISTENT_STORES: readonly StoreDescriptor[] = Object.freeze([
     schemaSource: runtimeSource("core/bridge-session-manager.ts", "bridge index, legacy session metadata, title, and vision sidecar readers"),
     openEntry: ["SessionCoordinator", "BridgeSessionManager", "VisionBridge"],
     migrationEntry: ["core/session-manifest/legacy-migration.ts", "core/migrations.ts"],
+    compatibility: 'Session prompt snapshot version 1 is unchanged. Enigma cold restore replaces only the exact obsolete host introduction prefix in systemPrompt and finalSystemPrompt, retaining all subsequent bytes, append prompts, persona files, tool/skill snapshots and message JSONL. The existing serialized metadata writer and manifest snapshot persist the correction once; custom or non-Enigma prefixes are not rewritten.',
     identityContract: "Entries are keyed by sessionId where available; any sessionPath field is only a locator compatibility field.",
     siteRules: rules(["core/bridge-session-manager.ts", "core/vision-bridge.ts"], "Writes a session-owned sidecar or bridge index."),
   }),

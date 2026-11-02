@@ -664,7 +664,7 @@
     ],
     "version": 3
   },
-  "payloadFingerprint": "sha256:731f27fd76b83118e7bd8bb0a392e2f5670eacf0bbfc2291a84a0485049bfed2",
+  "payloadFingerprint": "sha256:27ec1638db119594e5d541bfb6644f46684ed1691961778d78009938833a51e1",
   "registry": [
     {
       "affectedByEpochMigration": true,
@@ -2918,7 +2918,7 @@
       "protocolModules": [],
       "restorePolicy": "Restore only through the owning module after reader compatibility is established.",
       "schemaContract": {
-        "compatibility": "The named runtime reader is canonical; this inventory does not imply stricter validation than runtime currently performs.",
+        "compatibility": "Session prompt snapshot version 1 is unchanged. Enigma cold restore replaces only the exact obsolete host introduction prefix in systemPrompt and finalSystemPrompt, retaining all subsequent bytes, append prompts, persona files, tool/skill snapshots and message JSONL. The existing serialized metadata writer and manifest snapshot persist the correction once; custom or non-Enigma prefixes are not rewritten.",
         "kind": "runtime-source",
         "source": "core/bridge-session-manager.ts"
       },
@@ -3414,8 +3414,8 @@
   ],
   "review": {
     "classification": "compatible",
-    "compatibilityReason": "Reading schema 1 gains optional modelSynthesis metadata with the original batch annotations, synthesis request scope and explicit state. Existing chapters, insights, modelCoverage and source snapshots are retained with unchanged meaning; older readers ignore the optional receipt and show the final or partial annotations. No user data migration or DATA_EPOCH change is required.",
-    "payloadFingerprint": "sha256:731f27fd76b83118e7bd8bb0a392e2f5670eacf0bbfc2291a84a0485049bfed2"
+    "compatibilityReason": "Session prompt snapshot schema remains version 1. On Enigma restore, only the exact obsolete host introduction prefix is corrected in the frozen base/final prompt, with all remaining bytes and capability fields preserved. Existing serialized sidecar and manifest writes persist this correction. Other products, custom prompts and message JSONL are unchanged; no DATA_EPOCH migration is required.",
+    "payloadFingerprint": "sha256:27ec1638db119594e5d541bfb6644f46684ed1691961778d78009938833a51e1"
   },
   "schemas": [
     {
@@ -3898,7 +3898,7 @@
         {
           "contract": "core/session-coordinator.ts Hana metadata extensions",
           "module": "core/session-coordinator.ts",
-          "sourceHash": "sha256:181d195daffb83fb3d645374f26d65bc250f4edcce6c4371d9d9f21dbb0adc97"
+          "sourceHash": "sha256:df3369442d915e6a4e5eec7074bdf6edd703c4b3af273823d4e3cfc1ea2d5517"
         },
         {
           "contract": "core/session-jsonl-file.ts repair contract",

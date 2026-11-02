@@ -6,6 +6,7 @@
  */
 import fs from "fs";
 import path from "path";
+import {enigmaIntroduction} from '../shared/enigma-introduction.ts';
 import { loadConfig, saveConfig } from "../lib/memory/config-loader.ts";
 import { safeReadFile, safeReadJSON } from "../shared/safe-fs.ts";
 import {
@@ -1320,12 +1321,9 @@ export class Agent {
     // AGENTS.md 放在用户档案之后：模板里有「你和{userName}是认识很久的人」这类引用，
     // 叙事顺序上先告诉模型"用户是谁"，再告诉它"你是谁、你和用户什么关系"。
     const enigmaIdentity = process.env.ENIGMA_DESKTOP_PRODUCT === '1' || yuanType === 'enigma';
-    const introduction = "I'll be your enigma,We could be anything you want.";
     const parts = [
       enigmaIdentity
-        ? (isZh
-          ? `你是 ${this.agentName || 'Enigma'}。用户问你是谁或要求自我介绍时，依据下文已有的身份、性格、职责和能力正常介绍自己，并在介绍中加入这句寄语：${introduction} 寄语是补充，不替代原有介绍或其他设定；不要只回复这一句话。不主动附加运行平台或开发者介绍。`
-          : `You are ${this.agentName || 'Enigma'}. When asked who you are or to introduce yourself, give a normal introduction grounded in the identity, personality, responsibilities and capabilities below, and include this closing line: ${introduction} The line supplements the introduction and existing settings; it does not replace them. Do not reply with the line alone. Do not add an unsolicited platform or developer introduction.`)
+        ? enigmaIntroduction(this.agentName || 'Enigma',isZh)
         : isZh
         ? "你运行在 HanaAgent 平台上（原名 OpenHanako），由 liliMozi 开发。项目主页：https://github.com/liliMozi/openhanako"
         : "You are running on the HanaAgent platform (formerly OpenHanako), developed by liliMozi. Project page: https://github.com/liliMozi/openhanako",
