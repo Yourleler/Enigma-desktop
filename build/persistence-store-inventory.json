@@ -465,7 +465,7 @@
       "schemaSource": {
         "kind": "directory-contract",
         "module": "plugins/enigma/change-workbench.ts",
-        "contract": "frozen source publications, analysis jobs, findings and generated read-only workspaces; optional repo filter and unstaged source preserve prior publications; optional sourceCoverage and modelCoverage record file and request scope, while failed jobs may retain validated partial reading results"
+        "contract": "frozen source publications, analysis jobs, findings and generated read-only workspaces; optional repo filter and unstaged source preserve prior publications; optional sourceCoverage and modelCoverage record file and request scope, while failed jobs may retain validated partial reading results; optional modelSynthesis retains original batch chapters and insights, source index scope, counted summary request and completion or failure state"
       },
       "schemaContract": {
         "kind": "protocol",

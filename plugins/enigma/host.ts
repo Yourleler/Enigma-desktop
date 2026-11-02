@@ -999,7 +999,7 @@ export class EngineeringHost {
         await this.assertManagedModel(sessionPath,model.provider,model.id);
       },request:async(ctx,input,validate)=>{
         input.signal.throwIfAborted();const model=ctx.model!;
-        const usage=this.engine.usageLedger?.start({model,usageContext:{source:{subsystem:'review',operation:'reading',surface:'tool',trigger:'agent'},attribution:{kind:'session',sessionPath,sessionId:this.engine.getSessionIdForPath?.(sessionPath)}},metadata:{batch:input.index+1,task:ctx.sessionManager.getSessionId()}});let observedUsage:any=null;
+        const usage=this.engine.usageLedger?.start({model,usageContext:{source:{subsystem:'review',operation:'reading',surface:'tool',trigger:'agent'},attribution:{kind:'session',sessionPath,sessionId:this.engine.getSessionIdForPath?.(sessionPath)}},metadata:{batch:input.index+1,phase:input.phase||'source',task:ctx.sessionManager.getSessionId()}});let observedUsage:any=null;
         try{
           const response=await ctx.modelRegistry.streamSimple(model,{messages:[{role:'user',timestamp:Date.now(),content:[{type:'text',text:input.prompt}]}]},{signal:input.signal,maxTokens:input.maxTokens}).result();observedUsage=response.usage||null;
           if(['error','aborted'].includes(response.stopReason))throw Error('模型解读未完成');

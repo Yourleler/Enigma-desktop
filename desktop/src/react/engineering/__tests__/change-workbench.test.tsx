@@ -87,3 +87,9 @@ it('pauses source polling in hidden panels and refreshes when shown again',async
   expect(hanaFetch).toHaveBeenCalledWith(expect.stringContaining('/source?id=source'),expect.anything());
  }finally{vi.useRealTimers();}
 });
+
+it('translates scope diagnostics instead of exposing engine copy verbatim',async()=>{
+ vi.mocked(hanaFetch).mockImplementation(async url=>new Response(JSON.stringify(String(url).includes('/source')?{...publication,gaps:['Symbol outlines examined 24 of 139 candidate files; remaining changes retain per-file coverage.','No source query could be derived; provide entry symbols or a diff baseline.']}:{turns:[{id:'turn',onBranch:true,startedAt:'2026-10-31',prompt:'Change'}],repositories:[],jobs:[]})));
+ render(<ChangeWorkbench/>);await screen.findByText('2 个文件 · 版本 version');fireEvent.click(screen.getByText('范围说明 · 2'));
+ expect(screen.getByText(/已检查 24 \/ 139/)).toBeVisible();expect(screen.getByText(/未能提取符号入口/)).toBeVisible();expect(screen.queryByText(/Symbol outlines/)).toBeNull();
+});

@@ -36,7 +36,7 @@ it('supports document source anchors for model reading',async()=>{
 });
 
 function readingMaterial(context:any):any{
- const find=(value:any):string|undefined=>typeof value==='string'&&value.startsWith('用中文解释以下固定版本变更的第')?value:value&&typeof value==='object'?Object.values(value).map(find).find(Boolean):undefined;
+ const find=(value:any):string|undefined=>typeof value==='string'&&(value.startsWith('用中文解释以下固定版本变更的第')||value.startsWith('整理已校验的分批解读'))?value:value&&typeof value==='object'?Object.values(value).map(find).find(Boolean):undefined;
  const text=find(context);expect(text).toBeTruthy();return JSON.parse(text!.slice(text!.indexOf('\n')+1));
 }
 async function largeReadingFixture(){
@@ -47,13 +47,13 @@ async function largeReadingFixture(){
 it('sends complete JSON batches covering all published nodes and changes and persists their scope',async()=>{
  const f=await largeReadingFixture(),sent:any[]=[];
  f.engine.usageLedger=createUsageLedger();
- f.faux.setResponses(Array.from({length:12},()=>context=>{const batch=readingMaterial(context);sent.push(batch);const message=fauxAssistantMessage(JSON.stringify({chapters:batch.nodes.length?[{id:'note',title:'本批文档',summary:'所提供文档包含相同测试材料。',nodes:[batch.nodes[0].id]}]:[],insights:[]}));return message;}));
+ f.faux.setResponses(Array.from({length:12},()=>context=>{const batch=readingMaterial(context);if(batch.sources)return fauxAssistantMessage(JSON.stringify({chapters:[{title:'整体说明',summary:'按行为合并各批来源。',groups:batch.chapters.map((row:any)=>row.id)}],insights:[]}));sent.push(batch);const message=fauxAssistantMessage(JSON.stringify({chapters:batch.nodes.length?[{id:'note',title:'本批文档',summary:'所提供文档包含相同测试材料。',nodes:[batch.nodes[0].id]}]:[],insights:[]}));return message;}));
  const started=await f.api.analyze(f.session,f.source.id,'reading'),job=await untilDone(f.api,f.session,started.id);
  expect(job.status,job.error).toBe('completed');expect(sent.length).toBeGreaterThan(1);
  expect(new Set(sent.flatMap(batch=>batch.nodes.map((n:any)=>n.id))).size).toBe(14);
  expect(new Set(sent.flatMap(batch=>batch.changes.map((c:any)=>c.file))).size).toBe(14);
  expect(job.result.modelCoverage).toMatchObject({status:'complete',requests:sent.length,completedRequests:sent.length,nodes:14,totalNodes:14,changes:14,totalChanges:14});
- const usage=f.engine.usageLedger.list().entries;expect(usage).toHaveLength(sent.length);expect(usage.map((entry:any)=>entry.metadata.batch)).toEqual(sent.map((_,i)=>i+1));for(const entry of usage){expect(entry.usage.totalTokens).toBeGreaterThan(0);expect(entry.usage.output.reasoningTokens).toBeNull();}
+ const usage=f.engine.usageLedger.list().entries;expect(usage).toHaveLength(sent.length+1);expect(usage.filter((entry:any)=>entry.metadata.phase==='source').map((entry:any)=>entry.metadata.batch)).toEqual(sent.map((_,i)=>i+1));expect(usage.filter((entry:any)=>entry.metadata.phase==='synthesis')).toHaveLength(1);expect(job.result.modelSynthesis.status).toBe('complete');for(const entry of usage){expect(entry.usage.totalTokens).toBeGreaterThan(0);expect(entry.usage.output.reasoningTokens).toBeNull();}
  const restored=await new ChangeWorkbench(f.engine,{binding:async()=>null}).job(f.session,job.id);expect(restored.result.modelCoverage).toEqual(job.result.modelCoverage);
 });
 it('keeps source analysis and earlier valid batches when a later model response is malformed',async()=>{
@@ -119,4 +119,11 @@ it('polls and cancels running analysis without repeated source snapshots',async(
   await f.api.action(f.session,job.id,'cancel');expect(spy).not.toHaveBeenCalled();
  }finally{spy.mockRestore();release();}
  expect((await untilDone(f.api,f.session,job.id)).status).toBe('cancelled');
+});
+
+it('keeps completed source batches when only the synthesis reply fails',async()=>{
+ const f=await largeReadingFixture();
+ f.faux.setResponses(Array.from({length:12},()=>context=>{const batch=readingMaterial(context);return fauxAssistantMessage(batch.sources?'invalid synthesis':JSON.stringify({chapters:[{title:'Useful source chapter',summary:'A checked source reference',nodes:[batch.nodes[0].id]}],insights:[]}));}));
+ const started=await f.api.analyze(f.session,f.source.id,'reading'),job=await untilDone(f.api,f.session,started.id);
+ expect(job.status).toBe('failed');expect(job.result.modelCoverage.status).toBe('complete');expect(job.result.modelSynthesis.status).toBe('failed');expect(job.result.chapters.length).toBeGreaterThan(1);expect(job.result.modelSynthesis.chapters).toEqual(job.result.chapters);
 });

@@ -11,6 +11,7 @@ import { SourceIndex } from './source-index.js';
 import { ensureDir, id, readJson, redact, safeId, writeJson,hash } from './storage.js';
 import type {Observation,Evidence} from './types.js';
 import {emitActivity} from './telemetry.js';
+import type {ReadingSynthesis} from './reading-synthesis.js';
 
 type Role = 'entry' | 'contract' | 'implementation' | 'consumer' | 'test' | 'configuration' | 'documentation';
 type ReadingChange={repo:string;file:string;change:string;patch?:string;after?:{omitted?:string}};
@@ -44,6 +45,7 @@ export interface TaskReading {
     nodes:number;totalNodes:number;changes:number;totalChanges:number;edges:number;totalEdges:number;
     characters:number;clippedNodes:number;clippedPatches:number;
   };
+  modelSynthesis?:ReadingSynthesis;
   gaps: string[]; truncated: boolean;
 }
 
@@ -262,6 +264,7 @@ export class TaskReadingStore {
     requirements?: { id: string; status: 'supported' | 'conflict' | 'insufficient'; anchors: string[]; explanation: string }[];
     chapters?: { id: string; title: string; summary: string; nodes: string[] }[];
     layers?: { id: string; title: string; summary: string; nodes: string[] }[];
+    modelSynthesis?:ReadingSynthesis;
   }, task?: string,modelCoverage?:TaskReading['modelCoverage']) {
     return await this.workspace.exclusive(async () => {
       const opened = await this.open(reportId, task); if (!opened.current || opened.report.revision !== expectedRevision) throw new Error('Task reading source or revision changed; read the current map before annotation');
@@ -295,6 +298,13 @@ export class TaskReadingStore {
       if(modelCoverage){
         if(Object.entries(modelCoverage).some(([key,value])=>key!=='status'&&(!Number.isSafeInteger(value)||Number(value)<0))||modelCoverage.nodes>modelCoverage.totalNodes||modelCoverage.changes>modelCoverage.totalChanges||modelCoverage.edges>modelCoverage.totalEdges||modelCoverage.completedRequests>modelCoverage.requests||modelCoverage.requests>modelCoverage.plannedRequests||modelCoverage.status!=='complete'||modelCoverage.completedRequests!==modelCoverage.plannedRequests)throw new Error('Invalid model material coverage');
         report.modelCoverage={...modelCoverage};
+      }
+      if(input.modelSynthesis){
+        const value=input.modelSynthesis;
+        if(value.status!=='complete'||!Number.isSafeInteger(value.sourceBatches)||value.sourceBatches<2||value.sourceBatches>12||value.requests!==1||!Number.isSafeInteger(value.characters)||value.characters<1||value.nodes!==report.nodes.length||value.edges!==report.edges.length||value.chapters.length>24||value.insights.length>24)throw Error('Invalid reading synthesis receipt');
+        for(const chapter of value.chapters)check(chapter.nodes,chapter.summary,400);
+        for(const insight of value.insights)check(insight.anchors,insight.text);
+        report.modelSynthesis=structuredClone(value);
       }
       report.revision++; await this.publish(report); return report;
     });

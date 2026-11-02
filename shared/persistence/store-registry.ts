@@ -143,7 +143,7 @@ export const PERSISTENT_STORES: readonly StoreDescriptor[] = Object.freeze([
   defineStore({
     id: 'conversation-review-workbench', ownerModule: 'plugins/enigma/change-workbench.ts',
     pathPatterns: ['change-workbench/**'], pathKind: 'tree', format: 'json',
-    schemaSource: directorySource('plugins/enigma/change-workbench.ts', 'frozen source publications, analysis jobs, findings and generated read-only workspaces; optional repo filter and unstaged source preserve prior publications; optional sourceCoverage and modelCoverage record file and request scope, while failed jobs may retain validated partial reading results'),
+    schemaSource: directorySource('plugins/enigma/change-workbench.ts', 'frozen source publications, analysis jobs, findings and generated read-only workspaces; optional repo filter and unstaged source preserve prior publications; optional sourceCoverage and modelCoverage record file and request scope, while failed jobs may retain validated partial reading results; optional modelSynthesis retains original batch chapters and insights, source index scope, counted summary request and completion or failure state'),
     openEntry: ['ChangeWorkbench'], firstPossibleOpenPhase: 'runtime_ready', firstPossibleWritePhase: 'runtime_ready',
     identityContract: 'Session digest, publication UUID and job UUID; source access is revalidated before use.',
     checkpointPolicy: 'Preserve sources and verdicts; running processes are not captured as completed work.',

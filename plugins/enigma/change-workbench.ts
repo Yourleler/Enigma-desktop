@@ -162,7 +162,7 @@ export class ChangeWorkbench {
           const annotation=await explainReadingMaterial(report,pub.changes,{contextWindow:model.contextWindow,signal,onRequest,
             onProgress:async partial=>{job.result=partial;await this.save(path.join(this.directory(session),'job-'+job.id+'.json'),job);},
             request:async(input,validate)=>{
-              const requestUsage=this.engine.usageLedger?.start({model,usageContext,metadata:{readingJobId:job.id,batch:input.index+1}});let observedUsage:any=null;
+              const requestUsage=this.engine.usageLedger?.start({model,usageContext,metadata:{readingJobId:job.id,batch:input.index+1,phase:input.phase||'source'}});let observedUsage:any=null;
               try{
                 const response=await runtime.streamSimple(model,{messages:[{role:'user',timestamp:Date.now(),content:[{type:'text',text:input.prompt}]}]},{signal:input.signal,maxTokens:input.maxTokens}).result();
                 observedUsage=response.usage&&['input','output','cacheRead','cacheWrite'].some(key=>Number((response.usage as any)[key])>0)?response.usage:null;
@@ -176,7 +176,7 @@ export class ChangeWorkbench {
         }
         signal.throwIfAborted();job.status='completed';
         if(kind==='review'&&usage){const manager=SessionManager.open(job.result.session);const totals={input:0,output:0,cacheRead:0,cacheWrite:0};for(const e of manager.getBranch())if(e.type==='message'&&e.message.role==='assistant'&&e.message.usage)for(const k of Object.keys(totals))totals[k as keyof typeof totals]+=Number((e.message.usage as any)[k])||0;this.engine.usageLedger.finish(usage.requestId,{model,usage:totals});}
-      }catch(error){job.status=controller.signal.aborted?'cancelled':'failed';job.error=error instanceof Error?error.message:String(error);if(job.kind==='reading'&&job.result?.modelCoverage)job.result.modelCoverage.status='partial';if(usage)this.engine.usageLedger.recordError(usage.requestId,error,job.status==='cancelled'?'aborted':'error');}
+      }catch(error){job.status=controller.signal.aborted?'cancelled':'failed';job.error=error instanceof Error?error.message:String(error);if(job.kind==='reading'&&job.result?.modelCoverage&&job.result.modelCoverage.completedRequests!==job.result.modelCoverage.plannedRequests)job.result.modelCoverage.status='partial';if(usage)this.engine.usageLedger.recordError(usage.requestId,error,job.status==='cancelled'?'aborted':'error');}
       finally{job.endedAt=new Date().toISOString();try{await this.save(path.join(this.directory(session),'job-'+job.id+'.json'),job);}finally{this.jobs.delete(job.id);this.activeSessions.delete(session);}}
     })().catch(()=>{this.jobs.delete(job.id);this.activeSessions.delete(session);});return job;
   }

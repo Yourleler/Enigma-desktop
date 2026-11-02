@@ -664,7 +664,7 @@
     ],
     "version": 3
   },
-  "payloadFingerprint": "sha256:fa09f50e08e7d1df04ce554ac4eaa4091923734133c48757b30a5fbf89edd4c0",
+  "payloadFingerprint": "sha256:731f27fd76b83118e7bd8bb0a392e2f5670eacf0bbfc2291a84a0485049bfed2",
   "registry": [
     {
       "affectedByEpochMigration": true,
@@ -1103,7 +1103,7 @@
         "source": "plugins/enigma/change-workbench.ts"
       },
       "schemaSource": {
-        "contract": "frozen source publications, analysis jobs, findings and generated read-only workspaces; optional repo filter and unstaged source preserve prior publications; optional sourceCoverage and modelCoverage record file and request scope, while failed jobs may retain validated partial reading results",
+        "contract": "frozen source publications, analysis jobs, findings and generated read-only workspaces; optional repo filter and unstaged source preserve prior publications; optional sourceCoverage and modelCoverage record file and request scope, while failed jobs may retain validated partial reading results; optional modelSynthesis retains original batch chapters and insights, source index scope, counted summary request and completion or failure state",
         "kind": "directory-contract",
         "module": "plugins/enigma/change-workbench.ts"
       }
@@ -3414,8 +3414,8 @@
   ],
   "review": {
     "classification": "compatible",
-    "compatibilityReason": "Existing JSONL, activity indexes and cron jobs retain their schemas. Activity promotion adds an optional locator marker and exclusive move protection; old readers can still open the normal conversation. Cron editor revision checks reuse configRevision without rewriting jobs. Model reading shares existing optional modelCoverage and partial-result fields across desktop and Pi, with no data migration. The inventory now includes exclusive hard-link destination writes.",
-    "payloadFingerprint": "sha256:fa09f50e08e7d1df04ce554ac4eaa4091923734133c48757b30a5fbf89edd4c0"
+    "compatibilityReason": "Reading schema 1 gains optional modelSynthesis metadata with the original batch annotations, synthesis request scope and explicit state. Existing chapters, insights, modelCoverage and source snapshots are retained with unchanged meaning; older readers ignore the optional receipt and show the final or partial annotations. No user data migration or DATA_EPOCH change is required.",
+    "payloadFingerprint": "sha256:731f27fd76b83118e7bd8bb0a392e2f5670eacf0bbfc2291a84a0485049bfed2"
   },
   "schemas": [
     {
@@ -3536,10 +3536,10 @@
       "storeId": "conversation-input-queue"
     },
     {
-      "contract": "frozen source publications, analysis jobs, findings and generated read-only workspaces; optional repo filter and unstaged source preserve prior publications; optional sourceCoverage and modelCoverage record file and request scope, while failed jobs may retain validated partial reading results",
+      "contract": "frozen source publications, analysis jobs, findings and generated read-only workspaces; optional repo filter and unstaged source preserve prior publications; optional sourceCoverage and modelCoverage record file and request scope, while failed jobs may retain validated partial reading results; optional modelSynthesis retains original batch chapters and insights, source index scope, counted summary request and completion or failure state",
       "kind": "directory-contract",
       "module": "plugins/enigma/change-workbench.ts",
-      "sourceHash": "sha256:f90110c2edd1d7e17911dece7164a7df38d05443ba289f22dbe3394cb50d4116",
+      "sourceHash": "sha256:71b9f215ddb34ba942da4174909d4c4c933333a729e5fcd1115fca9c6f0b8e57",
       "storeId": "conversation-review-workbench"
     },
     {
@@ -3675,7 +3675,7 @@
       "contract": "schema 1 native-session/workspace binding, absolute roots, explicit memory flag, validated source identity, manager model grants and bounded guardian configuration/usage",
       "kind": "runtime-contract",
       "module": "plugins/enigma/host.ts",
-      "sourceHash": "sha256:c92756d717ba3123156e68488e137b79a896a549fb5f42c166a7f7c87b9dfe2e",
+      "sourceHash": "sha256:8efd32ec56dfd2ea83e5399a33eb64ecd8e0cace8531d5e977a37979af33cd7f",
       "storeId": "enigma-session-bindings"
     },
     {

@@ -23,3 +23,11 @@ it('does not infer complete coverage from a legacy record or treat advisory grou
  expect(readingText('Source-backed contract locations; expand each node for actual code.')).toContain('接口契约');
  expect(readingText('chapters: 7 published source nodes are not included in the chosen grouping; they remain available in the full map.')).toContain('7 个已记录节点');
 });
+
+it('distinguishes synthesis from source requests and retains original batch navigation',()=>{
+ const onSource=vi.fn(),source={repo:'r',file:'source.ts',line:4};
+ render(<ReadingCoverage reading={{nodes:[{id:'n',source}],modelCoverage:{status:'complete',requests:2,completedRequests:2,plannedRequests:2,nodes:1,totalNodes:1,changes:1,totalChanges:1,edges:0,totalEdges:0},modelSynthesis:{status:'complete',requests:1,sourceBatches:2,nodes:1,edges:0,chapters:[{id:'original',title:'Original explanation',summary:'Original evidence',nodes:['n']}],insights:[]}}} onSource={onSource}/>);
+ fireEvent.click(screen.getByText(/源码展开范围/));expect(screen.getByText(/整理额外发起 1 次/)).toBeVisible();
+ const original=screen.getByText(/查看各批原始解读/).closest('details')!;original.open=true;fireEvent(original,new Event('toggle'));
+ fireEvent.click(screen.getByRole('button',{name:'r / source.ts:4'}));expect(onSource).toHaveBeenCalledWith(source);
+});

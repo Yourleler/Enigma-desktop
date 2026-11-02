@@ -17,7 +17,7 @@ test('Pi tool sends all files beyond the old caps and retains valid batches on a
   const batches:any[]=[];let failAt=Infinity;
   const ctx:any={cwd:root,signal:new AbortController().signal,model:{id:'controlled',contextWindow:64000},modelRegistry:{streamSimple:(_model:any,input:any)=>({result:async()=>{
    const prompt=input.messages[0].content[0].text;
-   const batch=JSON.parse(prompt.slice(prompt.indexOf('\n')+1));batches.push(batch);
+   const batch=JSON.parse(prompt.slice(prompt.indexOf('\n')+1));if(batch.sources)return {stopReason:'stop',content:[{type:'text',text:JSON.stringify({chapters:[{title:'Merged reading',summary:'All provided source groups',groups:batch.chapters.map((row:any)=>row.id)}],insights:[]})}]};batches.push(batch);
    return {stopReason:'stop',content:[{type:'text',text:batches.length===failAt?'invalid-json':JSON.stringify({chapters:batch.nodes.length?[{title:'Source behavior',summary:'Only the supplied references were provided.',nodes:[batch.nodes[0].id]}]:[],insights:[]})}]};
   }})},sessionManager:{getSessionId:()=> 'pi-material',getBranch:()=>[]}};
   createChangeReadingExtension({workspace})(pi);await hooks.get('session_start')!({},ctx);

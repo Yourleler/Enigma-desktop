@@ -151,7 +151,7 @@ export class ChangeReadings {
         return store.annotate(report.id,report.revision,annotation,input.task,annotation.modelCoverage);
       },this.workspace.activity) : report;
       record.gaps.push(...record.reading.gaps); record.status = 'ready';
-    } catch (error) { record.status = 'failed'; record.error = redact(String(error), this.workspace.secrets); if(record.reading?.modelCoverage)record.reading.modelCoverage.status='partial'; }
+    } catch (error) { record.status = 'failed'; record.error = redact(String(error), this.workspace.secrets); if(record.reading?.modelCoverage&&record.reading.modelCoverage.completedRequests!==record.reading.modelCoverage.plannedRequests)record.reading.modelCoverage.status='partial'; }
     await writeJson(await this.path(record.id), record); return record;
   }
   async open(recordId: string, task: string) {

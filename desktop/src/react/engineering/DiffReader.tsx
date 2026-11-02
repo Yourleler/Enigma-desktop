@@ -97,7 +97,7 @@ export function DiffReader({change,version,line,side='target',flow=false,scope='
   if(oldAnchor?.id===id&&oldAnchor.line===line&&oldAnchor.side===side&&oldAnchor.doc.toString()===content)return;
   if(side==='baseline'&&!split){manualSplit.current=true;setSplit(true);return;}
   const view=side==='baseline'?baseline.current:editor.current;
-  if(view){const pos=view.state.doc.line(Math.min(Math.max(1,line),view.state.doc.lines)).from;view.dispatch({selection:{anchor:pos},effects:EditorView.scrollIntoView(pos,{y:'center'})});lastAnchor.current={id,line,side,doc:view.state.doc};onAnchorApplied?.();}
+  if(view){const pos=view.state.doc.line(Math.min(Math.max(1,line),view.state.doc.lines)).from;view.dispatch({selection:{anchor:pos},...(flow&&line===1?{}:{effects:EditorView.scrollIntoView(pos,flow?{y:'start',yMargin:110}:{y:'center'})})});lastAnchor.current={id,line,side,doc:view.state.doc};onAnchorApplied?.();}
  },[id,line,split,side,a,b,omitted]);
  if(!change)return <p>选择一个变更文件。</p>;
  const size=(value:any)=>!value?'无此文件':typeof value.size==='number'?`${value.size.toLocaleString()} 字节`:'大小未记录';
