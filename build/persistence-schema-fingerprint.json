@@ -664,7 +664,7 @@
     ],
     "version": 3
   },
-  "payloadFingerprint": "sha256:94d88e6361d13dadf8f8f135da935dbfc105381cfa7dd32d741becc4a0abcc25",
+  "payloadFingerprint": "sha256:fa09f50e08e7d1df04ce554ac4eaa4091923734133c48757b30a5fbf89edd4c0",
   "registry": [
     {
       "affectedByEpochMigration": true,
@@ -1145,7 +1145,7 @@
         "source": "lib/desk/cron-store.ts"
       },
       "schemaSource": {
-        "contract": "CronStore job registry and run receipt protocol",
+        "contract": "CronStore job registry and run receipt protocol; editor writes may require the existing configRevision and inaccessible run logs throw instead of looking empty",
         "kind": "directory-contract",
         "module": "lib/desk/cron-store.ts"
       }
@@ -1372,12 +1372,12 @@
       "protocolModules": [],
       "restorePolicy": "Restore only through the owning module after reader compatibility is established.",
       "schemaContract": {
-        "compatibility": "The named runtime reader is canonical; this inventory does not imply stricter validation than runtime currently performs.",
+        "compatibility": "Existing activity entries remain readable. The optional promotion marker resolves the same session in the agent sessions directory; old readers may show the original activity file as unavailable, but the normal conversation remains intact. No message bytes are rewritten.",
         "kind": "protocol",
         "source": "lib/desk/activity-store.ts"
       },
       "schemaSource": {
-        "contract": "activity index and activity-session JSONL lifecycle",
+        "contract": "activity index and activity-session JSONL lifecycle; optional promotedSessionFile preserves the activity reference after its session moves to normal conversations",
         "kind": "directory-contract",
         "module": "lib/desk/activity-store.ts"
       }
@@ -3414,8 +3414,8 @@
   ],
   "review": {
     "classification": "compatible",
-    "compatibilityReason": "Desktop power monitoring and a host-only read-only native session probe add in-memory visual suspension. They do not change window bounds, preferences, task state or any persisted format, do not alter sleep policy, and leave existing reading/usage metadata intact. No data migration or DATA_EPOCH change is required.",
-    "payloadFingerprint": "sha256:94d88e6361d13dadf8f8f135da935dbfc105381cfa7dd32d741becc4a0abcc25"
+    "compatibilityReason": "Existing JSONL, activity indexes and cron jobs retain their schemas. Activity promotion adds an optional locator marker and exclusive move protection; old readers can still open the normal conversation. Cron editor revision checks reuse configRevision without rewriting jobs. Model reading shares existing optional modelCoverage and partial-result fields across desktop and Pi, with no data migration. The inventory now includes exclusive hard-link destination writes.",
+    "payloadFingerprint": "sha256:fa09f50e08e7d1df04ce554ac4eaa4091923734133c48757b30a5fbf89edd4c0"
   },
   "schemas": [
     {
@@ -3539,14 +3539,14 @@
       "contract": "frozen source publications, analysis jobs, findings and generated read-only workspaces; optional repo filter and unstaged source preserve prior publications; optional sourceCoverage and modelCoverage record file and request scope, while failed jobs may retain validated partial reading results",
       "kind": "directory-contract",
       "module": "plugins/enigma/change-workbench.ts",
-      "sourceHash": "sha256:5610bc7836a7a74c5331eb2fc0381fb170ecd9881089d3747aefe72ca3da9f23",
+      "sourceHash": "sha256:f90110c2edd1d7e17911dece7164a7df38d05443ba289f22dbe3394cb50d4116",
       "storeId": "conversation-review-workbench"
     },
     {
-      "contract": "CronStore job registry and run receipt protocol",
+      "contract": "CronStore job registry and run receipt protocol; editor writes may require the existing configRevision and inaccessible run logs throw instead of looking empty",
       "kind": "directory-contract",
       "module": "lib/desk/cron-store.ts",
-      "sourceHash": "sha256:bb1664a1ce588406d4fafebd71b5726938ff4a8a619b380c0936ceadb217f37c",
+      "sourceHash": "sha256:0abcfa89a68578df0dbc7daaa9d4cbd93f2f9bb3130bf5694d31a9a07deb8200",
       "storeId": "cron-automation"
     },
     {
@@ -3595,7 +3595,7 @@
       "storeId": "deferred-result-state"
     },
     {
-      "contract": "activity index and activity-session JSONL lifecycle",
+      "contract": "activity index and activity-session JSONL lifecycle; optional promotedSessionFile preserves the activity reference after its session moves to normal conversations",
       "kind": "directory-contract",
       "module": "lib/desk/activity-store.ts",
       "sourceHash": "sha256:0bf7d6125868836dfd253e5b0d3599eef0f0340df6e78edbf688ae28b32d18e2",
@@ -3605,7 +3605,7 @@
       "contract": "bounded base64 cover upload temporary-directory lifecycle",
       "kind": "directory-contract",
       "module": "server/routes/desk.ts",
-      "sourceHash": "sha256:7d2cf25f7dbcdf256dc4188fb0256ddf413fa726fbf1ea934abb8e9514a45fc6",
+      "sourceHash": "sha256:1ee3246ca25db60464356490e957e18bdb67dcb56efe6652e9adb6b4d954c296",
       "storeId": "desk-cover-upload-staging"
     },
     {
@@ -3675,7 +3675,7 @@
       "contract": "schema 1 native-session/workspace binding, absolute roots, explicit memory flag, validated source identity, manager model grants and bounded guardian configuration/usage",
       "kind": "runtime-contract",
       "module": "plugins/enigma/host.ts",
-      "sourceHash": "sha256:9a4b0f63a13fede37fcf39d4f910065b908c759e3f960512527fb036918c84ec",
+      "sourceHash": "sha256:c92756d717ba3123156e68488e137b79a896a549fb5f42c166a7f7c87b9dfe2e",
       "storeId": "enigma-session-bindings"
     },
     {
@@ -3898,7 +3898,7 @@
         {
           "contract": "core/session-coordinator.ts Hana metadata extensions",
           "module": "core/session-coordinator.ts",
-          "sourceHash": "sha256:c785e1ad8730f675b888b673566d8cc689887320874c53ef18c2a65101a829a0"
+          "sourceHash": "sha256:181d195daffb83fb3d645374f26d65bc250f4edcce6c4371d9d9f21dbb0adc97"
         },
         {
           "contract": "core/session-jsonl-file.ts repair contract",
@@ -6009,7 +6009,15 @@
     },
     {
       "exemptionId": null,
-      "kind": "mkdir",
+      "kind": "copy-file",
+      "ordinal": 0,
+      "reason": "Creates, repairs, archives, restores, or appends session JSONL locators.",
+      "sourceFile": "core/session-coordinator.ts",
+      "storeId": "session-jsonl"
+    },
+    {
+      "exemptionId": null,
+      "kind": "copy-file",
       "ordinal": 0,
       "reason": "Creates, repairs, archives, restores, or appends session JSONL locators.",
       "sourceFile": "core/session-coordinator.ts",
@@ -6057,7 +6065,7 @@
     },
     {
       "exemptionId": null,
-      "kind": "remove-path",
+      "kind": "mkdir",
       "ordinal": 0,
       "reason": "Creates, repairs, archives, restores, or appends session JSONL locators.",
       "sourceFile": "core/session-coordinator.ts",
@@ -6129,7 +6137,7 @@
     },
     {
       "exemptionId": null,
-      "kind": "rename",
+      "kind": "remove-path",
       "ordinal": 0,
       "reason": "Creates, repairs, archives, restores, or appends session JSONL locators.",
       "sourceFile": "core/session-coordinator.ts",
@@ -6137,8 +6145,24 @@
     },
     {
       "exemptionId": null,
-      "kind": "rename",
+      "kind": "remove-path",
       "ordinal": 0,
+      "reason": "Creates, repairs, archives, restores, or appends session JSONL locators.",
+      "sourceFile": "core/session-coordinator.ts",
+      "storeId": "session-jsonl"
+    },
+    {
+      "exemptionId": null,
+      "kind": "remove-path",
+      "ordinal": 0,
+      "reason": "Creates, repairs, archives, restores, or appends session JSONL locators.",
+      "sourceFile": "core/session-coordinator.ts",
+      "storeId": "session-jsonl"
+    },
+    {
+      "exemptionId": null,
+      "kind": "remove-path",
+      "ordinal": 1,
       "reason": "Creates, repairs, archives, restores, or appends session JSONL locators.",
       "sourceFile": "core/session-coordinator.ts",
       "storeId": "session-jsonl"

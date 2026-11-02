@@ -1,15 +1,15 @@
 import {expect,it} from 'vitest';
-import {prepareReadingMaterial,validateReadingAnnotation} from '../plugins/enigma/reading-material';
+import {prepareReadingMaterial,validateReadingAnnotation} from 'enigma-next';
 
 it('packs every source node and file beyond former caps into complete bounded JSON',()=>{
  const nodes=Array.from({length:139},(_,i)=>({id:`node-${i}`,role:'implementation',source:{repo:'r',file:`file-${i}.ts`,line:1,snippet:'Quotes " and Chinese 中文\n'.repeat(30)}}));
  const changes=nodes.map(n=>({repo:'r',file:n.source.file,change:'modified',patch:'+ text\\quoted"\n'.repeat(20)}));
  const edges=nodes.slice(1).map((n,i)=>({from:nodes[i].id,to:n.id,confidence:'confirmed'}));
- const material=prepareReadingMaterial({nodes,edges},changes,18000);
+ const material=prepareReadingMaterial({goal:'Read all "quoted" requirements 中文',nodes,edges},changes,18000);
  expect(material.batches.length).toBeGreaterThan(1);
  expect(material.batches.flatMap(b=>b.nodes).map(n=>n.id)).toEqual(nodes.map(n=>n.id));
  expect(material.batches.flatMap(b=>b.changes).map(c=>c.file)).toEqual(changes.map(c=>c.file));
- for(const batch of material.batches){const text=JSON.stringify(batch);expect(text.length).toBeLessThanOrEqual(18000);expect(JSON.parse(text)).toEqual(batch);const ids=new Set(batch.nodes.map(n=>n.id));expect(batch.edges.every(e=>ids.has(e.from)&&ids.has(e.to))).toBe(true);}
+ for(const batch of material.batches){expect(batch.goal).toBe('Read all "quoted" requirements 中文');const text=JSON.stringify(batch);expect(text.length).toBeLessThanOrEqual(18000);expect(JSON.parse(text)).toEqual(batch);const ids=new Set(batch.nodes.map(n=>n.id));expect(batch.edges.every(e=>ids.has(e.from)&&ids.has(e.to))).toBe(true);}
  expect(material.coverage).toMatchObject({requests:0,nodes:0,totalNodes:139,changes:0,totalChanges:139,status:'pending'});
 });
 

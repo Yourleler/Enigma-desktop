@@ -989,7 +989,24 @@ export class EngineeringHost {
         agentDir,
         modelRuntime: await this.engine.modelRegistry.ready(),
       }),
-      createChangeReadingExtension({ workspace }),
+      createChangeReadingExtension({ workspace,onRequest:async(ctx)=>{
+        ctx.signal?.throwIfAborted();
+        if(this.engine.getSessionPermissionMode?.(sessionPath)==='read_only')throw Error('对话权限已改为只读，分析已停止');
+        const model=ctx.model!;await this.assertManagedModel(sessionPath,model.provider,model.id);
+        const current=await this.binding(sessionPath),policy=current?.modelPolicy;
+        if(policy){if(policy.maxRequests!==undefined&&policy.requests>=policy.maxRequests)throw Error('已达到本任务的模型调用限额');policy.requests++;await this.saveBinding(sessionPath,current);}
+        if(this.engine.getSessionPermissionMode?.(sessionPath)==='read_only')throw Error('对话权限已改为只读，分析已停止');
+        await this.assertManagedModel(sessionPath,model.provider,model.id);
+      },request:async(ctx,input,validate)=>{
+        input.signal.throwIfAborted();const model=ctx.model!;
+        const usage=this.engine.usageLedger?.start({model,usageContext:{source:{subsystem:'review',operation:'reading',surface:'tool',trigger:'agent'},attribution:{kind:'session',sessionPath,sessionId:this.engine.getSessionIdForPath?.(sessionPath)}},metadata:{batch:input.index+1,task:ctx.sessionManager.getSessionId()}});let observedUsage:any=null;
+        try{
+          const response=await ctx.modelRegistry.streamSimple(model,{messages:[{role:'user',timestamp:Date.now(),content:[{type:'text',text:input.prompt}]}]},{signal:input.signal,maxTokens:input.maxTokens}).result();observedUsage=response.usage||null;
+          if(['error','aborted'].includes(response.stopReason))throw Error('模型解读未完成');
+          const text=response.content.filter(part=>part.type==='text').map(part=>part.text).join('\n');validate(text);
+          if(usage)this.engine.usageLedger.finish(usage.requestId,{model,usage:observedUsage});return text;
+        }catch(error){if(usage)this.engine.usageLedger.recordError(usage.requestId,error,input.signal.aborted?'aborted':'error',{usage:observedUsage});throw error;}
+      }}),
     ];
     return {
       workspace,

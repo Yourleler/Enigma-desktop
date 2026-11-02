@@ -54,6 +54,8 @@ const FS_METHOD_KINDS = new Map([
   ["renameSync", "rename"],
   ["copyFile", "copy-file"],
   ["copyFileSync", "copy-file"],
+  // Exclusive hard-link creation is also a persistent destination write.
+  ["linkSync", "copy-file"],
   ["cp", "copy-file"],
   ["cpSync", "copy-file"],
   ["mkdir", "mkdir"],

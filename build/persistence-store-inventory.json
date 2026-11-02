@@ -504,7 +504,7 @@
       "schemaSource": {
         "kind": "directory-contract",
         "module": "lib/desk/cron-store.ts",
-        "contract": "CronStore job registry and run receipt protocol"
+        "contract": "CronStore job registry and run receipt protocol; editor writes may require the existing configRevision and inaccessible run logs throw instead of looking empty"
       },
       "schemaContract": {
         "kind": "protocol",
@@ -738,12 +738,12 @@
       "schemaSource": {
         "kind": "directory-contract",
         "module": "lib/desk/activity-store.ts",
-        "contract": "activity index and activity-session JSONL lifecycle"
+        "contract": "activity index and activity-session JSONL lifecycle; optional promotedSessionFile preserves the activity reference after its session moves to normal conversations"
       },
       "schemaContract": {
         "kind": "protocol",
         "source": "lib/desk/activity-store.ts",
-        "compatibility": "The named runtime reader is canonical; this inventory does not imply stricter validation than runtime currently performs."
+        "compatibility": "Existing activity entries remain readable. The optional promotion marker resolves the same session in the agent sessions directory; old readers may show the original activity file as unavailable, but the normal conversation remains intact. No message bytes are rewritten."
       },
       "openEntry": [
         "new ActivityStore",
@@ -4938,6 +4938,24 @@
     {
       "sourceFile": "core/session-coordinator.ts",
       "kind": "copy-file",
+      "excerpt": "fs.linkSync(newPath, oldPath)",
+      "reason": "Creates, repairs, archives, restores, or appends session JSONL locators.",
+      "storeId": "session-jsonl",
+      "exemptionId": null,
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "core/session-coordinator.ts",
+      "kind": "copy-file",
+      "excerpt": "fs.linkSync(oldPath, newPath)",
+      "reason": "Creates, repairs, archives, restores, or appends session JSONL locators.",
+      "storeId": "session-jsonl",
+      "exemptionId": null,
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "core/session-coordinator.ts",
+      "kind": "copy-file",
       "excerpt": "fsp.copyFile(sourceJournalPath, targetJournalPath, fs.constants.COPYFILE_EXCL)",
       "reason": "Creates, repairs, archives, restores, or appends session JSONL locators.",
       "storeId": "session-jsonl",
@@ -5010,6 +5028,33 @@
     {
       "sourceFile": "core/session-coordinator.ts",
       "kind": "remove-path",
+      "excerpt": "fs.unlinkSync(newPath)",
+      "reason": "Creates, repairs, archives, restores, or appends session JSONL locators.",
+      "storeId": "session-jsonl",
+      "exemptionId": null,
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "core/session-coordinator.ts",
+      "kind": "remove-path",
+      "excerpt": "fs.unlinkSync(newPath)",
+      "reason": "Creates, repairs, archives, restores, or appends session JSONL locators.",
+      "storeId": "session-jsonl",
+      "exemptionId": null,
+      "ordinal": 1
+    },
+    {
+      "sourceFile": "core/session-coordinator.ts",
+      "kind": "remove-path",
+      "excerpt": "fs.unlinkSync(oldPath)",
+      "reason": "Creates, repairs, archives, restores, or appends session JSONL locators.",
+      "storeId": "session-jsonl",
+      "exemptionId": null,
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "core/session-coordinator.ts",
+      "kind": "remove-path",
       "excerpt": "fs.unlinkSync(sp)",
       "reason": "Creates, repairs, archives, restores, or appends session JSONL locators.",
       "storeId": "session-jsonl",
@@ -5074,24 +5119,6 @@
       "sourceFile": "core/session-coordinator.ts",
       "kind": "remove-path",
       "excerpt": "fsp.rmdir(sessionDir)",
-      "reason": "Creates, repairs, archives, restores, or appends session JSONL locators.",
-      "storeId": "session-jsonl",
-      "exemptionId": null,
-      "ordinal": 0
-    },
-    {
-      "sourceFile": "core/session-coordinator.ts",
-      "kind": "rename",
-      "excerpt": "fs.renameSync(newPath, oldPath)",
-      "reason": "Creates, repairs, archives, restores, or appends session JSONL locators.",
-      "storeId": "session-jsonl",
-      "exemptionId": null,
-      "ordinal": 0
-    },
-    {
-      "sourceFile": "core/session-coordinator.ts",
-      "kind": "rename",
-      "excerpt": "fs.renameSync(oldPath, newPath)",
       "reason": "Creates, repairs, archives, restores, or appends session JSONL locators.",
       "storeId": "session-jsonl",
       "exemptionId": null,

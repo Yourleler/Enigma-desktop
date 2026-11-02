@@ -71,3 +71,6 @@ export { DocumentationStore } from './documentation.js';
 export {TaskAcceptance} from './task-acceptance.js';
 export {exportDifferentialHandoff,inspectDifferentialHandoff} from './differential-handoff.js';
 export {resolveMergeRequest} from './merge-request-source.js';
+
+export {prepareReadingMaterial,validateReadingAnnotation,explainReadingMaterial} from './reading-material.js';
+export type {ReadingMaterialBatch,ModelReadingCoverage,ReadingAnnotation,ReadingBatchRequest} from './reading-material.js';

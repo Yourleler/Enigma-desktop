@@ -802,7 +802,8 @@ export const PERSISTENT_STORES: readonly StoreDescriptor[] = Object.freeze([
     ownerModule: "lib/desk/activity-store.ts",
     pathPatterns: ["agents/{agentId}/desk/activities.json"],
     format: "mixed-directory",
-    schemaSource: directorySource("lib/desk/activity-store.ts", "activity index and activity-session JSONL lifecycle"),
+    schemaSource: directorySource("lib/desk/activity-store.ts", "activity index and activity-session JSONL lifecycle; optional promotedSessionFile preserves the activity reference after its session moves to normal conversations"),
+    compatibility: "Existing activity entries remain readable. The optional promotion marker resolves the same session in the agent sessions directory; old readers may show the original activity file as unavailable, but the normal conversation remains intact. No message bytes are rewritten.",
     openEntry: ["new ActivityStore", "DeskManager"],
     identityContract: "activityId/sessionId identify records; session files remain agent-owned locators.",
     siteRules: [
@@ -820,7 +821,7 @@ export const PERSISTENT_STORES: readonly StoreDescriptor[] = Object.freeze([
       "studios/{studioId}/desk/cron-runs/{runId}.json",
     ],
     format: "mixed-directory",
-    schemaSource: directorySource("lib/desk/cron-store.ts", "CronStore job registry and run receipt protocol"),
+    schemaSource: directorySource("lib/desk/cron-store.ts", "CronStore job registry and run receipt protocol; editor writes may require the existing configRevision and inaccessible run logs throw instead of looking empty"),
     openEntry: ["new CronStore", "StudioCronService"],
     migrationEntry: ["core/migrations.ts cron migrations"],
     identityContract: "jobId and runId are scoped to their agentId or studioId owner.",

@@ -38,6 +38,10 @@ function sitesIn(root: string, sourceFile: string) {
 }
 
 describe("persistence scan: descriptor-based writes", () => {
+  it("counts exclusive hard-link creation as a destination write", () => {
+    const root = makeFixtureRepo({"core/promote.ts":'import fs from "node:fs"; export function move(a,b){fs.linkSync(a,b);fs.unlinkSync(a);}'});
+    expect(sitesIn(root,"core/promote.ts").map((site:any)=>site.kind)).toEqual(['copy-file','remove-path']);
+  });
   it("counts a descriptor opened for writing as a file write", () => {
     const root = makeFixtureRepo({
       "core/opener.ts": [

@@ -138,7 +138,7 @@ export class ChangeReadings {
       await writeJson(join(await this.directory(), `latest-${safeId(input.task)}.json`), { id: record.id }); return record;
     }),this.workspace.activity);
   }
-  async build(input: ChangeReadingInput, options: { signal?: AbortSignal; explain?: (report: TaskReading, changes: ChangeFile[]) => Promise<Parameters<TaskReadingStore['annotate']>[2]> } = {}) {
+  async build(input: ChangeReadingInput, options: { signal?: AbortSignal; explain?: (report: TaskReading, changes: ChangeFile[], onProgress?:(reading:TaskReading)=>Promise<void>) => Promise<Parameters<TaskReadingStore['annotate']>[2]&{modelCoverage?:TaskReading['modelCoverage']}> } = {}) {
     const record = await this.capture(input, options.signal);
     try {
       record.status = 'reading'; await writeJson(await this.path(record.id), record);
@@ -146,9 +146,12 @@ export class ChangeReadings {
       const report = await measured('reading.analyze',{detail:`分析 ${record.changes.length} 个变更文件的源码关系`},()=>store.build({ goal: input.goal, task: input.task, expectedRepos: [...new Set(record.changes.map(file => file.repo))],
         changes: record.changes.map(({ before: _before, after: _after, ...change }) => change), maxQueries: 20 }, options.signal),this.workspace.activity);
       record.reading=report;
-      record.reading = options.explain && report.nodes.length ? await measured('reading.explain',{detail:'根据已冻结的源码节点生成讲解'},async()=>store.annotate(report.id, report.revision, await options.explain!(report, record.changes), input.task),this.workspace.activity) : report;
+      record.reading = options.explain && (report.nodes.length||record.changes.length) ? await measured('reading.explain',{detail:'根据已冻结的源码节点生成讲解'},async()=>{
+        const annotation=await options.explain!(report,record.changes,async partial=>{record.reading=partial;await writeJson(await this.path(record.id),record);});
+        return store.annotate(report.id,report.revision,annotation,input.task,annotation.modelCoverage);
+      },this.workspace.activity) : report;
       record.gaps.push(...record.reading.gaps); record.status = 'ready';
-    } catch (error) { record.status = 'failed'; record.error = redact(String(error), this.workspace.secrets); }
+    } catch (error) { record.status = 'failed'; record.error = redact(String(error), this.workspace.secrets); if(record.reading?.modelCoverage)record.reading.modelCoverage.status='partial'; }
     await writeJson(await this.path(record.id), record); return record;
   }
   async open(recordId: string, task: string) {
