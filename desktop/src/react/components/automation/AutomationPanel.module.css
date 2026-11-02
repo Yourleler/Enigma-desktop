@@ -7,11 +7,11 @@
 
 .agentTabsFrame {
     margin: 0 calc(var(--space-24) * -1) var(--space-16);
-    padding: var(--space-8) var(--space-24) 10px;
+    padding: var(--space-8) var(--space-24) var(--space-10);
     display: grid;
     grid-template-columns: 26px minmax(0, 1fr) 26px;
     align-items: start;
-    gap: 7px;
+    gap: var(--space-7);
 }
 
 .agentTabsShell {
@@ -35,7 +35,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    margin-top: 2px;
+    margin-top: var(--space-2);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     background: transparent;
@@ -60,7 +60,7 @@
     display: flex;
     align-items: flex-start;
     justify-content: flex-start;
-    gap: 14px;
+    gap: var(--space-14);
 }
 
 .agentTab {
@@ -69,8 +69,8 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 5px;
-    padding: 7px 0 6px;
+    gap: var(--space-5);
+    padding: var(--space-7) 0 var(--space-6);
     border: 0;
     border-radius: 14px;
     background: transparent;
@@ -127,9 +127,9 @@
 .categoryTabs {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: var(--space-6);
     margin: 0 0 var(--space-8);
-    padding: 2px;
+    padding: var(--space-2);
     overflow-x: auto;
     scrollbar-width: none;
     -ms-overflow-style: none;
@@ -143,7 +143,7 @@
     min-height: 26px;
     display: inline-flex;
     align-items: center;
-    gap: 5px;
+    gap: var(--space-5);
     flex: 0 0 auto;
     border: 1px solid transparent;
     border-radius: var(--radius-sm);
@@ -151,7 +151,7 @@
     color: var(--text-muted);
     font: inherit;
     font-size: var(--fs-caption);
-    padding: 4px 8px;
+    padding: var(--space-4) var(--space-8);
     cursor: default;
     transition: color var(--duration-fast), background var(--duration-fast), border-color var(--duration-fast);
 }
@@ -208,8 +208,8 @@
     display: grid;
     grid-template-columns: 22px minmax(0, 1fr) auto 14px;
     align-items: center;
-    gap: 8px;
-    padding: 7px 9px;
+    gap: var(--space-8);
+    padding: var(--space-7) var(--space-9);
     border: 0;
     background: transparent;
     color: inherit;
@@ -258,8 +258,8 @@
 .groupList {
     display: flex;
     flex-direction: column;
-    gap: 5px;
-    padding: 0 7px 7px;
+    gap: var(--space-5);
+    padding: 0 var(--space-7) var(--space-7);
 }
 
 .card {
@@ -275,8 +275,8 @@
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
     align-items: center;
-    gap: 8px;
-    padding: 7px 8px;
+    gap: var(--space-8);
+    padding: var(--space-7) var(--space-8);
     border: 0;
     background: transparent;
     color: inherit;
@@ -293,7 +293,7 @@
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: var(--space-2);
 }
 
 .title {
@@ -308,7 +308,7 @@
 .subline {
     display: flex;
     flex-wrap: wrap;
-    gap: 4px 8px;
+    gap: var(--space-4) var(--space-8);
 }
 
 .badge {
@@ -317,28 +317,28 @@
     color: var(--accent);
     border: 1px solid rgba(var(--accent-rgb), 0.24);
     border-radius: var(--radius-sm);
-    padding: 2px 4px;
+    padding: var(--space-2) var(--space-4);
     white-space: nowrap;
 }
 
 .details {
     border-top: 1px solid var(--border);
-    padding: 12px;
+    padding: var(--space-12);
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: var(--space-8);
 }
 
 .fieldGrid {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    gap: 8px;
+    gap: var(--space-8);
 }
 
 .field {
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: var(--space-3);
     min-width: 0;
     color: var(--text-muted);
     font-size: var(--fs-caption);
@@ -360,14 +360,14 @@
 .field input,
 .field select {
     min-height: 32px;
-    padding: 0 7px;
+    padding: 0 var(--space-7);
 }
 
 .field textarea {
     min-height: 5.6rem;
     max-height: 12rem;
     resize: vertical;
-    padding: 6px 7px;
+    padding: var(--space-6) var(--space-7);
     line-height: 1.45;
 }
 
@@ -387,7 +387,7 @@
     width: 100%;
     min-width: 0;
     min-height: 32px;
-    padding: 0 7px;
+    padding: 0 var(--space-7);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     background: color-mix(in srgb,var(--eg-card,var(--bg)) var(--glass-menu-mix,54%),transparent);
@@ -421,8 +421,8 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
-    gap: 6px;
-    padding: 0 7px;
+    gap: var(--space-6);
+    padding: 0 var(--space-7);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     background: color-mix(in srgb,var(--eg-card,var(--bg)) var(--glass-menu-mix,54%),transparent);
@@ -457,7 +457,7 @@
     max-height: 190px;
     display: grid;
     grid-template-columns: minmax(0, 1fr) 1px minmax(0, 1fr);
-    padding: 6px;
+    padding: var(--space-6);
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
     background: var(--bg-card, var(--bg));
@@ -471,12 +471,12 @@
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: var(--space-2);
     scrollbar-width: thin;
 }
 
 .timePickerDivider {
-    margin: 2px 5px;
+    margin: var(--space-2) var(--space-5);
     background: rgba(0, 0, 0, 0.06);
 }
 
@@ -507,21 +507,21 @@
 .scheduleEditor {
     display: grid;
     grid-template-columns: minmax(120px, 0.48fr) minmax(0, 1fr);
-    gap: 8px;
+    gap: var(--space-8);
     align-items: end;
 }
 
 .scheduleInline {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(96px, 0.72fr);
-    gap: 8px;
+    gap: var(--space-8);
     align-items: end;
 }
 
 .actions {
     display: flex;
     justify-content: flex-end;
-    gap: 6px;
+    gap: var(--space-6);
 }
 
 .textButton {
@@ -531,7 +531,7 @@
     color: var(--accent);
     font: inherit;
     font-size: var(--fs-caption);
-    padding: 4px 9px;
+    padding: var(--space-4) var(--space-9);
     cursor: default;
 }
 
@@ -557,16 +557,16 @@
     }
 }
 
-.rowSummary {display:grid;grid-template-columns:minmax(0,1fr) auto 14px;gap:8px;align-items:center;min-width:0;border:0;background:transparent;color:inherit;text-align:left;font:inherit;padding:0;cursor:pointer;}
-.form {border:0;padding:0;margin:0;min-width:0;display:flex;flex-direction:column;gap:12px;}
-.feedback {padding:8px 12px;font:12px/1.5 var(--font-ui);color:var(--text-muted);overflow-wrap:anywhere;}
+.rowSummary {display:grid;grid-template-columns:minmax(0,1fr) auto 14px;gap:var(--space-8);align-items:center;min-width:0;border:0;background:transparent;color:inherit;text-align:left;font:inherit;padding:0;cursor:pointer;}
+.form {border:0;padding:0;margin:0;min-width:0;display:flex;flex-direction:column;gap:var(--space-12);}
+.feedback {padding:var(--space-8) var(--space-12);font:12px/1.5 var(--font-ui);color:var(--text-muted);overflow-wrap:anywhere;}
 .feedback[role="alert"] {color:var(--danger,#bd655d);}
-.feedback button,.runHistory button {border:0;background:transparent;color:var(--accent);font:inherit;cursor:pointer;padding:4px 6px;border-radius:8px;}
+.feedback button,.runHistory button {border:0;background:transparent;color:var(--accent);font:inherit;cursor:pointer;padding:var(--space-4) var(--space-6);border-radius:8px;}
 .help {flex:1;font:12px/1.5 var(--font-ui);color:var(--text-muted);}
-.runHistory {border-top:1px solid var(--border);padding-top:12px;font:12px/1.6 var(--font-ui);color:var(--text-muted);min-width:0;}
-.historyHeading {display:flex;justify-content:space-between;align-items:center;gap:8px;}
-.runHistory ol {padding:0;list-style:none;margin:8px 0;max-height:220px;overflow:auto;}
-.runHistory li {display:flex;flex-wrap:wrap;gap:2px 12px;border-bottom:1px solid var(--border);padding:8px 0;}
+.runHistory {border-top:1px solid var(--border);padding-top:var(--space-12);font:12px/1.6 var(--font-ui);color:var(--text-muted);min-width:0;}
+.historyHeading {display:flex;justify-content:space-between;align-items:center;gap:var(--space-8);}
+.runHistory ol {padding:0;list-style:none;margin:var(--space-8) 0;max-height:220px;overflow:auto;}
+.runHistory li {display:flex;flex-wrap:wrap;gap:var(--space-2) var(--space-12);border-bottom:1px solid var(--border);padding:var(--space-8) 0;}
 .runHistory li span {width:100%;color:var(--text);}
 .runHistory li p {margin:0;width:100%;overflow-wrap:anywhere;}
 .runHistory [data-run-status="error"] {color:var(--danger,#bd655d);}
@@ -576,11 +576,11 @@
 
 .panel.panel {height:min(720px,calc(100dvh - 72px));max-height:calc(100dvh - 72px);width:min(620px,calc(100vw - 72px));max-width:620px;min-width:0;}
 
-.activityTool {margin:8px 0;border-bottom:1px solid var(--border);font:12px/1.5 var(--font-ui);color:var(--text-muted);}
-.activityTool summary {padding:8px 0;cursor:pointer;color:var(--text);overflow-wrap:anywhere;}
-.activityTool time {float:right;margin-left:12px;font-variant-numeric:tabular-nums;color:var(--text-muted);}
-.activityTool pre {white-space:pre-wrap;overflow-wrap:anywhere;max-height:240px;overflow:auto;background:transparent;font:12px/1.6 var(--font-mono);padding:8px 0;}
-.activityTool summary {display:flex;align-items:center;gap:7px;list-style:none;}
+.activityTool {margin:var(--space-8) 0;border-bottom:1px solid var(--border);font:12px/1.5 var(--font-ui);color:var(--text-muted);}
+.activityTool summary {padding:var(--space-8) 0;cursor:pointer;color:var(--text);overflow-wrap:anywhere;}
+.activityTool time {float:right;margin-left:var(--space-12);font-variant-numeric:tabular-nums;color:var(--text-muted);}
+.activityTool pre {white-space:pre-wrap;overflow-wrap:anywhere;max-height:240px;overflow:auto;background:transparent;font:12px/1.6 var(--font-mono);padding:var(--space-8) 0;}
+.activityTool summary {display:flex;align-items:center;gap:var(--space-7);list-style:none;}
 .activityTool summary::-webkit-details-marker {display:none;}
 .activityTool summary::before {content:'';width:5px;height:5px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(-45deg);flex:none;transition:transform var(--duration-fast) var(--ease-out);}
 .activityTool[open] summary::before {transform:rotate(45deg);}

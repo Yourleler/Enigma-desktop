@@ -73044,7 +73044,29 @@
       "reason": "nft-runtime-trace via nft-server-bundle (see roots[] for the full explanation)"
     },
     {
+      "path": "packages/enigma-engineering/dist/src/reading-material.js",
+      "inputType": "nft-runtime-trace",
+      "provenance": [
+        {
+          "root": "nft-server-bundle",
+          "kind": "nft-trace"
+        }
+      ],
+      "reason": "nft-runtime-trace via nft-server-bundle (see roots[] for the full explanation)"
+    },
+    {
       "path": "packages/enigma-engineering/dist/src/reading-store.js",
+      "inputType": "nft-runtime-trace",
+      "provenance": [
+        {
+          "root": "nft-server-bundle",
+          "kind": "nft-trace"
+        }
+      ],
+      "reason": "nft-runtime-trace via nft-server-bundle (see roots[] for the full explanation)"
+    },
+    {
+      "path": "packages/enigma-engineering/dist/src/reading-synthesis.js",
       "inputType": "nft-runtime-trace",
       "provenance": [
         {
@@ -73992,18 +74014,6 @@
         }
       ],
       "reason": "Reached via esbuild source module graph, imported by plugins/enigma/conductor.ts (import-statement); plugins/enigma/host.ts (import-statement)."
-    },
-    {
-      "path": "plugins/enigma/reading-material.ts",
-      "inputType": "source-graph",
-      "provenance": [
-        {
-          "root": "server-bootstrap",
-          "from": "plugins/enigma/change-workbench.ts",
-          "kind": "import-statement"
-        }
-      ],
-      "reason": "Reached via esbuild source module graph, imported by plugins/enigma/change-workbench.ts (import-statement)."
     },
     {
       "path": "plugins/enigma/session-changes.ts",
@@ -76079,6 +76089,23 @@
       "reason": "Reached via esbuild source module graph, imported by core/preferences-manager.ts (import-statement)."
     },
     {
+      "path": "shared/enigma-introduction.ts",
+      "inputType": "source-graph",
+      "provenance": [
+        {
+          "root": "server-bootstrap",
+          "from": "core/agent.ts",
+          "kind": "import-statement"
+        },
+        {
+          "root": "server-bootstrap",
+          "from": "core/session-coordinator.ts",
+          "kind": "import-statement"
+        }
+      ],
+      "reason": "Reached via esbuild source module graph, imported by core/agent.ts (import-statement); core/session-coordinator.ts (import-statement)."
+    },
+    {
       "path": "shared/enigma-product.cjs",
       "inputType": "source-graph",
       "provenance": [
@@ -77950,11 +77977,11 @@
     }
   ],
   "stats": {
-    "totalFiles": 6421,
+    "totalFiles": 6423,
     "byInputType": {
       "source-graph": 717,
       "runtime-asset": 11,
-      "nft-runtime-trace": 5693
+      "nft-runtime-trace": 5695
     }
   }
 }

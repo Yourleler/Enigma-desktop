@@ -715,6 +715,7 @@
     "shared/default-workspace-constants.ts",
     "shared/default-workspace.ts",
     "shared/editor-typography.ts",
+    "shared/enigma-introduction.ts",
     "shared/enigma-product.cjs",
     "shared/error-bus.ts",
     "shared/errors.ts",

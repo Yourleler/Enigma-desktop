@@ -1,7 +1,7 @@
 .rail { position:absolute;top:50%;right:6px;transform:translateY(-65%);width:28px;max-height:min(42%,260px);display:flex;flex-direction:column;align-items:center;gap:var(--space-5, 5px);z-index:5;color:var(--text-light);pointer-events:none; }
 .directoryTrigger { flex:0 0 24px;display:grid;place-items:center;width:28px;padding:0;border:0;border-radius:6px;color:var(--text-light);background:transparent;cursor:pointer;pointer-events:auto;opacity:.65;transition:color var(--duration-160ms, 160ms) ease,opacity var(--duration-160ms, 160ms) ease; }
 .directoryTrigger:hover,.directoryTrigger[aria-expanded="true"] { color:var(--accent);background:transparent;opacity:1; }
-.markers { position:relative;flex:0 1 auto;min-height:0;max-height:200px;width:100%;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-width:none;padding:var(--space-4, 4px) 0;pointer-events:auto;scroll-padding-block:8px;mask-image:linear-gradient(transparent,black 4px,black calc(100% - 4px),transparent); }
+.markers { position:relative;flex:0 1 auto;min-height:0;max-height:200px;width:100%;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-width:none;padding:var(--space-4, 4px) 0;pointer-events:auto;scroll-padding-block:var(--space-8);mask-image:linear-gradient(transparent,black 4px,black calc(100% - 4px),transparent); }
 .markers::-webkit-scrollbar { display:none; }
 .marker { height:16px;display:grid;place-items:center;width:100%;padding:0;border:0;background:transparent;color:var(--text-light);cursor:pointer;opacity:.42;transition:opacity var(--duration-140ms, 140ms) ease,color var(--duration-140ms, 140ms) ease; }
 .marker span { display:block;height:1.5px;border-radius:1px;background:currentColor;transform-origin:center;transition:transform var(--duration-180ms, 180ms) cubic-bezier(.2,.8,.2,1),height var(--duration-140ms, 140ms) ease; }
@@ -44,6 +44,6 @@
 .preview p { font-size: 12px; line-height: 1.55; }
 @media (max-height: 520px) { .rail { max-height:38%; } }
 @media(any-pointer:coarse) { .rail {width:40px;} .marker {height:30px;} .directoryTrigger {width:40px;height:40px;flex-basis:40px;} }
-.match {background:var(--search-match-bg);color:var(--search-match-text);border-radius:3px;padding:0 2px;box-shadow:0 0 0 1px var(--search-match-outline);font-weight:600;}
+.match {background:var(--search-match-bg);color:var(--search-match-text);border-radius:3px;padding:0 var(--space-2);box-shadow:0 0 0 1px var(--search-match-outline);font-weight:600;}
 ::highlight(enigma-timeline-results) {background:var(--search-match-bg);color:var(--search-match-text);}
 ::highlight(enigma-timeline-current) {background:var(--search-active-bg);color:var(--search-active-text);text-decoration:underline;}
