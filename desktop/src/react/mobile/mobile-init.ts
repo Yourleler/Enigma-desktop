@@ -5,7 +5,7 @@ import { sessionIdForPathFromLocatorState, sessionScopedValue } from '../stores/
 import { applyAgentIdentity, loadAvatars } from '../stores/agent-actions';
 import { activateWorkspaceDesk } from '../stores/desk-actions';
 import { loadMessages, pendingNewSessionIdentityPatch,switchSession } from '../stores/session-actions';
-import {restoreConversationView,trackConversationView} from '../engineering/conversation-view';
+import {pauseConversationViewTracking,restoreConversationView,trackConversationView} from '../engineering/conversation-view';
 import { connectWebSocket, getWebSocket } from '../services/websocket';
 import { configureAppEventActions } from '../services/app-event-actions';
 import { configureWsMessageHandler } from '../services/ws-message-handler';
@@ -66,6 +66,7 @@ export async function initializeMobileRuntime(principal: MobilePrincipal): Promi
   identity: ServerIdentity;
   bootstrap: MobileBootstrap;
 }> {
+  pauseConversationViewTracking();
   configureMobileMessageHandlers();
 
   const identity = await rawJson<ServerIdentity>('/api/server/identity');
@@ -185,7 +186,7 @@ export async function loadMobileSessions({
     useStore.setState({
       currentSessionPath: null,
       pendingSessionSwitchPath: null,
-      ...pendingNewSessionIdentityPatch(),
+      ...(state.pendingNewSession && state.pendingDraftId ? {} : pendingNewSessionIdentityPatch()),
       welcomeVisible: true,
     });
   }
