@@ -24,6 +24,11 @@ body.enigma-surface .enigma-background-option small { font-size:11px;line-height
 .is-compact .enigma-background-swatch { height:36px; }
 .is-compact .enigma-background-option { padding:var(--space-7); }
 .is-compact .enigma-background-option small { display:none; }
+/* Compact tiles are ~70px wide: a check beside the name wrapped "紫色光带"
+   onto two lines. Mark the choice on the swatch corner instead. */
+.is-compact .enigma-background-name b { min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+.is-compact .enigma-background-check { position:absolute;top:calc(var(--space-7, 7px) + 3px);right:calc(var(--space-7, 7px) + 3px);width:auto; }
+.is-compact .enigma-background-check:not(:empty) { display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--accent);color:var(--bg); }
 @media (max-width:480px) { .enigma-background-heading > span { font-size:10px; }.enigma-background-options { gap:var(--space-6); } }
 @container settings-pane (max-width:380px) {
  .enigma-background-options { grid-template-columns:1fr; }

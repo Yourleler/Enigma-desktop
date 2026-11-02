@@ -28,6 +28,9 @@
 .enigma-dock-section { height:100%; min-height:0; overflow:auto; }
 .enigma-dock-section[hidden], #previewPanel[data-dock-preview][hidden] { display:none !important; }
 .enigma-dock-empty { padding:var(--enigma-spacing-34); color:var(--text-muted); font:13px/1.7 var(--font-ui); }
+/* Match the file panel's empty state: centered in the panel, not pinned to a corner. */
+.enigma-dock-body .enigma-dock-empty { min-height:100%; box-sizing:border-box; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; text-wrap:pretty; }
+.enigma-dock-body .enigma-dock-empty :is(h3,p) { margin:0 0 var(--enigma-spacing-8); max-width:36em; }
 .enigma-dock-task-list { padding:var(--enigma-spacing-3); display:flex; flex-direction:column; gap:var(--enigma-spacing-3); }
 .enigma-dock-task-list > * { flex:0 0 auto; }
 .enigma-dock-task-intro { color:var(--text-muted); font:12px/1.6 var(--font-ui); }

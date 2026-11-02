@@ -69,12 +69,34 @@ body.enigma-surface #enigma-titlebar-chat-tools .enigma-conversation-header { pa
 body.enigma-surface #enigma-titlebar-chat-tools .enigma-new-task-settings button { max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px; }
 body.enigma-surface #enigma-titlebar-chat-tools .enigma-project-context { max-width:150px; }
 body.enigma-surface #enigma-titlebar-workspace { min-width:0;height:100%;-webkit-app-region:no-drag;pointer-events:auto; }
+/* The titlebar is a drag strip with pointer events off; the working-directory
+   picker beside the title must opt back in like the other titlebar controls. */
+body.enigma-surface .titlebar .tb-title-context .enigma-repository-context { -webkit-app-region:no-drag;pointer-events:auto; }
 body.enigma-surface #enigma-titlebar-workspace[hidden] { display:none; }
 body.enigma-surface #enigma-titlebar-workspace .enigma-dock-header { height:100%;box-sizing:border-box;border:0;padding:0 var(--space-2, 2px);gap:var(--space-3, 3px); }
 body.enigma-surface #enigma-titlebar-workspace .enigma-dock-tab { border-radius:7px; }
 body.enigma-surface #enigma-titlebar-workspace .enigma-dock-tab button { height:32px;min-height:32px;padding:var(--space-6, 6px) var(--space-8, 8px);font:400 13px/20px var(--font-ui);letter-spacing:0; }
 body.enigma-surface #enigma-titlebar-workspace .enigma-dock-tab button span:last-child { max-width:140px; }
 body.enigma-surface #enigma-titlebar-workspace .enigma-dock-tab-close { max-width:20px;padding:0 var(--space-3, 3px); }
+/* The work-panel tabs share the titlebar with conversation tools. As their
+   column narrows, inactive tabs stop reserving close space (the close button
+   takes the icon's place on hover), then collapse to icons whose whole hit
+   area selects the tab. The active tab always keeps its name and close
+   button; extra tabs still scroll behind the edge arrows. */
+body.enigma-surface #enigma-titlebar-workspace { container:enigma-dock-head/inline-size; }
+@container enigma-dock-head (max-width:570px) {
+ body.enigma-surface #enigma-titlebar-workspace .enigma-dock-tab button[role="tab"] { padding-inline:var(--space-7, 7px); }
+ body.enigma-surface #enigma-titlebar-workspace .enigma-dock-tab .enigma-dock-tab-close { position:absolute;left:var(--space-4, 4px);top:50%;transform:translateY(-50%);width:22px;max-width:none;height:22px;min-height:0;padding:0;display:grid;place-items:center;border-radius:6px;pointer-events:none; }
+ body.enigma-surface #enigma-titlebar-workspace .enigma-dock-tab:is(:hover,:has(:focus-visible)) .enigma-dock-tab-close { pointer-events:auto;opacity:1; }
+ body.enigma-surface #enigma-titlebar-workspace .enigma-dock-tab:is(:hover,:has(:focus-visible)) [role="tab"] > :first-child { opacity:0; }
+ body.enigma-surface #enigma-titlebar-workspace .enigma-dock-tab:not(:hover,:has(:focus-visible)) .enigma-dock-tab-close { opacity:0; }
+}
+@container enigma-dock-head (max-width:430px) {
+ body.enigma-surface #enigma-titlebar-workspace .enigma-dock-tab:not(.active) button[role="tab"] { padding-inline:var(--space-5, 5px);gap:0; }
+ body.enigma-surface #enigma-titlebar-workspace .enigma-dock-tab:not(.active) button[role="tab"] > span:last-child { position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap; }
+ body.enigma-surface #enigma-titlebar-workspace .enigma-dock-tab:not(.active) .enigma-dock-tab-close { display:none; }
+ body.enigma-surface #enigma-titlebar-workspace .enigma-dock-tab:not(.active):is(:hover,:has(:focus-visible)) [role="tab"] > :first-child { opacity:1; }
+}
 body.enigma-surface .enigma-sidebar-rail [data-channel-layout="rail"] { display:flex;flex-direction:column;position:relative;inset:auto;transform:none;background:transparent;border:0;box-shadow:none;padding:0;gap:var(--space-8, 8px);max-width:100%; }
 body.enigma-surface .enigma-sidebar-rail [data-channel-layout="rail"] > button { width:34px;height:34px;min-height:34px;padding:0;display:grid;place-items:center;border-radius:8px; }
 body.enigma-surface .enigma-sidebar-rail [data-channel-layout="rail"] > button[aria-pressed="true"] { color:var(--accent);background:var(--accent-light); }
@@ -96,6 +118,9 @@ body.enigma-surface .titlebar .tb-conversation-group { display:grid;grid-templat
 body.enigma-surface #enigma-titlebar-chat-tools { max-width:100%; }
 body.enigma-surface #enigma-titlebar-workspace { width:100%;max-width:100%;overflow:hidden; }
 body.enigma-surface .titlebar .tb-center-title { width:100%;overflow:hidden; }
+/* The legacy centered title is absolutely positioned across the whole bar.
+   Beside conversation tools and work tabs it must stay in its own column. */
+body.enigma-surface .titlebar:not([data-primary-page]) .tb-center-title { position:static;left:auto;transform:none;max-width:100%; }
 body.enigma-surface .enigma-dock-section.enigma-dock-task-list { padding:var(--space-18, 18px) var(--space-20, 20px);box-sizing:border-box;gap:var(--space-14, 14px); }
 body.enigma-surface .enigma-dock-task-intro { padding:0;margin:0; }
 body.enigma-surface .enigma-dock-task-intro h3 { margin:0 0 var(--space-5, 5px);font-size:14px;font-weight:600;line-height:1.5; }

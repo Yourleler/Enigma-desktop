@@ -525,6 +525,9 @@
 }
 
 .textButton {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-5, 5px);
     border: 1px solid rgba(var(--accent-rgb), 0.22);
     border-radius: var(--radius-sm);
     background: rgba(var(--accent-rgb), 0.05);

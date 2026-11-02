@@ -48,3 +48,7 @@
 body.enigma-surface .titlebar .tb-conversation-group { grid-template-columns:minmax(0,1fr) max-content; }
 @media(max-width:1000px){.tb-title-context>.enigma-repository-context{max-width:100px}.tb-title-context>.enigma-repository-context small{display:none}}
 body.enigma-surface .tb-title-context>.tb-center-title { width:auto;flex:0 1 auto;padding-right:4px; }
+/* Long conversation titles give way first; the working directory keeps its
+   name until the title has reached its minimum. */
+body.enigma-surface .titlebar .tb-title-context>.tb-center-title { flex-shrink:1000;min-width:64px; }
+body.enigma-surface .tb-title-context>.enigma-repository-context { min-width:32px; }
