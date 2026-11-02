@@ -30,6 +30,27 @@ it('attaches existing form without navigating and releases without closing tabs'
   expect(release).toHaveBeenCalledWith(owner);
   expect(command).not.toHaveBeenCalled();
 });
+it('does not roll back a native update when the initial bind or an older command returns late',async()=>{
+ let bound!:(value:SidebarBrowserState)=>void;
+ window.platform.sidebarBrowserBind=vi.fn(({surfaceId})=>{state={...state,surfaceId};return new Promise<SidebarBrowserState>(resolve=>{bound=resolve;});});
+ render(<SidebarBrowser sessionPath="alpha"/>);
+ act(()=>update({...state,activeTabId:'b',url:'https://example.com/new',tabs:[{tabId:'b',title:'New'}]}));
+ await act(async()=>bound(state));expect(screen.getByDisplayValue('https://example.com/new')).toBeTruthy();
+ let done!:(value:SidebarBrowserState)=>void;command.mockImplementationOnce(()=>new Promise(resolve=>{done=resolve;}));fireEvent.click(screen.getByRole('button',{name:'放大网页'}));
+ act(()=>update({...state,activeTabId:'c',url:'https://example.com/latest',tabs:[{tabId:'c',title:'Latest'}]}));
+ await act(async()=>done(state));expect(screen.getByDisplayValue('https://example.com/latest')).toBeTruthy();
+});
+it('keeps a newer page after a dialog response finishes and ignores its old error after switching tabs',async()=>{
+ state={...state,dialog:{dialogId:'confirm-old',type:'confirm',message:'Old page question'}};
+ render(<SidebarBrowser sessionPath="alpha"/>);await screen.findByRole('dialog');
+ let done!:(value:SidebarBrowserState)=>void;command.mockImplementationOnce(()=>new Promise(resolve=>{done=resolve;}));
+ fireEvent.click(screen.getByRole('button',{name:'确定'}));
+ act(()=>update({...state,dialog:null,activeTabId:'b',url:'https://example.com/new',tabs:[{tabId:'b',title:'New'}]}));
+ await act(async()=>done({...state,dialog:null}));expect(screen.getByDisplayValue('https://example.com/new')).toBeTruthy();
+ let fail!:(error:Error)=>void;command.mockImplementationOnce(()=>new Promise((_resolve,reject)=>{fail=reject;}));fireEvent.click(screen.getByRole('button',{name:'刷新网页'}));
+ act(()=>update({...state,dialog:null,activeTabId:'c',url:'https://example.com/latest',tabs:[{tabId:'c',title:'Latest'}]}));
+ await act(async()=>fail(new Error('old request error')));expect(screen.queryByRole('alert')).toBeNull();
+});
 
 it('uses current tab identity, rejects executable URLs and reports command failure', async () => {
   render(<SidebarBrowser sessionPath="alpha"/>);

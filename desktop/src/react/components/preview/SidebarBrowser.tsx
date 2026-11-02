@@ -18,22 +18,27 @@ export function SidebarBrowser({sessionPath}: {sessionPath?: string | null}) {
   const [connection, setConnection] = useState(0);
   const viewport = useRef<HTMLDivElement>(null);
   const live = useRef<string | null>(null);
+  const revision=useRef(0),requests=useRef(0);
   const visible = useBrowserDock(viewport, state && !state.detached && !state.dialog ? state.surfaceId : null);
   const accept = useCallback((update: SidebarBrowserState) => {
     if (update.surfaceId !== live.current) return;
+    revision.current++;
     const next = {...current.current, ...update};
+    if(!current.current||current.current.activeTabId!==next.activeTabId||current.current.sessionPath!==next.sessionPath||current.current.url!==next.url)setError('');
     current.current = next; setState(next);
   }, []);
 
   const command = useCallback(async (action: SidebarBrowserCommand['action'], extra: Partial<SidebarBrowserCommand> = {}) => {
     const surfaceId = live.current;
-    if (!surfaceId || !window.platform.sidebarBrowserCommand) return;
+    if (!surfaceId || !window.platform.sidebarBrowserCommand) throw new Error('浏览器未连接，请重新连接后再操作');
+    const observed=revision.current,request=++requests.current,tabId=current.current?.activeTabId;
     setError('');
     try {
       const update = await window.platform.sidebarBrowserCommand({surfaceId, action, tabId: current.current?.activeTabId, ...extra});
-      accept(update);
+      if(revision.current===observed&&request===requests.current)accept(update);
     } catch (failure) {
-      if (live.current === surfaceId) setError(failure instanceof Error ? failure.message : String(failure));
+      if (live.current === surfaceId&&current.current?.activeTabId===tabId&&request===requests.current&&revision.current===observed) setError(failure instanceof Error ? failure.message : String(failure));
+      return false;
     }
   }, [accept]);
 
@@ -52,11 +57,12 @@ export function SidebarBrowser({sessionPath}: {sessionPath?: string | null}) {
       if ((event as CustomEvent).detail === browserPreviewKey(sessionPath)) {if(current.current?.detached)setConnection(value=>value+1);else navigatePending();}
     };
     window.addEventListener('enigma-browser-navigation', onNavigation);
+    const initial=revision.current;
     void platform.sidebarBrowserBind({surfaceId, sessionPath}).then(update => {
       if (live.current !== surfaceId) return;
-      accept(update); navigatePending();
+      if(revision.current===initial)accept(update); navigatePending();
     }).catch(failure => {
-      if (live.current === surfaceId) setError(failure instanceof Error ? failure.message : String(failure));
+      if (live.current === surfaceId&&revision.current===initial) setError(failure instanceof Error ? failure.message : String(failure));
     });
     return () => {
       if (live.current === surfaceId) live.current = null;
@@ -75,7 +81,9 @@ export function SidebarBrowser({sessionPath}: {sessionPath?: string | null}) {
       onPreview={download=>{if(download.filePath)void openFilePreview(download.filePath,download.filename,extOfName(download.filename)||'',{origin:'desk'});}}/>
     {error&&<div role="alert" className="enigma-browser-error">{error}<button onClick={()=>setConnection(value=>value+1)}>重新连接</button></div>}
     {state?.dialog&&<BrowserDialog key={state.dialog.dialogId} dialog={state.dialog} onRespond={async(confirmed,text)=>{
-      const update=await window.platform.sidebarBrowserCommand!({surfaceId:state.surfaceId,action:'handleDialog',tabId:state.activeTabId,dialogId:state.dialog!.dialogId,accept:confirmed,text});accept(update);
+      const observed=revision.current,request=++requests.current;
+      const update=await window.platform.sidebarBrowserCommand!({surfaceId:state.surfaceId,action:'handleDialog',tabId:state.activeTabId,dialogId:state.dialog!.dialogId,accept:confirmed,text});
+      if(observed===revision.current&&request===requests.current)accept(update);
     }}/>}
     {state?.detached && <div className="enigma-browser-empty"><p>网页已移至独立窗口，页面内容和输入仍保留。</p><button onClick={() => setConnection(value => value + 1)}>放回侧栏</button></div>}
     <div className="enigma-browser-viewport" ref={viewport} hidden={!!state?.detached}>

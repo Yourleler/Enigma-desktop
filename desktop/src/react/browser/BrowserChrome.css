@@ -31,3 +31,8 @@
 .enigma-browser-window{height:100vh;display:flex;flex-direction:column;overflow:hidden}.enigma-browser-window-header{flex-shrink:0}.enigma-browser-window-body{flex:1;min-height:40px;margin:var(--space-4) var(--space-8) var(--space-8);border-radius:10px;border:1px solid var(--border)}
 
 .enigma-browser-window-header{max-height:calc(100vh - 64px);overflow-y:auto;scrollbar-width:thin;}
+
+body.enigma-surface .enigma-browser-chrome{background:color-mix(in srgb,var(--eg-card) var(--glass-control-mix,14%),var(--glass-clear-fill));backdrop-filter:blur(var(--glass-control-blur,1.5px));}
+body.enigma-surface .enigma-browser-toolbar input{background:color-mix(in srgb,var(--eg-card) var(--glass-control-mix,14%),var(--glass-clear-fill));border-color:var(--eg-stroke);backdrop-filter:blur(var(--glass-control-blur,1.5px));}
+body.enigma-glass-off :is(.enigma-browser-chrome,.enigma-browser-toolbar input){background:var(--eg-card);backdrop-filter:none;}
+@media(prefers-reduced-transparency:reduce),(prefers-contrast:more){body.enigma-surface :is(.enigma-browser-chrome,.enigma-browser-toolbar input){background:var(--eg-card);backdrop-filter:none;}}

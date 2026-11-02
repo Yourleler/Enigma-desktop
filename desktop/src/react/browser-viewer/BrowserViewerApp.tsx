@@ -10,11 +10,14 @@ initTheme();
 export function BrowserViewerApp(){
   const [state,setState]=useState<BrowserViewerUpdate|null>(null),[error,setError]=useState('');
   const header=useRef<HTMLDivElement>(null),live=useRef(state);live.current=state;
+  const revision=useRef(0),requests=useRef(0),mounted=useRef(false);
   useEffect(()=>{
-    const off=window.hana?.onBrowserUpdate?.(value=>setState(value));let alive=true;
-    void window.hana?.browserViewerState?.().then(value=>{if(alive)setState(value);}).catch(()=>{if(alive)setError('无法连接浏览器，请关闭窗口后重新打开。');});
+    let alive=true;mounted.current=true;
+    const initial=revision.current;
+    const off=window.hana?.onBrowserUpdate?.(value=>{if(!alive)return;revision.current++;live.current=value;setState(value);setError('');});
+    void window.hana?.browserViewerState?.().then(value=>{if(alive&&revision.current===initial){live.current=value;setState(value);setError('');}}).catch(()=>{if(alive&&revision.current===initial)setError('无法连接浏览器，请关闭窗口后重新打开。');});
     const themeOff=window.hana?.onSettingsChanged?.((type,data)=>{if(type==='theme-changed'&&data&&typeof data==='object'&&'theme' in data&&typeof data.theme==='string')setTheme(data.theme);});
-    document.title='网页浏览器';return()=>{alive=false;if(typeof off==='function')off();if(typeof themeOff==='function')themeOff();};
+    document.title='网页浏览器';return()=>{alive=false;mounted.current=false;requests.current++;if(typeof off==='function')off();if(typeof themeOff==='function')themeOff();};
   },[]);
   useLayoutEffect(()=>{
     const element=header.current;if(!element)return;const sync=()=>window.hana?.browserViewerLayout?.(Math.ceil(element.getBoundingClientRect().height));
@@ -22,13 +25,17 @@ export function BrowserViewerApp(){
   },[]);
   const command=useCallback(async(action:BrowserAction,extra:Partial<SidebarBrowserCommand>={})=>{
     const before=live.current;if(!before||!window.hana?.browserViewerCommand)throw new Error('请使用匹配的最新桌面应用');
+    const request=++requests.current,observed=revision.current;
     const value=await window.hana.browserViewerCommand({action,sessionPath:before.sessionPath||null,tabId:before.activeTabId,...extra});
-    if(live.current?.sessionPath===before.sessionPath)setState(value);
+    if(mounted.current&&request===requests.current&&revision.current===observed&&live.current?.sessionPath===before.sessionPath){live.current=value;setState(value);setError('');}
   },[]);
+  const direct=async(action:BrowserAction,extra:Partial<SidebarBrowserCommand>={})=>{
+    const before=live.current;try{await command(action,extra);}catch(reason){if(mounted.current&&live.current===before)setError(reason instanceof Error?reason.message:'网页操作失败，请重试');}
+  };
   return <section className="enigma-browser-window" aria-label="独立网页浏览器">
-    <div ref={header} className="enigma-browser-window-header"><BrowserChrome state={state} ready={!!state&&!error} status={state?.loading?'正在加载…':state?.sessionPath?state.sessionTitle||'对话浏览器':'手动浏览'} onCommand={command}
-      actions={<><button title="在主窗口继续查看同一网页" onClick={()=>void command('dock')}>放回侧栏</button><button aria-label="关闭独立窗口" title="关闭独立窗口，保留网页" onClick={()=>window.hana?.closeBrowserViewer?.()}>×</button></>}
-      onPreview={download=>void command('previewDownload',{downloadId:download.id})}/>
+    <div ref={header} className="enigma-browser-window-header"><BrowserChrome state={state} ready={!!state} status={state?.loading?'正在加载…':state?.sessionPath?state.sessionTitle||'对话浏览器':'手动浏览'} onCommand={command}
+      actions={<><button disabled={!state} title="在主窗口继续查看同一网页" onClick={()=>void direct('dock')}>放回侧栏</button><button aria-label="关闭独立窗口" title="关闭独立窗口，保留网页" onClick={()=>window.hana?.closeBrowserViewer?.()}>×</button></>}
+      onPreview={download=>void direct('previewDownload',{downloadId:download.id})}/>
       {error&&<div role="alert">{error}</div>}
       {state?.dialog&&<BrowserDialog key={state.dialog.dialogId} dialog={state.dialog} onRespond={async(accept,text)=>{await command('handleDialog',{dialogId:state.dialog!.dialogId,accept,text});}}/>}
     </div>

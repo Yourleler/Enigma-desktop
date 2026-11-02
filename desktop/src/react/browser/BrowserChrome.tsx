@@ -1,6 +1,7 @@
 import {useCallback,useEffect,useRef,useState,type ReactNode} from 'react';
 import type {BrowserViewerUpdate,SidebarBrowserCommand} from '../types';
 import {AppIcon} from '../ui/app-icons';
+import {SearchField} from '../ui/SearchField';
 import {resolveBrowserAddress} from '../utils/browser-address';
 import './BrowserChrome.css';
 
@@ -13,23 +14,29 @@ interface Props {
 }
 /** Shared browser chrome: the host supplies real state and scoped commands. */
 export function BrowserChrome({state,ready,status,surfaceId,onCommand,onPreview,actions}:Props) {
-  const [address,setAddress]=useState(''),[error,setError]=useState(''),[findOpen,setFindOpen]=useState(false),[query,setQuery]=useState(''),[matchCase,setMatchCase]=useState(false);
+  const identity=JSON.stringify([surfaceId,state?.sessionPath,state?.activeTabId]);
+  const scope=JSON.stringify([identity,state?.url]);
+  const currentScope=useRef(scope),attempt=useRef(0),mounted=useRef(true);currentScope.current=scope;
+  useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;attempt.current++;};},[]);
+  const [address,setAddress]=useState(''),[error,setError]=useState<{scope:string;text:string}|null>(null),[findOpen,setFindOpen]=useState(false),[query,setQuery]=useState(''),[matchCase,setMatchCase]=useState(false);
   const findTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
   const addressEditing=useRef(false),addressInput=useRef<HTMLInputElement>(null),findInput=useRef<HTMLInputElement>(null),tabStrip=useRef<HTMLDivElement>(null);
   const previousUrl=useRef<string|null|undefined>(undefined),previousTab=useRef<string|null|undefined>(undefined),live=useRef({state,ready,onCommand});live.current={state,ready,onCommand};
   const tabs=state?.tabs||[],downloads=state?.downloads||[],factor=state?.zoomFactor||1;
   const command=useCallback(async(action:BrowserAction,extra:Partial<SidebarBrowserCommand>={})=>{
-    setError('');try{await onCommand(action,extra);}catch(reason){setError(reason instanceof Error?reason.message:'网页操作失败，请重试');}
+    if(!live.current.ready)return false;
+    const started=currentScope.current,request=++attempt.current;
+    setError(null);try{return (await onCommand(action,extra))!==false;}catch(reason){if(mounted.current&&started===currentScope.current&&request===attempt.current)setError({scope:started,text:reason instanceof Error?reason.message:'网页操作失败，请重试'});return false;}
   },[onCommand]);
   useEffect(()=>{
-    const changed=previousTab.current!==state?.activeTabId;
+    const changed=previousTab.current!==identity;
     if(changed||!addressEditing.current&&!state?.loading)setAddress(state?.url==='about:blank'?'':state?.url||'');
     if(!changed&&previousUrl.current!==state?.url){setFindOpen(false);setQuery('');}
     previousUrl.current=state?.url;
-    if(changed){previousTab.current=state?.activeTabId;addressEditing.current=false;setQuery(state?.find?.query||'');setMatchCase(state?.find?.matchCase||false);setFindOpen(!!state?.find?.query);}
+    if(changed){previousTab.current=identity;addressEditing.current=false;setQuery(state?.find?.query||'');setMatchCase(state?.find?.matchCase||false);setFindOpen(!!state?.find?.query);}
   // Aborted provisional navigation may leave the committed URL unchanged.
   // Resync on load completion without overwriting a new address draft.
-  },[state?.url,state?.activeTabId,state?.loading]);
+  },[state?.url,identity,state?.loading]);
   useEffect(()=>{tabStrip.current?.querySelector('[aria-selected="true"]')?.scrollIntoView?.({block:'nearest',inline:'nearest'});},[state?.activeTabId]);
   const focusFind=()=>{setFindOpen(true);requestAnimationFrame(()=>{findInput.current?.focus();findInput.current?.select();});};
   const focusAddress=()=>{addressInput.current?.focus();addressInput.current?.select();};
@@ -42,12 +49,12 @@ export function BrowserChrome({state,ready,status,surfaceId,onCommand,onPreview,
   useEffect(()=>{
     if(!ready||!findOpen||!state?.activeTabId)return;
     if(state.find?.query===query&&state.find.matchCase===matchCase&&!state.find.pending)return;
-    const tabId=state.activeTabId;
-    const timer=setTimeout(()=>{if(live.current.state?.activeTabId===tabId)void command('find',{query,matchCase,tabId});},180);
+    const tabId=state.activeTabId,started=currentScope.current;
+    const timer=setTimeout(()=>{if(currentScope.current===started&&live.current.state?.activeTabId===tabId)void command('find',{query,matchCase,tabId});},180);
     findTimer.current=timer;return()=>{clearTimeout(timer);if(findTimer.current===timer)findTimer.current=null;};
-  },[query,matchCase,findOpen,state?.activeTabId,ready,command]);
-  const navigate=()=>{try{const url=resolveBrowserAddress(address);addressEditing.current=false;setAddress(url);void command('navigate',{url});}catch(reason){setError((reason as Error).message);}};
-  const closeFind=()=>{setFindOpen(false);setQuery('');void command('stopFind');void command('focusPage');};
+  },[query,matchCase,findOpen,identity,ready,command]);
+  const navigate=()=>{try{const url=resolveBrowserAddress(address);addressEditing.current=false;setAddress(url);void command('navigate',{url});}catch(reason){setError({scope:currentScope.current,text:(reason as Error).message});}};
+  const closeFind=()=>{const started=currentScope.current;setFindOpen(false);setQuery('');void command('stopFind').then(ok=>{if(ok&&mounted.current&&currentScope.current===started)void command('focusPage');});};
   const advance=(forward:boolean)=>{if(findTimer.current){clearTimeout(findTimer.current);findTimer.current=null;}void command('find',{query,matchCase,next:true,forward});};
   return <div className="enigma-browser-chrome" onKeyDown={event=>{
     const mod=event.ctrlKey||event.metaKey;
@@ -76,8 +83,8 @@ export function BrowserChrome({state,ready,status,surfaceId,onCommand,onPreview,
       <button title="使用系统默认浏览器打开当前网址" disabled={!ready||!/^https?:/.test(state?.url||'')} onClick={()=>void command('openExternal')}>系统浏览器</button>
       {state?.sessionPath&&<button title="停止所属对话的浏览器操作并撤回 Agent 授权" disabled={!ready} onClick={()=>void command('emergencyStop')}>停止控制</button>}
     </div>
-    {findOpen&&<div className="enigma-browser-find" role="search" aria-label="页内查找"><input ref={findInput} aria-label="查找网页内容" placeholder="在当前网页中查找" value={query} onChange={event=>setQuery(event.target.value)} onKeyDown={event=>{if(event.key==='Enter'){event.preventDefault();advance(!event.shiftKey);}else if(event.key==='Escape')closeFind();}}/><span role="status">{query?(state?.find?.query!==query||state.find.matchCase!==matchCase||state.find.pending?'查找中':state.find.matches?`${state.find.active} / ${state.find.matches}`:'未找到'):''}</span><button title="区分大小写" aria-label="区分大小写" aria-pressed={matchCase} onClick={()=>setMatchCase(value=>!value)}>Aa</button><button aria-label="上一个匹配" disabled={!query} onClick={()=>advance(false)}>↑</button><button aria-label="下一个匹配" disabled={!query} onClick={()=>advance(true)}>↓</button><button aria-label="关闭查找" onClick={closeFind}>×</button></div>}
-    {(error||state?.error)&&<div className="enigma-browser-error" role="alert">{error||state?.error}<button onClick={()=>void command('reload')}>重试</button></div>}
+    {findOpen&&<div className="enigma-browser-find" role="search" aria-label="页内查找"><SearchField ref={findInput} disabled={!ready} aria-label="查找网页内容" placeholder="在当前网页中查找" value={query} onChange={event=>setQuery(event.target.value)} onKeyDown={event=>{if(event.key==='Enter'){event.preventDefault();advance(!event.shiftKey);}else if(event.key==='Escape')closeFind();}}/><span role="status">{!ready?'浏览器未连接':query?(state?.find?.query!==query||state.find.matchCase!==matchCase||state.find.pending?'查找中':state.find.matches?`${state.find.active} / ${state.find.matches}`:'未找到'):''}</span><button title="区分大小写" aria-label="区分大小写" disabled={!ready} aria-pressed={matchCase} onClick={()=>setMatchCase(value=>!value)}>Aa</button><button aria-label="上一个匹配" disabled={!ready||!query} onClick={()=>advance(false)}>↑</button><button aria-label="下一个匹配" disabled={!ready||!query} onClick={()=>advance(true)}>↓</button><button aria-label="关闭查找" onClick={closeFind}>×</button></div>}
+    {((error?.scope===scope&&error.text)||state?.error)&&<div className="enigma-browser-error" role="alert">{error?.scope===scope?error.text:state?.error}<button onClick={()=>void command('reload')}>重试</button></div>}
     {!!downloads.length&&<details className="enigma-browser-downloads"><summary>下载（{downloads.length}）<span>{downloads.some(download=>download.state==='progress')?'下载中':'查看记录'}</span></summary>{downloads.map(download=><div key={download.id} className="enigma-browser-download-row"><span title={download.filename}>{download.filename}<small>{download.state==='completed'?'已完成':download.state==='progress'?`${Math.round(download.receivedBytes/1024)} KB · 下载中`:download.state==='cancelled'?'已取消':download.state==='missing'?'文件已移除':'下载中断，请重试'}</small></span>{download.state==='completed'&&<><button onClick={()=>onPreview(download)}>预览</button><button title="在文件管理器中显示" onClick={()=>void command('revealDownload',{downloadId:download.id})}>位置</button></>}{download.state==='progress'&&<button onClick={()=>void command('cancelDownload',{downloadId:download.id})}>取消</button>}</div>)}</details>}
   </div>;
 }

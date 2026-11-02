@@ -48,3 +48,27 @@ it('restores the committed address after a cancelled provisional navigation',asy
  view.rerender(<BrowserChrome state={{...state,loading:false}} ready status="手动浏览" onCommand={command} onPreview={vi.fn()}/>);
  expect(address).toHaveValue('example.org/draft');
 });
+it('ignores a rejected operation from the previous page and clears find state across workspaces',async()=>{
+ let fail!:(error:Error)=>void;const command=vi.fn(()=>new Promise<void>((_resolve,reject)=>{fail=reject;}));
+ const view=render(<BrowserChrome state={state} ready status="手动浏览" onCommand={command} onPreview={vi.fn()}/>);
+ fireEvent.click(screen.getByRole('button',{name:'刷新网页'}));
+ view.rerender(<BrowserChrome state={{...state,activeTabId:'b',url:'https://example.com/new'}} ready status="手动浏览" onCommand={command} onPreview={vi.fn()}/>);
+ await act(async()=>fail(new Error('Old tab failed')));expect(screen.queryByRole('alert')).toBeNull();
+ fireEvent.click(screen.getByRole('button',{name:'查找网页内容'}));fireEvent.change(screen.getByRole('textbox',{name:'查找网页内容'}),{target:{value:'old scope'}});
+ view.rerender(<BrowserChrome state={{...state,sessionPath:'another',activeTabId:'b',url:'https://example.com/new'}} ready status="另一个对话" onCommand={command} onPreview={vi.fn()}/>);
+ expect(screen.queryByRole('search')).toBeNull();
+});
+it('does not refocus a different page when closing find completes after a tab switch',async()=>{
+ let done!:()=>void;const command=vi.fn(async(action:string)=>{if(action==='stopFind')await new Promise<void>(resolve=>{done=resolve;});});
+ const view=render(<BrowserChrome state={state} ready status="手动浏览" onCommand={command} onPreview={vi.fn()}/>);
+ fireEvent.click(screen.getByRole('button',{name:'查找网页内容'}));fireEvent.click(screen.getByRole('button',{name:'关闭查找'}));
+ view.rerender(<BrowserChrome state={{...state,activeTabId:'b'}} ready status="手动浏览" onCommand={command} onPreview={vi.fn()}/>);
+ await act(async()=>done());expect(command).not.toHaveBeenCalledWith('focusPage',{});
+});
+it('keeps find controls unavailable after disconnection instead of displaying old results as current',()=>{
+ const command=vi.fn(async()=>{}),searched={...state,find:{query:'needle',matches:3,active:1,pending:false,matchCase:false}};
+ const view=render(<BrowserChrome state={searched} ready status="手动浏览" onCommand={command} onPreview={vi.fn()}/>);
+ expect(screen.getByText('1 / 3')).toBeVisible();view.rerender(<BrowserChrome state={searched} ready={false} status="连接失败" onCommand={command} onPreview={vi.fn()}/>);
+ expect(screen.getByRole('textbox',{name:'查找网页内容'})).toBeDisabled();expect(screen.getByRole('button',{name:'下一个匹配'})).toBeDisabled();expect(screen.queryByText('1 / 3')).toBeNull();
+ fireEvent.keyDown(screen.getByRole('textbox',{name:'查找网页内容'}),{key:'Enter'});expect(command).not.toHaveBeenCalled();
+});

@@ -4,3 +4,7 @@
 .enigma-page-dialog input {box-sizing:border-box;width:100%;padding:var(--space-8);border:1px solid var(--eg-stroke,#aaa);border-radius:7px;background:transparent;color:inherit;}
 .enigma-page-dialog>div {display:flex;justify-content:flex-end;gap:var(--space-8);margin-top:var(--space-12);}
 .enigma-page-dialog button {padding:var(--space-6) var(--space-14);border-radius:8px;border:1px solid var(--eg-stroke,#bbb);background:var(--overlay-light,#e5dff2);color:inherit;cursor:pointer;}
+
+body.enigma-surface .enigma-page-dialog{background:color-mix(in srgb,var(--eg-card) var(--glass-menu-mix,54%),transparent);backdrop-filter:blur(calc(10px + var(--glass-control-blur,1.5px)));}
+body.enigma-glass-off .enigma-page-dialog{background:var(--eg-card);backdrop-filter:none;}
+@media(prefers-reduced-transparency:reduce),(prefers-contrast:more){body.enigma-surface .enigma-page-dialog{background:var(--eg-card);backdrop-filter:none;}}
