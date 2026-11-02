@@ -1061,6 +1061,11 @@ export function createDeskRoute(engine, hub) {
     if (scope.error) return scope.error;
     const { store } = scope;
     try {
+      const jobId = c.req.query('jobId');
+      if (jobId) {
+        if (!store.getJob(jobId)) return c.json({ error: '任务不存在或已删除' }, 404);
+        return c.json({ runs: store.getRunHistory(jobId, 20).reverse() });
+      }
       return c.json({ jobs: store.listJobs() });
     } catch (err) {
       return cronStoreRouteFailure(c, err);
@@ -1210,7 +1215,10 @@ export function createDeskRoute(engine, hub) {
 
       case "update": {
         if (!params.id) return c.json({ error: "id required" });
-        const { id, ...fields } = params;
+        const { id, expectedConfigRevision, ...fields } = params;
+        if (expectedConfigRevision !== undefined && (!Number.isSafeInteger(expectedConfigRevision) || expectedConfigRevision < 1)) {
+          return c.json({error:'任务版本无效，请重新读取。'},400);
+        }
         const existingJob = store.getJob(id);
         if (!existingJob) return c.json({ error: "not found" });
         if (Object.prototype.hasOwnProperty.call(fields, "executor")) {
@@ -1259,10 +1267,11 @@ export function createDeskRoute(engine, hub) {
         }
         let job;
         try {
-          job = store.updateJob(id, fields);
+          job = store.updateJob(id, fields, {expectedConfigRevision});
         } catch (err) {
           if (isSafeCronStoreError(err)) return cronStoreRouteFailure(c, err);
           const message = err instanceof Error ? err.message : String(err);
+          if (err?.code === 'cron_job_revision_conflict') return c.json({error:message},409);
           return c.json({ error: message }, 400);
         }
         return c.json({ ok: true, job, jobs: store.listJobs() });

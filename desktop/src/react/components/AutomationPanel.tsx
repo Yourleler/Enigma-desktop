@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { useStore } from '../stores';
 import { usePanel } from '../hooks/use-panel';
+import {capturePreviewContext,previewConnectionKey} from '../utils/preview-context';
 import { hanaFetch } from '../hooks/use-hana-fetch';
 import { AgentAvatar, resolveAgentDisplayInfo } from '../utils/agent-display';
 import fp from './FloatingPanels.module.css';
@@ -64,6 +65,10 @@ export function AutomationPanel() {
   const addToast = useStore(s => s.addToast);
   const t = window.t ?? ((p: string) => p);
 
+  const connectionKey=useStore(previewConnectionKey);
+  const loadSerial=useRef(0),mounted=useRef(true),addingRef=useRef(false);
+  useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;loadSerial.current++;};},[]);
+  useEffect(()=>{loadSerial.current++;setJobs([]);setAvailableModels([]);setOpenJobs({});setLoadError(null);addingRef.current=false;setAddingManualJob(false);},[connectionKey]);
   const [jobs, setJobs] = useState<CronJob[]>([]);
   const [availableModels, setAvailableModels] = useState<ModelOption[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(currentAgentId);
@@ -72,68 +77,56 @@ export function AutomationPanel() {
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
+    const serial=++loadSerial.current,owns=capturePreviewContext();
+    const current=()=>mounted.current&&owns()&&serial===loadSerial.current;
     try {
-      const [cronRes, modelsRes] = await Promise.all([
-        hanaFetch('/api/desk/cron', { throwOnHttpError: false }),
-        hanaFetch('/api/models'),
-      ]);
+      void hanaFetch('/api/models').then(async response=>{
+        const data=await response.json();
+        if(current())setAvailableModels((data.models||[]).filter((model:ModelOption)=>model.id&&model.provider));
+      }).catch(()=>{});
+      const cronRes=await hanaFetch('/api/desk/cron',{throwOnHttpError:false});
+      if(!current())return;
       if (!cronRes.ok) {
         const body = await cronRes.json().catch(() => ({}));
         const detail = normalizeSessionRouteError(body).message;
+        if(!current())return;
         setLoadError(detail || (window.t ?? ((key: string) => key))('error.code.unexpected'));
         return;
       }
       const cronData = await cronRes.json();
-      const modelsData = await modelsRes.json().catch(() => ({ models: [] }));
-      const modelOptions = (modelsData.models || [])
-        .filter((m: { id?: string; provider?: string }) => m.id && m.provider)
-        .map((m: { id: string; provider: string; name?: string }) => ({
-          id: m.id,
-          provider: m.provider,
-          name: m.name,
-        }));
+      if(!current())return;
+      if(!Array.isArray(cronData.jobs))throw Error('Invalid task list');
       const nextJobs = cronData.jobs || [];
       setJobs(nextJobs);
-      setAvailableModels(modelOptions);
       setLoadError(null);
       updateBadge(nextJobs);
     } catch (err) {
+      if(!current())return;
       console.error('[automation] load failed:', err);
       setLoadError((window.t ?? ((key: string) => key))('error.code.unexpected'));
     }
   }, []);
 
-  const { visible, close } = usePanel('automation', loadData, [currentAgentId]);
+  const { visible, close } = usePanel('automation', loadData, [currentAgentId,connectionKey]);
 
-  const toggleJob = useCallback(async (jobId: string) => {
-    await hanaFetch('/api/desk/cron', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'toggle', id: jobId }),
-    });
-    await loadData();
-  }, [loadData]);
-
-  const removeJob = useCallback(async (jobId: string) => {
-    await hanaFetch('/api/desk/cron', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'remove', id: jobId }),
-    });
-    await loadData();
-  }, [loadData]);
-
-  const updateJob = useCallback(async (jobId: string, fields: Record<string, unknown>) => {
-    await hanaFetch('/api/desk/cron', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'update', id: jobId, ...fields }),
-    });
-    await loadData();
-  }, [loadData]);
+  const mutateJob = useCallback(async (body:Record<string,unknown>) => {
+    const owns=capturePreviewContext();
+    const response=await hanaFetch('/api/desk/cron',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),throwOnHttpError:false});
+    const data=await response.json().catch(()=>null);
+    if(!owns()||!mounted.current)throw Error('连接已经切换，请回到原连接核对任务。');
+    if(!response.ok||data?.ok!==true)throw Error(normalizeSessionRouteError(data||{}).message||'操作未确认，请刷新后核对。');
+    loadSerial.current++;
+    if(body.action==='remove')setJobs(previous=>{const next=previous.filter(job=>job.id!==body.id);updateBadge(next);return next;});
+    else if(data.job?.id)setJobs(previous=>{const next=previous.map(job=>job.id===data.job.id?data.job:job);updateBadge(next);return next;});
+    else await loadData();
+    return data.job as CronJob|undefined;
+  },[loadData]);
+  const removeJob=useCallback((id:string)=>mutateJob({action:'remove',id}).then(()=>{}),[mutateJob]);
+  const updateJob=useCallback((id:string,fields:Record<string,unknown>)=>mutateJob({action:'update',id,...fields}),[mutateJob]);
 
   const addManualJob = useCallback(async () => {
-    if (addingManualJob) return;
+    if (addingRef.current) return;
+    const owns=capturePreviewContext();
     const tr = window.t ?? ((p: string) => p);
     const tabAgentId = selectedAgentId && selectedAgentId !== '__unknown__' ? selectedAgentId : null;
     const actorAgentId = tabAgentId || primaryAgentId(agents, currentAgentId);
@@ -152,7 +145,7 @@ export function AutomationPanel() {
     const workspaceFolders = keepsSourceSession
       ? (currentWorkspaceFolders.length > 0 ? currentWorkspaceFolders : (cwd ? [cwd] : []))
       : (cwd ? [cwd] : []);
-    setAddingManualJob(true);
+    addingRef.current=true;setAddingManualJob(true);
     try {
       const res = await hanaFetch('/api/desk/cron', {
         method: 'POST',
@@ -179,6 +172,7 @@ export function AutomationPanel() {
         }),
         throwOnHttpError: false,
       });
+      if(!owns()||!mounted.current)return;
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         const detail = normalizeSessionRouteError(data).message;
@@ -187,12 +181,14 @@ export function AutomationPanel() {
         return;
       }
       const data = await res.json();
+      if(data.ok!==true)throw Error('任务创建未确认');
       await loadData();
+      if(!owns()||!mounted.current)return;
       if (data.job?.id) setOpenJobs(prev => ({ ...prev, [data.job.id]: true }));
     } catch {
-      addToast(tr('automation.createFailed'), 'error');
+      if(owns()&&mounted.current)addToast(tr('automation.createFailed'), 'error');
     } finally {
-      setAddingManualJob(false);
+      if(owns()&&mounted.current){addingRef.current=false;setAddingManualJob(false);}
     }
   }, [addToast, addingManualJob, agents, currentAgentId, currentAuthorizedFolders, currentSessionId, currentSessionPath, currentSessionProjection?.cwd, currentWorkspaceFolders, deskBasePath, deskWorkspaceMountId, homeFolder, loadData, selectedAgentId]);
 
@@ -227,10 +223,10 @@ export function AutomationPanel() {
 
   return (
     <div className={fp.floatingPanel} id="automationPanel">
-      <div className={fp.floatingPanelInner} data-glass-frame="panel">
+      <div className={`${fp.floatingPanelInner} ${styles.panel}`} data-glass-frame="panel">
         <div className={fp.floatingPanelHeader}>
           <h2 className={fp.floatingPanelTitle}>{t('automation.title')}</h2>
-          <button className={fp.floatingPanelClose} onClick={close}>
+          <button className={fp.floatingPanelClose} onClick={close} aria-label="关闭任务计划" data-tooltip="关闭任务计划">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
@@ -239,6 +235,8 @@ export function AutomationPanel() {
         </div>
         <div className={fp.floatingPanelBody}>
           <div className={styles.toolbar}>
+            <span className={styles.help}>应用运行时自动执行；休眠或退出期间不会执行。</span>
+            <button className={styles.textButton} onClick={()=>void loadData()}>刷新列表</button>
             <button className={styles.iconButton} type="button" onClick={addManualJob} title={t('automation.add')} aria-label={t('automation.add')} disabled={addingManualJob} aria-busy={addingManualJob}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <line x1="12" y1="5" x2="12" y2="19" />
@@ -267,12 +265,11 @@ export function AutomationPanel() {
                     <div className={fp.automationEmpty}>{t('automation.emptyForAgent')}</div>
                   )) : activeJobs.map(job => (
                     <AutomationCard
-                      key={job.id}
+                      key={`${connectionKey}:${job.id}`}
                       job={job}
                       availableModels={availableModels}
                       open={openJobs[job.id] === true}
                       onToggleOpen={() => setOpenJobs(prev => ({ ...prev, [job.id]: prev[job.id] !== true }))}
-                      onToggleEnabled={toggleJob}
                       onRemove={removeJob}
                       onUpdate={updateJob}
                     />

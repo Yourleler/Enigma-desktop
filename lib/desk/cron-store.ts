@@ -607,6 +607,9 @@ export class CronStore {
         return { changed: false, value: null };
       }
       const current = normalizeAutomationJob(state.jobs[currentIndex]);
+      if (options.expectedConfigRevision !== undefined && options.expectedConfigRevision !== current.configRevision) {
+        throw codedError("任务已被其他操作修改，请重新读取后保存。", "cron_job_revision_conflict", 409);
+      }
       const receipt = options?.suggestionReceipt ?? null;
       const receiptClaims = receipt
         ? inspectAutomationSuggestionReceipt(receipt, {
@@ -818,8 +821,9 @@ export class CronStore {
         .slice(-limit)
         .map(line => { try { return JSON.parse(line); } catch { return null; } })
         .filter(Boolean);
-    } catch {
-      return [];
+    } catch (error) {
+      if (error.code === 'ENOENT') return [];
+      throw codedError('运行记录暂不可读取，请检查权限后重试。', 'cron_store_unavailable', 500);
     }
   }
 

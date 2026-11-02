@@ -102,6 +102,13 @@ function timeParts(time: string) {
   };
 }
 
+export function validateScheduleDraft(draft:ScheduleDraft):void {
+  if(draft.mode==='interval'&&(!/^\d+$/.test(draft.intervalValue)||!Number.isSafeInteger(Number(draft.intervalValue))||Number(draft.intervalValue)<1))throw Error('执行间隔必须是大于零的整数。');
+  if(draft.mode==='monthly'&&(!/^\d+$/.test(draft.monthDay)||Number(draft.monthDay)<1||Number(draft.monthDay)>31))throw Error('每月日期须在 1 至 31 日之间。');
+  if(draft.mode==='once'&&(!draft.dateTime||!Number.isFinite(Date.parse(draft.dateTime))||Date.parse(draft.dateTime)<=Date.now()))throw Error('请选择未来的执行日期和时间。');
+  if(draft.mode==='advanced'&&!draft.cron.trim())throw Error('请填写计划表达式。');
+}
+
 export function storedScheduleFromDraft(draft: ScheduleDraft): StoredSchedule {
   if (draft.mode === 'interval') {
     const value = Math.max(1, parseInt(draft.intervalValue, 10) || 1);

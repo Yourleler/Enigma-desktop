@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useLayoutEffect } from 'react';
+import {createPortal} from 'react-dom';
 import { SelectWidget, type SelectOption } from '@/ui';
 import type { ScheduleDraft, ScheduleMode, IntervalUnit } from './schedule-draft';
 import styles from './AutomationPanel.module.css';
@@ -41,6 +42,7 @@ function TimePicker({
   const rootRef = useRef<HTMLDivElement | null>(null);
   const popoverRef = useRef<HTMLDivElement | null>(null);
   const [open, setOpen] = useState(false);
+  const [position,setPosition]=useState({left:12,top:12});
   const { hour, minute } = parseTime(value);
   const hours = useMemo(() => Array.from({ length: 24 }, (_, index) => index), []);
   const minutes = useMemo(() => Array.from({ length: 60 }, (_, index) => index), []);
@@ -48,34 +50,35 @@ function TimePicker({
   useEffect(() => {
     if (!open) return;
     const onPointerDown = (event: MouseEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+      if (!rootRef.current?.contains(event.target as Node)&&!popoverRef.current?.contains(event.target as Node)) setOpen(false);
     };
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setOpen(false);
+      if (event.key === 'Escape') {event.preventDefault();event.stopPropagation();setOpen(false);rootRef.current?.querySelector('button')?.focus();}
     };
+    const onScroll=(event:Event)=>{if(!popoverRef.current?.contains(event.target as Node))setOpen(false);};
+    document.addEventListener('scroll',onScroll,true);
+    const onResize=()=>setOpen(false);window.addEventListener('resize',onResize);
     document.addEventListener('mousedown', onPointerDown);
     document.addEventListener('keydown', onKeyDown);
     return () => {
+      window.removeEventListener('resize',onResize);
+      document.removeEventListener('scroll',onScroll,true);
       document.removeEventListener('mousedown', onPointerDown);
       document.removeEventListener('keydown', onKeyDown);
     };
   }, [open]);
 
-  useEffect(() => {
-    if (!open) return;
-    const defer = typeof window.requestAnimationFrame === 'function'
-      ? window.requestAnimationFrame
-      : (callback: FrameRequestCallback) => window.setTimeout(callback, 0);
-    defer(() => {
-      popoverRef.current
-        ?.querySelectorAll('[data-selected="true"]')
-        .forEach((node) => {
-          if (node instanceof HTMLElement && typeof node.scrollIntoView === 'function') {
-            node.scrollIntoView({ block: 'center' });
-          }
-        });
-    });
-  }, [hour, minute, open]);
+  useLayoutEffect(()=>{
+    if(!open)return;
+    const anchor=rootRef.current?.getBoundingClientRect();
+    if(anchor)setPosition({left:Math.max(12,Math.min(anchor.left,window.innerWidth-196)),top:anchor.bottom+196<window.innerHeight?anchor.bottom+6:Math.max(12,anchor.top-196)});
+    popoverRef.current?.querySelectorAll<HTMLElement>('[data-selected="true"]').forEach(node=>{const parent=node.parentElement;if(parent)parent.scrollTop=node.offsetTop-parent.offsetTop-parent.clientHeight/2+node.offsetHeight/2;});
+  },[open,hour,minute]);
+  const keyboard=(event:React.KeyboardEvent<HTMLButtonElement>,value:number,max:number,select:(value:number)=>void)=>{
+    if(!['ArrowUp','ArrowDown','Home','End'].includes(event.key))return;
+    event.preventDefault();const next=event.key==='Home'?0:event.key==='End'?max:(value+(event.key==='ArrowUp'?-1:1)+max+1)%(max+1);
+    select(next);(event.currentTarget.parentElement?.children[next] as HTMLElement)?.focus({preventScroll:true});
+  };
 
   const selectHour = (nextHour: number) => {
     onChange(formatTime(nextHour, minute));
@@ -100,8 +103,8 @@ function TimePicker({
           <path d="M12 7v5l3 2" />
         </svg>
       </button>
-      {open ? (
-        <div className={styles.timePickerPopover} ref={popoverRef}>
+      {open ? createPortal(
+        <div className={styles.timePickerPopover} ref={popoverRef} style={position} data-menu-surface="" data-menu-position="fixed" data-liquid="menu">
           <div className={styles.timePickerColumn} role="listbox" aria-label={t('automation.schedule.hour')}>
             {hours.map(option => (
               <button
@@ -109,6 +112,8 @@ function TimePicker({
                 className={styles.timePickerOption}
                 type="button"
                 aria-label={`${two(option)} ${t('automation.schedule.hour')}`}
+                role="option" aria-selected={option===hour} tabIndex={option===hour?0:-1}
+                onKeyDown={event=>keyboard(event,option,23,selectHour)}
                 data-selected={option === hour}
                 onClick={() => selectHour(option)}
               >
@@ -124,6 +129,8 @@ function TimePicker({
                 className={styles.timePickerOption}
                 type="button"
                 aria-label={`${two(option)} ${t('automation.schedule.minute')}`}
+                role="option" aria-selected={option===minute} tabIndex={option===minute?0:-1}
+                onKeyDown={event=>keyboard(event,option,59,selectMinute)}
                 data-selected={option === minute}
                 onClick={() => selectMinute(option)}
               >
@@ -131,7 +138,7 @@ function TimePicker({
               </button>
             ))}
           </div>
-        </div>
+        </div>,document.body
       ) : null}
     </div>
   );
@@ -152,7 +159,7 @@ export function ScheduleEditor({
   return (
     <div className={`${styles.scheduleEditor}${className ? ` ${className}` : ''}`}>
       <label className={styles.field}>
-        <span>{t('automation.field.schedule')}</span>
+        <span>执行频率</span>
         <SelectWidget
           className={styles.scheduleSelect}
           triggerClassName={styles.scheduleSelectTrigger}
@@ -236,7 +243,7 @@ export function ScheduleEditor({
       {draft.mode === 'once' ? (
         <label className={styles.field}>
           <span>{t('automation.schedule.dateTime')}</span>
-          <input type="datetime-local" value={draft.dateTime} onChange={e => update({ dateTime: e.target.value })} />
+          <input type="datetime-local" value={draft.dateTime} onInput={e => update({dateTime:e.currentTarget.value})} onChange={e => update({ dateTime: e.target.value })} />
         </label>
       ) : null}
 

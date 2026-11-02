@@ -81,6 +81,17 @@ describe("desk cron route", () => {
     }
   });
 
+  it('returns only known-job run history, newest first',async()=>{
+    const getRunHistory=vi.fn(()=>[{status:'error',startedAt:'a'},{status:'success',startedAt:'b'}]);
+    const store={studioId:TEST_STUDIO_ID,getJob:(id:string)=>id==='job_1'?{id}:null,getRunHistory};
+    const app=await createApp({getStudioCronStore:()=>createBoundStoreService(store)});
+    const response=await app.request('/api/desk/cron?jobId=job_1');
+    expect(response.status).toBe(200);expect((await response.json()).runs[0].status).toBe('success');
+    expect(getRunHistory).toHaveBeenCalledWith('job_1',20);
+    expect((await app.request('/api/desk/cron?jobId=..%2Fsecret')).status).toBe(404);
+    expect(getRunHistory).toHaveBeenCalledTimes(1);
+  });
+
   it("lists the studio cron store independent of the focused agent", async () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), "hana-desk-cron-"));
     roots.push(root);

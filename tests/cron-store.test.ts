@@ -1552,6 +1552,16 @@ describe("cron 解析器边界", () => {
 // ════════════════════════════════════════════
 
 describe("CronStore logRun 日志修剪", () => {
+  it('does not report inaccessible run history as an empty history',()=>{
+    const store=makeTmpStore();
+    expect(store.getRunHistory('missing')).toEqual([]);
+    const read=fs.readFileSync;
+    const spy=vi.spyOn(fs,'readFileSync').mockImplementation((file:any,...args:any[])=>{
+      if(String(file).endsWith('blocked.jsonl'))throw Object.assign(Error('denied'),{code:'EACCES'});
+      return (read as any)(file,...args);
+    });
+    try{expect(()=>store.getRunHistory('blocked')).toThrow('运行记录暂不可读取');}finally{spy.mockRestore();}
+  });
   it("logRun 超过 500 行时修剪到 300 行", () => {
     const store = makeTmpStore();
     for (let i = 0; i < 510; i++) {
@@ -1563,5 +1573,17 @@ describe("CronStore logRun 日志修剪", () => {
     expect(history.length).toBeGreaterThan(0);
     // 确认确实发生了修剪（不修剪的话是 510）
     expect(history.length).toBeLessThan(500);
+  });
+});
+
+
+describe('CronStore explicit editor revision',()=>{
+  it('atomically rejects stale edits while keeping the newer configuration',()=>{
+    const store=makeTmpStore();
+    const job=store.addJob({type:'cron',schedule:'0 9 * * *',prompt:'Initial',enabled:false});
+    const fresh=store.updateJob(job.id,{prompt:'Concurrent edit'});
+    expect(()=>store.updateJob(job.id,{prompt:'Old draft'},{expectedConfigRevision:job.configRevision})).toThrow('任务已被其他操作修改');
+    expect(store.getJob(job.id).prompt).toBe('Concurrent edit');
+    expect(store.updateJob(job.id,{label:'Rebased edit'},{expectedConfigRevision:fresh.configRevision}).label).toBe('Rebased edit');
   });
 });
