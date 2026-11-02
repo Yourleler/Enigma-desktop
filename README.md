@@ -17,10 +17,10 @@
 | Agent 底层 | Pi 的三个核心包均固定为 **1.4.0** |
 | 本轮交付 | 271完整包已签名安装；主／子模型隔离写入、新对话内置终端及点击发送目标命令已有实际证据，数据备份与原生核对见本轮记录 |
 | 本轮记录 | [可读性与内置终端](docs/interface-correction-and-terminal-2026-11-03.md)、[主页面与管家重构](docs/primary-pages-and-conductor-2026-11-03.md)、[仓库与资源引用](docs/repository-context-and-resource-mentions-2026-11-03.md) |
-| 独立保留的实验 | 通知定位与诊断保留在`codex/notification-navigation`，不含在258稳定版内；系统异常已恢复，见[实测边界](docs/notification-and-native-acceptance-2026-11-02.md) |
+| 已撤回的实验 | 通知定位与诊断实验保留在历史提交`1cf1e66b`中，后续已撤回，当前版本不包含该实验；系统异常已恢复，见[实测边界](docs/notification-and-native-acceptance-2026-11-02.md) |
 | 上游宿主基线 | OpenHanako / HanaAgent **0.450.0**；来源见 [FORK.md](FORK.md) |
 | 工程模块 | `packages/enigma-engineering`，内部 npm 包名 `enigma-next` |
-| 当前开发分支 | `codex/engineering-migration`；开发分支推送不等于更新 `main` |
+| 当前集成分支 | `main`；已合入截至0.452.271的完成迭代，后续已验收修改统一提交到此分支 |
 | 当前验收平台 | macOS；其他平台的代码或跳过测试不代表已完成实机验收 |
 | 整体目标 | **尚未完成全功能收尾**，剩余范围见[逐项对账](docs/acceptance-closeout-audit-2026-11-01.md) |
 | 后续重点 | 更广的管家应用控制、通知闭环与原全功能清单中的未验组合继续推进；不把本轮界面与工具链路通过当作完整Goal结束 |
