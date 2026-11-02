@@ -12,6 +12,7 @@ import path from "path";
 import crypto from "crypto";
 import { execFileSync } from "child_process";
 import { Hono } from "hono";
+import {activityTranscript} from '../../shared/activity-transcript.ts';
 import { safeJson } from "../hono-helpers.ts";
 import { parseSkillMetadata } from "../../lib/skills/skill-metadata.ts";
 import { installSkillPackageFromPath } from "../../lib/skills/skill-package-installer.ts";
@@ -371,8 +372,9 @@ export function createDeskRoute(engine, hub) {
   }
 
   /** 从所有 agent 的 activityStore 中按 ID 查找 entry */
-  function findActivityEntry(activityId) {
+  function findActivityEntry(activityId, preferredAgentId = null) {
     for (const ag of engine.listAgents()) {
+      if(preferredAgentId && ag.id!==preferredAgentId)continue;
       const store = engine.getActivityStore(ag.id);
       const entry = store?.get(activityId);
       if (entry) return { entry, agentId: ag.id };
@@ -950,17 +952,30 @@ export function createDeskRoute(engine, hub) {
     return c.json({ activities: allActivities });
   });
 
+  const promotions=new Map<string,Promise<string|null>>();
+  function activitySessionPath(entry,agentId){
+    const file=entry.promotedSessionFile||entry.sessionFile;
+    if(typeof file!=='string'||!file.endsWith('.jsonl')||/[\\/\0]/.test(file)||file.startsWith('.'))return null;
+    const base=path.join(engine.agentsDir,agentId,entry.promotedSessionFile?'sessions':'activity');
+    let target=path.join(base,file);
+    if(!entry.promotedSessionFile&&!fs.existsSync(target)){
+      const sessionId=engine.getSessionIdForPath?.(target),manifest=sessionId?engine.getSessionManifest?.(sessionId):null;
+      const promoted=path.join(engine.agentsDir,agentId,'sessions',file);
+      if(manifest?.ownerAgentId===agentId&&manifest.currentLocator?.path===promoted&&isInsidePath(promoted,path.dirname(promoted)))target=promoted;
+    }
+    return isInsidePath(target,path.dirname(target))?target:null;
+  }
+
   /** 读取指定活动的 session 对话消息（只读查看用） */
   route.get("/desk/activities/:id/session", async (c) => {
     const id = c.req.param("id");
     // 从所有 agent 的 activityStore 中查找
-    const { entry, agentId: foundAgentId } = findActivityEntry(id);
+    const { entry, agentId: foundAgentId } = findActivityEntry(id,c.req.query('agentId'));
     if (!entry) return deskRouteError(c, "activity_not_found", "activity not found", 404);
-    if (!entry.sessionFile) return deskRouteError(c, "activity_session_unavailable", "no session file", 404);
+    if (!entry.sessionFile && !entry.promotedSessionFile) return deskRouteError(c, "activity_session_unavailable", "no session file", 404);
 
-    const activityDir = path.join(engine.agentsDir, foundAgentId, "activity");
-    const sessionPath = path.join(activityDir, entry.sessionFile);
-    if (!fs.existsSync(sessionPath)) return deskRouteError(c, "activity_session_missing", "session file missing", 404);
+    const sessionPath=activitySessionPath(entry,foundAgentId);
+    if (!sessionPath||!fs.existsSync(sessionPath)) return deskRouteError(c, "activity_session_missing", "session file missing", 404);
 
     try {
       const raw = fs.readFileSync(sessionPath, "utf-8");
@@ -968,20 +983,7 @@ export function createDeskRoute(engine, hub) {
         try { return JSON.parse(l); } catch { return null; }
       }).filter(Boolean);
 
-      const messages = [];
-      for (const line of lines) {
-        if (line.type !== "message") continue;
-        const msg = line.message;
-        if (!msg) continue;
-        if (msg.role !== "user" && msg.role !== "assistant") continue;
-
-        const content = Array.isArray(msg.content)
-          ? msg.content.filter(b => b.type === "text" && b.text).map(b => b.text).join("")
-          : (typeof msg.content === "string" ? msg.content : "");
-
-        if (!content) continue;
-        messages.push({ role: msg.role, content });
-      }
+      const messages=activityTranscript(lines);
 
       return c.json({
         activity: {
@@ -1003,19 +1005,32 @@ export function createDeskRoute(engine, hub) {
 
   /** 将活动 session 提升为正常 session（从 activity/ 移到 sessions/） */
   route.post("/desk/activities/:id/promote", async (c) => {
-    const id = c.req.param("id");
-    const { entry, agentId: foundAgentId } = findActivityEntry(id);
-    if (!entry) return c.json({ error: "activity not found" });
-    if (!entry.sessionFile) return c.json({ error: "no session file" });
-
-    const newPath = await engine.promoteActivitySession(entry.sessionFile, foundAgentId);
-    if (!newPath) return c.json({ error: "promote failed" });
-
-    // 从 ActivityStore 移除已升格的条目
-    const store = engine.getActivityStore(foundAgentId);
-    store?.remove(id);
-
-    return c.json({ ok: true, sessionPath: newPath, agentId: foundAgentId });
+    const id=c.req.param('id');
+    const {entry,agentId}=findActivityEntry(id,c.req.query('agentId'));
+    if(!entry)return c.json({error:'找不到这条运行记录。'},404);
+    if(entry.status==='running')return c.json({error:'任务仍在运行，结束后再转为对话。'},409);
+    const key=agentId+':'+id;
+    let work=promotions.get(key);
+    const source=activitySessionPath(entry,agentId);
+    if(!work&&(!source||!fs.existsSync(source)))return c.json({error:'后台记录文件不可读取。'},404);
+    if(entry.promotedSessionFile)return c.json({ok:true,sessionPath:source,agentId,activity:entry});
+    if(!work){
+      work=(async()=>{
+        const target=await engine.promoteActivitySession(entry.sessionFile,agentId);
+        if(target){
+          if(typeof entry.label==='string'&&entry.label.trim())await engine.saveSessionTitle?.(target,entry.label.trim());
+          const updated=engine.getActivityStore(agentId)?.update(id,{promotedSessionFile:path.basename(target)});if(updated)emitActivityUpdate({...updated,agentId});
+        }
+        return target;
+      })();
+      promotions.set(key,work);
+      void work.finally(()=>{if(promotions.get(key)===work)promotions.delete(key);}).catch(()=>{});
+    }
+    try{
+      const target=await work;
+      if(!target)return c.json({error:'未能转为对话。请检查文件权限或是否已有同名对话。原记录已保留。'},409);
+      return c.json({ok:true,sessionPath:target,agentId,activity:engine.getActivityStore(agentId)?.get(id)});
+    }catch{return c.json({error:'转为对话尚未确认，请刷新运行记录后核对。'},500);}
   });
 
   /** 用小工具模型快速摘要（DevTools 调试用） */

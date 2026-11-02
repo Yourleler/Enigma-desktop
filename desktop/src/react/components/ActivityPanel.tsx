@@ -1,6 +1,9 @@
 import { GlassSelection } from '../ui/GlassSelection';
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useStore } from '../stores';
+import {capturePreviewContext,previewConnectionKey} from '../utils/preview-context';
+import {normalizeSessionRouteError} from '../../../../shared/error-user-messages.ts';
+import type {ActivityTranscriptMessage} from '../../../../shared/activity-transcript.ts';
 import { usePanel } from '../hooks/use-panel';
 import { hanaFetch } from '../hooks/use-hana-fetch';
 import { fetchConfig, invalidateConfigCache } from '../hooks/use-config';
@@ -25,14 +28,12 @@ interface ActivityItem extends Activity {
   agentId?: string;
   agentName?: string;
   sessionFile?: string;
+  promotedSessionFile?: string;
   startedAt?: number;
   finishedAt?: number;
 }
 
-interface DetailMessage {
-  role: string;
-  content: string;
-}
+type DetailMessage=ActivityTranscriptMessage;
 
 const FLEX_COLUMN_STYLE: React.CSSProperties = { display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 };
 const ACTIVITY_BUCKETS = ['automation', 'patrol', 'other'] as const;
@@ -88,7 +89,13 @@ export function ActivityPanel() {
   const agentName = useStore(s => s.agentName);
   const setActivities = useStore(s => s.setActivities);
 
-  const [hbEnabled, setHbEnabled] = useState(true);
+  const connectionKey=useStore(previewConnectionKey);
+  const [hbEnabled, setHbEnabled] = useState<boolean|null>(null);
+  const [loadError,setLoadError]=useState(''),[heartbeatError,setHeartbeatError]=useState(''),[heartbeatBusy,setHeartbeatBusy]=useState(false);
+  const selectedBuckets=useRef<Record<string,ActivityBucket>>({}),loadSerial=useRef(0),hbRevision=useRef(0),hbBusy=useRef(false),mounted=useRef(true);
+  useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;loadSerial.current++;};},[]);
+  const previousConnection=useRef(connectionKey);
+  useEffect(()=>{if(previousConnection.current===connectionKey)return;previousConnection.current=connectionKey;loadSerial.current++;setActivities([]);setHbEnabled(null);setLoadError('');setHeartbeatError('');hbBusy.current=false;setHeartbeatBusy(false);selectedBuckets.current={};},[connectionKey,setActivities]);
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(currentAgentId);
   const [selectedBucket, setSelectedBucket] = useState<ActivityBucket>('automation');
   const t = window.t ?? ((p: string) => p);
@@ -125,67 +132,66 @@ export function ActivityPanel() {
   }, [activeAgentId, selectedAgentId]);
 
   useEffect(() => {
-    setSelectedBucket(firstNonEmptyBucket(activeBuckets));
+    setSelectedBucket(activeAgentId&&selectedBuckets.current[activeAgentId]||firstNonEmptyBucket(activeBuckets));
   }, [activeAgentId, activeBuckets]);
 
-  const loadData = useCallback(() => {
-    hanaFetch('/api/desk/activities')
-      .then(r => r.json())
-      .then(data => setActivities(data.activities || []))
-      .catch(err => console.warn('[activity] fetch activities failed:', err));
-    fetchConfig()
-      .then(data => setHbEnabled(data.desk?.heartbeat_master !== false))
-      .catch(err => console.warn('[activity] fetch config failed:', err));
-  }, [setActivities]);
+  const loadData=useCallback(()=>{
+    const serial=++loadSerial.current,configRevision=hbRevision.current,owns=capturePreviewContext(),before=useStore.getState().activities;
+    const current=()=>owns()&&mounted.current&&serial===loadSerial.current;
+    void hanaFetch('/api/desk/activities',{throwOnHttpError:false}).then(async response=>{
+      const data=await response.json();if(!current())return;
+      if(response.ok===false||!Array.isArray(data.activities))throw Error(normalizeSessionRouteError(data).message||'运行记录暂不可读取。');
+      const changed=useStore.getState().activities.filter(row=>!before.includes(row));
+      const ids=new Set(changed.map(row=>row.agentId+':'+row.id));
+      setActivities([...changed,...data.activities.filter((row:Activity)=>!ids.has(row.agentId+':'+row.id))]);setLoadError('');
+    }).catch(()=>{if(current())setLoadError('运行记录加载失败，已有内容已保留。');});
+    void fetchConfig({cacheKey:connectionKey,force:true}).then(data=>{if(current()&&!hbBusy.current&&configRevision===hbRevision.current)setHbEnabled(data.desk?.heartbeat_master!==false);}).catch(()=>{if(current())setHeartbeatError('巡检设置暂不可读取，请刷新后重试。');});
+  },[setActivities,connectionKey]);
+  const {visible,close:closePanel}=usePanel('activity',loadData,[currentAgentId,connectionKey]);
+  const close=useCallback(()=>closePanel(),[closePanel]);
+  const toggleHeartbeat=useCallback(async()=>{
+    if(hbBusy.current||hbEnabled===null)return;
+    const owns=capturePreviewContext(),next=!hbEnabled;hbRevision.current++;hbBusy.current=true;setHeartbeatBusy(true);setHeartbeatError('');
+    try{
+      const response=await hanaFetch('/api/config',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({desk:{heartbeat_master:next}}),throwOnHttpError:false});
+      const data=await response.json();if(!owns()||!mounted.current)return;
+      if(response.ok===false||data.error)throw Error('未能保存巡检设置，请重试。');
+      setHbEnabled(next);invalidateConfigCache();
+    }catch{if(owns()&&mounted.current)setHeartbeatError('巡检开关未修改，请检查连接后重试。');}
+    finally{if(owns()&&mounted.current){hbBusy.current=false;setHeartbeatBusy(false);}}
+  },[hbEnabled]);
 
-  const { visible, close: closePanel } = usePanel('activity', loadData, [currentAgentId]);
-  const close = useCallback(() => { closePanel(); }, [closePanel]);
-
-  const toggleHeartbeat = useCallback(async () => {
-    const next = !hbEnabled;
-    setHbEnabled(next);
-    try {
-      await hanaFetch('/api/config', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ desk: { heartbeat_master: next } }),
-      });
-      invalidateConfigCache();
-    } catch {
-      setHbEnabled(!next); // rollback
-    }
-  }, [hbEnabled]);
-
-  const promoteActivity = useCallback(async (activityId: string) => {
-    try {
-      const res = await hanaFetch(`/api/desk/activities/${activityId}/promote`, { method: 'POST' });
-      const data = await res.json();
-      if (data.error || !data.sessionPath) return;
-      await loadSessions();
-      await switchSession(data.sessionPath);
-      const latest = useStore.getState().activities;
-      setActivities(latest.filter(a => a.id !== activityId));
-    } catch (err) {
-      console.error('[activity] promote failed:', err);
-    }
-  }, [setActivities]);
+  const promoteActivity=useCallback(async(activity:ActivityItem)=>{
+    const owns=capturePreviewContext(),origin=useStore.getState().currentSessionPath;
+    const response=await hanaFetch('/api/desk/activities/'+encodeURIComponent(activity.id)+'/promote?agentId='+encodeURIComponent(activity.agentId||currentAgentId||''),{method:'POST',throwOnHttpError:false});
+    const data=await response.json();if(!owns()||!mounted.current)return;
+    if(response.ok===false||data.error||!data.sessionPath)throw Error(normalizeSessionRouteError(data).message||'转为对话未确认。');
+    if(data.activity)useStore.setState(state=>({activities:state.activities.map(row=>row.id===activity.id&&row.agentId===activity.agentId?{...row,...data.activity,agentId:activity.agentId}:row)}));
+    await loadSessions();
+    if(!owns()||!mounted.current)return;
+    if(useStore.getState().currentSessionPath!==origin&&useStore.getState().currentSessionPath!==data.sessionPath)return;
+    await switchSession(data.sessionPath);
+    if(owns()&&useStore.getState().currentSessionPath===data.sessionPath)closePanel();
+    else if(owns())throw Error('对话已经保留，打开未完成。请在对话列表中重试。');
+  },[currentAgentId,closePanel]);
 
   if (!visible) return null;
 
   return (
     <div className={fp.floatingPanel} id="activityPanel">
-      <div className={fp.floatingPanelInner} data-glass-frame="panel">
+      <div className={`${fp.floatingPanelInner} ${automationStyles.panel}`} data-glass-frame="panel">
         <div id="activityListView" style={FLEX_COLUMN_STYLE}>
           <div className={fp.floatingPanelHeader}>
-              <h2 className={fp.floatingPanelTitle}>{t('activity.title')}</h2>
+              <h2 className={fp.floatingPanelTitle}>运行记录</h2>
               <div className={fp.activityHbToggle}>
                 <span className="hana-toggle-label">{t('activity.heartbeat')}</span>
                 <button
                   className={'hana-toggle' + (hbEnabled ? ' on' : '')}
+                  role="switch" aria-checked={hbEnabled===true} aria-label="自动巡检" disabled={hbEnabled===null||heartbeatBusy} data-tooltip="自动巡检开关；不影响计划任务"
                   onClick={toggleHeartbeat}
                 />
               </div>
-            <button className={fp.floatingPanelClose} onClick={close}>
+            <button className={fp.floatingPanelClose} onClick={close} aria-label="关闭运行记录" data-tooltip="关闭运行记录">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />
@@ -193,9 +199,11 @@ export function ActivityPanel() {
             </button>
           </div>
           <div className={fp.floatingPanelBody}>
+            <div className={automationStyles.toolbar}><button className={automationStyles.textButton} onClick={loadData}>刷新记录</button></div>
+            {(loadError||heartbeatError)&&<p role="alert" className={automationStyles.feedback}>{loadError||heartbeatError}</p>}
             <div className={fp.activityCards} id="activityCards">
               {agentTabs.length === 0 ? (
-                <div className={fp.activityEmpty}>{t('activity.empty')}</div>
+                !loadError&&<div className={fp.activityEmpty}>{t('activity.empty')}</div>
               ) : (
                 <>
                   <AgentTabScroller
@@ -221,7 +229,7 @@ export function ActivityPanel() {
                           role="tab"
                           aria-selected={active}
                           data-active={active}
-                          onClick={() => setSelectedBucket(bucket)}
+                          onClick={() => {if(activeAgentId)selectedBuckets.current[activeAgentId]=bucket;setSelectedBucket(bucket);}}
                         >
                           <span>{bucketLabel(bucket, t)}</span>
                           <span className={automationStyles.categoryTabCount}>{count}</span>
@@ -231,10 +239,10 @@ export function ActivityPanel() {
                   </div>
                   <div className={automationStyles.groupList}>
                     {activeActivities.length === 0 ? (
-                      <div className={fp.activityEmpty}>{t('activity.emptyForCategory')}</div>
+                      !loadError&&<div className={fp.activityEmpty}>{t('activity.emptyForCategory')}</div>
                     ) : activeActivities.map(a => (
                       <ActivityCard
-                        key={a.id}
+                        key={`${connectionKey}:${a.agentId}:${a.id}`}
                         activity={a}
                         agents={agents}
                         currentAgentId={currentAgentId}
@@ -264,9 +272,12 @@ function ActivityCard({
   agents: Agent[];
   currentAgentId: string | null;
   agentName: string;
-  onPromote: (id: string) => void;
+  onPromote: (activity: ActivityItem) => Promise<void>;
 }) {
   const [open, setOpen] = useState(false);
+  const [promoting,setPromoting]=useState(false),[promoteError,setPromoteError]=useState('');
+  const promoteBusy=useRef(false),alive=useRef(true);
+  useEffect(()=>{alive.current=true;return()=>{alive.current=false;};},[]);
   const [messages, setMessages] = useState<DetailMessage[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState(false);
@@ -281,7 +292,9 @@ function ActivityCard({
   const typeText = a.type === 'heartbeat' ? t('activity.heartbeat')
     : a.type === 'subagent' ? t('activity.subagent')
     : (a.label || t('activity.cron'));
-  const canUseSession = !!a.sessionFile;
+  const canUseSession=!!(a.sessionFile||a.promotedSessionFile);
+  const promoteLabel=a.promotedSessionFile?'打开对话':t('activity.promote');
+  const promote=async()=>{if(promoteBusy.current)return;promoteBusy.current=true;setPromoting(true);setPromoteError('');try{await onPromote(a);}catch(error){if(alive.current)setPromoteError(error instanceof Error?error.message:'转为对话失败，请重试。');}finally{promoteBusy.current=false;if(alive.current)setPromoting(false);}};
 
   let durationText = '';
   if (a.finishedAt && a.startedAt) {
@@ -303,25 +316,28 @@ function ActivityCard({
   useEffect(() => {
     if (!open || !canUseSession || messages !== null || loadError) return;
     let cancelled = false;
+    const owns=capturePreviewContext();
     setLoading(true);
     setLoadError(false);
 
-    void hanaFetch(`/api/desk/activities/${a.id}/session`)
+    void hanaFetch('/api/desk/activities/'+encodeURIComponent(a.id)+'/session?agentId='+encodeURIComponent(agentId||''))
       .then(res => res.json())
       .then(data => {
-        if (cancelled) return;
+        if (cancelled||!owns()) return;
         if (data.error) throw new Error(data.error);
         setMessages(Array.isArray(data.messages) ? data.messages : []);
       })
       .catch(() => {
-        if (!cancelled) setLoadError(true);
+        if (!cancelled&&owns()) setLoadError(true);
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!cancelled&&owns()) setLoading(false);
       });
 
     return () => { cancelled = true; };
   }, [a.id, canUseSession, loadError, messages, open]);
+
+  useEffect(()=>{setMessages(null);setLoadError(false);},[a.id,a.sessionFile,a.promotedSessionFile,a.finishedAt]);
 
   const toggleOpen = () => {
     if (!canUseSession) return;
@@ -358,10 +374,10 @@ function ActivityCard({
             <button
               type="button"
               className={fp.activitySessionAction}
-              onClick={() => onPromote(a.id)}
-              disabled={!canUseSession}
-              title={t('activity.promote')}
-              aria-label={t('activity.promote')}
+              onClick={()=>void promote()}
+              disabled={!canUseSession||a.status==='running'||promoting}
+              title={a.status==='running'?'任务仍在运行，结束后可转为对话':promoteLabel}
+              aria-label={promoting?'正在打开对话…':promoteLabel}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <polyline points="17 11 12 6 7 11" />
@@ -371,21 +387,24 @@ function ActivityCard({
           </>
         )}
       />
+      {promoteError&&<p role="alert" className={automationStyles.feedback}>{promoteError}</p>}
       <Collapse open={open}>
         <ActivityInlineTranscript
           messages={messages || []}
           loading={loading}
           error={loadError}
+          onRetry={()=>setLoadError(false)}
         />
       </Collapse>
     </div>
   );
 }
 
-function ActivityInlineTranscript({ messages, loading, error }: {
+function ActivityInlineTranscript({ messages, loading, error,onRetry }: {
   messages: DetailMessage[];
   loading: boolean;
   error: boolean;
+  onRetry:()=>void;
 }) {
   const bodyRef = useRef<HTMLDivElement>(null);
   const t = window.t ?? ((p: string) => p);
@@ -393,7 +412,7 @@ function ActivityInlineTranscript({ messages, loading, error }: {
 
   useEffect(() => {
     if (bodyRef.current) {
-      injectCopyButtons(bodyRef.current);
+      bodyRef.current.querySelectorAll<HTMLElement>('.md-content').forEach(node=>injectCopyButtons(node));
     }
   }, [messages]);
   useMermaidDiagrams(bodyRef, [messages]);
@@ -402,7 +421,7 @@ function ActivityInlineTranscript({ messages, loading, error }: {
     return <div className={fp.activityInlineTranscript}>{t('activity.loadingSession')}</div>;
   }
   if (error) {
-    return <div className={fp.activityInlineTranscript}>{t('activity.sessionLoadFailed')}</div>;
+    return <div role="alert" className={fp.activityInlineTranscript}>{t('activity.sessionLoadFailed')}<button onClick={onRetry}>重新读取过程</button></div>;
   }
   if (messages.length === 0) {
     return <div className={fp.activityInlineTranscript}>{t('activity.noSessionMessages')}</div>;
@@ -411,6 +430,10 @@ function ActivityInlineTranscript({ messages, loading, error }: {
   return (
     <div className={fp.activityInlineTranscript} ref={bodyRef}>
       {messages.map((m, i) => {
+        if(m.role==='tool')return <details key={'tool-'+i} className={automationStyles.activityTool}>
+          <summary>{m.phase==='call'?'调用':'结果'} · {m.toolName}{m.phase==='result'?m.status==='failed'?' · 失败':m.status==='succeeded'?' · 完成':' · 未知':''}{m.timestamp?<time>{new Date(m.timestamp).toLocaleTimeString(undefined,{hour12:false})}</time>:null}</summary>
+          <pre>{m.content}</pre>{m.truncated&&<p>内容较长，此处显示前 12,000 字符；可打开对话查看完整记录。</p>}
+        </details>;
         if (m.role === 'assistant') {
           const { mood, text } = parseMoodFromContent(m.content);
           return (

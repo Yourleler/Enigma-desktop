@@ -5106,6 +5106,14 @@ Continue the restored transcript.
     ]);
   });
 
+  it('does not overwrite an existing conversation while promoting a background result',async()=>{
+    const agentDir=path.join(tempDir,'collision-agent'),sessionDir=path.join(agentDir,'sessions'),activityDir=path.join(agentDir,'activity');fs.mkdirSync(sessionDir,{recursive:true});fs.mkdirSync(activityDir,{recursive:true});
+    const source=path.join(activityDir,'same.jsonl'),destination=path.join(sessionDir,'same.jsonl');fs.writeFileSync(source,'background result');fs.writeFileSync(destination,'existing user conversation');
+    const agent={id:'collision',agentDir,sessionDir};const coordinator=new SessionCoordinator({getAgent:()=>agent,getAgentById:()=>agent} as any);
+    await coordinator.promoteActivitySession('same.jsonl','collision');
+    expect(fs.readFileSync(destination,'utf8')).toBe('existing user conversation');expect(fs.readFileSync(source,'utf8')).toBe('background result');
+  });
+
   it("promoteActivitySession backfills missing tool snapshots for legacy activity sessions", async () => {
     const agentDir = path.join(tempDir, "agents", "hana");
     const activityDir = path.join(agentDir, "activity");

@@ -1461,6 +1461,12 @@ function mockPermissionDefault(mode = 'ask') {
   });
 
   describe('loadSessions 首次自动切换', () => {
+    it('ignores an old session list after the active connection changes',async()=>{
+      Object.assign(mockState,{serverPort:'3010',activeServerConnection:null,activeServerConnectionId:null,serverConnections:{},currentSessionPath:'/current',sessions:[]});
+      let finish!:(value:Response)=>void;mockFetch.mockImplementation(url=>url==='/api/sessions'?new Promise(resolve=>{finish=resolve;}):Promise.resolve(jsonResponse({})));
+      const pending=loadSessions();Object.assign(mockState,{serverPort:'3011'});finish(jsonResponse([{path:'/old-server/session'}]));await pending;expect(mockState.sessions).toEqual([]);
+    });
+
     it('reconciles the focused locator by currentSessionId without switching or reloading chat', async () => {
       Object.assign(mockState, {
         currentSessionId: 'sess_a',

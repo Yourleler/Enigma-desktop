@@ -365,6 +365,26 @@ describe("desk route", () => {
     }
   });
 
+  it('retains promoted activity records, deduplicates requests, and keeps their transcript readable',async()=>{
+    const root=fs.mkdtempSync(path.join(os.tmpdir(),'activity-promote-'));
+    try{
+      const activityDir=path.join(root,'agent-a','activity'),sessions=path.join(root,'agent-a','sessions');fs.mkdirSync(activityDir,{recursive:true});fs.mkdirSync(sessions,{recursive:true});
+      const entry={id:'act',type:'cron',status:'done',sessionFile:'result.jsonl',label:'Readable task'};
+      fs.writeFileSync(path.join(activityDir,'result.jsonl'),JSON.stringify({type:'message',message:{role:'assistant',content:[{type:'text',text:'Result'},{type:'toolCall',name:'read',id:'c',arguments:{path:'sample.txt'}}]}}));
+      const store={get:(id:string)=>id==='act'?entry:null,update:(_id:string,patch:any)=>Object.assign(entry,patch)};
+      const promote=vi.fn(async()=>{await new Promise(resolve=>setTimeout(resolve,5));fs.renameSync(path.join(activityDir,'result.jsonl'),path.join(sessions,'result.jsonl'));return path.join(sessions,'result.jsonl');});
+      const saveSessionTitle=vi.fn();
+      const {createDeskRoute}=await import('../server/routes/desk.ts');const app=new Hono();app.route('/api',createDeskRoute({agentsDir:root,listAgents:()=>[{id:'agent-a'}],getActivityStore:()=>store,getAgent:()=>({agentName:'A'}),promoteActivitySession:promote,saveSessionTitle},null));
+      const responses=await Promise.all([1,2].map(()=>app.request('/api/desk/activities/act/promote?agentId=agent-a',{method:'POST'})));
+      expect(responses.map(r=>r.status)).toEqual([200,200]);expect(promote).toHaveBeenCalledOnce();expect(saveSessionTitle).toHaveBeenCalledWith(path.join(sessions,'result.jsonl'),'Readable task');
+      expect(entry).toHaveProperty('promotedSessionFile','result.jsonl');
+      expect((await app.request('/api/desk/activities/act/promote?agentId=agent-a',{method:'POST'})).status).toBe(200);expect(promote).toHaveBeenCalledOnce();
+      const transcript=await(await app.request('/api/desk/activities/act/session?agentId=agent-a')).json();expect(transcript.messages.map(m=>m.role)).toEqual(['assistant','tool']);
+      expect((await app.request('/api/desk/activities/act/session?agentId=agent-b')).status).toBe(404);
+      entry.status='running';expect((await app.request('/api/desk/activities/act/promote?agentId=agent-a',{method:'POST'})).status).toBe(409);
+    }finally{fs.rmSync(root,{recursive:true,force:true});}
+  });
+
   it("returns route errors for missing activity session lookups", async () => {
     const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "hana-desk-route-"));
     try {

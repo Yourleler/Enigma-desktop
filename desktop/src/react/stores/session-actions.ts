@@ -8,6 +8,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- store partial patch + API 响应 JSON */
 
 import { useStore } from './index';
+import {capturePreviewContext} from '../utils/preview-context';
 import { sessionScopedKey, sessionScopedListIncludes, sessionScopedValue } from './session-slice';
 import { hanaFetch, hanaUrl } from '../hooks/use-hana-fetch';
 import { hydrateInputDrafts } from './input-draft-persistence';
@@ -574,6 +575,7 @@ async function fetchSessionMetaRecoveryStatus(): Promise<SessionMetaRecoveryStat
 }
 
 export async function loadSessions(): Promise<void> {
+  const owns=capturePreviewContext();
   // 先发起 /api/sessions（调用顺序上排在前面，保持它是 loadSessions() 触发的
   // 第一个 hanaFetch 调用——调用方/测试对"/api/sessions 是这次加载的第一个
   // 请求"这个顺序有既有假设），紧接着不等待地发起 /api/health 探测：两个请求
@@ -583,6 +585,7 @@ export async function loadSessions(): Promise<void> {
   try {
     const res = await sessionsFetchPromise;
     const data = await res.json();
+    if(!owns())return;
     const serverSessions = Array.isArray(data) ? data.map(normalizeServerSessionProjection) : [];
     const localSessions = useStore.getState().sessions || [];
     const sessions = mergeSessionsWithOptimisticFirstMessages(serverSessions, localSessions);
@@ -617,7 +620,8 @@ export async function loadSessions(): Promise<void> {
       await switchSession(sessions[0].path);
     }
   } catch { /* ignore */ }
-  useStore.getState().setSessionMetaRecovery(await metaRecoveryPromise);
+  const recovery=await metaRecoveryPromise;
+  if(owns())useStore.getState().setSessionMetaRecovery(recovery);
 }
 
 const EMPTY_FIRST_MESSAGE_PLACEHOLDER = '(no messages)';

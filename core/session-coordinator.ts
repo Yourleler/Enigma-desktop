@@ -7626,15 +7626,22 @@ export class SessionCoordinator {
   }
 
   async promoteActivitySession(activitySessionFile: any, agentId: any) {
+    if (typeof activitySessionFile !== 'string' || !activitySessionFile.endsWith('.jsonl') || /[\\/\0]/.test(activitySessionFile) || activitySessionFile.startsWith('.')) return null;
     const agent = agentId ? this._d.getAgentById(agentId) : this._d.getAgent();
     if (!agent) return null;
     const oldPath = path.join(agent.agentDir, "activity", activitySessionFile);
-    if (!fs.existsSync(oldPath)) return null;
-
     const newPath = path.join(agent.sessionDir, activitySessionFile);
+    if (!fs.existsSync(oldPath)) {
+      const manifest=this._sessionManifestStore?.resolveByLocatorPath(oldPath);
+      return manifest?.ownerAgentId===agent.id&&manifest.currentLocator?.path===newPath&&fs.existsSync(newPath)?newPath:null;
+    }
     try {
+      const sourceStat=fs.lstatSync(oldPath);
+      if (!sourceStat.isFile() || sourceStat.isSymbolicLink()) return null;
       fs.mkdirSync(agent.sessionDir, { recursive: true });
-      fs.renameSync(oldPath, newPath);
+      // link is exclusive: unlike rename, an existing conversation is never replaced.
+      fs.linkSync(oldPath, newPath);
+      try { fs.unlinkSync(oldPath); } catch (error) { fs.unlinkSync(newPath); throw error; }
       if (this._sessionManifestStore) {
         try {
           await this.moveSessionLifecycle({
@@ -7650,7 +7657,9 @@ export class SessionCoordinator {
             },
           });
         } catch (err) {
-          fs.renameSync(newPath, oldPath);
+          // Restoration also refuses to overwrite a newly-created source.
+          fs.linkSync(newPath, oldPath);
+          fs.unlinkSync(newPath);
           throw err;
         }
       }

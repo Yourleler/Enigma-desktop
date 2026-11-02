@@ -575,3 +575,14 @@
 @media(max-width:600px){.scheduleEditor,.scheduleInline{grid-template-columns:minmax(0,1fr);}.toolbar{flex-wrap:wrap;}.help{flex-basis:100%;}}
 
 .panel.panel {height:min(720px,calc(100dvh - 72px));max-height:calc(100dvh - 72px);width:min(620px,calc(100vw - 72px));max-width:620px;min-width:0;}
+
+.activityTool {margin:8px 0;border-bottom:1px solid var(--border);font:12px/1.5 var(--font-ui);color:var(--text-muted);}
+.activityTool summary {padding:8px 0;cursor:pointer;color:var(--text);overflow-wrap:anywhere;}
+.activityTool time {float:right;margin-left:12px;font-variant-numeric:tabular-nums;color:var(--text-muted);}
+.activityTool pre {white-space:pre-wrap;overflow-wrap:anywhere;max-height:240px;overflow:auto;background:transparent;font:12px/1.6 var(--font-mono);padding:8px 0;}
+.activityTool summary {display:flex;align-items:center;gap:7px;list-style:none;}
+.activityTool summary::-webkit-details-marker {display:none;}
+.activityTool summary::before {content:'';width:5px;height:5px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(-45deg);flex:none;transition:transform var(--duration-fast) var(--ease-out);}
+.activityTool[open] summary::before {transform:rotate(45deg);}
+.activityTool time {float:none;margin-left:auto;flex:none;}
+@media(prefers-reduced-motion:reduce){.activityTool summary::before{transition:none;}}

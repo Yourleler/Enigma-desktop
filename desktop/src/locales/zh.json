@@ -2601,7 +2601,7 @@
     "heartbeat": "日常巡检",
     "subagent": "子 agent 任务",
     "cron": "定时任务",
-    "automationRuns": "自定义自动化",
+    "automationRuns": "计划任务",
     "patrolRuns": "巡检",
     "otherRuns": "其他后台活动",
     "agentTabs": "按助手筛选活动",
@@ -2619,7 +2619,7 @@
     "sessionLoadFailed": "这次后台会话暂时无法读取",
     "noSessionMessages": "这次后台会话没有可显示的消息",
     "duration": "耗时 {text}",
-    "promote": "升格为对话"
+    "promote": "转为对话"
   },
   "automation": {
     "title": "任务计划",

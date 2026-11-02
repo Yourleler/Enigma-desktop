@@ -746,12 +746,13 @@ export function handleServerMessage(msg: any): void {
       if (msg.activity) {
         useStore.setState((current: any) => {
           const incoming = msg.activity;
-          const existing = current.activities.find((activity: any) => activity.id === incoming.id);
+          const matches=(activity:any)=>activity.id===incoming.id&&(!activity.agentId||!incoming.agentId||activity.agentId===incoming.agentId);
+          const existing = current.activities.find(matches);
           const merged = existing ? { ...existing, ...incoming } : incoming;
           return {
             activities: [
               merged,
-              ...current.activities.filter((activity: any) => activity.id !== incoming.id),
+              ...current.activities.filter((activity: any) => !matches(activity)),
             ].slice(0, 500),
           };
         });

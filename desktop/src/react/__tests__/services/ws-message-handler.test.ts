@@ -946,6 +946,12 @@ describe('ws-message-handler activity updates', () => {
     } as never);
   });
 
+  it('keeps equal activity ids from different assistants separate',()=>{
+    useStore.setState({activities:[{id:'same',agentId:'a',summary:'A'},{id:'same',agentId:'b',summary:'B'}]} as never);
+    handleServerMessage({type:'activity_update',activity:{id:'same',agentId:'b',summary:'B updated'}});
+    expect(useStore.getState().activities.map(row=>row.summary)).toEqual(['B updated','A']);
+  });
+
   it('merges activity_update by id so stale running cards do not remain in the panel', () => {
     handleServerMessage({
       type: 'activity_update',
