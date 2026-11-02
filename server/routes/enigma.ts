@@ -206,9 +206,11 @@ export function createEnigmaRoute(engine: any) {
   route.post("/enigma/conductor/new", async (c) => {
     try {
       const body = await safeJson(c);
-      if(body.repositories!==undefined){
-        if(createRequestContext(c,engine).authPrincipal?.kind!=='local_user')return c.json({error:'添加本机仓库需要本机用户操作'},403);
+      if(body.repositories!==undefined&&body.repositories!==null){
         if(!Array.isArray(body.repositories)||body.repositories.length>12)return c.json({error:'请选择不超过12个仓库'},400);
+        // An empty selection adds no local repository, so remote/Web users can still create a conductor.
+        if(!body.repositories.length)delete body.repositories;
+        else if(createRequestContext(c,engine).authPrincipal?.kind!=='local_user')return c.json({error:'添加本机仓库需要本机用户操作'},403);
       }
       let sourcePath:string|null=null;
       if(body.sessionPath||body.sessionId)sourcePath=await session(c,true,body);

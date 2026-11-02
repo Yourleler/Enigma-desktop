@@ -6,7 +6,7 @@
  */
 
 import { memo, useState, useEffect, useCallback } from 'react';
-import { hanaUrl } from '../../hooks/use-hana-fetch';
+import { hanaFetch } from '../../hooks/use-hana-fetch';
 import { useStore } from '../../stores';
 import { AgentAvatar, resolveAgentDisplayInfo } from '../../utils/agent-display';
 import { ChatResourceCard } from './ChatResourceCard';
@@ -66,14 +66,25 @@ export const SubagentCard = memo(function SubagentCard({ block }: SubagentCardPr
 
   const isInterrupted = status === 'running' && !block.streamKey && waitedForKey;
 
+  const [aborting, setAborting] = useState(false);
+  const [abortError, setAbortError] = useState('');
   const handleAbort = useCallback(async () => {
+    if (aborting) return;
+    setAborting(true);
+    setAbortError('');
     try {
-      const res = await fetch(hanaUrl(`/api/task/${block.taskId}/abort`), { method: 'POST' });
-      if (res.ok) {
-        setStatus('aborted');
-      }
-    } catch { /* user-initiated abort; silent on network failure */ }
-  }, [block.taskId]);
+      // hanaFetch carries the connection's auth header, so Web/remote sessions can stop tasks too.
+      const res = await hanaFetch(`/api/task/${encodeURIComponent(block.taskId)}/abort`, { method: 'POST', throwOnHttpError: false });
+      const data = await res.json().catch(() => null);
+      if (res.ok) setStatus('aborted');
+      else if (res.status === 404) setAbortError('任务已结束或不存在');
+      else setAbortError(data?.error === 'task type does not support abort' ? '该任务不支持中途停止' : (data?.error || '停止失败，请重试'));
+    } catch {
+      setAbortError('网络异常，停止请求未送达');
+    } finally {
+      setAborting(false);
+    }
+  }, [aborting, block.taskId]);
 
   const displayLabel = block.label || block.reuseInstance || null;
   const statusLabel = isInterrupted
@@ -106,13 +117,15 @@ export const SubagentCard = memo(function SubagentCard({ block }: SubagentCardPr
       )}
       title={agentName}
       titleMeta={displayLabel ? `· ${displayLabel}` : undefined}
-      subtitle={block.taskTitle}
+      subtitle={abortError ? [block.taskTitle, abortError].filter(Boolean).join(' · ') : block.taskTitle}
       statusLabel={statusLabel}
       statusTone={statusTone}
       actionSlot={status === 'running' && !isInterrupted && (
         <button
           type="button"
           className={styles.subagentAbortBtn}
+          disabled={aborting}
+          aria-label={t('subagentAbort')}
           onClick={(event) => {
             event.stopPropagation();
             void handleAbort();

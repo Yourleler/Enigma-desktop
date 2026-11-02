@@ -11,6 +11,8 @@ import {hanaFetch} from '../../hooks/use-hana-fetch';
 import {engineeringRequest} from '../../engineering/state';
 import {renderMarkdown} from '../../utils/markdown';
 import type {SessionConfirmationBlock} from '../../stores/chat-types';
+// Connector (MCP) form questions need the full form renderer; a bare approve would submit an empty answer.
+import {SessionConfirmationPrompt} from '../input/SessionConfirmationPrompt';
 import type {AttachedFile} from '../../stores/input-slice';
 import {AttachmentChip} from '../shared/AttachmentChip';
 import {AppIcon} from '../../ui/app-icons';
@@ -45,6 +47,8 @@ export function SideConversation({scope,active}:{scope:string;active:boolean}){
     }
    }
    if(event.type==='content_block'&&event.block?.type==='session_confirmation'&&event.block.status==='pending')setPending(event.block);
+   // The form prompt posts its own answer; once the agent moves on, the question has been resolved.
+   if(['text_delta','tool_end','thinking_start'].includes(event.type))setPending(current=>current?.kind==='mcp_elicitation'?null:current);
    if(event.type==='turn_end'){setRunning(false);setPending(null);void loadMessages(ref.sessionPath);}
    if(event.type==='error'){setRunning(false);setError(String(event.message||event.error||'侧边对话未完成'));}
   });
@@ -115,7 +119,8 @@ export function SideConversation({scope,active}:{scope:string;active:boolean}){
   <header><div><strong>侧边对话</strong><small>{ref?.contextIncluded?'已附带创建时的主对话文字背景。':'独立提问或处理问题，主对话继续保留。'}</small></div>{ref&&<><button type="button" onClick={()=>setNewChat(true)} data-tooltip="另开侧边对话，旧对话保留在历史中">新建</button><button type="button" onClick={()=>void switchSession(ref.sessionPath)} data-tooltip="在主栏使用完整编辑器继续此对话">打开完整对话</button></>}</header>
   {(!ref||newChat)?<section className="enigma-side-start"><p>可讨论当前任务、读取资料或安排修复。文件操作沿用原对话的权限，新的写入仍按权限规则确认。</p><label><input type="checkbox" checked={includeContext} onChange={event=>setIncludeContext(event.target.checked)}/> 附带主对话的文字背景</label><button type="button" disabled={!source||busy} onClick={()=>void create()}>{busy?'正在创建…':'开始侧边对话'}</button>{newChat&&<button onClick={()=>setNewChat(false)}>返回现有对话</button>}{!source&&<p>先开始一个主对话，再在旁边提问。</p>}</section>:<>
    <div ref={scroll} className="enigma-side-messages"><SubagentSessionPreview taskId={`side:${ref.sessionId}`} sessionId={ref.sessionId} sessionPath={ref.sessionPath} agentId={ref.agentId} streamStatus={running||streaming?'running':'done'} scrollContainerRef={scroll}/></div>
-   {pending&&<section className="enigma-side-approval"><strong>{pending.kind==='tool_action_approval'?'允许 Enigma 执行这次操作':pending.title}</strong><pre>{pending.subject?.label}\n{pending.subject?.detail}</pre><button disabled={busy} onClick={()=>void confirm('rejected')}>拒绝</button><button disabled={busy} onClick={()=>void confirm('confirmed')}>仅同意这次</button></section>}
+   {pending?.kind==='mcp_elicitation'&&<div className="enigma-side-elicitation"><SessionConfirmationPrompt block={pending}/></div>}
+   {pending&&pending.kind!=='mcp_elicitation'&&<section className="enigma-side-approval"><strong>{pending.kind==='tool_action_approval'?'允许 Enigma 执行这次操作':pending.title}</strong><pre>{pending.subject?.label}\n{pending.subject?.detail}</pre><button disabled={busy} onClick={()=>void confirm('rejected')}>拒绝</button><button disabled={busy} onClick={()=>void confirm('confirmed')}>仅同意这次</button></section>}
    <div className="enigma-side-compose"><FormSelectControl label="侧边模型" disabled={busy} value={`${ref.provider}/${ref.model}`} options={models.map(model=>({value:`${model.provider}/${model.id}`,label:model.name||model.id}))} onChange={value=>void changeModel(value)}/><div className="enigma-side-files">{files.map((file,index)=><AttachmentChip key={file.fileId||file.path} icon={<AppIcon name="file" size={14}/>} name={file.name} removeLabel={`移除侧边附件 ${file.name}`} onRemove={()=>save(text,files.filter((_,i)=>i!==index))}/>)}</div><textarea aria-label="侧边对话输入" value={text} rows={3} onChange={event=>save(event.target.value)} placeholder="在这里独立提问… Enter 换行"/>
     <div><button type="button" disabled={busy} onClick={()=>picker.current?.click()}>添加文件</button><input ref={picker} type="file" hidden multiple onChange={event=>{void upload(Array.from(event.target.files||[]));event.target.value='';}}/>{running||streaming?<button type="button" onClick={()=>{const ws=getWebSocket();ws?.send(JSON.stringify({type:'abort',sessionId:ref.sessionId,sessionPath:ref.sessionPath}));}}>停止侧边任务</button>:<button type="button" disabled={busy||(!text.trim()&&!files.length)} onClick={()=>void send()}>发送</button>}</div>
    </div>

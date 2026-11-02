@@ -59,6 +59,7 @@ import {
 } from "./model-policy.ts";
 import { ConversationConductor, validateLimits, type ConductorLimits } from "./conductor.ts";
 import { conversationModelPolicyExtension } from './conversation-model-policy.ts';
+import {repositoryResources} from './repository-resources.ts';
 import { EngineeringGuardian } from "./guardian-host.ts";
 import { EngineeringMemory } from "./memory-host.ts";
 import type { GuardianConfig } from "enigma-next";
@@ -309,15 +310,34 @@ export class EngineeringHost {
     for(const value of config.allowedModels){const slash=value.indexOf('/');if(!await this.engine.resolveModelWithCredentialsFresh({provider:value.slice(0,slash),id:value.slice(slash+1)}))throw new Error(`允许的模型 ${value} 不可用`);}
     if(setup?.policy.worker&&!config.allowedModels.includes(`${setup.policy.worker.provider}/${setup.policy.worker.id}`))throw new Error('子 Agent 模型不在允许范围内，请添加该模型或调整模型分工');
     if(!binding&&!options.repositories&&config.writableRepos.length)throw new Error('当前没有关联仓库，请先创建管家后在仓库设置中添加');
+    if(options.repositories){
+      // Validate everything up front so a bad selection never leaves a half-configured manager directory behind.
+      const seen=new Set<string>();
+      for(const selected of options.repositories){
+        if(!selected||!['read','write'].includes(selected.access)||typeof selected.root!=='string'||!path.isAbsolute(selected.root))throw new Error('请选择仓库根目录和读写方式');
+        const [resource]=await repositoryResources(this.engine,undefined,[selected.root]).catch(()=>[null] as any[]);
+        if(!resource)throw new Error(`仓库目录不存在或无法读取：${selected.root}`);
+        if(!resource.gitRoot)throw new Error(`${path.basename(selected.root)} 不是 Git 仓库`);
+        if(resource.gitRoot!==resource.path)throw new Error(`${path.basename(selected.root)} 是仓库子目录，请选择仓库根目录 ${resource.gitRoot}`);
+        if(seen.has(resource.path))throw new Error(`仓库 ${path.basename(selected.root)} 被重复选择`);
+        seen.add(resource.path);
+      }
+    }
+    // Only roll back a directory this call created; never delete an existing manager workspace.
+    const managerRootExisted=await fs.stat(managerRoot).then(()=>true,()=>false);
     if(!binding||options.repositories)await fs.mkdir(managerRoot,{recursive:true});
     const workspace = await Workspace.open(managerRoot);
     if(options.repositories){
       const writable:string[]=[];
-      for(const [index,selected] of options.repositories.entries()){
-        if(!['read','write'].includes(selected.access)||!path.isAbsolute(selected.root))throw new Error('请选择仓库根目录和读写方式');
-        const id=`repo-${index+1}`;
-        await workspace.exclusive(()=>workspace.addRepo(id,selected.root,{role:path.basename(selected.root),access:selected.access}));
-        if(selected.access==='write')writable.push(id);
+      try{
+        for(const [index,selected] of options.repositories.entries()){
+          const id=`repo-${index+1}`;
+          await workspace.exclusive(()=>workspace.addRepo(id,selected.root,{role:path.basename(selected.root),access:selected.access}));
+          if(selected.access==='write')writable.push(id);
+        }
+      }catch(error){
+        if(!managerRootExisted)await fs.rm(managerRoot,{recursive:true,force:true}).catch(()=>{});
+        throw error;
       }
       config.writableRepos=writable;
     }

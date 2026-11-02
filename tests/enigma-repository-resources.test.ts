@@ -9,3 +9,13 @@ it('lists multiple selected roots and references branches without changing the w
  expect(await repositoryBranches(repo)).toEqual(['feature/topic','main']);expect(execFileSync('git',['-C',repo,'branch','--show-current'],{encoding:'utf8'}).trim()).toBe('main');
  }finally{await fs.rm(root,{recursive:true,force:true});}
 });
+it('reports the git root so callers can reject repository subdirectories',async()=>{
+ const root=await fs.mkdtemp(path.join(os.tmpdir(),'enigma-repo-root-'));try{
+ const repo=path.join(root,'repo'),sub=path.join(repo,'packages','app');await fs.mkdir(sub,{recursive:true});
+ execFileSync('git',['init','-b','main',repo]);
+ const [top,nested]=await repositoryResources({},undefined,[repo,sub]);const real=await fs.realpath(repo);
+ expect(top.gitRoot).toBe(real);expect(top.path).toBe(real);
+ expect(nested.git).toBe(true);expect(nested.gitRoot).toBe(real);expect(nested.path).not.toBe(nested.gitRoot);
+ const [plain]=await repositoryResources({},undefined,[root]);expect(plain.git).toBe(false);expect(plain.gitRoot).toBeNull();
+ }finally{await fs.rm(root,{recursive:true,force:true});}
+});

@@ -25,7 +25,9 @@ export function WorkspaceTerminal({root,active}:{root?:string;active:boolean}){
   const input=terminal.onData(chars=>{if(!terminalId.current)return;writes=writes.then(()=>request('write',{terminalId:terminalId.current,chars})).catch(e=>{if(alive)setError(e.message);});});
   void (async()=>{try{
    const list=await request('list');const existing=list.terminals?.findLast((item:any)=>item.cwd===cwd&&item.status==='running');
-   const opened=existing||await request('start',{cwd,cols:terminal.cols,rows:terminal.rows});if(!alive)return;terminalId.current=opened.terminalId;
+   const opened=existing||await request('start',{cwd,cols:terminal.cols,rows:terminal.rows});
+   if(!alive){if(!existing&&opened?.terminalId)void request('close',{terminalId:opened.terminalId}).catch(()=>{});return;}
+   terminalId.current=opened.terminalId;
    const data=await request('read',{terminalId:opened.terminalId});if(!alive)return;
    for(const chunk of data.chunks||[]){terminal.write(chunk.data);seen=chunk.seq;}
    ready=true;for(const event of queued.sort((a,b)=>(a.seq||0)-(b.seq||0)))receive(event);setStatus(data.status);resize();terminal.focus();
@@ -34,5 +36,5 @@ export function WorkspaceTerminal({root,active}:{root?:string;active:boolean}){
  },[sessionPath,connection,cwd,revision]);
  useEffect(()=>{const observer=new MutationObserver(()=>{if(term.current)term.current.options.theme=palette();});observer.observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});return()=>observer.disconnect();},[]);
  useEffect(()=>{if(active&&container.current?.clientWidth)fit.current?.fit();},[active]);
- return <section className="enigma-workspace-terminal" aria-label="工作区终端"><header><label>目录<select aria-label="终端工作目录" value={cwd||''} onChange={e=>setChosen(e.target.value)}>{repositories.map(repo=><option value={repo.path} key={repo.path}>{repo.name}</option>)}</select></label><span role="status">{status==='loading'?'正在连接…':status==='running'?'已连接':'已停止'}</span><button onClick={()=>term.current?.clear()} aria-label="清空终端显示">清屏</button>{status==='running'?<button onClick={()=>void request('close',{terminalId:terminalId.current}).then(()=>setStatus('killed')).catch(e=>setError(e.message))}>停止终端</button>:<button onClick={()=>setRevision(v=>v+1)}>重新打开</button>}</header><p className="enigma-terminal-path" title={cwd}>{cwd}</p>{error&&<p className="enigma-terminal-error" role="alert">{error}</p>}<div ref={container} className="enigma-terminal-emulator"/><footer>命令在所选目录运行。隐藏面板保留进程，停止终端会结束进程。</footer></section>;
+ return <section className="enigma-workspace-terminal" aria-label="工作区终端"><header><label>目录<select aria-label="终端工作目录" value={cwd||''} onChange={e=>setChosen(e.target.value)}>{repositories.map(repo=><option value={repo.path} key={repo.path}>{repo.name}</option>)}</select></label><span role="status">{status==='loading'?'正在连接…':status==='running'?'已连接':'已停止'}</span><button onClick={()=>term.current?.clear()} aria-label="清空终端显示">清屏</button>{status==='running'?<button onClick={()=>void request('close',{terminalId:terminalId.current}).then(()=>setStatus('killed')).catch(e=>setError(e.message))}>停止终端</button>:<button disabled={status==='loading'} onClick={()=>{setError('');setRevision(v=>v+1);}}>重新打开</button>}</header><p className="enigma-terminal-path" title={cwd}>{cwd}</p>{error&&<p className="enigma-terminal-error" role="alert">{error}</p>}<div ref={container} className="enigma-terminal-emulator"/><footer>命令在所选目录运行。隐藏面板保留进程，停止终端会结束进程。</footer></section>;
 }
