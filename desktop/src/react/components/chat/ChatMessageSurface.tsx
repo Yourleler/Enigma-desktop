@@ -14,11 +14,18 @@ import { ChatTranscript } from './ChatTranscript';
 import { buildTimelineAnchors, type TimelineAnchor } from './timeline-anchors';
 import styles from './Chat.module.css';
 import { RunActivity } from './RunActivity';
+import {useEngineering,openGroup} from '../../engineering/state';
 
 const EMPTY_ITEMS: ChatListItem[] = [];
 const EMPTY_TIMELINE_ANCHORS: TimelineAnchor[] = [];
 const LOAD_MORE_THRESHOLD = 200;
 const SCROLL_THRESHOLD = 50;
+
+function ManagerStart({sessionPath}:{sessionPath:string}) {
+  const manager=useEngineering(s=>s.sessionPath===sessionPath&&s.snapshot?.kind==='manager');
+  if(!manager)return null;
+  return <section className={styles.managerStart} aria-label="管家使用说明"><h2>把目标交给管家</h2><p>说明要完成什么、允许修改哪些内容，以及怎样才算完成。管家会按你设置的范围安排独立工作对话，并汇总进展和检查结果。</p><p>可以从下方开始描述目标，也可以先查看工作任务与允许范围。</p><button type="button" onClick={()=>openGroup('conductor')}>查看工作任务</button></section>;
+}
 
 export interface ChatScrollButtonState {
   el: HTMLElement | null;
@@ -420,6 +427,7 @@ export const ChatMessageSurface = memo(function ChatMessageSurface({
               <button disabled={loadingMore} data-tooltip="加载更早的消息，并保留当前阅读位置" onClick={() => void loadMoreMessages(sessionPath)}>{loadingMore ? '正在加载更早的消息…' : '加载更早的消息'}</button>
             </div>
           )}
+          {active&&items.length===0&&!isSessionStreaming&&<ManagerStart sessionPath={sessionPath}/>}
           <ChatTranscript
             items={items}
             sessionPath={sessionPath}

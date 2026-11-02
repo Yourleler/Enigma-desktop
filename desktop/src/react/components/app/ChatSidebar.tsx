@@ -11,6 +11,7 @@ import { SessionList } from '../SessionList';
 import { SidebarNoticeSlot } from '../notices/SidebarNoticeSlot';
 import {AppIcon} from '../../ui/app-icons';
 import {ChannelTabBar} from '../channels/ChannelTabBar';
+import {dockScope,selectDockTab} from '../../stores/right-dock-store';
 
 interface ChatSidebarContentProps {
   showSettingsButton?: boolean;
@@ -53,6 +54,7 @@ export function AppNavigationRail({showSettingsButton=true,showActivityBars=true
           <button aria-label={t('skills.panel.title')} data-tooltip="技能" onClick={()=>onTogglePanel?.('skills')}><AppIcon name="skill" size={18}/></button>
         </>}
         <EngineeringSidebar compact/>
+        <button aria-label="侧边对话" data-tooltip="在右侧独立提问、传文件或处理问题" onClick={()=>{selectDockTab(dockScope(useStore.getState()),'sidechat');useStore.setState({jianOpen:true,layoutPriority:'workspace',layoutDrawer:null});}}><AppIcon name="chat" size={18}/></button>
         <div className="enigma-sidebar-rail-bottom">
           <button aria-label="已归档对话" data-tooltip="查看与恢复已归档对话" onClick={()=>setArchivesOpen(true)}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><path d="M4 7h16v14H4zM3 3h18v4H3zM9 11h6"/></svg></button>
           {showSettingsButton&&<button aria-label={t('settings.title')} data-tooltip={t('settings.title')} onClick={onOpenSettings}><AppIcon name="settings" size={18}/></button>}

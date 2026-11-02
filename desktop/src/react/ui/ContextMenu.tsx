@@ -55,21 +55,21 @@ export function ContextMenu({ items, position, onClose,className='' }: ContextMe
       onClose();
     };
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); onClose(); }
     };
 
     // 延迟注册，避免触发菜单的那次点击立即关闭它
     const timer = setTimeout(() => {
       document.addEventListener('click', handleClick, true);
       document.addEventListener('contextmenu', handleContextMenu, true);
-      document.addEventListener('keydown', handleKeyDown);
+      document.addEventListener('keydown', handleKeyDown, true);
     });
 
     return () => {
       clearTimeout(timer);
       document.removeEventListener('click', handleClick, true);
       document.removeEventListener('contextmenu', handleContextMenu, true);
-      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('keydown', handleKeyDown, true);
     };
   }, [onClose]);
 
@@ -82,6 +82,7 @@ export function ContextMenu({ items, position, onClose,className='' }: ContextMe
   return createPortal(
     <div
       className={['context-menu',className].filter(Boolean).join(' ')}
+      role="menu"
       data-liquid="menu" data-menu-surface="" data-menu-position="fixed" data-native-browser-occluder=""
       ref={menuRef}
       style={{ left: position.x, top: position.y }}
@@ -96,6 +97,7 @@ export function ContextMenu({ items, position, onClose,className='' }: ContextMe
           <div
             key={`${item.label || 'item'}-${i}`}
             className={`context-menu-item${item.danger ? ' danger' : ''}${item.disabled ? ' disabled' : ''}${hasSubmenu ? ' has-submenu' : ''}`}
+            role="menuitem"
             data-menu-row="" aria-disabled={item.disabled||undefined}
             onMouseDown={(e) => e.preventDefault()}
             onMouseEnter={() => {
@@ -120,7 +122,7 @@ export function ContextMenu({ items, position, onClose,className='' }: ContextMe
             {item.checked !== undefined && (
               <span className="context-menu-check" aria-hidden="true">{item.checked&&<AppIcon name="check" size={14}/>}</span>
             )}
-            <span title={item.label} className={`context-menu-label${item.disabled ? ' disabled' : ''}`}>{item.label || ''}</span>
+            <span title={item.label} className="context-menu-label">{item.label || ''}</span>
             {hasSubmenu&&<AppIcon name="chevronRight" size={14} className="enigma-submenu-chevron"/>}
             {submenuOpen && (
               <div className={`context-menu-submenu ${submenuSide}`} data-liquid="menu" data-menu-surface="" data-menu-position="absolute">
@@ -132,6 +134,7 @@ export function ContextMenu({ items, position, onClose,className='' }: ContextMe
                     <div
                       key={`${child.label || 'child'}-${childIndex}`}
                       className={`context-menu-item${child.danger ? ' danger' : ''}${child.disabled ? ' disabled' : ''}`}
+                      role="menuitem"
                       data-menu-row="" aria-disabled={child.disabled||undefined}
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={(e) => {

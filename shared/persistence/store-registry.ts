@@ -207,7 +207,10 @@ export const PERSISTENT_STORES: readonly StoreDescriptor[] = Object.freeze([
     checkpointPolicy: "Do not include worker Git state in Hana epoch rollback; workers retain their own code and receipts.",
     restorePolicy: "Resolve manager/task ownership, inspect source and pending effects, and use explicit Enigma recovery.",
     identityContract: "A manager and task id own one isolated workspace root; conversation creation does not grant broader source access.",
-    siteRules: rules(["plugins/enigma/conductor.ts"], "Creates only the parent of a manager-owned worker workspace.", ["mkdir"], "path\\.dirname\\(root\\)"),
+    siteRules: [
+      ...rules(["plugins/enigma/conductor.ts"], "Creates only the parent of a manager-owned worker workspace.", ["mkdir"], "path\\.dirname\\(root\\)"),
+      ...rules(["plugins/enigma/host.ts"], "Creates a profile-owned manager workspace when no project scope exists.", ["mkdir"], "fs\\.mkdir\\(managerRoot"),
+    ],
   }),
 
   defineStore({
@@ -216,13 +219,14 @@ export const PERSISTENT_STORES: readonly StoreDescriptor[] = Object.freeze([
     pathPatterns: ["user/enigma-bindings.json"],
     format: "json",
     schemaSource: runtimeSource("plugins/enigma/host.ts", "schema 1 native-session/workspace binding, absolute roots, explicit memory flag, validated source identity, manager model grants and bounded guardian configuration/usage"),
+    protocolModules: ['plugins/enigma/model-policy.ts', 'plugins/enigma/conversation-model-policy.ts'],
     openEntry: ["EngineeringHost.load", "EngineeringHost.saveBinding"],
     epochPolicy: "compatible",
     affectedByEpochMigration: false,
     checkpointPolicy: "Bindings identify external engineering workspaces; capture this metadata without traversing or rolling back their repositories.",
     restorePolicy: "Restore only through the schema 1 binding reader; external workspace/code recovery remains an explicit Enigma operation.",
-    compatibility: "An additive plugin-owned file; existing Hana stores and DATA_EPOCH remain unchanged. Background tasks inherit existing binding model-policy counters and source project/permission fields without copying active plans or adding binding fields.",
-    siteRules: rules(["plugins/enigma/host.ts"], "Writes the native engineering binding map only.", ["atomic-write"], "this\\.configPath"),
+    compatibility: "Schema 1 adds optional modelSessions keyed by native session identity, separate from engineering roots, plus delegated mode and an optional worker role. Missing modelSessions means no ordinary-conversation policy. Child policies snapshot their configured role without widening model grants; counters and actual source messages remain unchanged. Existing sessions and workspaces still load. Preserve a complete backup before using an older writer that does not understand these optional fields; DATA_EPOCH remains 1.",
+    siteRules: rules(["plugins/enigma/host.ts"], "Creates the parent directory and atomically writes engineering bindings and ordinary-conversation model policies.", ["atomic-write", "mkdir"], "this\\.configPath"),
     identityContract: "Hana sessionId owns one current workspace binding; sessionPath is only a locator for a not-yet-registered session.",
   }),
   defineStore({

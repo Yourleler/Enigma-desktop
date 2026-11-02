@@ -664,7 +664,7 @@
     ],
     "version": 3
   },
-  "payloadFingerprint": "sha256:e19024b43fe08a8728763448b28518717f0d59ab134d9e73bbe6692f709ec504",
+  "payloadFingerprint": "sha256:78d055fcde9c9a97462a22393f3c75f221446a8850ff25ea025a08b057a5cbad",
   "registry": [
     {
       "affectedByEpochMigration": true,
@@ -1817,10 +1817,13 @@
         "user/enigma-bindings.json"
       ],
       "preCoordinatorReadProjection": null,
-      "protocolModules": [],
+      "protocolModules": [
+        "plugins/enigma/model-policy.ts",
+        "plugins/enigma/conversation-model-policy.ts"
+      ],
       "restorePolicy": "Restore only through the schema 1 binding reader; external workspace/code recovery remains an explicit Enigma operation.",
       "schemaContract": {
-        "compatibility": "An additive plugin-owned file; existing Hana stores and DATA_EPOCH remain unchanged. Background tasks inherit existing binding model-policy counters and source project/permission fields without copying active plans or adding binding fields.",
+        "compatibility": "Schema 1 adds optional modelSessions keyed by native session identity, separate from engineering roots, plus delegated mode and an optional worker role. Missing modelSessions means no ordinary-conversation policy. Child policies snapshot their configured role without widening model grants; counters and actual source messages remain unchanged. Existing sessions and workspaces still load. Preserve a complete backup before using an older writer that does not understand these optional fields; DATA_EPOCH remains 1.",
         "kind": "runtime-source",
         "source": "plugins/enigma/host.ts"
       },
@@ -3414,8 +3417,8 @@
   ],
   "review": {
     "classification": "compatible",
-    "compatibilityReason": "Optional quotes preserve source excerpts in version 1 input drafts. New servers protect stored quotes from clients that omit them; new clients keep a local recovery journal until a quotes-capable server acknowledges. Existing entries load without migration. Source geometry is transient, and backups are required for downgrade to an older server that does not understand quotes. DATA_EPOCH remains 1.",
-    "payloadFingerprint": "sha256:e19024b43fe08a8728763448b28518717f0d59ab134d9e73bbe6692f709ec504"
+    "compatibilityReason": "Optional schema 1 modelSessions and worker roles remain additive. Manager creation uses profile-owned workspaces and validates model grants. Existing custom session entries record explicit side-conversation context and plan notes. The additional source change rejects incomplete model identifiers under a managed grant and does not change persisted fields. Preserve full configuration before downgrade; DATA_EPOCH remains 1.",
+    "payloadFingerprint": "sha256:78d055fcde9c9a97462a22393f3c75f221446a8850ff25ea025a08b057a5cbad"
   },
   "schemas": [
     {
@@ -3654,7 +3657,7 @@
       "contract": "schema 1 manager identity, explicit limits, owned projects/conversations, resumable interrupted tasks, selected integration previews and original acceptance evidence",
       "kind": "runtime-contract",
       "module": "plugins/enigma/conductor.ts",
-      "sourceHash": "sha256:920e798ba43096bf434683202c3d866777dd1a74acdb702ca35ad79ffaaf2367",
+      "sourceHash": "sha256:437b28ad3ee69b3933310378eee9b5f2c2384a525af7eb1b8952dccb39dab788",
       "storeId": "enigma-conductor-ledgers"
     },
     {
@@ -3668,14 +3671,24 @@
       "contract": "managerId/taskId owned isolated workspace roots; code/Enigma state have independently verified protocols",
       "kind": "directory-contract",
       "module": "plugins/enigma/conductor.ts",
-      "sourceHash": "sha256:920e798ba43096bf434683202c3d866777dd1a74acdb702ca35ad79ffaaf2367",
+      "sourceHash": "sha256:437b28ad3ee69b3933310378eee9b5f2c2384a525af7eb1b8952dccb39dab788",
       "storeId": "enigma-managed-workspace-roots"
     },
     {
       "contract": "schema 1 native-session/workspace binding, absolute roots, explicit memory flag, validated source identity, manager model grants and bounded guardian configuration/usage",
       "kind": "runtime-contract",
       "module": "plugins/enigma/host.ts",
-      "sourceHash": "sha256:8efd32ec56dfd2ea83e5399a33eb64ecd8e0cace8531d5e977a37979af33cd7f",
+      "protocolModules": [
+        {
+          "module": "plugins/enigma/conversation-model-policy.ts",
+          "sourceHash": "sha256:2d98e01c5fec73191859273dccc2dc12ad8d31b7acf9ec7d805f7847767d2fec"
+        },
+        {
+          "module": "plugins/enigma/model-policy.ts",
+          "sourceHash": "sha256:b6fbc095c90f1222e565017ca0be3fb1134a4ca0298cc4908180bb5dc9a39ec7"
+        }
+      ],
+      "sourceHash": "sha256:895beb09327e3dde5e844831fb2b605e775e787aaab9a2f01e58938a7b38645d",
       "storeId": "enigma-session-bindings"
     },
     {
@@ -3898,7 +3911,7 @@
         {
           "contract": "core/session-coordinator.ts Hana metadata extensions",
           "module": "core/session-coordinator.ts",
-          "sourceHash": "sha256:8c7080f0d82e7e93e10b44a5037a7eb816506164266e2b166041749042c4d821"
+          "sourceHash": "sha256:75f5a9781c9598cfacd4d1f2b12fa4fb089b5494fb1f56a2fc1e62b53edf56b1"
         },
         {
           "contract": "core/session-jsonl-file.ts repair contract",
@@ -9523,23 +9536,23 @@
       "exemptionId": null,
       "kind": "atomic-write",
       "ordinal": 0,
-      "reason": "Writes the native engineering binding map only.",
+      "reason": "Creates the parent directory and atomically writes engineering bindings and ordinary-conversation model policies.",
       "sourceFile": "plugins/enigma/host.ts",
       "storeId": "enigma-session-bindings"
     },
     {
       "exemptionId": null,
-      "kind": "atomic-write",
+      "kind": "mkdir",
       "ordinal": 0,
-      "reason": "Writes the native engineering binding map only.",
+      "reason": "Creates a profile-owned manager workspace when no project scope exists.",
       "sourceFile": "plugins/enigma/host.ts",
-      "storeId": "enigma-session-bindings"
+      "storeId": "enigma-managed-workspace-roots"
     },
     {
       "exemptionId": null,
-      "kind": "atomic-write",
-      "ordinal": 1,
-      "reason": "Writes the native engineering binding map only.",
+      "kind": "mkdir",
+      "ordinal": 0,
+      "reason": "Creates the parent directory and atomically writes engineering bindings and ordinary-conversation model policies.",
       "sourceFile": "plugins/enigma/host.ts",
       "storeId": "enigma-session-bindings"
     },

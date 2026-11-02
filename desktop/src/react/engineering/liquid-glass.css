@@ -280,6 +280,8 @@ body.enigma-surface [data-glass-frame], body.enigma-surface .enigma-modal[data-g
   backdrop-filter:blur(14px) saturate(1.18); -webkit-backdrop-filter:blur(14px) saturate(1.18);
 }
 body.enigma-surface .enigma-modal[data-glass-frame] > :is(header,footer) { background:transparent; }
+/* Panels sit over readable conversation text, so they need their own cover. */
+body.enigma-surface [data-glass-frame="panel"] { --glass-frame-mix:max(96%,var(--glass-menu-mix,54%)); backdrop-filter:blur(24px) saturate(1.08); -webkit-backdrop-filter:blur(24px) saturate(1.08); }
 body.enigma-surface [data-glass-frame="settings"] .settings-panel { background:transparent; }
 /* Compact, feathered light with monochrome dither. The noise is part of
    the material background, so it neither covers text nor intercepts input. */

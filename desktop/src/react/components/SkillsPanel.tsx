@@ -1,3 +1,4 @@
+import {createPortal} from 'react-dom';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useStore } from '../stores';
 import { usePanel } from '../hooks/use-panel';
@@ -603,9 +604,9 @@ export function SkillsPanel() {
 
   if (!visible) return null;
 
-  return (
+  return createPortal(
     <div className={fp.floatingPanel} id="skillsPanel">
-      <div className={fp.floatingPanelInner} data-glass-frame="panel">
+      <div className={fp.floatingPanelInner} data-glass-frame="panel" data-native-browser-occluder="">
         <div className={fp.floatingPanelHeader}>
           <h2 className={fp.floatingPanelTitle}>{t('skills.panel.title')}</h2>
           <button className={fp.floatingPanelClose} onClick={close} aria-label={t('common.close')}>
@@ -752,6 +753,7 @@ export function SkillsPanel() {
           </div>
         ) : null}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

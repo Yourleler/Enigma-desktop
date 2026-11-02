@@ -52,10 +52,10 @@
 }
 
 .text { min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
-.quote { max-width:min(36rem,100%); min-width:0; padding:6px 10px; background:transparent; border-color:transparent; box-shadow:none; }
+.quote { max-width:min(36rem,100%); min-width:0; padding:var(--space-6) var(--space-10); background:transparent; border-color:transparent; box-shadow:none; }
 .quote:hover, .quote:focus-within { background:var(--overlay-subtle); }
-.quote .name { align-items:flex-start; white-space:normal; gap:7px; }
-.quote .icon { margin-top:3px; color:var(--accent); }
+.quote .name { align-items:flex-start; white-space:normal; gap:var(--space-8); }
+.quote .icon { margin-top:var(--space-4); color:var(--accent); }
 .quote .text { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; white-space:pre-wrap; overflow-wrap:anywhere; line-height:1.5; }
 .quote:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
 

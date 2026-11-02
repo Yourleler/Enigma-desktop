@@ -208,6 +208,7 @@ export function InputContextMenu() {
     ];
     return (
       <ContextMenu
+        className="enigma-copy-menu"
         items={readOnlyItems}
         position={menu.position}
         onClose={handleClose}

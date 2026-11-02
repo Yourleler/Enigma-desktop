@@ -18,6 +18,8 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import {
   modelForPhase,
   validateModelPolicy,
+  modelPolicyRoles,
+  childModelPolicy,
   type ModelPolicy,
 } from "./model-policy.ts";
 
@@ -73,7 +75,7 @@ interface Ledger {
   completion?: { id: string; source: unknown };
 }
 
-function validateLimits(value: ConductorLimits) {
+export function validateLimits(value: ConductorLimits) {
   if (
     !Number.isInteger(value.maxConcurrent) ||
     value.maxConcurrent < 1 ||
@@ -275,12 +277,7 @@ export class ConversationConductor {
       (task) =>
         task.writeRepos.some((repo) => !next.writableRepos.includes(repo)) ||
         (task.modelPolicy &&
-          [
-            task.modelPolicy.execution,
-            task.modelPolicy.planning,
-            task.modelPolicy.review,
-          ]
-            .filter(Boolean)
+          modelPolicyRoles(task.modelPolicy)
             .some(
               (role) =>
                 !next.allowedModels.includes(`${role!.provider}/${role!.id}`),
@@ -332,6 +329,8 @@ export class ConversationConductor {
     input: Omit<ManagedConversation, "status" | "id"> & { id?: string },
   ) {
     const ledger = await this.load();
+    const inheritedPolicy = childModelPolicy((await this.host.binding?.(this.managerPath))?.modelPolicy);
+    if (!input.modelPolicy && inheritedPolicy) input = { ...input, modelPolicy: inheritedPolicy };
     if (ledger.tasks.length >= ledger.limits.maxTasks)
       throw new Error("Task-group limit reached");
     if (
@@ -363,11 +362,7 @@ export class ConversationConductor {
     )
       throw new Error("Select a project owned by this manager");
     if (input.modelPolicy) {
-      for (const role of [
-        input.modelPolicy.execution,
-        input.modelPolicy.planning,
-        input.modelPolicy.review,
-      ].filter(Boolean))
+      for (const role of modelPolicyRoles(input.modelPolicy))
         if (
           !ledger.limits.allowedModels.includes(`${role!.provider}/${role!.id}`)
         )
@@ -382,7 +377,7 @@ export class ConversationConductor {
       throw new Error(
         "Worker assignment was not approved against the original user goal",
       );
-    if(ledger.tasks.length>=ledger.limits.maxTasks||input.writeRepos.some(repo=>!ledger.limits.writableRepos.includes(repo))||input.modelPolicy&&[input.modelPolicy.execution,input.modelPolicy.planning,input.modelPolicy.review].filter(Boolean).some(role=>!ledger.limits.allowedModels.includes(`${role!.provider}/${role!.id}`)))throw new Error('Manager limits changed while assignment approval was pending');
+    if(ledger.tasks.length>=ledger.limits.maxTasks||input.writeRepos.some(repo=>!ledger.limits.writableRepos.includes(repo))||input.modelPolicy&&modelPolicyRoles(input.modelPolicy).some(role=>!ledger.limits.allowedModels.includes(`${role.provider}/${role.id}`)))throw new Error('Manager limits changed while assignment approval was pending');
     const task: ManagedConversation = {
       id: input.id ? safeId(input.id) : id("conversation"),
       title: input.title,
@@ -973,11 +968,7 @@ export class ConversationConductor {
     const ledger = await this.load(),
       task = this.task(id),
       policy = validateModelPolicy(input);
-    for (const role of [
-      policy.execution,
-      policy.planning,
-      policy.review,
-    ].filter(Boolean))
+    for (const role of modelPolicyRoles(policy))
       if (
         !ledger.limits.allowedModels.includes(`${role!.provider}/${role!.id}`)
       )

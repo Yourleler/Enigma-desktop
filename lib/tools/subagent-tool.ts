@@ -323,6 +323,9 @@ export function createSubagentTool(deps) {
       const parentSessionRef = parentSessionRefForPath(deps, parentSessionPath);
       const parentSessionId = parentSessionRef?.sessionId || null;
       const parentCwd = getToolSessionCwd(ctx) || deps.getParentCwd?.() || null;
+      const delegated = deps.resolveDelegatedOptions
+        ? await deps.resolveDelegatedOptions(parentSessionPath, params.model)
+        : {model:params.model};
 
       // Direct subagent：每次创建都会生成一个系统身份 threadId。label/legacy instance
       // 只做展示，不再作为复用开关；续接必须使用 subagent_reply(threadId)。
@@ -469,7 +472,8 @@ export function createSubagentTool(deps) {
             parentSessionPath,
             emitEvents: true,
             persist: directPersistDir(deps),
-            model: params.model,
+            model: delegated.model,
+            ...(delegated.thinkingLevel ? {thinkingLevel:delegated.thinkingLevel} : {}),
             ...(toolAccess.customToolFilter ? { toolFilter: toolAccess.customToolFilter } : {}),
             ...(toolAccess.builtinToolFilter ? { builtinFilter: toolAccess.builtinToolFilter } : {}),
             permissionMode: toolAccess.permissionMode,

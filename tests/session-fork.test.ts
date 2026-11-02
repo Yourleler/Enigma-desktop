@@ -487,7 +487,7 @@ describe("SessionCoordinator session fork", () => {
       },
     });
     const titles = JSON.parse(fs.readFileSync(path.join(path.dirname(harness.childSessionPath), "session-titles.json"), "utf-8"));
-    expect(titles[result.sessionId]).toBe("Fork source title");
+    expect(titles[result.sessionId]).toBe("fork-Fork source title");
     expect(result).toMatchObject({
       sessionId: result.sessionId,
       sessionPath: harness.childSessionPath,

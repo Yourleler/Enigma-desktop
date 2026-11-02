@@ -26,7 +26,10 @@ it('keeps a sheet glow positioned while crossing child controls and fades it wit
  sheet.dispatchEvent(new MouseEvent('pointermove',{bubbles:true,clientX:180,clientY:160}));
  expect(sheet.style.getPropertyValue('--glass-pointer-x')).toBe('20.00%');expect(sheet.style.getPropertyValue('--glass-pointer-y')).toBe('15.00%');
  a.dispatchEvent(new MouseEvent('pointermove',{bubbles:true,clientX:180,clientY:160}));
- expect(sheet.style.getPropertyValue('--glass-light-opacity')).toBe('1');expect(sheet.style.getPropertyValue('--glass-pointer-y')).toBe('15.00%');
+ expect(sheet.style.getPropertyValue('--glass-light-opacity')).toBe('0');expect(sheet.style.getPropertyValue('--glass-pointer-y')).toBe('15.00%');
+ frames.shift()!(16);const entered=Number(sheet.style.getPropertyValue('--glass-light-opacity'));expect(entered).toBeGreaterThan(0);expect(entered).toBeLessThan(.2);
+ for(let i=1;i<90&&frames.length;i++)frames.shift()!(16+i*16);
+ expect(Number(sheet.style.getPropertyValue('--glass-light-opacity'))).toBe(.72);
  b.dispatchEvent(new MouseEvent('pointermove',{bubbles:true,clientX:180,clientY:210}));
  expect(sheet.style.getPropertyValue('--glass-pointer-y')).toBe('15.00%');expect(sheet.hasAttribute('data-liquid-active')).toBe(true);
  document.dispatchEvent(new Event('pointerleave'));

@@ -82,6 +82,23 @@ describe("subagent-tool (executeIsolated 原子模式)", () => {
     vi.useRealTimers();
   });
 
+  it('resolves child model roles against the dispatching conversation before executing', async () => {
+    deps.resolveDelegatedOptions=vi.fn(async(sp,requested)=>({model:requested||'test/worker',thinkingLevel:'low'}));
+    await createSubagentTool(deps).execute('role-call',{task:'Read the test file'},null,null,mockCtx('/original/session'));
+    expect(deps.resolveDelegatedOptions).toHaveBeenCalledWith('/original/session',undefined);
+    expect(deps.executeIsolated).toHaveBeenCalledWith('Read the test file',expect.objectContaining({model:'test/worker',thinkingLevel:'low',parentSessionPath:'/original/session'}));
+  });
+
+  it('retains explicit child overrides and never dispatches an unavailable configured role', async () => {
+    deps.resolveDelegatedOptions=vi.fn(async(_sp,requested)=>{if(requested)return {model:requested};throw Error('child model unavailable');});
+    const tool=createSubagentTool(deps);
+    await tool.execute('override-call',{task:'Read one file',model:'test/explicit'},null,null,mockCtx());
+    expect(deps.executeIsolated).toHaveBeenCalledWith('Read one file',expect.objectContaining({model:'test/explicit'}));
+    deps.executeIsolated.mockClear();
+    await expect(tool.execute('failed-call',{task:'Read another file'},null,null,mockCtx())).rejects.toThrow('child model unavailable');
+    expect(deps.executeIsolated).not.toHaveBeenCalled();
+  });
+
   // 1. fire-and-forget: returns immediately with taskId / streamStatus / sessionPath
   it("dispatches task and returns immediately with running status", async () => {
     const tool = createSubagentTool(deps);

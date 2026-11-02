@@ -1,13 +1,13 @@
 /* One surface language for nested menus, not for provider logos or content artwork. */
 body.enigma-surface [data-menu-surface] {
-  --glass-fill: color-mix(in srgb,var(--eg-card) var(--glass-menu-mix,54%),transparent);
-  --glass-blur: 10px;
+  --glass-fill: color-mix(in srgb,var(--eg-card) max(90%,var(--glass-menu-mix,54%)),transparent);
+  --glass-blur: 20px;
   color: var(--eg-text);
   border: 1px solid var(--eg-stroke-strong);
   border-radius: 16px;
   box-shadow: 0 12px 32px var(--shade-indigo-15),0 2px 7px var(--shade-indigo-7),inset 0 1px 0 var(--glass-edge);
   font: 13px/1.45 var(--font-ui);
-  background: color-mix(in srgb,var(--eg-card) var(--glass-menu-mix,54%),transparent);
+  background: color-mix(in srgb,var(--eg-card) max(90%,var(--glass-menu-mix,54%)),transparent);
   animation: enigma-menu-enter var(--duration-140ms) cubic-bezier(.2,.8,.2,1);
   -webkit-app-region: no-drag;
 }
@@ -32,6 +32,8 @@ body.enigma-surface .enigma-icon-tile {width:32px;height:32px;display:inline-fle
 body.enigma-surface .enigma-icon-tile svg {width:18px;height:18px;display:block;}
 body.enigma-surface :is(.sidebar-action-btn,.enigma-new-chat,.sidebar-activity-bar):hover .enigma-icon {color:var(--eg-accent);}
 body.enigma-surface .context-menu {padding:var(--space-6);min-width:190px;}
+body.enigma-surface .context-menu.enigma-copy-menu {min-width:104px; width:max-content; border-radius:10px; padding:var(--space-4);}
+body.enigma-surface .enigma-copy-menu .context-menu-item {min-height:28px; padding:var(--space-4) var(--space-10);}
 body.enigma-surface .context-menu-item {min-height:34px;gap:var(--space-10);padding:var(--space-7) var(--space-10);}
 body.enigma-surface .context-menu-submenu {padding:var(--space-6);min-width:190px;}
 body.enigma-surface .context-menu-divider {margin:var(--space-5) var(--space-8);background:var(--eg-stroke);}

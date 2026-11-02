@@ -44,6 +44,17 @@ it('rejects undelegated write scopes, unapproved models and unrelated conversati
   expect(engine.abortSession).not.toHaveBeenCalled();expect(engine.setSessionProjectAssignment).not.toHaveBeenCalled();
 });
 
+it('snapshots the configured child model at enqueue while preserving explicit task policies',async()=>{
+  const {manager,host}=await setup();vi.spyOn(manager,'pump').mockResolvedValue(undefined);
+  Object.assign(host,{binding:async()=>({modelPolicy:{mode:'delegated',execution:{provider:'test',id:'main'},worker:{provider:'test',id:'model',thinking:'low'}}})});
+  const task=await manager.enqueue({title:'child',goal:'read',requires:[],writeRepos:[],checks:[]});
+  expect(task.modelPolicy?.execution).toEqual({provider:'test',id:'model',thinking:'low'});expect(task.modelPolicy?.mode).toBe('single');expect(task.modelPolicy?.worker).toBeUndefined();
+  const explicit=await manager.enqueue({title:'explicit',goal:'read',requires:[],writeRepos:[],checks:[],modelPolicy:{mode:'single',execution:{provider:'test',id:'model',thinking:'high'},phase:'execution',requests:0,failures:0}});
+  expect(explicit.modelPolicy?.execution.thinking).toBe('high');
+  Object.assign(host,{binding:async()=>({modelPolicy:{worker:{provider:'other',id:'not-allowed'}}})});
+  await expect(manager.enqueue({title:'bad child',goal:'read',requires:[],writeRepos:[],checks:[]})).rejects.toThrow('allowlist');
+});
+
 it('allows narrowing persisted manager limits and rejects silent expansion or rewind enablement',async()=>{
   const {manager,directory}=await setup();
   await manager.restrictLimits({maxConcurrent:1,maxTasks:2});

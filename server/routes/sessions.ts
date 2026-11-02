@@ -1,6 +1,7 @@
 import {normalizedSearchOptions,matchCenteredSnippet} from '../../shared/history-search.ts';
 import {collectTurnUsage} from '../turn-usage.ts';
 import {autoProjectIdForCwd} from '../../shared/session-projects.ts';
+import {engineeringHost} from '../../plugins/enigma/host.ts';
 /**
  * Session 管理 REST 路由
  */
@@ -2044,6 +2045,8 @@ export function createSessionsRoute(engine, hub = null) {
       if (!auth.allowed) return c.json({ error: "insufficient_scope", reason: auth.reason }, 403);
       const body = await safeJson(c);
       const { memoryEnabled, agentId, currentSessionPath: oldSessionPath, thinkingLevel } = body;
+      const modelHost = typeof engine.hanakoHome === 'string' ? engineeringHost(engine) : null;
+      const modelSetup = await modelHost?.prepareNewConversationModelPolicy(body.modelPolicy);
       const workspaceSelection = resolveSessionWorkspaceSelection(engine, requestContext, body);
       const cwd = workspaceSelection.cwd;
       const workspaceFolders = Array.isArray(body.workspaceFolders)
@@ -2094,7 +2097,7 @@ export function createSessionsRoute(engine, hub = null) {
           agentId,
           cwd || undefined,
           memFlag,
-          undefined,
+          modelSetup?.model,
           createOptions,
         ));
       } else {
@@ -2102,11 +2105,12 @@ export function createSessionsRoute(engine, hub = null) {
           null,
           cwd || undefined,
           memFlag,
-          undefined,
+          modelSetup?.model,
           createOptions,
         ));
       }
       engine.persistSessionMeta(newSessionPath);
+      if (modelSetup) await modelHost!.configureModelPolicy(newSessionPath, modelSetup.policy, {initialize:true});
       if (projectId && typeof engine.setSessionProjectAssignment === "function") {
         await engine.setSessionProjectAssignment({ sessionPath: newSessionPath, projectId });
       }
@@ -2160,6 +2164,8 @@ export function createSessionsRoute(engine, hub = null) {
 
       const body = await safeJson(c);
       const { memoryEnabled, agentId, permissionMode, thinkingLevel } = body;
+      const modelHost = typeof engine.hanakoHome === 'string' ? engineeringHost(engine) : null;
+      const modelSetup = await modelHost?.prepareNewConversationModelPolicy(body.modelPolicy);
       const workspaceSelection = resolveSessionWorkspaceSelection(engine, requestContext, body);
       const cwd = workspaceSelection.cwd;
       const workspaceFolders = Array.isArray(body.workspaceFolders)
@@ -2175,6 +2181,7 @@ export function createSessionsRoute(engine, hub = null) {
         : null;
 
       const detachedOptions: {
+        model?: any;
         cwd: any;
         memoryEnabled: boolean;
         agentId: string | null;
@@ -2185,6 +2192,7 @@ export function createSessionsRoute(engine, hub = null) {
         workspaceMountId?: string;
         workspaceLabel?: string | null;
       } = {
+        ...(modelSetup ? {model:modelSetup.model} : {}),
         cwd: cwd || undefined,
         memoryEnabled: memFlag,
         agentId: typeof agentId === "string" && agentId.trim() ? agentId.trim() : null,
@@ -2205,6 +2213,7 @@ export function createSessionsRoute(engine, hub = null) {
       const newAgentId = result.agentId;
       const newSessionId = result.sessionId || engine.getSessionIdForPath?.(newSessionPath) || null;
       engine.persistSessionMeta?.(newSessionPath);
+      if (modelSetup) await modelHost!.configureModelPolicy(newSessionPath, modelSetup.policy, {initialize:true});
       if (projectId && typeof engine.setSessionProjectAssignment === "function") {
         await engine.setSessionProjectAssignment({ sessionPath: newSessionPath, projectId });
       }

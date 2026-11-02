@@ -3461,6 +3461,11 @@
       "provenance": [
         {
           "root": "server-bootstrap",
+          "from": "plugins/enigma/conversation-model-policy.ts",
+          "kind": "import-statement"
+        },
+        {
+          "root": "server-bootstrap",
           "from": "core/session-coordinator.ts",
           "kind": "import-statement"
         },
@@ -3470,7 +3475,7 @@
           "kind": "import-statement"
         }
       ],
-      "reason": "Reached via esbuild source module graph, imported by core/session-coordinator.ts (import-statement); hub/index.ts (import-statement)."
+      "reason": "Reached via esbuild source module graph, imported by plugins/enigma/conversation-model-policy.ts (import-statement); core/session-coordinator.ts (import-statement); hub/index.ts (import-statement)."
     },
     {
       "path": "core/skill-manager.ts",
@@ -73916,6 +73921,18 @@
       "reason": "Reached via esbuild source module graph, imported by plugins/enigma/host.ts (import-statement)."
     },
     {
+      "path": "plugins/enigma/conversation-model-policy.ts",
+      "inputType": "source-graph",
+      "provenance": [
+        {
+          "root": "server-bootstrap",
+          "from": "plugins/enigma/host.ts",
+          "kind": "import-statement"
+        }
+      ],
+      "reason": "Reached via esbuild source module graph, imported by plugins/enigma/host.ts (import-statement)."
+    },
+    {
       "path": "plugins/enigma/execution-policy.ts",
       "inputType": "source-graph",
       "provenance": [
@@ -73980,11 +73997,16 @@
         },
         {
           "root": "server-bootstrap",
+          "from": "server/routes/sessions.ts",
+          "kind": "import-statement"
+        },
+        {
+          "root": "server-bootstrap",
           "from": "server/index.ts",
           "kind": "dynamic-import"
         }
       ],
-      "reason": "Reached via esbuild source module graph, imported by core/conversation-change-capture.ts (dynamic-import); core/session-coordinator.ts (import-statement); core/engine.ts (import-statement); +3 more importer(s)."
+      "reason": "Reached via esbuild source module graph, imported by core/conversation-change-capture.ts (dynamic-import); core/session-coordinator.ts (import-statement); core/engine.ts (import-statement); +4 more importer(s)."
     },
     {
       "path": "plugins/enigma/memory-host.ts",
@@ -74009,11 +74031,16 @@
         },
         {
           "root": "server-bootstrap",
+          "from": "plugins/enigma/conversation-model-policy.ts",
+          "kind": "import-statement"
+        },
+        {
+          "root": "server-bootstrap",
           "from": "plugins/enigma/host.ts",
           "kind": "import-statement"
         }
       ],
-      "reason": "Reached via esbuild source module graph, imported by plugins/enigma/conductor.ts (import-statement); plugins/enigma/host.ts (import-statement)."
+      "reason": "Reached via esbuild source module graph, imported by plugins/enigma/conductor.ts (import-statement); plugins/enigma/conversation-model-policy.ts (import-statement); plugins/enigma/host.ts (import-statement)."
     },
     {
       "path": "plugins/enigma/session-changes.ts",
@@ -77982,9 +78009,9 @@
     }
   ],
   "stats": {
-    "totalFiles": 6423,
+    "totalFiles": 6424,
     "byInputType": {
-      "source-graph": 717,
+      "source-graph": 718,
       "runtime-asset": 11,
       "nft-runtime-trace": 5695
     }

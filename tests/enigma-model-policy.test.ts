@@ -1,5 +1,5 @@
 import {expect,it} from 'vitest';
-import {modelForPhase,planningBlocksTool,validateModelPolicy} from '../plugins/enigma/model-policy.ts';
+import {modelForPhase,planningBlocksTool,validateModelPolicy,childModelPolicy,modelPolicyRoles} from '../plugins/enigma/model-policy.ts';
 
 it('planning denies direct and indirect execution while retaining source, planning and status access',()=>{
   for(const [tool,action] of [['repo_write',''],['repo_run',''],['workspace_verify',''],['background_task','start'],['service_manage','restart'],['recipe_manage','run'],['delegate_task','start'],['delegate_task','merge'],['browser_validate','run'],['solution_experiment','evaluate']])expect(planningBlocksTool(tool,{action}),`${tool}:${action}`).toBe(true);
@@ -10,4 +10,11 @@ it('sanitizes model policy state, validates roles and selects the configured pha
   expect(policy.requests).toBe(0);expect(policy.phase).toBe('planning');expect(policy.execution).not.toHaveProperty('arbitrary');expect(policy).not.toHaveProperty('root');
   expect(modelForPhase(policy).id).toBe('planner');policy.phase='execution';expect(modelForPhase(policy).id).toBe('fast');policy.phase='review';expect(modelForPhase(policy).id).toBe('critic');
   expect(()=>validateModelPolicy({mode:'adaptive',execution:{provider:'test',id:'fast'}})).toThrow('planning models');
+});
+it('keeps the main model separate from the default child and does not recursively delegate children',()=>{
+  const policy=validateModelPolicy({mode:'delegated',execution:{provider:'test',id:'main'},worker:{provider:'test',id:'worker',thinking:'low'},maxRequests:10});
+  expect(policy.phase).toBe('execution');expect(modelForPhase(policy).id).toBe('main');
+  expect(modelPolicyRoles(policy).map(role=>role.id)).toEqual(['main','worker']);
+  const child=childModelPolicy(policy)!;expect(child.mode).toBe('single');expect(modelForPhase(child)).toEqual({provider:'test',id:'worker',thinking:'low'});expect(child.worker).toBeUndefined();
+  expect(()=>validateModelPolicy({mode:'delegated',execution:policy.execution})).toThrow('child model');
 });

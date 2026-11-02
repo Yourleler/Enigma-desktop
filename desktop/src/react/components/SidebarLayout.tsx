@@ -83,7 +83,7 @@ export function SidebarLayout({ restorePreference = true }: { restorePreference?
       if (e.defaultPrevented) return;
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 's') { e.preventDefault(); toggleSidebar(); }
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'n') { e.preventDefault(); createNewSession(); }
-      if (e.key === 'Escape' && !useStore.getState().layoutDrawer && !document.querySelector('[role="dialog"],[role="menu"],.cm-panels') && useStore.getState().previewOpen) closePreview();
+      if (e.key === 'Escape' && !useStore.getState().layoutDrawer && !document.querySelector('[role="dialog"],[role="menu"],[role="listbox"],[data-menu-surface],.cm-panels') && useStore.getState().previewOpen) closePreview();
     };
     document.addEventListener('keydown', onKeydown);
     return () => { cancelAnimationFrame(frame); observer?.disconnect(); unsubscribe(); unsubscribeEngineering(); unsubscribeChanges(); unsubscribeDock(); window.removeEventListener('resize', schedule); document.removeEventListener('keydown', onKeydown); };

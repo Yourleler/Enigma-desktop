@@ -177,14 +177,14 @@ export function EditorContextMenu({
       close();
     };
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') close();
+      if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); close(); }
     };
     const handleScroll = () => close();
 
     const timer = setTimeout(() => {
       doc.addEventListener('click', handleClick, true);
       doc.addEventListener('contextmenu', handleCtx, true);
-      doc.addEventListener('keydown', handleKeyDown);
+      doc.addEventListener('keydown', handleKeyDown, true);
       win.addEventListener('scroll', handleScroll, true);
     });
 
@@ -192,7 +192,7 @@ export function EditorContextMenu({
       clearTimeout(timer);
       doc.removeEventListener('click', handleClick, true);
       doc.removeEventListener('contextmenu', handleCtx, true);
-      doc.removeEventListener('keydown', handleKeyDown);
+      doc.removeEventListener('keydown', handleKeyDown, true);
       win.removeEventListener('scroll', handleScroll, true);
     };
   }, [menu, onBlockMenuClose, ownerDoc, ownerWin]);

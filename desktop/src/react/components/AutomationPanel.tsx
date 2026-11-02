@@ -1,3 +1,4 @@
+import {createPortal} from 'react-dom';
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { useStore } from '../stores';
 import { usePanel } from '../hooks/use-panel';
@@ -221,9 +222,9 @@ export function AutomationPanel() {
 
   if (!visible) return null;
 
-  return (
+  return createPortal(
     <div className={fp.floatingPanel} id="automationPanel">
-      <div className={`${fp.floatingPanelInner} ${styles.panel}`} data-glass-frame="panel">
+      <div className={`${fp.floatingPanelInner} ${styles.panel}`} data-glass-frame="panel" data-native-browser-occluder="">
         <div className={fp.floatingPanelHeader}>
           <h2 className={fp.floatingPanelTitle}>{t('automation.title')}</h2>
           <button className={fp.floatingPanelClose} onClick={close} aria-label="关闭任务计划" data-tooltip="关闭任务计划">
@@ -280,6 +281,7 @@ export function AutomationPanel() {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -53,8 +53,8 @@ function nextPendingDraftId(): string {
  * 要求 pendingDraftId 非空才认这是一个有效的待建草稿；裸设会让身份残缺，
  * submitEditorMessage 的 ensureSession 门槛就此失效，发送静默无响应（#2101）。
  */
-export function pendingNewSessionIdentityPatch(): { pendingNewSession: true; pendingDraftId: string; pendingNewSessionMemoryEnabled: null } {
-  return { pendingNewSession: true, pendingDraftId: nextPendingDraftId(), pendingNewSessionMemoryEnabled: null };
+export function pendingNewSessionIdentityPatch(): { pendingNewSession: true; pendingDraftId: string; pendingNewSessionMemoryEnabled: null; pendingNewSessionModelPolicy: undefined } {
+  return { pendingNewSession: true, pendingDraftId: nextPendingDraftId(), pendingNewSessionMemoryEnabled: null, pendingNewSessionModelPolicy:undefined };
 }
 
 function invalidateSessionSwitches(): void {
@@ -1076,6 +1076,7 @@ function buildPendingSessionCreateBody(state: Record<string, any>): PendingSessi
   if (state.pendingNewSessionThinkingLevel) {
     body.thinkingLevel = state.pendingNewSessionThinkingLevel;
   }
+  if (state.pendingNewSessionModelPolicy !== undefined) body.modelPolicy = state.pendingNewSessionModelPolicy;
   if (state.pendingNewSessionPermissionMode) {
     body.permissionMode = state.pendingNewSessionPermissionMode;
   }

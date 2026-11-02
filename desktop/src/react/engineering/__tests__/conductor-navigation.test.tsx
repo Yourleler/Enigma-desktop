@@ -11,7 +11,7 @@ import {composeTaskRequest}from'../compose-task';
 vi.mock('../state',async load=>({...await load<typeof import('../state')>(),engineeringRequest:vi.fn(),openEngineering:vi.fn()}));
 vi.mock('../../stores/session-actions',()=>({loadSessions:vi.fn(),switchSession:vi.fn()}));
 vi.mock('../compose-task',()=>({composeTaskRequest:vi.fn()}));
-beforeEach(()=>{vi.clearAllMocks();useEngineering.setState({sessionPath:'/old',connectionId:'a',snapshot:{overview:{repositories:[]}}});useStore.setState({models:[{id:'model',provider:'test',name:'Test',isCurrent:true}] as any});});
+beforeEach(()=>{vi.clearAllMocks();useEngineering.setState({sessionPath:'/old',connectionId:'a',snapshot:{overview:{repositories:[]}}});useStore.setState({currentSessionPath:'/old',currentAgentId:'test',activeServerConnectionId:'a',models:[{id:'model',provider:'test',name:'Test',isCurrent:true}] as any});});
 afterEach(cleanup);
 it('refreshes the new manager identity before opening its composer',async()=>{
  vi.mocked(engineeringRequest).mockResolvedValue({sessionPath:'/created',sessionId:'manager-id'});const close=vi.fn();render(<ConductorCreateDialog close={close}/>);
@@ -21,8 +21,15 @@ it('refreshes the new manager identity before opening its composer',async()=>{
 });
 it('a delayed manager creation never navigates away from a new conversation',async()=>{
  let resolve!:(value:any)=>void;vi.mocked(engineeringRequest).mockImplementationOnce(()=>new Promise(r=>{resolve=r;}));const close=vi.fn();render(<ConductorCreateDialog close={close}/>);
- fireEvent.click(screen.getByRole('button',{name:'创建管家对话'}));act(()=>useEngineering.setState({sessionPath:'/new'}));
+ fireEvent.click(screen.getByRole('button',{name:'创建管家对话'}));act(()=>useStore.setState({currentSessionPath:'/new'}));
  await act(async()=>resolve({sessionPath:'/created'}));expect(switchSession).not.toHaveBeenCalled();expect(close).not.toHaveBeenCalled();expect(screen.getByRole('alert')).toHaveTextContent('会话或服务已切换');
+});
+it('creates from home without manufacturing or switching a source conversation',async()=>{
+ useStore.setState({currentSessionPath:null});useEngineering.setState({sessionPath:'',snapshot:null});
+ vi.mocked(engineeringRequest).mockResolvedValue({sessionPath:'/created',sessionId:'manager-id'});render(<ConductorCreateDialog close={vi.fn()}/>);
+ await act(async()=>fireEvent.click(screen.getByRole('button',{name:'创建管家对话'})));
+ expect(engineeringRequest).toHaveBeenCalledWith('/conductor/new','',expect.objectContaining({agentId:'test',limits:expect.objectContaining({writableRepos:[]})}));
+ expect(switchSession).toHaveBeenCalledWith('/created');
 });
 it('a late generated report cannot open an artifact from another connection',async()=>{
  let resolve!:(value:any)=>void;vi.mocked(engineeringRequest).mockImplementationOnce(()=>new Promise(r=>{resolve=r;}));

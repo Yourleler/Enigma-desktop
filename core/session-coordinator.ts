@@ -1770,6 +1770,8 @@ export class SessionCoordinator {
     const sessionPathForMeta = sessionMgr.getSessionFile?.() || null;
     const engineeringEngine = this._d.getEngine?.();
     const engineering = typeof engineeringEngine?.hanakoHome === 'string' ? await engineeringHost(engineeringEngine).prepare(sessionPathForMeta) : null;
+    const conversationModelExtension = !engineering && sessionPathForMeta && typeof engineeringEngine?.hanakoHome === 'string'
+      ? engineeringHost(engineeringEngine).conversationModelExtension(sessionPathForMeta) : null;
     let restoredProviderCacheAffinityKey = null;
     if (restore && sessionPathForMeta) {
       try {
@@ -2102,7 +2104,7 @@ export class SessionCoordinator {
           const base = baseResourceLoader.getExtensions?.() ?? { extensions: [], errors: [] };
           return {
             ...base,
-            extensions: [turnContextExtension, visionAuxiliaryExtension, ...(base.extensions || [])],
+            extensions: [turnContextExtension, visionAuxiliaryExtension, ...(conversationModelExtension ? [conversationModelExtension] : []), ...(base.extensions || [])],
           };
         },
       },
@@ -2582,6 +2584,10 @@ export class SessionCoordinator {
       const definitions = session.getAllTools().filter(tool => activeNames.includes(tool.name));
       Object.assign(sessionEntry, { toolNames: [...activeNames], runtimeToolNames: [...activeNames], activeToolDefinitions: definitions });
       await this.writeSessionMeta(sessionPath, { toolNames: activeNames, memoryEnabled: false, experienceEnabled: false });
+    }
+    if (!engineering && conversationModelExtension && sessionPath) {
+      engineeringHost(engineeringEngine).attachConversationModelRouting(sessionPath, session);
+      session.setActiveToolsByName([...new Set([...session.getActiveToolNames(), 'agent_phase'])]);
     }
 
     if (restoredPromptSnapshot?.finalSystemPrompt) {
@@ -3763,10 +3769,8 @@ export class SessionCoordinator {
           source: "session_fork",
         });
       }
-      if (sourceTitle) {
-        await this.saveSessionTitle(childSessionPath, sourceTitle);
-        childTitleWritten = true;
-      }
+      await this.saveSessionTitle(childSessionPath, `fork-${sourceTitle || '新对话'}`);
+      childTitleWritten = true;
 
       if (typeof this._d.forkSessionFiles !== "function") {
         throw sessionForkError("session file fork support is unavailable", "session_file_fork_unavailable", 503);
@@ -8012,7 +8016,7 @@ export class SessionCoordinator {
       }
       const execResourceLoader = Object.create(resourceLoader, execResourceLoaderProps);
       const execThinkingLevel = resolveThinkingLevelForModel(
-        this._d.getPrefs().getThinkingLevel(),
+        opts.thinkingLevel ?? this._d.getPrefs().getThinkingLevel(),
         execModel,
         (level) => models.resolveThinkingLevel(level),
       );

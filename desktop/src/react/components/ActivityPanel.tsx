@@ -1,3 +1,4 @@
+import {createPortal} from 'react-dom';
 import { GlassSelection } from '../ui/GlassSelection';
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useStore } from '../stores';
@@ -177,9 +178,9 @@ export function ActivityPanel() {
 
   if (!visible) return null;
 
-  return (
+  return createPortal(
     <div className={fp.floatingPanel} id="activityPanel">
-      <div className={`${fp.floatingPanelInner} ${automationStyles.panel}`} data-glass-frame="panel">
+      <div className={`${fp.floatingPanelInner} ${automationStyles.panel}`} data-glass-frame="panel" data-native-browser-occluder="">
         <div id="activityListView" style={FLEX_COLUMN_STYLE}>
           <div className={fp.floatingPanelHeader}>
               <h2 className={fp.floatingPanelTitle}>运行记录</h2>
@@ -257,7 +258,8 @@ export function ActivityPanel() {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

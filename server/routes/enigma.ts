@@ -138,6 +138,12 @@ export function createEnigmaRoute(engine: any) {
       return fail(c, error);
     }
   });
+  route.get('/enigma/model-policy', async c => {
+    try {
+      const sessionPath = await session(c);
+      return c.json({policy:(await host.modelBinding(sessionPath))?.modelPolicy || null});
+    } catch(error) { return fail(c,error); }
+  });
   route.get("/enigma/model-policy-default", async (c) => {
     try {
       const context = createRequestContext(c, engine);
@@ -161,8 +167,14 @@ export function createEnigmaRoute(engine: any) {
   route.post("/enigma/conductor/new", async (c) => {
     try {
       const body = await safeJson(c);
+      let sourcePath:string|null=null;
+      if(body.sessionPath||body.sessionId)sourcePath=await session(c,true,body);
+      else{
+        const context=createRequestContext(c,engine);
+        if(!context.authorize?.('sessions.write',{kind:'studio',studioId:context.studioId})?.allowed)return c.json({error:'没有创建管家对话的权限'},403);
+      }
       return c.json(
-        await host.createConductor(await session(c, true, body), body.limits),
+        await host.createConductor(sourcePath, body.limits,{agentId:body.agentId,modelPolicy:body.modelPolicy}),
       );
     } catch (error) {
       return fail(c, error);
@@ -177,6 +189,10 @@ export function createEnigmaRoute(engine: any) {
     } catch (error) {
       return fail(c, error);
     }
+  });
+  route.post('/enigma/side-chat/new',async c=>{
+    try{const body=await safeJson(c);return c.json(await host.createSideConversation(await session(c,true,body),body.includeContext===true));}
+    catch(error){return fail(c,error);}
   });
   route.post('/enigma/conductor/cancel',async c=>{
     try{const body=await safeJson(c),sessionPath=await session(c,true,body);if(typeof body.id!=='string'||!body.id.trim())return c.json({error:'请选择当前管家创建的工作对话'},400);return c.json(await host.conductor(sessionPath).cancel(body.id));}

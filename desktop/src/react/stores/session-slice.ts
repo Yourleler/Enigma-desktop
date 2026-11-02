@@ -150,6 +150,7 @@ export interface SessionSlice {
   pendingProjectId: string | null;
   pendingNewSessionMemoryEnabled: boolean | null;
   pendingNewSessionThinkingLevel: ThinkingLevel | null;
+  pendingNewSessionModelPolicy?: import('../../../../plugins/enigma/model-policy').ModelPolicy | null;
   pendingNewSessionPermissionMode: SessionPermissionMode | null;
   sessionPermissionMode: SessionPermissionMode;
   memoryEnabled: boolean;

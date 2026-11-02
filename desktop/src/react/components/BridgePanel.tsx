@@ -1,3 +1,4 @@
+import {createPortal} from 'react-dom';
 import { useState, useEffect, useLayoutEffect, useCallback, useRef, useMemo } from 'react';
 import { useStore } from '../stores';
 import { sessionScopedListIncludes, sessionScopedValue } from '../stores/session-slice';
@@ -249,9 +250,9 @@ export function BridgePanel() {
 
   if (!visible) return null;
 
-  return (
+  return createPortal(
     <div className={`${fp.floatingPanel} ${fp.bridgePanelWide}`} id="bridgePanel">
-      <div className={fp.floatingPanelInner} data-glass-frame="panel">
+      <div className={fp.floatingPanelInner} data-glass-frame="panel" data-native-browser-occluder="">
         <div className={fp.floatingPanelHeader}>
           {agents.length > 1 && (
             <div className={fp.bridgeAgentRow} ref={agentMenuRef}>
@@ -408,7 +409,8 @@ export function BridgePanel() {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

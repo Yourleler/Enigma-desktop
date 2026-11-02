@@ -278,19 +278,18 @@ export function EngineeringSidebar({compact=false}:{compact?:boolean}={}) {
   const snapshot = useEngineering((s) => s.snapshot);
   const switching=useStore(s=>!!s.pendingSessionSwitchPath);
   const [conductorOpen, setConductorOpen] = useState(false);
-  if (switching||!snapshot?.connected) return null;
+  if (switching) return null;
   return (
     <div className={`enigma-sidebar-tools${compact?' enigma-sidebar-tools-compact':''}`} aria-label="工程项目功能">
-      <button aria-label="仓库" data-tooltip="管理本任务的仓库、角色、依赖和检查命令" onClick={() => openGroup("project")}>
+      {snapshot?.connected&&<><button aria-label="仓库" data-tooltip="管理本任务的仓库、角色、依赖和检查命令" onClick={() => openGroup("project")}>
         <AppIcon name="project" size={17}/>{!compact&&<> 仓库 <span>{snapshot.overview?.repositories?.length || 0}</span></>}
       </button>
       <div>
         <button aria-label="记忆" data-tooltip="检索工程经验、查看来源与适用范围，整理记忆候选" onClick={() => openGroup("memory")}><AppIcon name="memory" size={17}/>{!compact&&'记忆'}</button>
         <button aria-label="技能" data-tooltip="查看可用技能与可复用的工程操作配方" onClick={() => openGroup("skills")}><AppIcon name="skill" size={17}/>{!compact&&'技能'}</button>
       </div>
-      {snapshot.kind !== "manager" && (
-        <button aria-label="新建管家任务" data-tooltip="交代目标与允许范围，由管家编排多个工作对话" onClick={() => setConductorOpen(true)}><AppIcon name="team" size={17}/>{!compact&&'新建管家任务'}</button>
-      )}
+      </>}
+      <button aria-label="任务管家" data-tooltip="创建独立管家对话，安排与跟踪多个工作任务" onClick={() => snapshot?.kind==='manager'?openGroup('conductor'):setConductorOpen(true)}><AppIcon name="team" size={17}/>{!compact&&'任务管家'}</button>
       {conductorOpen && (
         <ConductorCreateDialog close={() => setConductorOpen(false)} />
       )}

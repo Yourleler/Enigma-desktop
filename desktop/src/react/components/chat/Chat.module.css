@@ -2344,3 +2344,7 @@
 .emptyAssistantReply { color:var(--text-muted); font:13px/1.7 var(--font-ui); padding:var(--space-8) 0; }
 ::highlight(enigma-chat-results) { background:var(--search-match-bg); color:var(--search-match-text); }
 ::highlight(enigma-chat-current) { background:var(--search-active-bg); color:var(--search-active-text); }
+.managerStart { max-width:520px; margin:var(--space-40) auto; padding:var(--space-24); color:var(--text); }
+.managerStart h2 { font:600 20px/1.4 var(--font-ui); margin:0 0 var(--space-16); }
+.managerStart p { font:14px/1.8 var(--font-ui); color:var(--text-muted); }
+.managerStart button { border:0; border-radius:8px; padding:var(--space-6) var(--space-10); color:var(--accent); background:var(--accent-light); font:13px/1.5 var(--font-ui); cursor:pointer; }

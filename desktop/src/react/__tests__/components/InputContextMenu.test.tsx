@@ -1,7 +1,7 @@
 /**
  * @vitest-environment jsdom
  */
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { InputContextMenu } from '../../components/InputContextMenu';
 
@@ -68,8 +68,8 @@ describe('InputContextMenu', () => {
 
     const cutItem = screen.getByText('ctx.cut');
     const copyItem = screen.getByText('ctx.copy');
-    expect(cutItem.className).toContain('disabled');
-    expect(copyItem.className).toContain('disabled');
+    expect(cutItem.closest('[aria-disabled]')?.getAttribute('aria-disabled')).toBe('true');
+    expect(copyItem.closest('[aria-disabled]')?.getAttribute('aria-disabled')).toBe('true');
 
     fireEvent.click(copyItem);
     expect(runEditCommand).not.toHaveBeenCalled();
@@ -196,5 +196,18 @@ describe('InputContextMenu', () => {
 
     fireEvent.contextMenu(screen.getByTestId('preview-text'), { clientX: 14, clientY: 14 });
     expect(screen.getByText('ctx.copy')).toBeTruthy();
+  });
+  it('consumes Escape in the menu before the preview close shortcut can see it', async () => {
+    vi.useFakeTimers();const previewClose=vi.fn();
+    const shortcut=(event:KeyboardEvent)=>{if(event.key==='Escape'&&!event.defaultPrevented)previewClose();};
+    document.addEventListener('keydown',shortcut);
+    try{
+      render(<Harness><div id="previewPanel"><p data-testid="preview-text">keep this preview open</p></div></Harness>);
+      fireEvent.contextMenu(screen.getByTestId('preview-text'),{clientX:14,clientY:14});
+      await act(async()=>{vi.runOnlyPendingTimers();});
+      fireEvent.keyDown(document,{key:'Escape'});
+      expect(screen.queryByRole('menu')).toBeNull();expect(previewClose).not.toHaveBeenCalled();
+      fireEvent.keyDown(document,{key:'Escape'});expect(previewClose).toHaveBeenCalledOnce();
+    }finally{document.removeEventListener('keydown',shortcut);vi.useRealTimers();}
   });
 });

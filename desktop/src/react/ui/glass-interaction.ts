@@ -6,7 +6,7 @@ export function installGlassInteractions() {
   const surfaceQuery = '[data-liquid-surface],[data-glass-frame]';
   const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)');
   const disabled = () => visualsSuspended() || reduced?.matches || document.body.matches('.enigma-glass-off,.enigma-motion-off');
-  type Light = { element: HTMLElement; x: number; y: number; tx: number; ty: number; previous: number; frame: number };
+  type Light = { element: HTMLElement; x: number; y: number; tx: number; ty: number; previous: number; frame: number; opacity:number; peak:number };
   let surface: Light | null = null, control: Light | null = null, pressed: HTMLElement | null = null;
   const clearLight = (light: Light | null) => {
     if (!light) return;
@@ -28,6 +28,7 @@ export function installGlassInteractions() {
   const paint = (light: Light) => {
     light.element.style.setProperty('--glass-pointer-x', `${light.x.toFixed(2)}%`);
     light.element.style.setProperty('--glass-pointer-y', `${light.y.toFixed(2)}%`);
+    light.element.style.setProperty('--glass-light-opacity', String(light.opacity));
   };
   const tick = (light: Light, at: number) => {
     light.frame = 0;
@@ -36,9 +37,11 @@ export function installGlassInteractions() {
     light.previous = at;
     const blend = 1 - Math.exp(-dt / 45);
     light.x += (light.tx - light.x) * blend; light.y += (light.ty - light.y) * blend;
+    light.opacity += (light.peak-light.opacity)*(1-Math.exp(-dt/130));
+    if(light.peak-light.opacity<.005)light.opacity=light.peak;
     if (Math.abs(light.tx - light.x) + Math.abs(light.ty - light.y) < .12) { light.x = light.tx; light.y = light.ty; }
     paint(light);
-    if (light.x !== light.tx || light.y !== light.ty) light.frame = requestAnimationFrame(time => tick(light, time));
+    if (light.x !== light.tx || light.y !== light.ty || light.opacity !== light.peak) light.frame = requestAnimationFrame(time => tick(light, time));
     else light.previous = 0;
   };
   const track = (previous: Light | null, element: HTMLElement | null, event: PointerEvent): Light | null => {
@@ -47,13 +50,13 @@ export function installGlassInteractions() {
     let light = previous;
     if (light?.element !== element) {
       clearLight(light);
-      light = { element, ...position, tx: position.x, ty: position.y, previous: 0, frame: 0 };
+      const setting=element.matches('[data-glass-frame="settings"]');
+      light = { element, ...position, tx: position.x, ty: position.y, previous: 0, frame: 0,opacity:setting?0:1,peak:setting ? .72 : 1 };
       paint(light); // Set coordinates before enabling the glow, never at 28%/8%.
-      element.style.setProperty('--glass-light-opacity', '1');
       element.dataset.liquidActive = '';
     }
     light.tx = position.x; light.ty = position.y;
-    if (!light.frame && (light.x !== light.tx || light.y !== light.ty)) light.frame = requestAnimationFrame(time => tick(light, time));
+    if (!light.frame && (light.x !== light.tx || light.y !== light.ty || light.opacity !== light.peak)) light.frame = requestAnimationFrame(time => tick(light, time));
     return light;
   };
   const move = (event: PointerEvent) => {

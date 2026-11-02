@@ -667,6 +667,7 @@ export class Agent {
         return this._cb.executeIsolated(prompt, opts);
       },
       resolveUtilityModel: () => this._cb?.getCurrentModelId?.() || null,
+      resolveDelegatedOptions: (sp, requested) => this._cb?.getEngine?.()?.resolveSessionChildOptions?.(sp, requested) ?? {model:requested},
       getDeferredStore: () => this._cb?.getDeferredResults?.(),
       getSubagentRunStore: () => this._cb?.getSubagentRunStore?.(),
       getSubagentThreadStore: () => this._cb?.getSubagentThreadStore?.(),

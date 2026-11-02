@@ -9,8 +9,11 @@ import { SelectWidget, ProviderIcon, ProviderGroupHeader, selectWidgetStyles, ty
 import styles from './InputArea.module.css';
 import {modelSelectionKey,receiveModelSelection,useModelSelectionStore} from '../../stores/model-selection-store';
 import {AppIcon} from '../../ui/app-icons';
+import {useComposerModelPolicy} from '../../engineering/use-model-policy';
+import {ModelPolicyDialog} from '../../engineering/ModelPolicy';
+import {modelForPhase} from '../../../../../plugins/enigma/model-policy';
 
-export function ModelSelector({ models, sessionModel, isStreaming = false }: {
+export function ModelSelector({ models, sessionModel: suppliedSessionModel, isStreaming = false }: {
   models: Model[];
   sessionModel?: SessionModel;
   isStreaming?: boolean;
@@ -18,6 +21,11 @@ export function ModelSelector({ models, sessionModel, isStreaming = false }: {
   const { t } = useI18n();
   const [switching, setLoading] = useState(false);
   const path=useStore(s=>s.currentSessionPath)||'',connection=useStore(s=>s.activeServerConnectionId);
+  const {policy,error:policyError}=useComposerModelPolicy();
+  const [rolesOpen,setRolesOpen]=useState(false);
+  const pendingRole=!path&&policy?modelForPhase(policy):undefined;
+  const sessionModel=suppliedSessionModel||(pendingRole?{...pendingRole,name:models.find(m=>m.id===pendingRole.id&&m.provider===pendingRole.provider)?.name||pendingRole.id}:undefined);
+  const configuredRoles=policy?(policy.mode==='delegated'?[['主 Agent',policy.execution],['子 Agent',policy.worker]]:policy.mode==='single'?[]:[['规划',policy.planning],['执行',policy.execution],['复核',policy.review],['子 Agent',policy.worker]]).filter((entry:any)=>entry[1]).map(([name,role]:any)=>`${name}：${models.find(m=>m.id===role.id&&m.provider===role.provider)?.name||role.id}`):[];
   const [cancelError,setCancelError]=useState('');
   const selection=useModelSelectionStore(s=>s.items[modelSelectionKey(connection,path)]);
   const loading=switching;
@@ -114,12 +122,20 @@ export function ModelSelector({ models, sessionModel, isStreaming = false }: {
         useStore.getState().setModelSwitching(false);
       } else {
         // New session path: persist the model selection and mirror its thinking default into the draft.
+        const draftPolicy=state.pendingNewSessionModelPolicy===undefined&&state.pendingDraftId
+          ? (await(await hanaFetch('/api/enigma/model-policy-default')).json()).policy||null
+          : state.pendingNewSessionModelPolicy;
         const setRes = await hanaFetch('/api/models/set', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ modelId, provider }),
         });
         const setData = await setRes.json().catch(() => ({}));
+        const latest=useStore.getState();
+        if(state.pendingDraftId&&latest.pendingDraftId===state.pendingDraftId&&latest.activeServerConnectionId===state.activeServerConnectionId&&latest.pendingNewSessionModelPolicy===state.pendingNewSessionModelPolicy){
+          const role=draftPolicy?.phase==='planning'?'planning':draftPolicy?.phase==='review'?'review':'execution';
+          useStore.setState({pendingNewSessionModelPolicy:draftPolicy?{...draftPolicy,[role]:{...draftPolicy[role],id:modelId,provider}}:null});
+        }
         if (setData.thinkingLevel) {
           useStore.getState().setThinkingLevel(setData.thinkingLevel);
           useStore.getState().setPendingNewSessionThinkingLevel(setData.thinkingLevel);
@@ -187,7 +203,9 @@ export function ModelSelector({ models, sessionModel, isStreaming = false }: {
   }, [grouped, groupKeys, switchModel]);
 
   return (
-    <div className={styles['model-choice']}><SelectWidget
+    <div className={styles['model-choice']}>
+    {configuredRoles.length>0&&<button type="button" className={styles['model-role-summary']} aria-label={`模型分工：${configuredRoles.join('；')}`} data-tooltip={configuredRoles.join('\n')} onClick={()=>setRolesOpen(true)}>{policy?.mode==='delegated'?'主 / 子':`${configuredRoles.length} 个角色`}</button>}
+    <SelectWidget
       className={styles['model-selector']}
       options={options}
       value={currentValue}
@@ -205,14 +223,16 @@ export function ModelSelector({ models, sessionModel, isStreaming = false }: {
           {current?.provider && (
             <ProviderIcon provider={current.provider} className={styles['model-provider-icon']} />
           )}
-          <span className={styles['model-pill-label']}>{label}</span>{loading&&<span className="enigma-model-loading" aria-label="正在记录模型选择"/>}
+          <span className={styles['model-pill-label']}>{configuredRoles.length>0&&<span>{policy?.mode==='delegated'?'主 Agent':policy?.phase==='planning'?'规划':policy?.phase==='review'?'复核':'执行'} · </span>}{label}</span>{loading&&<span className="enigma-model-loading" aria-label="正在记录模型选择"/>}
         </>
       )}
       renderGroupHeader={(g) => <ProviderGroupHeader provider={g} />}
     />
     {selection?.state==='pending'&&<span className={styles['model-selection-note']} role="status"><AppIcon name="arrowEnter" size={13}/>下一请求：{models.find(m=>m.id===selection.id&&m.provider===selection.provider)?.name||selection.id}<button type="button" aria-label="取消待切换模型" onClick={()=>void cancelSelection()}>×</button></span>}
     {cancelError&&<span className={styles['model-selection-note']} role="alert">{cancelError}</span>}
+    {policyError&&<span className={styles['model-selection-note']} role="alert">{policyError}</span>}
     {selection?.state==='failed'&&<span className={styles['model-selection-note']} role="alert" title={selection.error}>模型未切换：{selection.error||'请重新选择'}</span>}
+    {rolesOpen&&<ModelPolicyDialog close={()=>setRolesOpen(false)}/>}
     </div>
   );
 }
