@@ -8943,7 +8943,7 @@
       "sourceFile": "plugins/enigma/host.ts",
       "kind": "mkdir",
       "excerpt": "fs.mkdir(managerRoot,{recursive:true})",
-      "reason": "Creates a profile-owned manager workspace when no project scope exists.",
+      "reason": "Creates a profile-owned manager workspace when no project scope exists; removes it only when this same creation call made it and repository setup failed.",
       "storeId": "enigma-managed-workspace-roots",
       "exemptionId": null,
       "ordinal": 0
@@ -8963,6 +8963,15 @@
       "excerpt": "fs.mkdir(root, {recursive: true})",
       "reason": "Creates local metadata for a project without an external folder.",
       "storeId": "plugin-runtime-data",
+      "exemptionId": null,
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "plugins/enigma/host.ts",
+      "kind": "remove-path",
+      "excerpt": "fs.rm(managerRoot,{recursive:true,force:true})",
+      "reason": "Creates a profile-owned manager workspace when no project scope exists; removes it only when this same creation call made it and repository setup failed.",
+      "storeId": "enigma-managed-workspace-roots",
       "exemptionId": null,
       "ordinal": 0
     },
