@@ -1,16 +1,23 @@
 {
-  "name": "HanaAgent",
-  "short_name": "HanaAgent",
+  "name": "Enigma",
+  "short_name": "Enigma",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#f7f1e7",
-  "theme_color": "#f7f1e7",
+  "background_color": "#f6f2e9",
+  "theme_color": "#f6f2e9",
   "icons": [
     {
       "src": "./icon.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./assets/enigma/touch-icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

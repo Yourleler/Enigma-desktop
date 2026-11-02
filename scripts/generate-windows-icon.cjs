@@ -135,4 +135,6 @@ function main() {
   console.log(`Generated ${path.relative(ROOT, TARGET)} (${SIZES.join(", ")} px)`);
 }
 
-main();
+module.exports = { createIco };
+
+if (require.main === module) main();

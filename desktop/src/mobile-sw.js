@@ -1,4 +1,4 @@
-const CACHE_NAME = 'hana-mobile-v0';
+const CACHE_NAME = 'hana-mobile-v1';
 const APP_SHELL = [
   './',
   './manifest.webmanifest',
