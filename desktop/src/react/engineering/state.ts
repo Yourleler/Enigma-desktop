@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { hanaFetch } from "../hooks/use-hana-fetch";
 import { useStore } from "../stores";
+import { toggleJianSidebar } from '../stores/desk-actions';
 import { presentAction } from './interaction-copy';
 import { activeFieldValues } from './form-fields';
 
@@ -216,13 +217,7 @@ export function openEngineering(tab: Tab) {
   } catch {
     /* descriptors are optional UI state */
   }
-  useStore.setState({
-    jianOpen: true,
-    jianAutoCollapsed: false,
-    ...(window.innerWidth < 861
-      ? { sidebarOpen: false, sidebarAutoCollapsed: false }
-      : {}),
-  });
+  toggleJianSidebar(true);
   rememberEngineeringView();
   void loadEngineeringTab(tab);
 }

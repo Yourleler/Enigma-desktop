@@ -1688,6 +1688,14 @@ function mockPermissionDefault(mode = 'ask') {
   });
 
   describe('switchSession 的 hasData 语义（#405 直接回归）', () => {
+    it('returns to the conversation when navigating out of a narrow workspace drawer',async()=>{
+      Object.assign(mockState,{currentSessionPath:'/source',layoutDrawer:'workspace',jianOpen:true,jianAutoCollapsed:false,chatSessions:{'/target':{items:[]}}});
+      mockFetch.mockResolvedValueOnce(jsonResponse({sessionId:'target-id',cwd:'/workspace-target',agentId:'hana'}));
+      await switchSession('/target');
+      expect(mockState.currentSessionPath).toBe('/target');expect(mockState.layoutDrawer).toBeNull();
+      // Width arbitration keeps the existing pane preference for a wide window.
+      expect(mockState.jianOpen).toBe(true);
+    });
     it('点回已提交的当前 session 会取消在途切换，旧响应不能把焦点切走', async () => {
       Object.assign(mockState, {
         currentSessionPath: '/a',

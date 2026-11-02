@@ -5,7 +5,7 @@ import {afterEach,beforeEach,expect,it,vi} from 'vitest';
 import {WorkspaceCompanionRail} from '../../components/app/WorkspaceCompanionRail';
 import {MainContent} from '../../MainContent';
 import {useStore} from '../../stores';
-import {useEngineering} from '../state';
+import {useEngineering,openGroup} from '../state';
 import {SidebarLayout,updateLayout} from '../../components/SidebarLayout';
 import {useRightDock} from '../../stores/right-dock-store';
 import {ActionDialog} from '../Engineering';
@@ -13,6 +13,7 @@ vi.mock('../../components/app/WorkspaceFileChangeBridge',()=>({WorkspaceFileChan
 vi.mock('../../components/right-workspace/RightDock',()=>({RightDock:()=> <button>查看内容</button>}));
 vi.mock('../../components/BrowserCard',()=>({BrowserCard:()=>null}));
 vi.mock('../../components/ComputerUseOverlay',()=>({ComputerUseOverlay:()=>null}));
+vi.mock('../../hooks/use-hana-fetch',()=>({hanaFetch:vi.fn(async()=>({ok:true,json:async()=>({})}))}));
 beforeEach(()=>{
  vi.stubGlobal('t',(key:string)=>key);vi.stubGlobal('innerWidth',420);vi.stubGlobal('matchMedia',()=>({matches:false,addEventListener:vi.fn(),removeEventListener:vi.fn()}));
  localStorage.clear();document.documentElement.removeAttribute('style');useRightDock.setState({views:{}});
@@ -28,6 +29,14 @@ it('narrow pane occupies the shared frame without recreating the removed floatin
 it('closing a narrow pane preserves the selected content and lets it reopen',()=>{
  render(<Frame/>);fireEvent.keyDown(document,{key:'Escape'});expect(useEngineering.getState().active).toBe('group:reading');
  act(()=>{useStore.setState({jianOpen:true,jianAutoCollapsed:false});updateLayout('workspace');});expect(useStore.getState().layoutDrawer).toBe('workspace');expect(screen.getByRole('button',{name:'查看内容'})).toBeInTheDocument();
+});
+it('reopens the same engineering group after a narrow drawer was dismissed',async()=>{
+ useStore.setState({currentSessionPath:'/test',activeServerConnectionId:null,pendingSessionSwitchPath:null});
+ useEngineering.setState({sessionPath:'/test',tabs:[{id:'group:reading',group:'reading',title:'阅读'}]});
+ render(<Frame/>);fireEvent.keyDown(document,{key:'Escape'});
+ await act(async()=>openGroup('reading'));
+ expect(useStore.getState()).toMatchObject({jianOpen:true,layoutDrawer:'workspace'});
+ expect(screen.getByRole('button',{name:'查看内容'})).toBeInTheDocument();
 });
 it('removes closed pane controls from keyboard navigation',()=>{
  useStore.setState({jianOpen:false,layoutDrawer:null});const {container}=render(<WorkspaceCompanionRail/>);expect(container.querySelector('#jianSidebar')).toHaveAttribute('inert');

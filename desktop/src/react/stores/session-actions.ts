@@ -756,6 +756,7 @@ export async function switchSession(path: string): Promise<void> {
   if (path === s.currentSessionPath && !s.pendingNewSession) {
     useStore.setState(state => ({
       pendingSessionSwitchPath: null,
+      layoutDrawer: null,
       unreadOutputSessionPaths: filterSessionScopedStateList(state as Record<string, any>, state.unreadOutputSessionPaths || [], path),
     }));
     return;
@@ -861,6 +862,7 @@ export async function switchSession(path: string): Promise<void> {
     useStore.setState((prev: any) => ({
       ...currentSessionIdentityPatch(prev, path, data.sessionId),
       pendingSessionSwitchPath: null,
+      layoutDrawer: null,
       pendingNewSession: false,
       pendingDraftId: null,
       pendingProjectId: null,
@@ -1005,6 +1007,7 @@ async function switchDeletedAgentSession(path: string, version: number): Promise
     ...currentSessionIdentityPatch(state as Record<string, any>, path, projection?.sessionId),
     currentSessionPath: path,
     pendingSessionSwitchPath: null,
+    layoutDrawer: null,
     pendingNewSession: false,
     pendingDraftId: null,
     pendingProjectId: null,

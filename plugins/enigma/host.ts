@@ -84,7 +84,7 @@ type Binding = {
   guardianInterventions?: number;
   managedGrant?: { managerPath: string; root: string; models: string[] };
 };
-type ModelBinding = Pick<Binding, 'modelPolicy' | 'pendingModel'>;
+type ModelBinding = Pick<Binding, 'modelPolicy' | 'pendingModel' | 'managedGrant'>;
 const hosts = new WeakMap<object, EngineeringHost>();
 
 /** The only Hana-facing adapter. Engineering code never owns a second main session. */
@@ -372,7 +372,7 @@ export class EngineeringHost {
   }
   async createSideConversation(sourcePath: string, includeContext: boolean) {
     if(!this.isEnabled())throw new Error('侧边对话功能已关闭');
-    if((await this.binding(sourcePath))?.managedGrant)throw new Error('受管工作对话请由管家安排新的协作任务，不能绕过任务数量限制');
+    if((await this.modelBinding(sourcePath))?.managedGrant)throw new Error('受管工作对话请由管家安排新的协作任务，不能绕过任务数量限制');
     const source=this.engine.getSessionByPath(sourcePath)||await this.engine.ensureSessionLoaded(sourcePath);
     if(!source)throw new Error('原对话不可用');
     const branch=source.sessionManager.getBranch();
@@ -509,7 +509,7 @@ export class EngineeringHost {
     const selected = requested || (role ? `${role.provider}/${role.id}` : undefined);
     if (!selected) return {model:undefined};
     const slash = selected.indexOf('/');
-    if(slash<=0&&sessionPath&&(await this.binding(sessionPath))?.managedGrant)
+    if(slash<=0&&sessionPath&&(await this.modelBinding(sessionPath))?.managedGrant)
       throw new Error('受管子任务必须使用完整的供应商和模型标识，不能绕过允许模型范围');
     if (slash > 0) {
       const model = { provider: selected.slice(0, slash), id: selected.slice(slash + 1) };
@@ -612,8 +612,8 @@ export class EngineeringHost {
     };
   }
   async prepareModelRequest(sessionPath: string, native: any) {
-    if (!this.isEnabled()) return;
     if (!await this.modelBinding(sessionPath)) return;
+    if (!this.isEnabled()) { await this.assertManagedModel(sessionPath,native.model.provider,native.model.id); return; }
     await this.applyRequestedModel(sessionPath);
     await this.assertManagedModel(sessionPath, native.model.provider, native.model.id);
     const binding = await this.modelBinding(sessionPath), policy = binding?.modelPolicy;
@@ -912,7 +912,7 @@ export class EngineeringHost {
     return this.modelSelectionResult(sessionPath);
   }
   async assertManagedModel(sessionPath: string, provider: string, id: string) {
-    const grant = (await this.binding(sessionPath))?.managedGrant;
+    const grant = (await this.modelBinding(sessionPath))?.managedGrant;
     if (grant && !grant.models.includes(`${provider}/${id}`))
       throw new Error("Worker model is outside its current manager grant");
   }
@@ -920,9 +920,13 @@ export class EngineeringHost {
     sessionPath: string,
     managerPath: string,
     models: string[],
+    standaloneRoot?: string,
   ) {
-    const binding = await this.binding(sessionPath);
-    if (!binding) throw new Error("Worker workspace is not connected");
+    const engineeringBinding=await this.binding(sessionPath);
+    const binding = (await this.modelBinding(sessionPath))||{};
+    const root=engineeringBinding?.root||binding.managedGrant?.root||standaloneRoot;
+    if(!root||!path.isAbsolute(root))throw new Error('Worker workspace is not available');
+    if(!engineeringBinding&&standaloneRoot&&path.resolve(this.engine.getSessionByPath(sessionPath)?.sessionManager.getCwd()||'')!==path.resolve(standaloneRoot))throw new Error('Worker scope does not match its native conversation');
     if (
       binding.managedGrant &&
       binding.managedGrant.managerPath !== managerPath
@@ -931,7 +935,7 @@ export class EngineeringHost {
     this.nextModelIntent(sessionPath);
     binding.managedGrant = {
       managerPath,
-      root: binding.root,
+      root,
       models: [...models],
     };
     if (
@@ -965,7 +969,7 @@ export class EngineeringHost {
         maxRequests: policy.maxRequests,
       };
     }
-    await this.saveBinding(sessionPath, binding);
+    await this.saveModelBinding(sessionPath, binding);
   }
   async inherit(sourcePath: string, targetPath: string) {
     const binding = await this.binding(sourcePath);
@@ -1195,6 +1199,7 @@ export class EngineeringHost {
   }
   private async connectProjectOnce(sessionPath:string,memory:boolean){
     if (await this.binding(sessionPath)) return this.snapshot(sessionPath);
+    if((await this.modelBinding(sessionPath))?.managedGrant)throw new Error('资料工作对话使用原生文件工具；需要代码任务时请返回管家安排');
     const info = (await this.engine.listSessions()).find((item: any) => item.path === sessionPath);
     if (!info) throw new Error('无法找到当前对话');
     const projectId = info.projectId || autoProjectIdForCwd(info.cwd);
@@ -1209,6 +1214,7 @@ export class EngineeringHost {
   }
   async connect(sessionPath: string, root: string, memory = false) {
     if (!this.isEnabled()) throw new Error("Engineering plugin is disabled");
+    if(!await this.binding(sessionPath)&&(await this.modelBinding(sessionPath))?.managedGrant)throw new Error('资料工作对话不转换为代码工作区，请返回管家安排代码任务');
     const session =
       this.engine.getSessionByPath(sessionPath) ||
       (await this.engine.ensureSessionLoaded(sessionPath));
@@ -1272,15 +1278,18 @@ export class EngineeringHost {
         actions: [],
       };
     const binding = await this.binding(sessionPath);
-    if (!binding)
+    if (!binding) {
+      const modelBinding=await this.modelBinding(sessionPath);
       return {
         connected: false,
         groups: engineeringGroups,
         actions: uiActions,
         sessionPath,
-        modelPolicy: (await this.modelBinding(sessionPath))?.modelPolicy,
-        modelSelection: (await this.modelBinding(sessionPath))?.pendingModel,
+        modelPolicy: modelBinding?.modelPolicy,
+        modelSelection: modelBinding?.pendingModel,
+        ...(modelBinding?.managedGrant?.managerPath?{managerSessionPath:modelBinding.managedGrant.managerPath}:{}),
       };
+    }
     const controller = await this.controller(sessionPath);
     const cached = this.overviews.get(sessionPath);
     const overview =

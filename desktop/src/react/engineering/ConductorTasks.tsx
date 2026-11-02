@@ -78,6 +78,7 @@ export function ConductorTasks({ value: initial }: { value: any }) {
             <details className="enigma-task-goal"><summary>任务要求</summary><p>{task.goal}</p></details>
             {task.requires?.length>0&&<p className="enigma-source-note">前置任务：{task.requires.map((id:string)=>value.tasks.find((item:any)=>item.id===id)?.title||id).join('、')}。开始时会带入前置任务的固定代码成果。</p>}
             {task.inputVersions?.length>0&&<p className="enigma-source-note">已带入 {task.inputVersions.length} 个前置文件版本。整合这项成果前，需先选择相应上游成果。</p>}
+            {task.inputFiles?.length>0&&<details className="enigma-result"><summary>指定资料 · {task.inputFiles.length} 份</summary><p>启动前重新核对版本，再复制到工作对话；原文件不修改。</p><ul>{task.inputFiles.map((file:any)=><li key={`${file.fromTask||'manager'}:${file.fileId}`}>{file.label} <small>· {file.fromTask?`来自任务「${value.tasks.find((item:any)=>item.id===file.fromTask)?.title||file.fromTask}」`:'来自管家对话'}</small></li>)}</ul></details>}
             <div className="enigma-chips">
               <span>{task.executionActive&&task.status==='cancelled'?'已请求停止，正在收尾':task.executionActive&&task.status==='completed'?'工作对话仍有执行':task.waitingOnDependencies?'前置任务未完成':statuses[task.status] || "状态待核对"}</span>
               <span>

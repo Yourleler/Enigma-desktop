@@ -55,6 +55,18 @@ describe('ChatSidebarContent', () => {
 
   afterEach(() => {
     cleanup();
+    vi.unstubAllGlobals();
+  });
+
+  it('opens side conversation as a drawer on narrow screens and beside chat on wide screens',()=>{
+    vi.stubGlobal('innerWidth',550);
+    useStore.setState({jianOpen:false,jianAutoCollapsed:false,sidebarOpen:false,sidebarAutoCollapsed:false,layoutDrawer:null});
+    render(<AppNavigationRail/>);
+    fireEvent.click(screen.getByRole('button',{name:'侧边对话'}));
+    expect(useStore.getState()).toMatchObject({jianOpen:true,layoutDrawer:'workspace'});
+    vi.stubGlobal('innerWidth',1200);
+    fireEvent.click(screen.getByRole('button',{name:'侧边对话'}));
+    expect(useStore.getState()).toMatchObject({jianOpen:true,layoutDrawer:null});
   });
 
   it('keeps the desktop collapse control in the titlebar and disables hidden sidebar content', () => {

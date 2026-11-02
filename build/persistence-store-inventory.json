@@ -1082,14 +1082,16 @@
       "schemaContract": {
         "kind": "runtime-source",
         "source": "plugins/enigma/conductor.ts",
-        "compatibility": "Additive plugin-owned JSON; existing Hana schemas and DATA_EPOCH are unchanged."
+        "compatibility": "Schema 1 adds optional task kind and selected inputFiles with source file/task identity, label, SHA-256, byte length and an optional local file version signature. Old tasks remain code tasks; missing inputFiles is empty. Input copies are revalidated before dispatch and changed input sources invalidate group completion. Existing host schemas and DATA_EPOCH remain unchanged."
       },
       "openEntry": [
         "ConversationConductor.load",
         "ConversationConductor.initialize"
       ],
       "migrationEntry": [],
-      "protocolModules": [],
+      "protocolModules": [
+        "plugins/enigma/conductor-inputs.ts"
+      ],
       "firstPossibleOpenPhase": "engine_construct",
       "firstPossibleWritePhase": "runtime_ready",
       "epochPolicy": "compatible",
@@ -1150,7 +1152,7 @@
       "schemaSource": {
         "kind": "directory-contract",
         "module": "plugins/enigma/conductor.ts",
-        "contract": "managerId/taskId owned isolated workspace roots; code/Enigma state have independently verified protocols"
+        "contract": "managerId/taskId owned isolated workspace roots and exclusive read-only input copies; source file identities and SHA-256 live in the conductor ledger"
       },
       "schemaContract": {
         "kind": "protocol",
@@ -1161,7 +1163,9 @@
         "ConversationConductor.run"
       ],
       "migrationEntry": [],
-      "protocolModules": [],
+      "protocolModules": [
+        "plugins/enigma/conductor-inputs.ts"
+      ],
       "firstPossibleOpenPhase": "engine_construct",
       "firstPossibleWritePhase": "runtime_ready",
       "epochPolicy": "compatible",
@@ -1191,7 +1195,7 @@
       "schemaContract": {
         "kind": "runtime-source",
         "source": "plugins/enigma/host.ts",
-        "compatibility": "Schema 1 adds optional modelSessions keyed by native session identity, separate from engineering roots, plus delegated mode and an optional worker role. Missing modelSessions means no ordinary-conversation policy. Child policies snapshot their configured role without widening model grants; counters and actual source messages remain unchanged. Existing sessions and workspaces still load. Preserve a complete backup before using an older writer that does not understand these optional fields; DATA_EPOCH remains 1."
+        "compatibility": "Schema 1 adds optional modelSessions keyed by native session identity, separate from engineering roots, plus delegated mode and an optional worker role. Model-only workers may carry the same managedGrant shape (managerPath, root, models) without enabling repository tool restrictions. Missing modelSessions means no ordinary-conversation policy. Child policies and grants remain bounded across restart. Existing sessions and workspaces still load. Preserve a complete backup before using an older writer that does not understand optional fields; DATA_EPOCH remains 1."
       },
       "openEntry": [
         "EngineeringHost.load",
@@ -8773,6 +8777,24 @@
       "ordinal": 0
     },
     {
+      "sourceFile": "plugins/enigma/conductor-inputs.ts",
+      "kind": "mkdir",
+      "excerpt": "fs.mkdir(directory,{recursive:true})",
+      "reason": "Creates exclusive read-only input copies inside the new worker workspace; never modifies source files.",
+      "storeId": "enigma-managed-workspace-roots",
+      "exemptionId": null,
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "plugins/enigma/conductor-inputs.ts",
+      "kind": "write-file",
+      "excerpt": "fs.writeFile(destination,data,{flag:'wx',mode:0o444})",
+      "reason": "Creates exclusive read-only input copies inside the new worker workspace; never modifies source files.",
+      "storeId": "enigma-managed-workspace-roots",
+      "exemptionId": null,
+      "ordinal": 0
+    },
+    {
       "sourceFile": "plugins/enigma/conductor.ts",
       "kind": "atomic-write",
       "excerpt": "writeJson(this.file, value)",
@@ -8805,6 +8827,15 @@
       "excerpt": "fs.mkdir(path.dirname(this.file), { recursive: true })",
       "reason": "Writes only the manager ledger and its containing directory.",
       "storeId": "enigma-conductor-ledgers",
+      "exemptionId": null,
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "plugins/enigma/conductor.ts",
+      "kind": "mkdir",
+      "excerpt": "fs.mkdir(root)",
+      "reason": "Creates a fresh native-only worker directory when no code repository exists.",
+      "storeId": "enigma-managed-workspace-roots",
       "exemptionId": null,
       "ordinal": 0
     },

@@ -664,7 +664,7 @@
     ],
     "version": 3
   },
-  "payloadFingerprint": "sha256:78d055fcde9c9a97462a22393f3c75f221446a8850ff25ea025a08b057a5cbad",
+  "payloadFingerprint": "sha256:495bd5d7efc2c3ba63fac5f76c78adefecf39c5a08d3f593f7ebac81b9f566e7",
   "registry": [
     {
       "affectedByEpochMigration": true,
@@ -1708,10 +1708,12 @@
         "user/enigma-conductors/*.json"
       ],
       "preCoordinatorReadProjection": null,
-      "protocolModules": [],
+      "protocolModules": [
+        "plugins/enigma/conductor-inputs.ts"
+      ],
       "restorePolicy": "Validate the manager identity and inspect actual worker state before resuming; never blindly replay stored tasks.",
       "schemaContract": {
-        "compatibility": "Additive plugin-owned JSON; existing Hana schemas and DATA_EPOCH are unchanged.",
+        "compatibility": "Schema 1 adds optional task kind and selected inputFiles with source file/task identity, label, SHA-256, byte length and an optional local file version signature. Old tasks remain code tasks; missing inputFiles is empty. Input copies are revalidated before dispatch and changed input sources invalidate group completion. Existing host schemas and DATA_EPOCH remain unchanged.",
         "kind": "runtime-source",
         "source": "plugins/enigma/conductor.ts"
       },
@@ -1780,7 +1782,9 @@
         "workspaces/managed/"
       ],
       "preCoordinatorReadProjection": null,
-      "protocolModules": [],
+      "protocolModules": [
+        "plugins/enigma/conductor-inputs.ts"
+      ],
       "restorePolicy": "Resolve manager/task ownership, inspect source and pending effects, and use explicit Enigma recovery.",
       "schemaContract": {
         "compatibility": "The named runtime reader is canonical; this inventory does not imply stricter validation than runtime currently performs.",
@@ -1788,7 +1792,7 @@
         "source": "plugins/enigma/conductor.ts"
       },
       "schemaSource": {
-        "contract": "managerId/taskId owned isolated workspace roots; code/Enigma state have independently verified protocols",
+        "contract": "managerId/taskId owned isolated workspace roots and exclusive read-only input copies; source file identities and SHA-256 live in the conductor ledger",
         "kind": "directory-contract",
         "module": "plugins/enigma/conductor.ts"
       }
@@ -1823,7 +1827,7 @@
       ],
       "restorePolicy": "Restore only through the schema 1 binding reader; external workspace/code recovery remains an explicit Enigma operation.",
       "schemaContract": {
-        "compatibility": "Schema 1 adds optional modelSessions keyed by native session identity, separate from engineering roots, plus delegated mode and an optional worker role. Missing modelSessions means no ordinary-conversation policy. Child policies snapshot their configured role without widening model grants; counters and actual source messages remain unchanged. Existing sessions and workspaces still load. Preserve a complete backup before using an older writer that does not understand these optional fields; DATA_EPOCH remains 1.",
+        "compatibility": "Schema 1 adds optional modelSessions keyed by native session identity, separate from engineering roots, plus delegated mode and an optional worker role. Model-only workers may carry the same managedGrant shape (managerPath, root, models) without enabling repository tool restrictions. Missing modelSessions means no ordinary-conversation policy. Child policies and grants remain bounded across restart. Existing sessions and workspaces still load. Preserve a complete backup before using an older writer that does not understand optional fields; DATA_EPOCH remains 1.",
         "kind": "runtime-source",
         "source": "plugins/enigma/host.ts"
       },
@@ -3417,8 +3421,8 @@
   ],
   "review": {
     "classification": "compatible",
-    "compatibilityReason": "Optional schema 1 modelSessions and worker roles remain additive. Manager creation uses profile-owned workspaces and validates model grants. Existing custom session entries record explicit side-conversation context and plan notes. The additional source change rejects incomplete model identifiers under a managed grant and does not change persisted fields. Preserve full configuration before downgrade; DATA_EPOCH remains 1.",
-    "payloadFingerprint": "sha256:78d055fcde9c9a97462a22393f3c75f221446a8850ff25ea025a08b057a5cbad"
+    "compatibilityReason": "Schema 1 conductor tasks gain optional native-only kind and versioned input-file snapshots. Native-only workers retain model grants through modelSessions without repository-only tool restrictions. Version-checked read-only input copies live in existing manager-owned worker roots; source files are never modified. Changed or unavailable inputs invalidate completion of results that depend on them. Old tasks and absent optional fields remain readable. DATA_EPOCH stays 1.",
+    "payloadFingerprint": "sha256:495bd5d7efc2c3ba63fac5f76c78adefecf39c5a08d3f593f7ebac81b9f566e7"
   },
   "schemas": [
     {
@@ -3657,7 +3661,13 @@
       "contract": "schema 1 manager identity, explicit limits, owned projects/conversations, resumable interrupted tasks, selected integration previews and original acceptance evidence",
       "kind": "runtime-contract",
       "module": "plugins/enigma/conductor.ts",
-      "sourceHash": "sha256:437b28ad3ee69b3933310378eee9b5f2c2384a525af7eb1b8952dccb39dab788",
+      "protocolModules": [
+        {
+          "module": "plugins/enigma/conductor-inputs.ts",
+          "sourceHash": "sha256:bff3268497e5f8dbd56ec45df417f129e074dc6602b8eb91a6f6a7f88fc5875d"
+        }
+      ],
+      "sourceHash": "sha256:c5f3050c5d622599061b0bdc63716cd190f657ad5fd567dc3a6ac2da3ff14f85",
       "storeId": "enigma-conductor-ledgers"
     },
     {
@@ -3668,10 +3678,16 @@
       "storeId": "enigma-execution-policies"
     },
     {
-      "contract": "managerId/taskId owned isolated workspace roots; code/Enigma state have independently verified protocols",
+      "contract": "managerId/taskId owned isolated workspace roots and exclusive read-only input copies; source file identities and SHA-256 live in the conductor ledger",
       "kind": "directory-contract",
       "module": "plugins/enigma/conductor.ts",
-      "sourceHash": "sha256:437b28ad3ee69b3933310378eee9b5f2c2384a525af7eb1b8952dccb39dab788",
+      "protocolModules": [
+        {
+          "module": "plugins/enigma/conductor-inputs.ts",
+          "sourceHash": "sha256:bff3268497e5f8dbd56ec45df417f129e074dc6602b8eb91a6f6a7f88fc5875d"
+        }
+      ],
+      "sourceHash": "sha256:c5f3050c5d622599061b0bdc63716cd190f657ad5fd567dc3a6ac2da3ff14f85",
       "storeId": "enigma-managed-workspace-roots"
     },
     {
@@ -3688,7 +3704,7 @@
           "sourceHash": "sha256:b6fbc095c90f1222e565017ca0be3fb1134a4ca0298cc4908180bb5dc9a39ec7"
         }
       ],
-      "sourceHash": "sha256:895beb09327e3dde5e844831fb2b605e775e787aaab9a2f01e58938a7b38645d",
+      "sourceHash": "sha256:34f4afdf6f275535cb573d1c08fc2681ec9e34eaf1253571d516653a7e049762",
       "storeId": "enigma-session-bindings"
     },
     {
@@ -9422,6 +9438,22 @@
     },
     {
       "exemptionId": null,
+      "kind": "mkdir",
+      "ordinal": 0,
+      "reason": "Creates exclusive read-only input copies inside the new worker workspace; never modifies source files.",
+      "sourceFile": "plugins/enigma/conductor-inputs.ts",
+      "storeId": "enigma-managed-workspace-roots"
+    },
+    {
+      "exemptionId": null,
+      "kind": "write-file",
+      "ordinal": 0,
+      "reason": "Creates exclusive read-only input copies inside the new worker workspace; never modifies source files.",
+      "sourceFile": "plugins/enigma/conductor-inputs.ts",
+      "storeId": "enigma-managed-workspace-roots"
+    },
+    {
+      "exemptionId": null,
       "kind": "atomic-write",
       "ordinal": 0,
       "reason": "Writes only the manager ledger and its containing directory.",
@@ -9451,6 +9483,14 @@
       "reason": "Writes only the manager ledger and its containing directory.",
       "sourceFile": "plugins/enigma/conductor.ts",
       "storeId": "enigma-conductor-ledgers"
+    },
+    {
+      "exemptionId": null,
+      "kind": "mkdir",
+      "ordinal": 0,
+      "reason": "Creates a fresh native-only worker directory when no code repository exists.",
+      "sourceFile": "plugins/enigma/conductor.ts",
+      "storeId": "enigma-managed-workspace-roots"
     },
     {
       "exemptionId": "external-enigma-conductor-reports",

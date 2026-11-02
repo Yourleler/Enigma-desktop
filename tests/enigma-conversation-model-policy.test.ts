@@ -40,3 +40,11 @@ it('cannot use a bare child model alias to bypass a managed model grant',async()
  await expect(host.resolveChildOptions('chat-a','test/unapproved')).rejects.toThrow('outside');
  expect(await host.resolveChildOptions('chat-a','test/child')).toEqual({model:'test/child'});
 });
+it('keeps model grants on a native-only worker without enabling engineering tool restrictions',async()=>{
+ const {host,root,native,engine}=await fixture();Object.assign(native.sessionManager,{getCwd:()=>root});
+ await host.setManagedModels('chat-a','manager',['test/child'],root);
+ expect(await host.binding('chat-a')).toBeNull();expect((await host.modelBinding('chat-a'))?.managedGrant?.root).toBe(root);
+ await expect(host.assertManagedModel('chat-a','test','unapproved')).rejects.toThrow('outside');
+ await expect(host.connect('chat-a',root)).rejects.toThrow('不转换');
+ const restored=new EngineeringHost(engine);await restored.assertManagedModel('chat-a','test','child');await expect(restored.assertManagedModel('chat-a','test','other')).rejects.toThrow('outside');
+});

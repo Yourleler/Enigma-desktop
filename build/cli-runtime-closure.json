@@ -73909,6 +73909,18 @@
       "reason": "Reached via esbuild source module graph, imported by server/routes/enigma.ts (import-statement)."
     },
     {
+      "path": "plugins/enigma/conductor-inputs.ts",
+      "inputType": "source-graph",
+      "provenance": [
+        {
+          "root": "server-bootstrap",
+          "from": "plugins/enigma/conductor.ts",
+          "kind": "import-statement"
+        }
+      ],
+      "reason": "Reached via esbuild source module graph, imported by plugins/enigma/conductor.ts (import-statement)."
+    },
+    {
       "path": "plugins/enigma/conductor.ts",
       "inputType": "source-graph",
       "provenance": [
@@ -78009,9 +78021,9 @@
     }
   ],
   "stats": {
-    "totalFiles": 6424,
+    "totalFiles": 6425,
     "byInputType": {
-      "source-graph": 718,
+      "source-graph": 719,
       "runtime-asset": 11,
       "nft-runtime-trace": 5695
     }

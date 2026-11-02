@@ -3,7 +3,7 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { ConversationConductor } from '../plugins/enigma/conductor.ts';
-import { Workspace } from 'enigma-next';
+import { Workspace, Artifacts } from 'enigma-next';
 import { EngineeringHost } from '../plugins/enigma/host.ts';
 import {runProcess} from 'enigma-next/process';
 
@@ -53,6 +53,25 @@ it('snapshots the configured child model at enqueue while preserving explicit ta
   expect(explicit.modelPolicy?.execution.thinking).toBe('high');
   Object.assign(host,{binding:async()=>({modelPolicy:{worker:{provider:'other',id:'not-allowed'}}})});
   await expect(manager.enqueue({title:'bad child',goal:'read',requires:[],writeRepos:[],checks:[]})).rejects.toThrow('allowlist');
+});
+
+it('reads an owned saved report with explicit paging and preserves freshness and file provenance',async()=>{
+ const {manager,engine,directory}=await setup(),workspace=await Workspace.open(directory),content='Report evidence.\nOriginal checks are still required.';
+ await fs.mkdir(path.join(workspace.data,'handoffs'),{recursive:true});await fs.writeFile(path.join(workspace.data,'handoffs/report.md'),content);
+ Object.assign(engine,{getSessionByPath:()=>({sessionManager:{getSessionId:()=> 'manager-pi'}}),registerSessionFile:vi.fn(()=>({id:'sf_report'}))});
+ const artifacts=new Artifacts(workspace),record=await artifacts.add({title:'Read-only result',kind:'report',task:'manager-pi',runtime:'handoffs/report.md'});
+ const listed=await manager.readReport();expect((listed as any).reports.map(row=>row.id)).toContain(record.id);
+ const first:any=await manager.readReport({artifact:record.id,length:12});expect(first.text).toBe(content.slice(0,12));expect(first.nextOffset).toBe(12);expect(first.totalCharacters).toBe(content.length);expect(first.sourceCurrent).toBe(true);expect(first.fileId).toBe('sf_report');
+ const rest:any=await manager.readReport({artifact:record.id,offset:12});expect(first.text+rest.text).toBe(content);expect(rest.nextOffset).toBeNull();
+ const foreign=await artifacts.add({title:'Another task',kind:'report',task:'foreign',runtime:'handoffs/report.md'});
+ await expect(manager.readReport({artifact:foreign.id})).rejects.toThrow('another task');
+});
+
+it('lists only the selected owned conversation files with explicit continuation',async()=>{
+ const {manager,engine}=await setup();Object.assign(engine,{listActiveSessionFiles:vi.fn(()=>Array.from({length:205},(_,index)=>({id:`sf_${index}`,label:`note ${index}`,size:3,status:'available'})))});
+ const first=await manager.files();expect(first.files).toHaveLength(100);expect(first.total).toBe(205);expect(first.nextOffset).toBe(100);
+ const last=await manager.files({offset:200});expect(last.files).toHaveLength(5);expect(last.nextOffset).toBeNull();
+ await expect(manager.files({id:'foreign'})).rejects.toThrow('Only conversations');
 });
 
 it('allows narrowing persisted manager limits and rejects silent expansion or rewind enablement',async()=>{
