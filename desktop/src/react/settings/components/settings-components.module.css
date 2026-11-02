@@ -298,6 +298,12 @@
     margin-top: var(--space-8);
 }
 
+/* 直接放在无内边距卡片里时，与卡片内列表行（space-12）对齐，避免贴边 */
+.surfaceCard > .expandable {
+    margin-top: 0;
+    padding: 0 var(--space-12);
+}
+
 .expandableHeader {
     display: flex;
     align-items: center;

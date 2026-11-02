@@ -935,6 +935,8 @@
 :global(.enigma-compact-session-list) .sessionItemActions > button:active { transform:scale(.92);background:color-mix(in srgb,var(--accent) 14%,transparent); }
 :global(.enigma-compact-session-list) .sessionItemActions > button:focus-visible { outline:1px solid var(--accent);outline-offset:1px; }
 @media(any-pointer:coarse) { :global(.enigma-compact-session-list) .sessionItemActions > button {width:44px;height:44px;} :global(.enigma-compact-session-list) .sessionItem {min-height:48px;} :global(.enigma-compact-session-list) .sessionItem:is(:hover,:focus-within) .sessionItemHeader,:global(.enigma-compact-session-list) .sessionItemHeader {padding-right:138px;} }
+/* 主输入为触屏（手机/平板）时三个 44px 按钮会把标题挤到只剩 2~3 个字；置顶/归档都在“⋯”菜单里，行内只留“⋯” */
+@media(pointer:coarse) { :global(.enigma-compact-session-list) .sessionItemActions > :is(.sessionPinBtn,.sessionArchiveBtn) {display:none;} :global(.enigma-compact-session-list) .sessionItem:is(:hover,:focus-within) .sessionItemHeader,:global(.enigma-compact-session-list) .sessionItemHeader {padding-right:48px;} }
 
 :global(.enigma-compact-session-list) .sidebarSection {margin:16px 0 8px;}
 :global(.enigma-compact-session-list) .sidebarSectionHeading {padding:0 10px;margin-bottom:4px;}
