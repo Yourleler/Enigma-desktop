@@ -1,3 +1,4 @@
+import {ResourceMentionPicker,type ResourceMention} from './ResourceMentionPicker';
 import { GlassSelection } from '../../ui/GlassSelection';
 import { memo, useEffect, useMemo, useRef, type RefObject } from 'react';
 import type { Agent } from '../../types';
@@ -9,10 +10,11 @@ import { FileKindIcon } from '../shared/FileKindIcon';
 import { FolderIcon } from '../shared/FolderIcon';
 import styles from './InputArea.module.css';
 
-export type MentionMenuItem = FileMentionItem | SessionMentionItem | AgentMentionItem;
+export type MentionMenuItem = FileMentionItem | SessionMentionItem | AgentMentionItem | ResourceMention;
 
 export const MentionMenu = memo(function MentionMenu({
   tab,
+  query = '',
   items,
   selected,
   busy,
@@ -22,6 +24,7 @@ export const MentionMenu = memo(function MentionMenu({
   onHover,
 }: {
   tab: MentionTab;
+  query?:string;
   items: MentionMenuItem[];
   selected: number;
   busy: boolean;
@@ -40,7 +43,7 @@ export const MentionMenu = memo(function MentionMenu({
   return (
     <div className={styles['mention-menu']} data-liquid="menu" data-menu-surface="" data-menu-position="absolute" role="dialog" aria-label={t('input.mention.title')}>
       <div className={styles['mention-tabs']} role="tablist" data-glass-segmented=""><GlassSelection selection={tab}/>
-        {(['files', 'sessions', 'agents'] as MentionTab[]).map(value => (
+        {(['repositories', 'branches', 'files', 'github', 'sessions', 'agents'] as MentionTab[]).map(value => (
           <button
             key={value}
             type="button"
@@ -52,11 +55,11 @@ export const MentionMenu = memo(function MentionMenu({
               onTabChange(value);
             }}
           >
-            {t(`input.mention.tab.${value}`)}
+            {({repositories:'仓库',branches:'分支',github:'GitHub'} as Record<string,string>)[value]||t(`input.mention.tab.${value}`)}
           </button>
         ))}
       </div>
-      <div className={styles['mention-results']} role="listbox">
+      {tab==='repositories'||tab==='branches'||tab==='github'?<ResourceMentionPicker kind={tab} query={query} onSelect={onSelect}/>:<div className={styles['mention-results']} role="listbox">
         {items.map((item, index) => (
           <MentionItemButton
             key={item.id}
@@ -73,7 +76,7 @@ export const MentionMenu = memo(function MentionMenu({
             {busy ? t('common.loading') : t('input.mention.empty')}
           </div>
         )}
-      </div>
+      </div>}
     </div>
   );
 });

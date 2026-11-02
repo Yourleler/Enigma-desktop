@@ -120,17 +120,6 @@ function WelcomeInner() {
           selectedId={selectedAgentId || currentAgentId}
         />
       )}
-      <FolderPicker
-        agents={agents}
-        currentAgentId={currentAgentId}
-        selectedFolder={selectedFolder}
-        selectedWorkspaceMountId={selectedWorkspaceMountId}
-        selectedWorkspaceLabel={selectedWorkspaceLabel}
-        studioWorkspaces={studioWorkspaces}
-        homeFolder={homeFolder}
-        workspaceFolders={workspaceFolders}
-        cwdHistory={cwdHistory}
-      />
       <MemoryToggle enabled={memoryEnabled} masterEnabled={memoryMasterEnabled} t={t} />
     </div>
   );
@@ -599,4 +588,9 @@ function MemoryToggle({ enabled, masterEnabled, t }: {
       <span>{label}</span>
     </button>
   );
+}
+
+export function WelcomeWorkspacePicker(){
+ const agents=useStore(s=>s.agents),currentAgentId=useStore(s=>s.currentAgentId),selectedFolder=useStore(s=>s.selectedFolder),selectedWorkspaceMountId=useStore(s=>s.selectedWorkspaceMountId),selectedWorkspaceLabel=useStore(s=>s.selectedWorkspaceLabel),studioWorkspaces=useStore(s=>s.studioWorkspaces),homeFolder=useStore(s=>s.homeFolder),workspaceFolders=useStore(s=>s.workspaceFolders),cwdHistory=useStore(s=>s.cwdHistory);
+ return <FolderPicker agents={agents} currentAgentId={currentAgentId} selectedFolder={selectedFolder} selectedWorkspaceMountId={selectedWorkspaceMountId} selectedWorkspaceLabel={selectedWorkspaceLabel} studioWorkspaces={studioWorkspaces} homeFolder={homeFolder} workspaceFolders={workspaceFolders} cwdHistory={cwdHistory}/>;
 }

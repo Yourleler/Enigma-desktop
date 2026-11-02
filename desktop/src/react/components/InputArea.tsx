@@ -972,6 +972,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
   }), [agents, fileMentionQuery, slashAgentId]);
 
   const mentionItems = useMemo<MentionMenuItem[]>(() => {
+    if (['repositories','branches','github'].includes(mentionTab)) return [];
     if (mentionTab === 'sessions') return sessionMentionItems;
     if (mentionTab === 'agents') return agentMentionItems;
     return fileMentionItems;
@@ -1565,7 +1566,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
     hasText: inputText.trim().length > 0,
     hasFiles: attachedFiles.length > 0 || editorHasInlineNode(editor, 'fileBadge'),
     hasSkills: editorHasInlineNode(editor, 'skillBadge'),
-    hasMentions: editorHasInlineNode(editor, 'sessionBadge') || editorHasInlineNode(editor, 'agentBadge'),
+    hasMentions: editorHasInlineNode(editor, 'resourceBadge') || editorHasInlineNode(editor, 'sessionBadge') || editorHasInlineNode(editor, 'agentBadge'),
     hasDocContext: docContextAttached,
     hasQuotes: quotedSelections.length > 0,
   });
@@ -1765,6 +1766,11 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
   }, [editor, fileMentionRange, inputLocked]);
 
   const handleMentionSelect = useCallback((item: MentionMenuItem) => {
+    if('kind' in item&&item.kind==='resource'){
+      if(inputLocked||!editor||!fileMentionRange)return;
+      editor.chain().focus().deleteRange({from:fileMentionRange.from,to:fileMentionRange.to}).insertContent({type:'resourceBadge',attrs:{label:item.name,reference:item.reference,kind:'repository'}}).insertContent(' ').run();
+      setFileMenuOpen(false);setFileMentionRange(null);setFileMentionQuery('');return;
+    }
     if ('kind' in item && item.kind === 'session') {
       if (inputLocked || !editor || !fileMentionRange) return;
       editor.chain()
@@ -1805,6 +1811,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
     const editorJson = editor.getJSON();
     const { text: rawText, skills, fileRefs, sessionRefs, agentMentions } = serializeEditor(editorJson);
     const text = rawText.trim();
+    const resourceDisplayText = serializeEditor(editorJson,{displayResources:true}).text.trim();
     const clickState = useStore.getState();
     const clickedPendingDraftId = clickState.pendingNewSession ? clickState.pendingDraftId : null;
     const clickedSessionPath = clickState.currentSessionPath;
@@ -2089,7 +2096,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
       if(connectionIdentity(useStore.getState())!==clickedConnection)return;
       const clientMessageId = createClientUserMessageId();
       const displayMessage = {
-        text,
+        text: resourceDisplayText,
         ...(/\[(?:图片|文件) \d+\]/.test(text) ? {inlineAttachments:true} : {}),
         skills: skills.length > 0 ? skills : undefined,
         quotedText: quotes.length > 0 ? quotes.map(q => q.text).join('\n\n') : undefined,
@@ -2115,8 +2122,8 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
       if(type!=='queue')useStore.getState().appendOptimisticUserMessage(sessionPathForSend, {
         id: clientMessageId,
         role: 'user',
-        text,
-        textHtml: text ? renderMarkdown(text) : undefined,
+        text: resourceDisplayText,
+        textHtml: resourceDisplayText ? renderMarkdown(resourceDisplayText) : undefined,
         timestamp: Date.now(),
         attachments: displayMessage.attachments,
         quotedText: displayMessage.quotedText,
@@ -2239,9 +2246,14 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
     }
     if(expandedComposer||imageFocus)return false;
     if (fileMenuOpen) {
+      if (['repositories','branches','github'].includes(mentionTab) && ['ArrowDown','Enter','Tab'].includes(e.key)) {
+        e.preventDefault();
+        fileMenuRef.current?.querySelector<HTMLElement>('.enigma-resource-picker button:not(:disabled)')?.focus();
+        return true;
+      }
       if ((e.key === 'ArrowRight' || e.key === 'ArrowLeft')) {
         e.preventDefault();
-        const tabs: MentionTab[] = ['files', 'sessions', 'agents'];
+        const tabs: MentionTab[] = ['repositories', 'branches', 'files', 'github', 'sessions', 'agents'];
         const direction = e.key === 'ArrowRight' ? 1 : -1;
         setMentionTab(tabs[(tabs.indexOf(mentionTab) + direction + tabs.length) % tabs.length]);
         setFileSelected(0);
@@ -2397,6 +2409,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
         {fileMenuOpen && (
           <MentionMenu
             tab={mentionTab}
+            query={fileMentionQuery}
             items={mentionItems}
             selected={fileSelected}
             busy={fileMentionBusy}

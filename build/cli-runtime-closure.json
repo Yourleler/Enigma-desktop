@@ -654,11 +654,16 @@
         },
         {
           "root": "server-bootstrap",
+          "from": "plugins/enigma/repository-resources.ts",
+          "kind": "import-statement"
+        },
+        {
+          "root": "server-bootstrap",
           "from": "plugins/enigma/change-workbench.ts",
           "kind": "import-statement"
         }
       ],
-      "reason": "Reached via esbuild source module graph, imported by core/session-coordinator.ts (import-statement); core/engine.ts (import-statement); plugins/enigma/change-workbench.ts (import-statement)."
+      "reason": "Reached via esbuild source module graph, imported by core/session-coordinator.ts (import-statement); core/engine.ts (import-statement); plugins/enigma/repository-resources.ts (import-statement); +1 more importer(s)."
     },
     {
       "path": "core/credential-backup-retention.ts",
@@ -74055,6 +74060,18 @@
       "reason": "Reached via esbuild source module graph, imported by plugins/enigma/conductor.ts (import-statement); plugins/enigma/conversation-model-policy.ts (import-statement); plugins/enigma/host.ts (import-statement)."
     },
     {
+      "path": "plugins/enigma/repository-resources.ts",
+      "inputType": "source-graph",
+      "provenance": [
+        {
+          "root": "server-bootstrap",
+          "from": "server/routes/enigma.ts",
+          "kind": "import-statement"
+        }
+      ],
+      "reason": "Reached via esbuild source module graph, imported by server/routes/enigma.ts (import-statement)."
+    },
+    {
       "path": "plugins/enigma/session-changes.ts",
       "inputType": "source-graph",
       "provenance": [
@@ -78026,9 +78043,9 @@
     }
   ],
   "stats": {
-    "totalFiles": 6425,
+    "totalFiles": 6426,
     "byInputType": {
-      "source-graph": 719,
+      "source-graph": 720,
       "runtime-asset": 11,
       "nft-runtime-trace": 5695
     }

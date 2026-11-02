@@ -1,3 +1,4 @@
+import {ResourceBadge} from './extensions/resource-badge';
 import type { Extensions } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import { Bold } from '@tiptap/extension-bold';
@@ -31,6 +32,7 @@ export function createInputEditorExtensions(placeholder: InputEditorPlaceholder)
     Placeholder.configure({ placeholder }),
     SkillBadge,
     FileBadge,
+    ResourceBadge,
     AttachmentInsertion,
     SessionBadge,
     AgentBadge,

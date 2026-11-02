@@ -21,7 +21,7 @@ export interface EditorAgentMention {
 /**
  * Walk TipTap JSON document, extract input badges and plain text.
  */
-export function serializeEditor(json: JSONContent): {
+export function serializeEditor(json: JSONContent, format: {displayResources?:boolean} = {}): {
   text: string;
   skills: string[];
   fileRefs: EditorFileRef[];
@@ -44,6 +44,7 @@ export function serializeEditor(json: JSONContent): {
   }
 
   function serializeInline(node: JSONContent, options: { emitFileBadgeText?: boolean } = {}): string {
+    if (node.type === 'resourceBadge' && node.attrs) return format.displayResources ? `@${String(node.attrs.label)}` : `[@${String(node.attrs.label||'资源')}]\n${String(node.attrs.reference||'')}\n`;
     if (node.type === 'skillBadge' && node.attrs?.name) {
       skills.push(node.attrs.name as string);
       return '';

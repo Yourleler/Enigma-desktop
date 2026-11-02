@@ -1,3 +1,4 @@
+import {repositoryResources,repositoryBranches,githubResources} from '../../plugins/enigma/repository-resources.ts';
 import {desktopInputQueue} from '../../core/desktop-input-queue.ts';
 import { SessionChanges } from '../../plugins/enigma/session-changes.ts';
 import {ChangeWorkbench} from '../../plugins/enigma/change-workbench.ts';
@@ -7,6 +8,7 @@ import { createRequestContext } from "../http/boundary.ts";
 import { engineeringHost } from "../../plugins/enigma/host.ts";
 import { Artifacts, DocumentationStore,BackgroundRuns,TaskEvents,ServiceManager,artifactPresentation,artifactContentDisposition,readStoredReviewSource } from "enigma-next";
 import fs from "node:fs/promises";
+import path from "node:path";
 import { withNativeEngineeringExecution } from "../../plugins/enigma/execution-policy.ts";
 import { isReadOnlyPermissionMode } from '../../core/session-permission-mode.ts';
 import { hash } from 'enigma-next/storage';
@@ -52,6 +54,20 @@ export function createEnigmaRoute(engine: any) {
   route.post('/enigma/input-queue',async c=>{try{const body=await safeJson(c),sessionPath=await session(c,true,body);return c.json(await desktopInputQueue(engine).add(sessionPath,body));}catch(error){return fail(c,error);}});
   route.patch('/enigma/input-queue',async c=>{try{const body=await safeJson(c),sessionPath=await session(c,true,body);return c.json(await desktopInputQueue(engine).update(sessionPath,body));}catch(error){return fail(c,error);}});
   route.post('/enigma/input-queue/send',async c=>{try{const body=await safeJson(c),sessionPath=await session(c,true,body);await desktopInputQueue(engine).sendNow(sessionPath,body.id);return c.json({ok:true});}catch(error){return fail(c,error);}});
+  route.post('/enigma/repositories/context',async c=>{try{
+    const body=await safeJson(c),context=createRequestContext(c,engine);
+    const sp=body.sessionPath?await session(c,false,body):undefined;
+    if(sp&&!context.authorize?.('files.read',{kind:'session',sessionPath:sp})?.allowed)return c.json({error:'没有读取目录的权限'},403);
+    if(!sp&&context.authPrincipal?.kind!=='local_user')return c.json({error:'本机目录选择仅对本机用户开放'},403);
+    const roots=Array.isArray(body.roots)?body.roots.filter((r:any)=>typeof r==='string'&&path.isAbsolute(r)).slice(0,12):[];
+    const repositories=await repositoryResources(engine,sp,roots);
+    if(body.branchRoot){const repo=repositories.find(r=>r.path===body.branchRoot);if(!repo)throw Error('目录不在当前对话范围内');return c.json({branches:await repositoryBranches(repo.path)});}
+    return c.json({repositories});
+  }catch(error){return fail(c,error);}});
+  route.get('/enigma/github/resources',async c=>{try{
+    const context=createRequestContext(c,engine);if(context.authPrincipal?.kind!=='local_user')return c.json({error:'GitHub账号资源仅对本机用户开放'},403);
+    return c.json(await githubResources({repo:c.req.query('repo'),page:Number(c.req.query('page')||1)}));
+  }catch(error){return fail(c,error);}});
   const changes = new SessionChanges(engine, host);
   const readingWorkbench=new ChangeWorkbench(engine,host);
   const readingAccess=async(c:any,write=false,body:any={})=>{

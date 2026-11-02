@@ -1,3 +1,4 @@
+import {RepositoryContextBar} from '../chat/RepositoryContext';
 import { AppearanceMenu } from '../../engineering/AppearanceMenu';
 import { AppIcon } from '../../ui/app-icons';
 import { ChannelTabBar } from '../channels/ChannelTabBar';
@@ -74,6 +75,7 @@ export function AppTitlebar({
           <span>{centerTitle}</span>
         </div>
       )}
+      {centerTitle&&<RepositoryContextBar compact/>}
       <div id="enigma-titlebar-chat-tools"/>
       </div>
       <div id="enigma-titlebar-workspace" hidden={!jianOpen}/>

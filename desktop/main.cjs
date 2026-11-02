@@ -5704,6 +5704,13 @@ wrapIpcBestEffortHandler("open-folder", (_event, folderPath) => {
   shell.openPath(folderPath);
 });
 
+wrapIpcBestEffortHandler("open-terminal", async (_event, folderPath) => {
+  if(typeof folderPath!=="string"||!path.isAbsolute(folderPath)||!fs.statSync(folderPath).isDirectory())return {ok:false,error:"请选择有效工作目录"};
+  const command=process.platform==='darwin'?'/usr/bin/open':process.platform==='win32'?'wt.exe':'x-terminal-emulator';
+  const args=process.platform==='darwin'?['-a','Terminal',folderPath]:process.platform==='win32'?['-d',folderPath]:[];
+  return new Promise(resolve=>execFile(command,args,{cwd:folderPath},error=>resolve(error?{ok:false,error:"系统终端无法打开，请检查终端安装"}:{ok:true})));
+});
+
 // 原生拖拽：书桌文件拖到 Finder / 聊天区
 wrapIpcOn("start-drag", async (event, filePaths) => {
   const paths = Array.isArray(filePaths) ? filePaths : [filePaths];

@@ -1,3 +1,4 @@
+import {TerminalChooser} from '../components/chat/RepositoryContext';
 import { WorkspaceChooser } from "./WorkspaceChooser";
 import { resolveServerConnection } from "../services/server-connection";
 import { GlassSelection } from '../ui/GlassSelection';
@@ -74,6 +75,7 @@ export function EngineeringToolbar({compact=false}:{compact?:boolean}={}) {
   const activeTab = useEngineering((s) => s.active);
   const [modelsOpen, setModelsOpen] = useState(false);
   const [catalogOpen, setCatalogOpen] = useState(false);
+  const [terminalOpen,setTerminalOpen]=useState(false);
   const [appearance]=useMaterialPreferences();
   useLayoutEffect(()=>{restoreTabs(sessionPath);},[sessionPath,connection]);
   useEffect(() => {
@@ -132,10 +134,12 @@ export function EngineeringToolbar({compact=false}:{compact?:boolean}={}) {
         <button onClick={()=>setCatalogOpen(true)}>全部操作<small>搜索操作和说明</small></button>
         <button onClick={()=>void engineeringRequest('/conductor/new',sessionPath,{}).then(result=>switchSession(result.sessionPath)).catch(error=>useEngineering.setState({error:String(error)}))}>新建任务管家</button>
       </> : toolSections.map(section=><div className="enigma-feature-section" key={section.label}><div className="enigma-menu-section-title">{section.label}</div>{section.ids.filter(id=>id!=='conductor').map(id=><button key={id} onClick={()=>void openProjectTool(id)}>{groups.find(g=>g.id===id)?.label}<small>{featureHint(id)}</small></button>)}</div>)}
+      <button onClick={()=>setTerminalOpen(true)}>打开终端<small>选择仓库的工作目录</small></button>
       <button onClick={()=>setModelsOpen(true)}>模型分工<small>规划、执行、复核使用的模型</small></button>
       {snapshot?.connected&&<button onClick={()=>useEngineering.setState({connectOpen:true})}>切换项目目录<small>{snapshot.root}</small></button>}
     </SurfaceMenu>
     {snapshot?.connected&&(busy||operation?.state==='failed'||snapshot.overview?.blockers?.length>0)&&<button className="enigma-compact-status" onClick={()=>openGroup('observer')} data-tooltip="查看当前阶段、等待原因和旁路诊断"><span className={busy?'enigma-live':''}>●</span>{busy?'运行中':'待核对'}</button>}
+    {terminalOpen&&<TerminalChooser close={()=>setTerminalOpen(false)}/>}
     <ConnectDialog/><ActionDialog/><ApprovalDialog/>
     {catalogOpen&&<ActionCatalog close={()=>setCatalogOpen(false)}/>}
     {modelsOpen&&<ModelPolicyDialog close={()=>setModelsOpen(false)}/>}

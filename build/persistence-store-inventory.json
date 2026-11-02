@@ -2122,7 +2122,7 @@
       "schemaContract": {
         "kind": "runtime-source",
         "source": "core/input-drafts-store.ts",
-        "compatibility": "Draft file version 1 is retained. Optional sequence, per-key revisions and source quote arrays support conditional writes and quote-only drafts; absent fields normalize to zero/empty. Quote records retain source identity and text, excluding transient screen geometry. New clients require the quotes capability before syncing quote drafts; new servers reject legacy writes that omit existing quotes. Older servers can discard this additive field, so downgrade requires preserving the full draft backup and a fresh client/server baseline. No claim of quote or concurrency protection across an old server writer."
+        "compatibility": "Draft file version 1 is retained. Editor documents may include an inline resourceBadge carrying label, reference and kind; current clients serialize it into the outgoing text. Retain full draft backups before opening older clients that do not recognize the new editor node. Optional sequence, per-key revisions and source quote arrays support conditional writes and quote-only drafts; absent fields normalize to zero/empty. Quote records retain source identity and text, excluding transient screen geometry. New clients require the quotes capability before syncing quote drafts; new servers reject legacy writes that omit existing quotes. Older servers can discard this additive field, so downgrade requires preserving the full draft backup and a fresh client/server baseline. No claim of quote or concurrency protection across an old server writer."
       },
       "openEntry": [
         "new InputDraftsStore",
@@ -2130,7 +2130,8 @@
       ],
       "migrationEntry": [],
       "protocolModules": [
-        "shared/input-drafts.ts"
+        "shared/input-drafts.ts",
+        "desktop/src/react/components/input/extensions/resource-badge.ts"
       ],
       "firstPossibleOpenPhase": "engine_construct",
       "firstPossibleWritePhase": "engine_construct",

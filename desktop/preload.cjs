@@ -103,6 +103,7 @@ contextBridge.exposeInMainWorld("hana", {
   selectFiles: (options) => ipcRenderer.invoke("select-files", options),
   selectSkill: () => ipcRenderer.invoke("select-skill"),
   selectPlugin: () => ipcRenderer.invoke("select-plugin"),
+  openTerminal: (path) => ipcRenderer.invoke("open-terminal", path),
   openFolder: (path) => ipcRenderer.invoke("open-folder", path),
   openFile: (path) => ipcRenderer.invoke("open-file", path),
   openExternal: (url) => ipcRenderer.invoke("open-external", url),

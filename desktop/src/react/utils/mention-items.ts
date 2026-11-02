@@ -1,6 +1,6 @@
 import type { Agent, Session } from '../types';
 
-export type MentionTab = 'files' | 'sessions' | 'agents';
+export type MentionTab = 'files' | 'repositories' | 'branches' | 'github' | 'sessions' | 'agents';
 
 export interface SessionMentionItem {
   kind: 'session';

@@ -1891,3 +1891,4 @@
 .input-bottom-bar .model-choice { min-width:0; flex:1 1 auto; }
 .input-bottom-bar .model-pill { color:var(--text); }
 @container (max-width: 540px) { .input-bottom-bar { flex-wrap:wrap; row-gap:2px; } .input-controls { margin-left:auto; max-width:100%; } }
+.mention-tabs { flex-wrap:wrap; }

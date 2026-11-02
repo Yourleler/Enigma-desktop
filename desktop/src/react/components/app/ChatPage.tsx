@@ -1,10 +1,11 @@
+import {RepositoryContextBar} from '../chat/RepositoryContext';
 import './ConversationHeader.css';
 import {ProjectContextBar} from '../chat/ProjectContextBar';
 import { SessionClock } from '../chat/SessionClock';
 import { EngineeringToolbar } from '../../engineering/Engineering';
 import { useStore } from '../../stores';
 import { InputArea, type InputAreaProps } from '../InputArea';
-import { WelcomeScreen } from '../WelcomeScreen';
+import { WelcomeScreen,WelcomeWorkspacePicker } from '../WelcomeScreen';
 import { ChatArea } from '../chat/ChatArea';
 import { RegionalErrorBoundary } from '../RegionalErrorBoundary';
 import {HeaderSlot} from './HeaderSlot';
@@ -36,6 +37,7 @@ export function ChatPage({
         <EngineeringToolbar compact/>
         <SessionClock compact inline/>
       </div></HeaderSlot>
+      <div className={welcomeVisible?"enigma-new-conversation":undefined} style={welcomeVisible?undefined:{display:"contents"}}>
       <div className={`chat-area${hasPanels ? ' has-panels' : ''}`}>
         <WelcomeContainer />
         <RegionalErrorBoundary region={`${regionPrefix}chat`} resetKeys={[currentSessionPath]}>
@@ -49,7 +51,9 @@ export function ChatPage({
           autoRetry={inputSurface === 'mobile' ? { attempts: 2, delayMs: 120 } : undefined}
         >
           <InputArea key={currentSessionPath || '__new'} surface={inputSurface} />
+          {welcomeVisible&&<div className="enigma-composer-repositories"><WelcomeWorkspacePicker/><RepositoryContextBar/></div>}
         </RegionalErrorBoundary>
+      </div>
       </div>
     </>
   );

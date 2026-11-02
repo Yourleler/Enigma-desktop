@@ -610,6 +610,7 @@ export interface PlatformApi {
   viewerClose?(): void;
   /** 主窗口监听任意 viewer 关闭，payload 是 windowId（用于清理 pinnedViewers store）。 */
   onViewerClosed?(callback: (windowId: number) => void): void;
+  openTerminal?(path: string): Promise<{ok:boolean;error?:string}>;
   openFolder(path: string): void;
   openFile(path: string): void;
   openExternal(url: string): void;

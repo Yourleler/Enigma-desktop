@@ -664,7 +664,7 @@
     ],
     "version": 3
   },
-  "payloadFingerprint": "sha256:42271e45ccb22deadde6a601c2ebf36b4a0a5684d4020963e6011b439ff8776c",
+  "payloadFingerprint": "sha256:2f108d307a26cbd21354582fa47057e59287dcac3df6115e8e3c3ff279db89b3",
   "registry": [
     {
       "affectedByEpochMigration": true,
@@ -2749,11 +2749,12 @@
       ],
       "preCoordinatorReadProjection": null,
       "protocolModules": [
-        "shared/input-drafts.ts"
+        "shared/input-drafts.ts",
+        "desktop/src/react/components/input/extensions/resource-badge.ts"
       ],
       "restorePolicy": "Restore the full file atomically before opening clients. Restart clients to obtain the restored revision baseline; never replay stale conditional mutations as unconditional writes.",
       "schemaContract": {
-        "compatibility": "Draft file version 1 is retained. Optional sequence, per-key revisions and source quote arrays support conditional writes and quote-only drafts; absent fields normalize to zero/empty. Quote records retain source identity and text, excluding transient screen geometry. New clients require the quotes capability before syncing quote drafts; new servers reject legacy writes that omit existing quotes. Older servers can discard this additive field, so downgrade requires preserving the full draft backup and a fresh client/server baseline. No claim of quote or concurrency protection across an old server writer.",
+        "compatibility": "Draft file version 1 is retained. Editor documents may include an inline resourceBadge carrying label, reference and kind; current clients serialize it into the outgoing text. Retain full draft backups before opening older clients that do not recognize the new editor node. Optional sequence, per-key revisions and source quote arrays support conditional writes and quote-only drafts; absent fields normalize to zero/empty. Quote records retain source identity and text, excluding transient screen geometry. New clients require the quotes capability before syncing quote drafts; new servers reject legacy writes that omit existing quotes. Older servers can discard this additive field, so downgrade requires preserving the full draft backup and a fresh client/server baseline. No claim of quote or concurrency protection across an old server writer.",
         "kind": "runtime-source",
         "source": "core/input-drafts-store.ts"
       },
@@ -3421,8 +3422,8 @@
   ],
   "review": {
     "classification": "compatible",
-    "compatibilityReason": "Read-only change summary and goal controls reuse existing stores; no stored schema or DATA_EPOCH changes.",
-    "payloadFingerprint": "sha256:42271e45ccb22deadde6a601c2ebf36b4a0a5684d4020963e6011b439ff8776c"
+    "compatibilityReason": "Existing draft JSON document can carry resourceBadge nodes with label, reference and kind; preserve drafts before older clients. Repository lookups and terminal launch add no persistent store. DATA_EPOCH unchanged.",
+    "payloadFingerprint": "sha256:2f108d307a26cbd21354582fa47057e59287dcac3df6115e8e3c3ff279db89b3"
   },
   "schemas": [
     {
@@ -3647,7 +3648,7 @@
       "contract": "desktop window bounds, release announcement bookmark, and update cache version marker readers",
       "kind": "directory-contract",
       "module": "desktop/main.cjs",
-      "sourceHash": "sha256:6390d0a8f576a668a3976565309eb65be7bb5e18cd35a9aa60ac9495c6ac0bec",
+      "sourceHash": "sha256:e1339a77f46b1a791b69c46f9e2751b5e89b7479f8274fc628e0a6e642878640",
       "storeId": "desktop-window-version-state"
     },
     {
@@ -3907,6 +3908,10 @@
       "kind": "runtime-contract",
       "module": "core/input-drafts-store.ts",
       "protocolModules": [
+        {
+          "module": "desktop/src/react/components/input/extensions/resource-badge.ts",
+          "sourceHash": "sha256:4d1e55b5946d76541b1898f014f4c91bb5f286c1f796132a11d8807f24f20ea5"
+        },
         {
           "module": "shared/input-drafts.ts",
           "sourceHash": "sha256:70389d0f483852db701db8bdcd23c9ad5a85376078c49e61bb7dc1b25a1e0e86"
