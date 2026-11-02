@@ -950,7 +950,7 @@ function ApprovalDialog() {
       title={dialog.title}
       close={() => void answer(false)}
     >
-      <p>{dialog.message}</p>
+      <p style={{whiteSpace:'pre-wrap'}}>{dialog.message}</p>
       {dialog.kind === "select" ? (
         <FormSelectControl label="选择答案" value={value} onChange={setValue} options={[{value:'',label:'请选择'},...(dialog.options||[]).map((option:string)=>({value:option,label:option}))]}/>
 

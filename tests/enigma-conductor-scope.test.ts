@@ -44,6 +44,23 @@ it('rejects undelegated write scopes, unapproved models and unrelated conversati
   expect(engine.abortSession).not.toHaveBeenCalled();expect(engine.setSessionProjectAssignment).not.toHaveBeenCalled();
 });
 
+it('retains settled output when cancellation evicts a fresh or resumed worker runtime',async()=>{
+  const {manager,engine,host,directory}=await setup(),ledger=await manager.load();
+  const workspace=await Workspace.open(directory),repo=path.join(directory,'source');await fs.mkdir(repo);await runProcess(['git','init','-q'],repo);await fs.writeFile(path.join(repo,'note.txt'),'original');await workspace.addRepo('main',repo,{access:'write'});
+  let evicted=false;
+  const native={model:{provider:'test',id:'model'},getLastAssistantText:()=> 'Read evidence before stop',sendCustomMessage:vi.fn(async()=>{}),sessionManager:{getSessionId:()=> 'worker-pi',getBranch:()=>[{type:'message',message:{role:'assistant',stopReason:'aborted'}}]}};
+  Object.assign(engine,{getSessionByPath:(p:string)=>p==='/owned/worker.jsonl'&&evicted?null:native,listSessions:async()=>[],resolveModelWithCredentialsFresh:async()=>({model:native.model}),resolveSessionOwnership:()=>({agentId:'test'}),createDetachedSession:async()=>({sessionPath:'/owned/worker.jsonl',sessionId:'worker'}),saveSessionTitle:async()=>{},promptSession:async()=>{ledger.tasks[0].status='cancelled';evicted=true;}});
+  Object.assign(host,{connect:async()=>{evicted=false;},setManagedModels:async()=>{}});
+  const task={id:'worker',title:'read note',goal:'read',requires:[],writeRepos:[],checks:[],status:'queued' as const};ledger.tasks.push(task);
+  for(let run=0;run<2;run++){
+    ledger.tasks[0].status='queued';await (manager as any).run(task);
+    expect(ledger.tasks[0].status).toBe('cancelled');
+    expect(ledger.tasks[0].result).toBe('Read evidence before stop');
+    expect(ledger.tasks[0].error).toBeUndefined();
+  }
+  expect(await fs.readFile(path.join(repo,'note.txt'),'utf8')).toBe('original');
+});
+
 it('snapshots the configured child model at enqueue while preserving explicit task policies',async()=>{
   const {manager,host}=await setup();vi.spyOn(manager,'pump').mockResolvedValue(undefined);
   Object.assign(host,{binding:async()=>({modelPolicy:{mode:'delegated',execution:{provider:'test',id:'main'},worker:{provider:'test',id:'model',thinking:'low'}}})});
