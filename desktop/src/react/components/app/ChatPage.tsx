@@ -5,7 +5,7 @@ import { SessionClock } from '../chat/SessionClock';
 import { EngineeringToolbar } from '../../engineering/Engineering';
 import { useStore } from '../../stores';
 import { InputArea, type InputAreaProps } from '../InputArea';
-import { WelcomeScreen,WelcomeWorkspacePicker } from '../WelcomeScreen';
+import { WelcomeScreen } from '../WelcomeScreen';
 import { ChatArea } from '../chat/ChatArea';
 import { RegionalErrorBoundary } from '../RegionalErrorBoundary';
 import {HeaderSlot} from './HeaderSlot';
@@ -51,7 +51,7 @@ export function ChatPage({
           autoRetry={inputSurface === 'mobile' ? { attempts: 2, delayMs: 120 } : undefined}
         >
           <InputArea key={currentSessionPath || '__new'} surface={inputSurface} />
-          {welcomeVisible&&<div className="enigma-composer-repositories"><WelcomeWorkspacePicker/><RepositoryContextBar/></div>}
+          {welcomeVisible&&<div className="enigma-composer-repositories"><RepositoryContextBar/></div>}
         </RegionalErrorBoundary>
       </div>
       </div>

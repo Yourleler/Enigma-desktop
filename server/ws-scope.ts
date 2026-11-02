@@ -56,6 +56,7 @@ export function wsClientCanReceiveEvent(client, event, { resolvedSessionId = nul
   if (!client || !event || typeof event !== "object") return false;
   const principal = normalizePrincipal(client.principal);
   if (principalOwnsLocalConnection(principal)) return true;
+  if(typeof event.type==='string'&&event.type.startsWith('terminal_'))return false;
 
   if (event.thumbnail && typeof event.thumbnail === "string") return false;
 

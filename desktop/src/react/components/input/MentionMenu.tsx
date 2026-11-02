@@ -1,6 +1,7 @@
+import {createPortal} from 'react-dom';
 import {ResourceMentionPicker,type ResourceMention} from './ResourceMentionPicker';
 import { GlassSelection } from '../../ui/GlassSelection';
-import { memo, useEffect, useMemo, useRef, type RefObject } from 'react';
+import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import type { Agent } from '../../types';
 import type { FileMentionItem } from '../../utils/file-mention-items';
 import type { AgentMentionItem, MentionTab, SessionMentionItem } from '../../utils/mention-items';
@@ -22,6 +23,7 @@ export const MentionMenu = memo(function MentionMenu({
   onTabChange,
   onSelect,
   onHover,
+  onClose,
 }: {
   tab: MentionTab;
   query?:string;
@@ -32,16 +34,20 @@ export const MentionMenu = memo(function MentionMenu({
   onTabChange: (tab: MentionTab) => void;
   onSelect: (item: MentionMenuItem) => void;
   onHover: (index: number) => void;
+  onClose?:()=>void;
 }) {
   const selectedRef = useRef<HTMLButtonElement>(null);
+  const menuRef=useRef<HTMLDivElement>(null);
+  const [position,setPosition]=useState({left:12,top:12,maxHeight:320});
+  useLayoutEffect(()=>{const place=()=>{const editor=document.getElementById('inputBox');if(!editor)return;const anchor=editor.closest('[data-liquid="composer"]')||editor;const box=anchor.getBoundingClientRect();const maxHeight=Math.min(320,Math.max(100,box.top-20));const height=Math.min(menuRef.current?.getBoundingClientRect().height||maxHeight,maxHeight);setPosition({left:Math.max(12,Math.min(box.left,window.innerWidth-392)),top:Math.max(12,box.top-height-8),maxHeight});};place();const observer=new ResizeObserver(place);if(menuRef.current)observer.observe(menuRef.current);window.addEventListener('resize',place);window.addEventListener('scroll',place,true);return()=>{observer.disconnect();window.removeEventListener('resize',place);window.removeEventListener('scroll',place,true);};},[]);
   const t = window.t ?? ((key: string) => key);
 
   useEffect(() => {
     selectedRef.current?.scrollIntoView?.({ block: 'nearest' });
   }, [selected]);
 
-  return (
-    <div className={styles['mention-menu']} data-liquid="menu" data-menu-surface="" data-menu-position="absolute" role="dialog" aria-label={t('input.mention.title')}>
+  return createPortal(
+    <div ref={menuRef} onKeyDown={event=>{if(event.key==='Escape'){event.preventDefault();event.stopPropagation();onClose?.();document.getElementById('inputBox')?.focus();}}} data-composer-mention="" style={position} className={styles['mention-menu']} data-liquid="menu" data-menu-surface="" data-menu-position="fixed" role="dialog" aria-label={t('input.mention.title')}>
       <div className={styles['mention-tabs']} role="tablist" data-glass-segmented=""><GlassSelection selection={tab}/>
         {(['repositories', 'branches', 'files', 'github', 'sessions', 'agents'] as MentionTab[]).map(value => (
           <button
@@ -77,7 +83,7 @@ export const MentionMenu = memo(function MentionMenu({
           </div>
         )}
       </div>}
-    </div>
+    </div>,document.body
   );
 });
 
@@ -115,7 +121,7 @@ function MentionItemButton({
       </span>
       <span className={styles['mention-main']}>
         <span className={styles['mention-name']}>{item.name}</span>
-        <span className={styles['mention-detail']}>{item.detail}</span>
+        {item.detail&&item.detail!=='/'&&<span className={styles['mention-detail']}>{item.detail}</span>}
       </span>
     </button>
   );

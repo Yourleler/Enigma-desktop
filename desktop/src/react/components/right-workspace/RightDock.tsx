@@ -1,3 +1,5 @@
+import {lazy,Suspense} from 'react';
+const WorkspaceTerminal=lazy(()=>import('./WorkspaceTerminal').then(module=>({default:module.WorkspaceTerminal})));
 import {SessionClock} from '../chat/SessionClock';
 import {SideConversation} from './SideConversation';
 import {motion,useReducedMotion} from 'motion/react';
@@ -36,6 +38,7 @@ const fixed:TabInfo[]=[
   {id:'changes',label:'变更',icon:'changes',hint:'代码变更、智能阅读和完整差异'},
   {id:'browser',label:'浏览器',icon:'browser',hint:'浏览网页，切换标签保留页面'},
   {id:'tasks',label:'任务',icon:'activity',hint:'进度、协作助手和任务详情'},
+  {id:'terminal',label:'终端',icon:'command',hint:'在选定工作目录运行命令'},
 ];
 const toolIcons: Record<string, AppIconName> = {
   project: 'project', plan: 'diary', collaboration: 'team', conductor: 'team',
@@ -200,6 +203,7 @@ export function RightDock(){
       </section>
       {hasVisited('changes')&&<section key={`changes:${scope}`} hidden={!show('changes')} inert={!show('changes')} aria-hidden={!show('changes')} className="enigma-dock-section">{session?<ChangeWorkbench active={visible&&show('changes')}/>:<div className="enigma-dock-empty">开始项目对话后，在这里查看代码变更。</div>}</section>}
       {hasVisited('browser')&&<section key={`browser:${scope}`} hidden={!show('browser')} inert={!show('browser')} aria-hidden={!show('browser')} className="enigma-dock-section"><SidebarBrowser sessionPath={view?.browserSession===undefined?session:view.browserSession}/></section>}
+      {hasVisited('terminal')&&<section key={`terminal:${scope}:${view?.terminalRoot||''}`} hidden={!show('terminal')} inert={!show('terminal')} aria-hidden={!show('terminal')} className="enigma-dock-section"><Suspense fallback={<p>正在打开终端…</p>}><WorkspaceTerminal root={view?.terminalRoot} active={show('terminal')}/></Suspense></section>}
       {hasVisited('agents')&&<section hidden={!show('agents')} inert={!show('agents')} aria-hidden={!show('agents')} className="enigma-dock-section"><SubagentPanel/></section>}
       {hasVisited('sidechat')&&<section key={`sidechat:${scope}`} hidden={!show('sidechat')} inert={!show('sidechat')} aria-hidden={!show('sidechat')} className="enigma-dock-section"><SideConversation scope={scope} active={show('sidechat')}/></section>}
       {hasVisited('tasks')&&<section hidden={!show('tasks')} inert={!show('tasks')} aria-hidden={!show('tasks')} className="enigma-dock-section enigma-dock-task-list"><div className="enigma-dock-task-intro"><h3>任务概览</h3><p>当前对话的计划、协作和运行信息。</p>{engineering?.connected&&<div><button onClick={()=>openGroup('plan')}>计划</button><button onClick={()=>openGroup('acceptance')}>检查结果</button><button onClick={()=>openGroup('observer')}>运行诊断</button></div>}</div><SessionClock compact/><SessionTodoCard/><WorkflowCard/><AgentActivityCard/><SessionStatusCard/></section>}

@@ -3,6 +3,7 @@ import type {CSSProperties} from 'react';
 // Base: Lucide 0.468.0, ISC. License: assets/lucide/LICENSE. https://lucide.dev
 // chat, close and refresh are locally authored paths using the same stroke.
 const paths={
+ conductor:'<circle cx="12" cy="5" r="3"/><rect x="3" y="15" width="6" height="6" rx="2"/><rect x="15" y="15" width="6" height="6" rx="2"/><path d="M12 8v4M6 15v-3h12v3"/>',
  chat:'<path d="M6 4h12a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H9l-6 3V7a3 3 0 0 1 3-3Z"/><path d="M7 9h10M7 13h6"/>',
  close:'<path d="m6 6 12 12M18 6 6 18"/>',
  refresh:'<path d="M20 7v5h-5M4 17v-5h5"/><path d="M6.1 7a7 7 0 0 1 11.6-1L20 9M4 15l2.3 3A7 7 0 0 0 17.9 17"/>',

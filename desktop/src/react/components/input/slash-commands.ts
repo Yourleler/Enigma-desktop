@@ -1,3 +1,4 @@
+import {ensureSession,switchSession} from '../../stores/session-actions';
 /**
  * slash-commands.ts — 斜杠命令定义和执行逻辑
  *
@@ -209,22 +210,28 @@ export function executeSlashViaWs(
 ): (inputText?: string) => Promise<void> {
   return async (inputText?: string) => {
     setBusy(cmd);
-    setInput('');
     setMenuOpen(false);
     const rawText = typeof inputText === 'string' && inputText.trim().startsWith('/')
       ? inputText.trim()
       : `/${cmd}`;
     try {
+      let state=useStore.getState();
+      let sessionPath=state.currentSessionPath;
+      if((cmd==='goal'||cmd==='loop')&&(!state.currentSessionPath||state.pendingNewSession)){
+        const pendingId=state.pendingDraftId;const created=await ensureSession(pendingId);if(!created)return;sessionPath=created.sessionPath;state=useStore.getState();
+        if(state.pendingNewSession&&state.pendingDraftId===pendingId){await switchSession(sessionPath);state=useStore.getState();}
+      }
       const ws = getWebSocket();
       if (ws?.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({
           type: 'slash',
           text: rawText,
-          sessionPath: useStore.getState().currentSessionPath,
+          sessionPath,
           agentId: agentId || null,
         }));
-      }
-    } finally {
+        setInput('');if(sessionPath)state.clearDraft(sessionPath);
+      }else state.addToast('连接未就绪，命令已保留','error');
+    }catch(error){useStore.getState().addToast(error instanceof Error?error.message:'命令未发送，输入已保留','error');} finally {
       setTimeout(() => setBusy(null), 800);
     }
   };
@@ -268,9 +275,9 @@ export function buildSlashCommands(
     // /loop 是服务端命令且必须带参数（任务描述 / 子命令），所以走 server-command 通道：
     // 提交时由 InputArea 经 applySlashCompletion 保留参数原文，再整条发给服务端 dispatcher。
     {
-      name: 'loop',
-      label: '/loop',
-      description: t('slash.loop'),
+      name: 'goal',
+      label: '/goal',
+      description: '目标模式：持续推进目标；支持 pause、resume、stop、status',
       busyLabel: '',
       icon: appIconSvg('loop'),
       type: 'server-command',

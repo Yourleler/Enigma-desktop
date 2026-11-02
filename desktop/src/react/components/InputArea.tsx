@@ -872,7 +872,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
   // ── 斜杠命令 ──
 
   const diaryFn = useCallback(() => {
-    executeDiary(t, addToast, removeToast, () => { editor?.commands.clearContent(); }, setSlashMenuOpen)();
+    executeDiary(t, addToast, removeToast, () => { if(editor&&!editor.isDestroyed)editor.commands.clearContent(); }, setSlashMenuOpen)();
   }, [t, addToast, removeToast, editor]);
   const xingFn = useCallback(async () => {
     editor?.commands.clearContent();
@@ -1545,6 +1545,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
     const handler = (e: MouseEvent) => {
       if (slashMenuRef.current?.contains(e.target as Node)) return;
       if (slashBtnRef.current?.contains(e.target as Node)) return;
+      if ((e.target as Element)?.closest?.('[data-composer-submit]')) return;
       dismissSlashMenu();
     };
     document.addEventListener('mousedown', handler);
@@ -1554,7 +1555,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
   useEffect(() => {
     if (!fileMenuOpen) return;
     const handler = (e: MouseEvent) => {
-      if (fileMenuRef.current?.contains(e.target as Node)) return;
+      if (fileMenuRef.current?.contains(e.target as Node)||(e.target as Element)?.closest?.('[data-composer-mention]')) return;
       setFileMenuOpen(false);
     };
     document.addEventListener('mousedown', handler);
@@ -2248,7 +2249,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
     if (fileMenuOpen) {
       if (['repositories','branches','github'].includes(mentionTab) && ['ArrowDown','Enter','Tab'].includes(e.key)) {
         e.preventDefault();
-        fileMenuRef.current?.querySelector<HTMLElement>('.enigma-resource-picker button:not(:disabled)')?.focus();
+        document.querySelector<HTMLElement>('[data-composer-mention] .enigma-resource-picker button:not(:disabled)')?.focus();
         return true;
       }
       if ((e.key === 'ArrowRight' || e.key === 'ArrowLeft')) {
@@ -2409,6 +2410,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
         {fileMenuOpen && (
           <MentionMenu
             tab={mentionTab}
+            onClose={()=>setFileMenuOpen(false)}
             query={fileMentionQuery}
             items={mentionItems}
             selected={fileSelected}

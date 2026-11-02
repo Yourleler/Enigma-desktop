@@ -293,7 +293,7 @@ export class EngineeringHost {
       projectId: projection.projectId || autoProjectIdForCwd(projection.cwd)});
     return result;
   }
-  async createConductor(sourcePath: string | null, limits?: Partial<ConductorLimits>, options: {inheritUserRequirements?:boolean;agentId?:string;modelPolicy?:unknown} = {}) {
+  async createConductor(sourcePath: string | null, limits?: Partial<ConductorLimits>, options: {inheritUserRequirements?:boolean;agentId?:string;modelPolicy?:unknown;repositories?:{root:string;access:'read'|'write'}[]} = {}) {
     if(!this.isEnabled())throw new Error('请先启用任务管家功能');
     const binding = sourcePath ? await this.binding(sourcePath) : null;
     const source = sourcePath ? this.engine.getSessionByPath(sourcePath) || await this.engine.ensureSessionLoaded(sourcePath) : null;
@@ -303,14 +303,24 @@ export class EngineeringHost {
     const setup=inheritedPolicy?await this.prepareNewConversationModelPolicy(inheritedPolicy):null;
     const sourceModel=setup?.model||source?.model||this.engine.currentModel;
     if(!sourceModel?.provider||!sourceModel?.id||!agent?.sessionDir)throw new Error('请先选择可用的主模型');
-    const managerRoot=binding?.root||path.join(this.engine.hanakoHome,'workspaces','managed','conductors',`manager-${crypto.randomUUID()}`);
+    const managerRoot=(!options.repositories&&binding?.root)||path.join(this.engine.hanakoHome,'workspaces','managed','conductors',`manager-${crypto.randomUUID()}`);
     const config=validateLimits({maxConcurrent:limits?.maxConcurrent??3,maxTasks:limits?.maxTasks??8,writableRepos:limits?.writableRepos??[],allowRewind:limits?.allowRewind??false,allowedModels:limits?.allowedModels??[`${sourceModel.provider}/${sourceModel.id}`]});
     if(!config.allowedModels.length)throw new Error('新管家至少需要一个可用模型');
     for(const value of config.allowedModels){const slash=value.indexOf('/');if(!await this.engine.resolveModelWithCredentialsFresh({provider:value.slice(0,slash),id:value.slice(slash+1)}))throw new Error(`允许的模型 ${value} 不可用`);}
     if(setup?.policy.worker&&!config.allowedModels.includes(`${setup.policy.worker.provider}/${setup.policy.worker.id}`))throw new Error('子 Agent 模型不在允许范围内，请添加该模型或调整模型分工');
-    if(!binding&&config.writableRepos.length)throw new Error('当前没有关联仓库，请先创建管家后在仓库设置中添加');
-    if(!binding)await fs.mkdir(managerRoot,{recursive:true});
+    if(!binding&&!options.repositories&&config.writableRepos.length)throw new Error('当前没有关联仓库，请先创建管家后在仓库设置中添加');
+    if(!binding||options.repositories)await fs.mkdir(managerRoot,{recursive:true});
     const workspace = await Workspace.open(managerRoot);
+    if(options.repositories){
+      const writable:string[]=[];
+      for(const [index,selected] of options.repositories.entries()){
+        if(!['read','write'].includes(selected.access)||!path.isAbsolute(selected.root))throw new Error('请选择仓库根目录和读写方式');
+        const id=`repo-${index+1}`;
+        await workspace.exclusive(()=>workspace.addRepo(id,selected.root,{role:path.basename(selected.root),access:selected.access}));
+        if(selected.access==='write')writable.push(id);
+      }
+      config.writableRepos=writable;
+    }
     if(config.writableRepos.some(repo=>!workspace.config.repos.some(item=>item.id===repo&&item.access==='write')))throw new Error('选中的可写仓库不在当前项目范围内');
     const manager = SessionManager.create(
         managerRoot,
@@ -328,7 +338,7 @@ export class EngineeringHost {
       memoryEnabled: false,
       model: sourceModel,
       agentId,
-      permissionMode: "auto",
+      permissionMode: sourcePath ? this.engine.getSessionPermissionMode(sourcePath) : "ask",
       visibleInSessionList: true,
       sessionKind: "enigma-manager",
     });

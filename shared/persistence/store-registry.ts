@@ -222,7 +222,7 @@ export const PERSISTENT_STORES: readonly StoreDescriptor[] = Object.freeze([
     ownerModule: "plugins/enigma/host.ts",
     pathPatterns: ["user/enigma-bindings.json"],
     format: "json",
-    schemaSource: runtimeSource("plugins/enigma/host.ts", "schema 1 native-session/workspace binding, absolute roots, explicit memory flag, validated source identity, manager model grants and bounded guardian configuration/usage"),
+    schemaSource: runtimeSource("plugins/enigma/host.ts", "schema 1 native-session/workspace binding, absolute roots, explicit memory flag, validated source identity, manager model grants and bounded guardian configuration/usage; user-selected repositories reuse the existing workspace configuration and manager limit fields"),
     protocolModules: ['plugins/enigma/model-policy.ts', 'plugins/enigma/conversation-model-policy.ts'],
     openEntry: ["EngineeringHost.load", "EngineeringHost.saveBinding"],
     epochPolicy: "compatible",

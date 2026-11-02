@@ -518,6 +518,7 @@ function applyInputSessionConfirmationBlock(msg: any): void {
 
 export function handleServerMessage(msg: any): void {
   if (!rememberSessionLocatorFromMessage(msg)) return;
+  if(typeof msg.type==='string'&&msg.type.startsWith('terminal_')&&msg.sessionPath){dispatchStreamKey(msg.sessionPath,msg);return;}
   const state = useStore.getState();
 
   const rebuildingFor = isStreamResumeRebuilding();

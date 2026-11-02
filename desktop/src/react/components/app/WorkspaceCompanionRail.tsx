@@ -4,7 +4,7 @@ import { RightDock } from '../right-workspace/RightDock';
 import { WorkspaceFileChangeBridge } from './WorkspaceFileChangeBridge';
 
 export function WorkspaceCompanionRail() {
-  const open=useStore(s=>s.jianOpen);
+  const open=useStore(s=>s.jianOpen&&s.currentTab==='chat'&&!s.activePanel);
   const solo=useStore(s=>s.layoutDrawer);
   const autoCollapsed=useStore(s=>s.jianAutoCollapsed);
   return <>

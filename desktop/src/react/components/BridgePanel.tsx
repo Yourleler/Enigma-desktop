@@ -1,3 +1,4 @@
+import {AppIcon} from '../ui/app-icons';
 import {createPortal} from 'react-dom';
 import { useState, useEffect, useLayoutEffect, useCallback, useRef, useMemo } from 'react';
 import { useStore } from '../stores';
@@ -56,8 +57,9 @@ function getBridgeSessionIdentity(
   };
 }
 
-export function BridgePanel() {
+export function BridgePanel({embedded=false}:{embedded?:boolean}={}) {
 
+  const [loading,setLoading]=useState(false),[loadError,setLoadError]=useState(''),[updatedAt,setUpdatedAt]=useState<number|null>(null);
   const [platform, setPlatform] = useState<BridgePlatform>(initialBridgePlatform);
   const [sessions, setSessions] = useState<BridgeSession[]>([]);
   const [currentKey, setCurrentKey] = useState<string | null>(null);
@@ -96,6 +98,7 @@ export function BridgePanel() {
   const loadPlatformData = useCallback(async (plat: BridgePlatform) => {
     const snapshotId = bridgeAgentId;
     if (!snapshotId) return;
+    setLoading(true);setLoadError('');
     try {
       const agentQuery = `&agentId=${encodeURIComponent(snapshotId)}`;
       const [statusRes, sessionsRes] = await Promise.all([
@@ -103,16 +106,17 @@ export function BridgePanel() {
         hanaFetch(`/api/bridge/sessions?platform=${plat}${agentQuery}`),
       ]);
       if (bridgeAgentIdRef.current !== snapshotId) return; // stale
+      if(!statusRes.ok||!sessionsRes.ok)throw Error('连接状态读取失败');
       const sData = await statusRes.json();
       const sessData = await sessionsRes.json();
       if (bridgeAgentIdRef.current !== snapshotId) return; // stale
       setStatusData(sData);
       updateSidebarDot(sData);
       setShowOverlay(!sData[plat]?.configured);
-      setSessions(sessData.sessions || []);
+      setSessions(sessData.sessions || []);setUpdatedAt(Date.now());
     } catch (err) {
-      console.error('[bridge] load platform data failed:', err);
-    }
+      console.error('[bridge] load platform data failed:', err);if(bridgeAgentIdRef.current===snapshotId)setLoadError('无法读取连接状态，请重试');
+    }finally{if(bridgeAgentIdRef.current===snapshotId)setLoading(false);}
   }, [bridgeAgentId]);
 
   const loadData = useCallback(() => {
@@ -250,9 +254,10 @@ export function BridgePanel() {
 
   if (!visible) return null;
 
-  return createPortal(
-    <div className={`${fp.floatingPanel} ${fp.bridgePanelWide}`} id="bridgePanel">
+  const content = (
+    <div className={`${fp.floatingPanel} ${fp.bridgePanelWide} ${embedded?'enigma-primary-panel':''}`}  id="bridgePanel">
       <div className={fp.floatingPanelInner} data-glass-frame="panel" data-native-browser-occluder="">
+        {embedded&&<header className="enigma-page-heading"><h2>消息连接</h2></header>}
         <div className={fp.floatingPanelHeader}>
           {agents.length > 1 && (
             <div className={fp.bridgeAgentRow} ref={agentMenuRef}>
@@ -316,35 +321,15 @@ export function BridgePanel() {
               </button>
             ))}
           </div>
-          <button className={fp.floatingPanelClose} onClick={close}>
+          <button data-page-close={embedded||undefined} className={fp.floatingPanelClose} onClick={close}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
           </button>
         </div>
-        <div className={fp.bridgeBody}>
-          {showOverlay && (
-            <div className={fp.bridgeOverlay} id="bridgeOverlay">
-              <div className={fp.bridgeOverlayContent}>
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                  <line x1="12" y1="9" x2="12" y2="13" />
-                  <line x1="12" y1="17" x2="12.01" y2="17" />
-                </svg>
-                <div className={fp.bridgeOverlayText}>
-                  {t('bridge.notConfigured', { platform: bridgePlatformLabel(platform, t) })}
-                </div>
-                <button className={fp.bridgeOverlayBtn} onClick={() => openSettingsModal('bridge')}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="3" />
-                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                  </svg>
-                  <span>{t('bridge.goToSettings')}</span>
-                </button>
-              </div>
-            </div>
-          )}
+        <div className="enigma-bridge-intro"><p className="enigma-page-description">查看外部消息平台的连接状态与会话。配置后可从对应平台联系助手；本机工作对话仍独立保留。</p><div className="enigma-page-refresh"><button disabled={loading} onClick={()=>void loadPlatformData(platform)}><AppIcon name="refresh" size={15} className={loading?'enigma-refreshing':''}/>{loading?'正在刷新…':'刷新连接'}</button><span role="status">{loadError|| (updatedAt?`更新于 ${new Date(updatedAt).toLocaleTimeString('zh-CN',{hour12:false})}`:'')}</span></div></div><div className={fp.bridgeBody}>
+          {showOverlay?<div className="enigma-connection-empty"><AppIcon name="link" size={30}/><h3>尚未连接 {bridgePlatformLabel(platform,t)}</h3><p>添加平台配置后，可以在这里查看会话和连接状态。</p><button className="enigma-primary" onClick={()=>openSettingsModal('bridge')}>配置连接</button></div>:<>
           <div className={fp.bridgeSidebar} id="bridgeSidebar">
             <div className={fp.bridgeContactList} id="bridgeContactList">
               {sessions.length === 0 ? (
@@ -407,11 +392,12 @@ export function BridgePanel() {
               </div>
             )}
           </div>
+          </>}
         </div>
       </div>
-    </div>,
-    document.body
+    </div>
   );
+  return embedded?content:createPortal(content,document.body);
 }
 
 function dotClass(status?: string): string {

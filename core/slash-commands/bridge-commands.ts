@@ -221,8 +221,9 @@ export const bridgeCommands = [
   },
   {
     name: "loop",
-    description: "在当前会话启动/管理循环任务",
-    usage: "/loop <任务> | /loop stop | pause | resume | status",
+    aliases: ["goal"],
+    description: "目标模式：启动、暂停或继续持续任务",
+    usage: "/goal <目标> | /goal stop | pause | resume | status",
     scope: "session",
     permission: "owner",
     source: "core",
@@ -262,7 +263,7 @@ async function _handleLoopCommand(ctx) {
       if (rendered) return { reply: rendered };
       return args
         ? { reply: "（该会话没有循环）" }
-        : { error: "用法：/loop <任务> | /loop stop | pause | resume | status" };
+        : { error: "用法：/goal <目标> | /goal stop | pause | resume | status" };
     }
     if (firstToken === "stop") {
       await controller.stop(target);
@@ -270,14 +271,14 @@ async function _handleLoopCommand(ctx) {
     }
     if (firstToken === "pause") {
       await controller.pause(target, "user");
-      return { reply: "（循环已暂停，/loop resume 恢复）" };
+      return { reply: "（循环已暂停，/goal resume 恢复）" };
     }
     if (firstToken === "resume") {
       await controller.resume(target);
       return { reply: "（循环已恢复）" };
     }
     await controller.start(target, args);
-    return { reply: "（循环已启动，/loop status 查看进度，/loop stop 终止）" };
+    return { reply: "（循环已启动，/goal status 查看进度，/goal stop 终止）" };
   } catch (err) {
     return { error: err?.message || String(err) };
   }

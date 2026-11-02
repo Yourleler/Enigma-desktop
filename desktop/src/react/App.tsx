@@ -1,3 +1,4 @@
+import {primaryTitles} from './components/app/PrimaryPages';
 import { EnigmaDesign } from './ui/EnigmaDesign';
 /**
  * App.tsx — React 根组件（纯布局编排）
@@ -45,7 +46,8 @@ initDragPrevention();
 
 function togglePanel(panel: ActivePanel) {
   const s = useStore.getState();
-  s.setActivePanel(s.activePanel === panel ? null : panel);
+  s.setActivePanel(panel);
+  useStore.setState({layoutDrawer:null});
 }
 
 function ConnectionStatus() {
@@ -72,6 +74,7 @@ function App() {
   const previewExpanded = useStore(s => s.previewExpanded);
   const layoutDrawer = useStore(s => s.layoutDrawer);
   const currentTab = useStore(s => s.currentTab);
+  const primaryPage = useStore(s=>s.activePanel);
   const currentTitle = useStore(s => {
     const session = s.sessions.find(item => item.path === s.currentSessionPath);
     return session?.title || session?.firstMessage || 'Enigma';
@@ -102,12 +105,12 @@ function App() {
 
       {/* ── App shell: titlebar 作为独立布局行（flex column 第一行），
            app body 占剩余高度。取代旧的 fixed overlay + 各内容区 padding-top 避让。 ── */}
-      <div className="app-shell">
+      <div className="app-shell" data-primary-page={primaryPage||undefined}>
         {/* ── Titlebar ── */}
         <AppTitlebar
-          centerTitle={currentTab === 'chat' ? currentTitle : undefined}
-          sidebarOpen={sidebarOpen}
-          jianOpen={jianOpen}
+          centerTitle={primaryPage?primaryTitles[primaryPage]:currentTab === 'chat' ? currentTitle : undefined}
+          sidebarOpen={!primaryPage&&sidebarOpen}
+          jianOpen={!primaryPage&&currentTab==='chat'&&jianOpen}
           previewOpen={previewOpen}
           showPreviewToggle
           showChannelTabs={false}
@@ -117,7 +120,7 @@ function App() {
         />
 
         {/* ── App body ── */}
-        <div className="app" data-preview-expanded={previewExpanded || undefined} data-layout-drawer={layoutDrawer || undefined}>
+        <div className="app" data-primary-page={primaryPage||undefined} data-preview-expanded={previewExpanded || undefined} data-layout-drawer={layoutDrawer || undefined}>
           <AppNavigationRail includeChannels onOpenSettings={()=>openSettingsModal()} onTogglePanel={togglePanel}/>
           <div className="enigma-workspace-frame">
           <ChatSidebar

@@ -97,3 +97,7 @@ describe("/loop", () => {
     expect(r.error).toContain("loop_already_active");
   });
 });
+
+it('exposes /goal as the same owner-scoped goal controller',()=>{
+ const registry=new SlashCommandRegistry();const def=loopCmd()!;expect(def.aliases).toContain('goal');expect(SlashCommandRegistry.CORE_RESERVED_NAMES.has('goal')).toBe(true);registry.registerCommand(def);expect(registry.lookup('goal')).toBe(registry.lookup('loop'));
+});

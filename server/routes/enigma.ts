@@ -181,9 +181,35 @@ export function createEnigmaRoute(engine: any) {
       return fail(c, error);
     }
   });
+  route.post('/enigma/terminal',async c=>{try{
+    const body=await safeJson(c),context=createRequestContext(c,engine);
+    if(context.authPrincipal?.kind!=='local_user')return c.json({error:'终端需要本机用户连接'},403);
+    const sp=await session(c,true,body),manager=engine.terminalSessions;
+    let result:any;
+    if(body.action==='list')result=manager.list(sp);
+    else if(body.action==='start'){
+      const roots=await repositoryResources(engine,sp),selected=roots.find(root=>root.path===body.cwd);
+      if(!selected)throw Error('请选择当前对话中的工作目录');
+      result=await manager.start({sessionPath:sp,cwd:selected.path,label:'工作区终端',cols:body.cols||90,rows:body.rows||24});
+    }else if(body.action==='read')result=manager.read({sessionPath:sp,terminalId:body.terminalId,sinceSeq:body.sinceSeq||0});
+    else if(body.action==='write')result=manager.write({sessionPath:sp,terminalId:body.terminalId,chars:body.chars});
+    else if(body.action==='resize')result=manager.resize({sessionPath:sp,terminalId:body.terminalId,cols:body.cols,rows:body.rows});
+    else if(body.action==='close')result=manager.close({sessionPath:sp,terminalId:body.terminalId});
+    else throw Error('未知终端操作');
+    return c.json(result);
+  }catch(error){return fail(c,error);}});
+  route.get('/enigma/conductors',async c=>{try{
+    const context=createRequestContext(c,engine),sessions=await engine.listSessions();
+    const conductors=sessions.filter((item:any)=>item.sessionKind==='enigma-manager'&&context.authorize?.('sessions.read',{kind:'session',sessionPath:item.path,sessionId:item.sessionId})?.allowed).map((item:any)=>({path:item.path,title:item.title,modified:item.modified,sessionId:item.sessionId}));
+    return c.json({conductors});
+  }catch(error){return fail(c,error);}});
   route.post("/enigma/conductor/new", async (c) => {
     try {
       const body = await safeJson(c);
+      if(body.repositories!==undefined){
+        if(createRequestContext(c,engine).authPrincipal?.kind!=='local_user')return c.json({error:'添加本机仓库需要本机用户操作'},403);
+        if(!Array.isArray(body.repositories)||body.repositories.length>12)return c.json({error:'请选择不超过12个仓库'},400);
+      }
       let sourcePath:string|null=null;
       if(body.sessionPath||body.sessionId)sourcePath=await session(c,true,body);
       else{
@@ -191,7 +217,7 @@ export function createEnigmaRoute(engine: any) {
         if(!context.authorize?.('sessions.write',{kind:'studio',studioId:context.studioId})?.allowed)return c.json({error:'没有创建管家对话的权限'},403);
       }
       return c.json(
-        await host.createConductor(sourcePath, body.limits,{agentId:body.agentId,modelPolicy:body.modelPolicy}),
+        await host.createConductor(sourcePath, body.limits,{agentId:body.agentId,modelPolicy:body.modelPolicy,repositories:body.repositories}),
       );
     } catch (error) {
       return fail(c, error);

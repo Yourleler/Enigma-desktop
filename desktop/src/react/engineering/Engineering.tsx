@@ -112,15 +112,15 @@ export function EngineeringToolbar({compact=false}:{compact?:boolean}={}) {
     return () => document.body.classList.remove("enigma-engineering");
   }, [snapshot?.connected, appearance]);
   if(switching)return <p className="enigma-source-note" role="status">正在打开所选对话…</p>;
-  if (!sessionPath)
-    return (
-      <>
-        <div className="enigma-new-task-settings">
-          <button aria-haspopup="dialog" aria-expanded={modelsOpen} data-tooltip="设置新任务的规划、执行与复核模型" onClick={() => setModelsOpen(true)}>新任务模型分工</button>
-        </div>
-        {modelsOpen && <ModelPolicyDialog close={() => setModelsOpen(false)} />}
-      </>
-    );
+  if (!sessionPath) return <div className="enigma-compact-tools">
+    <SurfaceMenu label="项目工具" hint="终端、模型分工与任务管家" icon={<><AppIcon name="skill" size={16}/><span>工具</span></>}>
+      <button onClick={()=>setTerminalOpen(true)}>打开终端<small>选择工作目录</small></button>
+      <button onClick={()=>setModelsOpen(true)}>模型分工<small>选择主模型、子模型或工作阶段</small></button>
+      <button onClick={()=>useStore.getState().setActivePanel('conductor')}>任务管家<small>安排多个工作对话</small></button>
+    </SurfaceMenu>
+    {terminalOpen&&<TerminalChooser close={()=>setTerminalOpen(false)}/>}
+    {modelsOpen&&<ModelPolicyDialog close={()=>setModelsOpen(false)}/>}
+  </div>;
   const operation = snapshot?.state?.operation;
   const busy =
     operation?.state === "running" || snapshot?.state?.idle === false;

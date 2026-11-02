@@ -83,10 +83,10 @@ describe('resolveSlashSubmitSelection', () => {
 
   it('exposes the loop command as a server-dispatched entry', () => {
     const commands = makeCommands();
-    const loop = commands.find(command => command.name === 'loop');
+    const loop = commands.find(command => command.name === 'goal');
 
     expect(loop).toBeTruthy();
-    expect(loop?.label).toBe('/loop');
+    expect(loop?.label).toBe('/goal');
     expect(loop?.type).toBe('server-command');
   });
 
@@ -94,14 +94,14 @@ describe('resolveSlashSubmitSelection', () => {
     const commands = makeCommands();
 
     const result = resolveSlashSubmitSelection({
-      text: '/loop 每轮检查一次构建状态',
+      text: '/goal 每轮检查一次构建状态',
       skills: [],
       commands,
       selectedIndex: 0,
       dismissedText: null,
     });
 
-    expect(result?.name).toBe('loop');
+    expect(result?.name).toBe('goal');
   });
 
   it('does not treat builtin slash commands with arguments as local commands', () => {

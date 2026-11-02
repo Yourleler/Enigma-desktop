@@ -1,3 +1,4 @@
+import {AppIcon} from '../ui/app-icons';
 import {createPortal} from 'react-dom';
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { useStore } from '../stores';
@@ -45,7 +46,7 @@ function agentTabIds(agents: Agent[], groups: Map<string, CronJob[]>) {
   return ids;
 }
 
-export function AutomationPanel() {
+export function AutomationPanel({embedded=false}:{embedded?:boolean}={}) {
   const agentAvatarUrl = useStore(s => s.agentAvatarUrl);
   const agentName = useStore(s => s.agentName);
   const agentYuan = useStore(s => s.agentYuan);
@@ -70,6 +71,7 @@ export function AutomationPanel() {
   const loadSerial=useRef(0),mounted=useRef(true),addingRef=useRef(false);
   useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;loadSerial.current++;};},[]);
   useEffect(()=>{loadSerial.current++;setJobs([]);setAvailableModels([]);setOpenJobs({});setLoadError(null);addingRef.current=false;setAddingManualJob(false);},[connectionKey]);
+  const [refreshing,setRefreshing]=useState(false),[updatedAt,setUpdatedAt]=useState<number|null>(null);
   const [jobs, setJobs] = useState<CronJob[]>([]);
   const [availableModels, setAvailableModels] = useState<ModelOption[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(currentAgentId);
@@ -78,6 +80,7 @@ export function AutomationPanel() {
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
+    setRefreshing(true);
     const serial=++loadSerial.current,owns=capturePreviewContext();
     const current=()=>mounted.current&&owns()&&serial===loadSerial.current;
     try {
@@ -98,14 +101,14 @@ export function AutomationPanel() {
       if(!current())return;
       if(!Array.isArray(cronData.jobs))throw Error('Invalid task list');
       const nextJobs = cronData.jobs || [];
-      setJobs(nextJobs);
+      setJobs(nextJobs);setUpdatedAt(Date.now());
       setLoadError(null);
       updateBadge(nextJobs);
     } catch (err) {
       if(!current())return;
       console.error('[automation] load failed:', err);
       setLoadError((window.t ?? ((key: string) => key))('error.code.unexpected'));
-    }
+    } finally {if(current())setRefreshing(false);}
   }, []);
 
   const { visible, close } = usePanel('automation', loadData, [currentAgentId,connectionKey]);
@@ -222,12 +225,12 @@ export function AutomationPanel() {
 
   if (!visible) return null;
 
-  return createPortal(
-    <div className={fp.floatingPanel} id="automationPanel">
+  const content = (
+    <div className={`${fp.floatingPanel} ${embedded?'enigma-primary-panel':''}`} id="automationPanel">
       <div className={`${fp.floatingPanelInner} ${styles.panel}`} data-glass-frame="panel" data-native-browser-occluder="">
         <div className={fp.floatingPanelHeader}>
           <h2 className={fp.floatingPanelTitle}>{t('automation.title')}</h2>
-          <button className={fp.floatingPanelClose} onClick={close} aria-label="关闭任务计划" data-tooltip="关闭任务计划">
+          <button data-page-close={embedded||undefined} className={fp.floatingPanelClose} onClick={close} aria-label="关闭任务计划" data-tooltip="关闭任务计划">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
@@ -237,12 +240,12 @@ export function AutomationPanel() {
         <div className={fp.floatingPanelBody}>
           <div className={styles.toolbar}>
             <span className={styles.help}>应用运行时自动执行；休眠或退出期间不会执行。</span>
-            <button className={styles.textButton} onClick={()=>void loadData()}>刷新列表</button>
-            <button className={styles.iconButton} type="button" onClick={addManualJob} title={t('automation.add')} aria-label={t('automation.add')} disabled={addingManualJob} aria-busy={addingManualJob}>
+            <button className={styles.textButton} disabled={refreshing} aria-busy={refreshing} onClick={()=>void loadData()}><AppIcon name="refresh" size={15} className={refreshing?'enigma-refreshing':''}/>{refreshing?'正在刷新…':'刷新列表'}</button><span role="status">{updatedAt?`更新于 ${new Date(updatedAt).toLocaleTimeString('zh-CN',{hour12:false})}`:''}</span>
+            <button className={`${styles.iconButton} enigma-add-plan`} type="button" onClick={addManualJob} title={t('automation.add')} aria-label={t('automation.add')} disabled={addingManualJob} aria-busy={addingManualJob}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <line x1="12" y1="5" x2="12" y2="19" />
                 <line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
+              </svg><span>新建计划</span>
             </button>
           </div>
           <div className={fp.automationList} id="automationList">
@@ -263,7 +266,7 @@ export function AutomationPanel() {
                 />
                 <div className={styles.groupList}>
                   {activeJobs.length === 0 ? (!loadError && (
-                    <div className={fp.automationEmpty}>{t('automation.emptyForAgent')}</div>
+                    <div className={fp.automationEmpty}><strong>还没有任务计划</strong><p>安排指定时间或周期执行的任务，例如每天整理进展、定期检查项目。</p><button className={styles.textButton} onClick={addManualJob} disabled={addingManualJob}>创建第一个计划</button></div>
                   )) : activeJobs.map(job => (
                     <AutomationCard
                       key={`${connectionKey}:${job.id}`}
@@ -281,7 +284,7 @@ export function AutomationPanel() {
           </div>
         </div>
       </div>
-    </div>,
-    document.body
+    </div>
   );
+  return embedded?content:createPortal(content,document.body);
 }

@@ -114,7 +114,7 @@ function AllSkillsAvatar() {
   );
 }
 
-export function SkillsPanel() {
+export function SkillsPanel({embedded=false}:{embedded?:boolean}={}) {
   const agents = useStore(s => s.agents);
   const currentAgentId = useStore(s => s.currentAgentId);
   const agentName = useStore(s => s.agentName);
@@ -604,19 +604,19 @@ export function SkillsPanel() {
 
   if (!visible) return null;
 
-  return createPortal(
-    <div className={fp.floatingPanel} id="skillsPanel">
+  const content = (
+    <div className={`${fp.floatingPanel} ${embedded?'enigma-primary-panel':''}`} id="skillsPanel">
       <div className={fp.floatingPanelInner} data-glass-frame="panel" data-native-browser-occluder="">
         <div className={fp.floatingPanelHeader}>
           <h2 className={fp.floatingPanelTitle}>{t('skills.panel.title')}</h2>
-          <button className={fp.floatingPanelClose} onClick={close} aria-label={t('common.close')}>
+          <button data-page-close={embedded||undefined} className={fp.floatingPanelClose} onClick={close} aria-label={t('common.close')}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
           </button>
         </div>
-        <div className={fp.floatingPanelBody}>
+        <div className={fp.floatingPanelBody}><p className="enigma-page-description">管理助手可用的工作方法和工具包。查看技能内容、按助手启用或分组；在对话里输入 / 可按需调用。</p>
           <div
             className={styles.dropSurface}
             data-testid="skills-panel-drop-surface"
@@ -663,7 +663,7 @@ export function SkillsPanel() {
                 mode={canManage ? 'manage' : 'agent'}
                 bundles={skillBundles}
                 skills={treeSkills}
-                nameHints={{}}
+                nameHints={{'character-creator':'创建助手','hana-plugin-creator':'创建插件','quiet-musing':'闲时思考','user-guide':'使用指南'}}
                 emptyText={t('settings.skills.noUser')}
                 onDeleteSkill={canManage ? deleteSkill : undefined}
                 onCreateBundle={canManage ? createBundle : undefined}
@@ -753,7 +753,7 @@ export function SkillsPanel() {
           </div>
         ) : null}
       </div>
-    </div>,
-    document.body
+    </div>
   );
+  return embedded?content:createPortal(content,document.body);
 }

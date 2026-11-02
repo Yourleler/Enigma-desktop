@@ -84,6 +84,7 @@ interface MenuState { items: ContextMenuItem[]; position: { x: number; y: number
 
 export function ChannelTabBar({rail=false}:{rail?:boolean}={}) {
   const currentTab = useStore(s => s.currentTab);
+  const primaryPage=useStore(s=>s.activePanel);
   const channelTotalUnread = useStore(s => s.channelTotalUnread);
   const locale = useStore(s => s.locale);
   const pluginPages = useStore(s => s.pluginPages);
@@ -197,7 +198,7 @@ export function ChannelTabBar({rail=false}:{rail?:boolean}={}) {
     <div className={styles.tbTabs} data-channel-layout={rail?'rail':undefined} data-glass-segmented="" aria-label="主页面切换">
       <GlassSelection selection={`${currentTab}:${locale}:${visibleTabs.join(',')}`} selector="button[data-tab][aria-pressed='true']"/>
       {visibleTabs.map(tab => {
-        const isActive = currentTab === tab;
+        const isActive = currentTab === tab&&!primaryPage;
         const isDragging = dragTab === tab;
         const isDragOver = dragOverTab === tab;
         let cls = styles.tbTab;

@@ -1892,3 +1892,11 @@
 .input-bottom-bar .model-pill { color:var(--text); }
 @container (max-width: 540px) { .input-bottom-bar { flex-wrap:wrap; row-gap:2px; } .input-controls { margin-left:auto; max-width:100%; } }
 .mention-tabs { flex-wrap:wrap; }
+
+/* Compact, viewport-level resource picker. */
+.mention-menu { position:fixed;bottom:auto;z-index:20000;width:min(380px,calc(100vw - 24px));max-height:320px;box-sizing:border-box;background:color-mix(in srgb,var(--eg-sidebar,var(--bg-card)) 97%,transparent)!important;backdrop-filter:blur(24px);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.12); }
+.mention-tabs { flex-wrap:nowrap;gap:2px;padding:6px;overflow-x:auto;flex-shrink:0; }
+.mention-tab { min-width:0;flex:1;padding:6px 8px;font-size:12px;white-space:nowrap; }
+.mention-item { padding:8px 10px;font-size:13px;min-height:36px; }
+.mention-main { min-width:0; }
+.mention-detail { font-size:11px;line-height:1.4; }

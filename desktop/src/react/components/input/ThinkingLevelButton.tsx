@@ -82,6 +82,7 @@ export function ThinkingLevelButton({ level, onChange, availableLevels }: {
 
   return (
     <SelectWidget
+      ariaLabel={`推理强度：${tLevel(`input.thinkingLevel.${activeLevel}`, THINKING_LEVEL_COPY[activeLevel].label)}`}
       className={styles['thinking-selector']}
       options={options}
       value={activeLevel}
@@ -93,7 +94,7 @@ export function ThinkingLevelButton({ level, onChange, availableLevels }: {
       triggerBare
       triggerClassName={`${styles['thinking-pill']}${isOff ? '' : ` ${styles.active}`}`}
       renderTrigger={() => (
-        <span data-tooltip={`思考力度：${tLevel(`input.thinkingLevel.${activeLevel}`, THINKING_LEVEL_COPY[activeLevel].label)}`}>{tLevel(`input.thinkingLevel.${activeLevel}`, THINKING_LEVEL_COPY[activeLevel].label)}</span>
+        <span data-tooltip={`推理强度：${tLevel(`input.thinkingLevel.${activeLevel}`, THINKING_LEVEL_COPY[activeLevel].label)}`}>{tLevel(`input.thinkingLevel.${activeLevel}`, THINKING_LEVEL_COPY[activeLevel].label)}</span>
       )}
     />
   );

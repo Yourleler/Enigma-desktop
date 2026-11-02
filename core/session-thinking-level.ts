@@ -2,8 +2,9 @@ import { lookupKnown } from "../shared/known-models.ts";
 
 export const DEFAULT_SESSION_THINKING_LEVEL = "medium";
 const VALID_THINKING_LEVELS = new Set(["off", "low", "medium", "high", "xhigh", "max"]);
-const DEFAULT_VISIBLE_THINKING_LEVELS = ["off", "medium", "high"];
+const DEFAULT_VISIBLE_THINKING_LEVELS = ["off", "low", "medium", "high"];
 const OPENAI_XHIGH_MODEL_MARKERS = [
+  "gpt-6",
   "gpt-5.2",
   "gpt-5.3",
   "gpt-5.4",

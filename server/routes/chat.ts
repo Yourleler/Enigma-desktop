@@ -1325,6 +1325,7 @@ export function createChatRoute(
 
   // 单订阅：事件只写入一次，再按需广播到所有连接中的客户端。
   hub.subscribe((event, sessionPath) => {
+    if(typeof event.type==='string'&&event.type.startsWith('terminal_')&&sessionPath){broadcast({type:event.type,sessionPath,sessionId:sessionIdForPath(sessionPath),terminalId:event.terminalId,status:event.status,seq:event.seq,data:event.data});return;}
     if(event.type==='enigma_event'){
       const events=['run_start','dialog','dialog_closed','approval','model_selection','new_context','code_fork','workspace_changed','guardian_update','memory_dream'];
       const settled=event.event==='refresh'&&['settled','cancelled','settings','branch'].includes(event.data?.event);

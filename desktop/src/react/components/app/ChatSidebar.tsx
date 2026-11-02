@@ -43,19 +43,19 @@ function BridgeDot() {
 
 export function AppNavigationRail({showSettingsButton=true,showActivityBars=true,onOpenSettings,onTogglePanel,includeChannels=false}:Pick<ChatSidebarContentProps,'showSettingsButton'|'showActivityBars'|'onOpenSettings'|'onTogglePanel'>&{includeChannels?:boolean}) {
   const [archivesOpen,setArchivesOpen]=useState(false);
-  const engineering=useEngineering(s=>!!s.snapshot?.connected);
+  const active=useStore(s=>s.activePanel);
+  const select=(page:ActivePanel)=>{useStore.setState({layoutDrawer:null});if(onTogglePanel)onTogglePanel(page);else useStore.getState().setActivePanel(page);};
   const t=window.t??((p:string)=>p);
   return <>
       <nav className="enigma-sidebar-rail" aria-label="应用导航">
         {includeChannels?<ChannelTabBar rail/>:<button aria-label="聊天" data-tooltip="返回聊天与项目" onClick={()=>useStore.getState().setActivePanel(null)}><AppIcon name="chat" size={19}/></button>}
-        {showActivityBars&&!engineering&&<>
-          <button aria-label={t('sidebar.bridgeShort')} data-tooltip="消息连接" onClick={()=>onTogglePanel?.('bridge')}><AppIcon name="link" size={18}/><BridgeDot/></button>
-          <button aria-label={t('sidebar.activity')} data-tooltip="运行记录" onClick={()=>onTogglePanel?.('activity')}><AppIcon name="activity" size={18}/></button>
-          <button aria-label={t('automation.title')} data-tooltip="任务计划" onClick={()=>onTogglePanel?.('automation')}><AppIcon name="clock" size={18}/></button>
-          <button aria-label={t('skills.panel.title')} data-tooltip="技能" onClick={()=>onTogglePanel?.('skills')}><AppIcon name="skill" size={18}/></button>
+        {showActivityBars&&<>
+          <button aria-label={t('sidebar.bridgeShort')} data-tooltip="消息连接" aria-pressed={active==='bridge'} onClick={()=>select('bridge')}><AppIcon name="link" size={18}/><BridgeDot/></button>
+          <button aria-label={t('sidebar.activity')} data-tooltip="运行记录" aria-pressed={active==='activity'} onClick={()=>select('activity')}><AppIcon name="activity" size={18}/></button>
+          <button aria-label={t('automation.title')} data-tooltip="任务计划" aria-pressed={active==='automation'} onClick={()=>select('automation')}><AppIcon name="clock" size={18}/></button>
+          <button aria-label={t('skills.panel.title')} data-tooltip="技能" aria-pressed={active==='skills'} onClick={()=>select('skills')}><AppIcon name="skill" size={18}/></button>
         </>}
-        <EngineeringSidebar compact/>
-        <button aria-label="侧边对话" data-tooltip="在右侧独立提问、传文件或处理问题" onClick={()=>{selectDockTab(dockScope(useStore.getState()),'sidechat');toggleJianSidebar(true);}}><AppIcon name="chat" size={18}/></button>
+        <button aria-label="任务管家" aria-pressed={active==='conductor'} data-tooltip="任务管家：分配工作、选择模型并跟踪执行" onClick={()=>select('conductor')}><AppIcon name="conductor" size={18}/></button>
         <div className="enigma-sidebar-rail-bottom">
           <button aria-label="已归档对话" data-tooltip="查看与恢复已归档对话" onClick={()=>setArchivesOpen(true)}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><path d="M4 7h16v14H4zM3 3h18v4H3zM9 11h6"/></svg></button>
           {showSettingsButton&&<button aria-label={t('settings.title')} data-tooltip={t('settings.title')} onClick={onOpenSettings}><AppIcon name="settings" size={18}/></button>}

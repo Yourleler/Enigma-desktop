@@ -16,6 +16,7 @@ export function SendButton({ isStreaming, hasInput, disabled, onSend, onSteer, o
 
   return (
     <button
+      data-composer-submit={mode === 'send' ? '' : undefined}
       className={`${styles['send-btn']}${mode === 'steer' ? ` ${styles['is-steer']}` : mode === 'stop' ? ` ${styles['is-streaming']}` : ''}`}
       disabled={disabled}
       aria-label={mode==='steer'?'加入发送队列':t(mode==='send'?'chat.send':'chat.stop')}

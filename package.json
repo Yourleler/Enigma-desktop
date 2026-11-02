@@ -1,6 +1,6 @@
 {
   "name": "hanako",
-  "version": "0.452.267",
+  "version": "0.452.271",
   "type": "module",
   "description": "HanaAgent - a personal AI agent with memory and soul",
   "license": "Apache-2.0",
@@ -104,6 +104,8 @@
     "@tiptap/react": "^3.22.0",
     "@tiptap/starter-kit": "^3.22.0",
     "@traptitech/markdown-it-katex": "^3.6.0",
+    "@xterm/addon-fit": "0.11.0",
+    "@xterm/xterm": "6.0.0",
     "better-sqlite3": "^12.6.2",
     "chokidar": "^5.0.0",
     "codemirror": "^6.0.2",

@@ -1190,7 +1190,7 @@
       "schemaSource": {
         "kind": "runtime-contract",
         "module": "plugins/enigma/host.ts",
-        "contract": "schema 1 native-session/workspace binding, absolute roots, explicit memory flag, validated source identity, manager model grants and bounded guardian configuration/usage"
+        "contract": "schema 1 native-session/workspace binding, absolute roots, explicit memory flag, validated source identity, manager model grants and bounded guardian configuration/usage; user-selected repositories reuse the existing workspace configuration and manager limit fields"
       },
       "schemaContract": {
         "kind": "runtime-source",

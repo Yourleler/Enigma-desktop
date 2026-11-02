@@ -1,3 +1,4 @@
+import {PrimaryPages} from './PrimaryPages';
 import {useState,type ReactNode} from 'react';
 import {Overlay} from '../../ui/Overlay';
 import {AppIcon} from '../../ui/app-icons';
@@ -141,12 +142,10 @@ export function AppPages() {
         {currentTab === 'chat' && <ChatPage />}
         {currentTab === 'channels' && <ChannelPage />}
         {isPluginTab && <PluginPage pluginId={currentTab.slice(7)} />}
-        <ActivityPanel />
-        <AutomationPanel />
-        <SkillsPanel />
-        <BridgePanel />
+
       </MainContent>
 
+      <PrimaryPages/>
       <WorkspaceCompanionRail />
     </>
   );

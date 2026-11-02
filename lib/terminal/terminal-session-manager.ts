@@ -167,6 +167,12 @@ declare root: any;
     };
   }
 
+  resize({sessionPath,terminalId,cols,rows}:any={}) {
+    const entry=this._requireOwned({sessionPath,terminalId});
+    entry.handle?.resize?.(Math.max(20,Math.min(400,Math.floor(cols))),Math.max(4,Math.min(160,Math.floor(rows))));
+    return publicEntry(entry);
+  }
+
   close({ sessionPath, terminalId }: any = {}) {
     const entry = this._requireOwned({ sessionPath, terminalId });
     if (entry.status === "running") {

@@ -1,3 +1,4 @@
+import {PrimaryPages,primaryTitles} from '../components/app/PrimaryPages';
 import React, { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { AppTitlebar } from '../components/app/AppTitlebar';
@@ -168,6 +169,7 @@ function MobileDesktopShell({
   const previewOpen = useStore(s => s.previewOpen);
   const mediaViewer = useStore(s => s.mediaViewer);
   const currentTab = useStore(s => s.currentTab);
+  const primaryPage=useStore(s=>s.activePanel);
   const sessions = useStore(s => s.sessions);
   const currentSessionPath = useStore(s => s.currentSessionPath);
   const pendingNewSession = useStore(s => s.pendingNewSession);
@@ -319,14 +321,14 @@ function MobileDesktopShell({
     >
       <SidebarLayout restorePreference={false}/>
       <AppTitlebar
-        sidebarOpen={sidebarOpen}
-        jianOpen={jianOpen}
+        sidebarOpen={!primaryPage&&sidebarOpen}
+        jianOpen={!primaryPage&&jianOpen}
         previewOpen={previewOpen}
         showPreviewToggle
         showNewSessionButton
         showChannelTabs={false}
         showWidgetButtons={false}
-        centerTitle={titlebarTitle}
+        centerTitle={primaryPage?primaryTitles[primaryPage]:titlebarTitle}
         onNewSession={() => void createNewSession()}
         onToggleSidebar={() => {
           toggleSidebar(!sidebarOpen);
@@ -344,8 +346,8 @@ function MobileDesktopShell({
           <button type="button" onClick={onApplyMobileUpdate}>{t('mobile.update.reload')}</button>
         </div>
       )}
-      <div className="app mobile-desktop-app" data-preview-expanded={previewExpanded || undefined} data-layout-drawer={layoutDrawer || undefined}>
-        <AppNavigationRail showActivityBars={false} showSettingsButton={settingsAvailable} onOpenSettings={()=>openSettingsModal()}/>
+      <div className="app mobile-desktop-app" data-primary-page={primaryPage||undefined} data-preview-expanded={previewExpanded || undefined} data-layout-drawer={layoutDrawer || undefined}>
+        <AppNavigationRail showActivityBars showSettingsButton={settingsAvailable} onOpenSettings={()=>openSettingsModal()}/>
         <div className="enigma-workspace-frame">
         <ChatSidebar
           showNavigationRail={false}
@@ -358,6 +360,7 @@ function MobileDesktopShell({
           onCollapse={() => toggleSidebar(false)}
           region="mobile-sidebar"
         />
+        <PrimaryPages/>
         <MainContent>
           <ChatPage inputSurface="mobile" regionPrefix="mobile-" />
         </MainContent>

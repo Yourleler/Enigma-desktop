@@ -181,3 +181,8 @@ describe("session thinking level capabilities", () => {
     )).toBe("low");
   });
 });
+
+it('offers low and extreme reasoning for the current GPT generation while keeping explicit model choices',()=>{
+ expect(getModelThinkingLevels({id:'gpt-6-1-sol',reasoning:true})).toEqual(['off','low','medium','high','max']);
+ expect(getModelThinkingLevels({id:'gpt-6-1-sol',thinkingLevels:['low','high']})).toEqual(['low','high']);
+});

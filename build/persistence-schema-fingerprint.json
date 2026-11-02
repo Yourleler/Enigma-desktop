@@ -664,7 +664,7 @@
     ],
     "version": 3
   },
-  "payloadFingerprint": "sha256:2f108d307a26cbd21354582fa47057e59287dcac3df6115e8e3c3ff279db89b3",
+  "payloadFingerprint": "sha256:340aa62e8b06975e68e84ca21994bd7a7af55a8d09e718f391c3f577f825f839",
   "registry": [
     {
       "affectedByEpochMigration": true,
@@ -1832,7 +1832,7 @@
         "source": "plugins/enigma/host.ts"
       },
       "schemaSource": {
-        "contract": "schema 1 native-session/workspace binding, absolute roots, explicit memory flag, validated source identity, manager model grants and bounded guardian configuration/usage",
+        "contract": "schema 1 native-session/workspace binding, absolute roots, explicit memory flag, validated source identity, manager model grants and bounded guardian configuration/usage; user-selected repositories reuse the existing workspace configuration and manager limit fields",
         "kind": "runtime-contract",
         "module": "plugins/enigma/host.ts"
       }
@@ -3422,8 +3422,8 @@
   ],
   "review": {
     "classification": "compatible",
-    "compatibilityReason": "Existing draft JSON document can carry resourceBadge nodes with label, reference and kind; preserve drafts before older clients. Repository lookups and terminal launch add no persistent store. DATA_EPOCH unchanged.",
-    "payloadFingerprint": "sha256:2f108d307a26cbd21354582fa47057e59287dcac3df6115e8e3c3ff279db89b3"
+    "compatibilityReason": "New terminal tab uses existing terminal sessions and transcripts; resize does not change records. Goal alias and reasoning options preserve existing stored types. DATA_EPOCH unchanged.",
+    "payloadFingerprint": "sha256:340aa62e8b06975e68e84ca21994bd7a7af55a8d09e718f391c3f577f825f839"
   },
   "schemas": [
     {
@@ -3692,7 +3692,7 @@
       "storeId": "enigma-managed-workspace-roots"
     },
     {
-      "contract": "schema 1 native-session/workspace binding, absolute roots, explicit memory flag, validated source identity, manager model grants and bounded guardian configuration/usage",
+      "contract": "schema 1 native-session/workspace binding, absolute roots, explicit memory flag, validated source identity, manager model grants and bounded guardian configuration/usage; user-selected repositories reuse the existing workspace configuration and manager limit fields",
       "kind": "runtime-contract",
       "module": "plugins/enigma/host.ts",
       "protocolModules": [
@@ -3705,7 +3705,7 @@
           "sourceHash": "sha256:b6fbc095c90f1222e565017ca0be3fb1134a4ca0298cc4908180bb5dc9a39ec7"
         }
       ],
-      "sourceHash": "sha256:34f4afdf6f275535cb573d1c08fc2681ec9e34eaf1253571d516653a7e049762",
+      "sourceHash": "sha256:373853a8fbcd626fac0ae866b4d22f0dbf666ebcfc87e3336633cfb1134159a6",
       "storeId": "enigma-session-bindings"
     },
     {
@@ -4072,7 +4072,7 @@
       "contract": "terminal metadata JSON plus ordered transcript JSONL protocol",
       "kind": "directory-contract",
       "module": "lib/terminal/terminal-session-manager.ts",
-      "sourceHash": "sha256:5e7c4faac6ad1ad030c410192d0d2b96c8bb2f566228c7dcb0a36e5970fd1e9e",
+      "sourceHash": "sha256:4cd4c57eb999e65263c146d7835d209ddb56cfd4e23c20d275587abbf0fffd4e",
       "storeId": "terminal-session-state"
     },
     {

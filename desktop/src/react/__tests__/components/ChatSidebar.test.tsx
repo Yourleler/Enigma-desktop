@@ -58,15 +58,14 @@ describe('ChatSidebarContent', () => {
     vi.unstubAllGlobals();
   });
 
-  it('opens side conversation as a drawer on narrow screens and beside chat on wide screens',()=>{
-    vi.stubGlobal('innerWidth',550);
-    useStore.setState({jianOpen:false,jianAutoCollapsed:false,sidebarOpen:false,sidebarAutoCollapsed:false,layoutDrawer:null});
+  it('opens a stable primary page and does not duplicate side conversation in the rail',()=>{
+    useStore.setState({activePanel:null,jianOpen:true,layoutDrawer:null});
     render(<AppNavigationRail/>);
-    fireEvent.click(screen.getByRole('button',{name:'侧边对话'}));
-    expect(useStore.getState()).toMatchObject({jianOpen:true,layoutDrawer:'workspace'});
-    vi.stubGlobal('innerWidth',1200);
-    fireEvent.click(screen.getByRole('button',{name:'侧边对话'}));
-    expect(useStore.getState()).toMatchObject({jianOpen:true,layoutDrawer:null});
+    expect(screen.queryByRole('button',{name:'侧边对话'})).toBeNull();
+    fireEvent.click(screen.getByRole('button',{name:'任务管家'}));
+    expect(useStore.getState().activePanel).toBe('conductor');
+    expect(screen.getByRole('button',{name:'任务管家'})).toHaveAttribute('aria-pressed','true');
+    expect(useStore.getState().jianOpen).toBe(true);
   });
 
   it('keeps the desktop collapse control in the titlebar and disables hidden sidebar content', () => {

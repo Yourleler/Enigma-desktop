@@ -1,7 +1,7 @@
 import type { Model } from '../types';
 
 export type ThinkingLevel = 'off' | 'auto' | 'low' | 'medium' | 'high' | 'xhigh' | 'max';
-export const DEFAULT_THINKING_LEVELS: ThinkingLevel[] = ['off', 'medium', 'high'];
+export const DEFAULT_THINKING_LEVELS: ThinkingLevel[] = ['off', 'low', 'medium', 'high'];
 
 export function normalizeThinkingLevel(level: ThinkingLevel): ThinkingLevel {
   if (level === 'auto') return 'medium';

@@ -1,3 +1,4 @@
+import {AppIcon} from '../ui/app-icons';
 import {createPortal} from 'react-dom';
 import { GlassSelection } from '../ui/GlassSelection';
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -83,7 +84,7 @@ function firstNonEmptyBucket(buckets: Map<ActivityBucket, ActivityItem[]> | unde
   return ACTIVITY_BUCKETS.find(bucket => (buckets?.get(bucket)?.length || 0) > 0) || 'automation';
 }
 
-export function ActivityPanel() {
+export function ActivityPanel({embedded=false}:{embedded?:boolean}={}) {
   const activities = useStore(s => s.activities) as ActivityItem[];
   const agents = useStore(s => s.agents);
   const currentAgentId = useStore(s => s.currentAgentId);
@@ -91,6 +92,7 @@ export function ActivityPanel() {
   const setActivities = useStore(s => s.setActivities);
 
   const connectionKey=useStore(previewConnectionKey);
+  const [refreshing,setRefreshing]=useState(false),[updatedAt,setUpdatedAt]=useState<number|null>(null);
   const [hbEnabled, setHbEnabled] = useState<boolean|null>(null);
   const [loadError,setLoadError]=useState(''),[heartbeatError,setHeartbeatError]=useState(''),[heartbeatBusy,setHeartbeatBusy]=useState(false);
   const selectedBuckets=useRef<Record<string,ActivityBucket>>({}),loadSerial=useRef(0),hbRevision=useRef(0),hbBusy=useRef(false),mounted=useRef(true);
@@ -137,6 +139,7 @@ export function ActivityPanel() {
   }, [activeAgentId, activeBuckets]);
 
   const loadData=useCallback(()=>{
+    setRefreshing(true);
     const serial=++loadSerial.current,configRevision=hbRevision.current,owns=capturePreviewContext(),before=useStore.getState().activities;
     const current=()=>owns()&&mounted.current&&serial===loadSerial.current;
     void hanaFetch('/api/desk/activities',{throwOnHttpError:false}).then(async response=>{
@@ -144,8 +147,8 @@ export function ActivityPanel() {
       if(response.ok===false||!Array.isArray(data.activities))throw Error(normalizeSessionRouteError(data).message||'运行记录暂不可读取。');
       const changed=useStore.getState().activities.filter(row=>!before.includes(row));
       const ids=new Set(changed.map(row=>row.agentId+':'+row.id));
-      setActivities([...changed,...data.activities.filter((row:Activity)=>!ids.has(row.agentId+':'+row.id))]);setLoadError('');
-    }).catch(()=>{if(current())setLoadError('运行记录加载失败，已有内容已保留。');});
+      setActivities([...changed,...data.activities.filter((row:Activity)=>!ids.has(row.agentId+':'+row.id))]);setLoadError('');setUpdatedAt(Date.now());
+    }).catch(()=>{if(current())setLoadError('运行记录加载失败，已有内容已保留。');}).finally(()=>{if(current())setRefreshing(false);});
     void fetchConfig({cacheKey:connectionKey,force:true}).then(data=>{if(current()&&!hbBusy.current&&configRevision===hbRevision.current)setHbEnabled(data.desk?.heartbeat_master!==false);}).catch(()=>{if(current())setHeartbeatError('巡检设置暂不可读取，请刷新后重试。');});
   },[setActivities,connectionKey]);
   const {visible,close:closePanel}=usePanel('activity',loadData,[currentAgentId,connectionKey]);
@@ -178,8 +181,8 @@ export function ActivityPanel() {
 
   if (!visible) return null;
 
-  return createPortal(
-    <div className={fp.floatingPanel} id="activityPanel">
+  const content = (
+    <div className={`${fp.floatingPanel} ${embedded?'enigma-primary-panel':''}`} id="activityPanel">
       <div className={`${fp.floatingPanelInner} ${automationStyles.panel}`} data-glass-frame="panel" data-native-browser-occluder="">
         <div id="activityListView" style={FLEX_COLUMN_STYLE}>
           <div className={fp.floatingPanelHeader}>
@@ -192,7 +195,7 @@ export function ActivityPanel() {
                   onClick={toggleHeartbeat}
                 />
               </div>
-            <button className={fp.floatingPanelClose} onClick={close} aria-label="关闭运行记录" data-tooltip="关闭运行记录">
+            <button data-page-close={embedded||undefined} className={fp.floatingPanelClose} onClick={close} aria-label="关闭运行记录" data-tooltip="关闭运行记录">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />
@@ -200,7 +203,7 @@ export function ActivityPanel() {
             </button>
           </div>
           <div className={fp.floatingPanelBody}>
-            <div className={automationStyles.toolbar}><button className={automationStyles.textButton} onClick={loadData}>刷新记录</button></div>
+            <p className="enigma-page-description">这里记录计划任务、自动巡检和后台工作实际执行的结果。展开记录可查看过程与输出，也可以打开对应对话继续处理。普通聊天中的操作请在原对话查看。</p><div className="enigma-page-refresh"><button className={automationStyles.textButton} disabled={refreshing} aria-busy={refreshing} onClick={loadData}><AppIcon name="refresh" size={15} className={refreshing?'enigma-refreshing':''}/>{refreshing?'正在刷新…':'刷新记录'}</button><span role="status">{updatedAt?`更新于 ${new Date(updatedAt).toLocaleTimeString('zh-CN',{hour12:false})} · ${activities.length} 条记录`:'正在读取执行记录'}</span></div>
             {(loadError||heartbeatError)&&<p role="alert" className={automationStyles.feedback}>{loadError||heartbeatError}</p>}
             <div className={fp.activityCards} id="activityCards">
               {agentTabs.length === 0 ? (
@@ -240,7 +243,7 @@ export function ActivityPanel() {
                   </div>
                   <div className={automationStyles.groupList}>
                     {activeActivities.length === 0 ? (
-                      !loadError&&<div className={fp.activityEmpty}>{t('activity.emptyForCategory')}</div>
+                      !loadError&&<div className={fp.activityEmpty}><strong>还没有这类执行记录</strong><p>任务运行后，这里会显示结果、用时和可查看的过程。</p><button onClick={()=>useStore.getState().setActivePanel('automation')}>查看任务计划</button></div>
                     ) : activeActivities.map(a => (
                       <ActivityCard
                         key={`${connectionKey}:${a.agentId}:${a.id}`}
@@ -258,9 +261,9 @@ export function ActivityPanel() {
           </div>
         </div>
       </div>
-    </div>,
-    document.body
+    </div>
   );
+  return embedded?content:createPortal(content,document.body);
 }
 
 function ActivityCard({
@@ -352,8 +355,8 @@ function ActivityCard({
       <ChatResourceCard
         className={`${fp.activitySessionCard}${a.status === 'error' ? ` ${fp.activitySessionCardError}` : ''}`}
         icon={<AgentAvatar info={displayInfo} className={fp.activitySessionAvatar} alt={displayInfo.displayName} />}
-        title={displayInfo.displayName}
-        titleMeta={`· ${typeText}`}
+        title={a.label||typeText}
+        titleMeta={`· ${displayInfo.displayName}`}
         subtitle={subtitle}
         statusLabel={statusLabel}
         statusTone={statusTone}

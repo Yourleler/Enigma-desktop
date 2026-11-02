@@ -1,3 +1,4 @@
+import {useStore} from '../../stores';
 import {RepositoryContextBar} from '../chat/RepositoryContext';
 import { AppearanceMenu } from '../../engineering/AppearanceMenu';
 import { AppIcon } from '../../ui/app-icons';
@@ -37,9 +38,10 @@ export function AppTitlebar({
   showWidgetButtons = true,
 }: AppTitlebarProps) {
   const t = window.t ?? ((p: string) => p);
+  const primaryPage=useStore(s=>s.activePanel);
 
   return (
-    <div className="titlebar" data-sidebar-open={sidebarOpen}>
+    <div className="titlebar" data-sidebar-open={sidebarOpen} data-primary-page={primaryPage||undefined}>
       <TitlebarDividers sidebarOpen={sidebarOpen} workspaceOpen={jianOpen}/>
       <div className="tb-left-group">
         <button
@@ -70,12 +72,14 @@ export function AppTitlebar({
         )}
       </div>
       <div className="tb-conversation-group">
+      <div className="tb-title-context">
       {centerTitle && (
         <div className="tb-center-title" aria-label={t('titlebar.currentChatTitle')} title={centerTitle}>
           <span>{centerTitle}</span>
         </div>
       )}
-      {centerTitle&&<RepositoryContextBar compact/>}
+      {centerTitle&&!primaryPage&&<RepositoryContextBar compact/>}
+      </div>
       <div id="enigma-titlebar-chat-tools"/>
       </div>
       <div id="enigma-titlebar-workspace" hidden={!jianOpen}/>
