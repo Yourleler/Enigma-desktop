@@ -664,7 +664,7 @@
     ],
     "version": 3
   },
-  "payloadFingerprint": "sha256:f91246bb10e459eb4531c3ebd4c08ebd817449de12faabac364126c9b2ec112b",
+  "payloadFingerprint": "sha256:fb82fb8cb25b8e1c6f275a1b1072c3ceffd013999c85b8eb38b7cfd23efa09d8",
   "registry": [
     {
       "affectedByEpochMigration": true,
@@ -3414,8 +3414,8 @@
   ],
   "review": {
     "classification": "compatible",
-    "compatibilityReason": "Desktop main now retains live notification objects, dispatches scoped activation targets, and appends content-free delivery phase diagnostics. Window bounds, release bookmarks, update marker readers, SQLite schemas, registry mappings and existing serialized shapes are unchanged. The reviewed delta is solely the desktop-window-version-state whole-module source hash; no DATA_EPOCH migration is required.",
-    "payloadFingerprint": "sha256:f91246bb10e459eb4531c3ebd4c08ebd817449de12faabac364126c9b2ec112b"
+    "compatibilityReason": "Empty sessions restore their existing model_change selection explicitly instead of using the agent default. Managed workers populate the existing projectId and error fields; existing cancellation status is preserved. JSONL entry formats, ledger schema versions, SQLite tables and registry mappings do not change. Source digests were reviewed; no DATA_EPOCH migration is required.",
+    "payloadFingerprint": "sha256:fb82fb8cb25b8e1c6f275a1b1072c3ceffd013999c85b8eb38b7cfd23efa09d8"
   },
   "schemas": [
     {
@@ -3640,7 +3640,7 @@
       "contract": "desktop window bounds, release announcement bookmark, and update cache version marker readers",
       "kind": "directory-contract",
       "module": "desktop/main.cjs",
-      "sourceHash": "sha256:0533d7faee134fff2a2ceb4f3070efb8801726209d43a9f8cb6f4270e82d2068",
+      "sourceHash": "sha256:6390d0a8f576a668a3976565309eb65be7bb5e18cd35a9aa60ac9495c6ac0bec",
       "storeId": "desktop-window-version-state"
     },
     {
@@ -3654,7 +3654,7 @@
       "contract": "schema 1 manager identity, explicit limits, owned projects/conversations, resumable interrupted tasks, selected integration previews and original acceptance evidence",
       "kind": "runtime-contract",
       "module": "plugins/enigma/conductor.ts",
-      "sourceHash": "sha256:5cccf2ac938eb1dc7427a47e543332d9679d7dd2d4bf79568c70475a1087e8ec",
+      "sourceHash": "sha256:920e798ba43096bf434683202c3d866777dd1a74acdb702ca35ad79ffaaf2367",
       "storeId": "enigma-conductor-ledgers"
     },
     {
@@ -3668,7 +3668,7 @@
       "contract": "managerId/taskId owned isolated workspace roots; code/Enigma state have independently verified protocols",
       "kind": "directory-contract",
       "module": "plugins/enigma/conductor.ts",
-      "sourceHash": "sha256:5cccf2ac938eb1dc7427a47e543332d9679d7dd2d4bf79568c70475a1087e8ec",
+      "sourceHash": "sha256:920e798ba43096bf434683202c3d866777dd1a74acdb702ca35ad79ffaaf2367",
       "storeId": "enigma-managed-workspace-roots"
     },
     {
@@ -3898,7 +3898,7 @@
         {
           "contract": "core/session-coordinator.ts Hana metadata extensions",
           "module": "core/session-coordinator.ts",
-          "sourceHash": "sha256:df3369442d915e6a4e5eec7074bdf6edd703c4b3af273823d4e3cfc1ea2d5517"
+          "sourceHash": "sha256:8c7080f0d82e7e93e10b44a5037a7eb816506164266e2b166041749042c4d821"
         },
         {
           "contract": "core/session-jsonl-file.ts repair contract",

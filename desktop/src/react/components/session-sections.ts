@@ -10,6 +10,7 @@ import {
   UNCATEGORIZED_PROJECT_ID,
   autoProjectIdForCwd as makeAutoProjectIdForCwd,
   autoProjectNameForCwd,
+  cwdFromAutoProjectId,
   isAutoProjectId,
 } from '../../../../shared/session-projects.ts';
 
@@ -231,11 +232,16 @@ function ensureProjectGroup(
 ): SessionProjectGroup {
   const existing = projectById.get(projectId);
   if (existing) return existing;
+  const directoryName=autoProjectNameForCwd(cwdFromAutoProjectId(projectId)||session.cwd,'未指定项目');
+  const generatedWorkerDirectory=/^conversation-[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(directoryName);
+  const workspaceName=session.workspaceLabel?.trim()||(generatedWorkerDirectory?session.title?.trim():null);
   const project: SessionProjectGroup = {
     id: projectId,
     name: projectId === UNCATEGORIZED_PROJECT_ID
       ? '未归类'
-      : autoProjectNameForCwd(session.cwd, '未指定项目'),
+      : projectId===makeAutoProjectIdForCwd(session.cwd)&&workspaceName
+        ? workspaceName
+        : directoryName,
     folderId: null,
     order: Number.MAX_SAFE_INTEGER,
     source: 'cwd',

@@ -54,7 +54,7 @@ const LABELED_TOOL_NAMES = [
  * 文案键但不是工具名：同一个工具按 action 分出来的档位。
  * 它们要有完整三相位，但不进内置工具名单（那张表是拿工具名判断内外部用的）。
  */
-const ACTION_LABEL_KEYS = ['session_send', 'session_create', 'notify_desktop'];
+const ACTION_LABEL_KEYS = ['session_send', 'session_create'];
 
 /**
  * 不进进程区、因而不需要文案的工具。

@@ -260,6 +260,25 @@ describe("historical sessions whose model is unavailable", () => {
     expect(runtimeSession.prompt).not.toHaveBeenCalled();
   });
 
+  it('preserves the selected model when restoring a session before its first user message',async()=>{
+    const coordinator=createCoordinator();
+    const manager=sessionManagerOpenMock();
+    const entries=[
+      {type:'session',version:3,id:'empty',timestamp:'2026-07-01T00:00:00.000Z',cwd:root},
+      {type:'model_change',id:'selected-model',parentId:null,timestamp:'2026-07-01T00:00:01.000Z',provider:NEXT_MODEL.provider,modelId:NEXT_MODEL.id},
+    ];
+    manager.buildSessionContext=()=>({model:{provider:NEXT_MODEL.provider,modelId:NEXT_MODEL.id},messages:[]});
+    manager.getEntries=manager.getBranch=()=>entries;
+    manager.getLeafId=()=> 'selected-model';
+    manager.getEntry=id=>entries.find(entry=>entry.id===id)||null;
+    const content=entries.map(entry=>JSON.stringify(entry)).join('\n')+'\n';fs.writeFileSync(sessionPath,content);
+    coordinator._d.getModels().currentModel={...NEXT_MODEL,id:'different-agent-default'};
+    await coordinator.switchSession(sessionPath);
+    expect(createAgentSessionMock.mock.calls[0][0].model).toMatchObject({provider:NEXT_MODEL.provider,id:NEXT_MODEL.id});
+    expect(runtimeSession.model.id).toBe(NEXT_MODEL.id);
+    expect(fs.readFileSync(sessionPath,'utf8')).toBe(content);
+  });
+
   it("requires an explicit model selection before clearing the blocked state", async () => {
     const coordinator = createCoordinator();
     await coordinator.switchSession(sessionPath);

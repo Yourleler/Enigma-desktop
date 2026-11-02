@@ -129,7 +129,11 @@ export async function engineeringRequest(
   let parseFailed = false;
   const value = await res.json().catch(() => { parseFailed = true; return { error: `服务返回了无法读取的内容（HTTP ${res.status}）` }; });
   if (!res.ok || parseFailed) {
-    const error = new Error(typeof value?.error === 'string' ? value.error : '工程操作失败') as Error & {status:number};
+    const rawMessage = typeof value?.error === 'string' ? value.error : '工程操作失败';
+    const message = rawMessage === 'Automatic approval review rejected the engineering action: Automatic approval review could not produce a valid decision.'
+      ? '自动审批未得到有效决定，本次操作没有执行。请检查审批模型配置后重试。'
+      : rawMessage;
+    const error = new Error(message) as Error & {status:number};
     error.status=res.status;
     throw error;
   }

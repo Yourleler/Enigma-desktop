@@ -406,9 +406,6 @@ app.on("gpu-info-update", () => {
 
 let splashWindow = null;
 let mainWindow = null;
-// macOS removes a newly created notification when its JS object is collected.
-// Retain live notifications until the user closes/activates them.
-const desktopNotifications = new Set();
 const mainWindowReadyTimers = new WeakMap();
 let onboardingWindow = null;
 let quickChatWindow = null;
@@ -5984,7 +5981,7 @@ wrapIpcBestEffortHandler("show-notification", (_event, title, body, agentId, raw
   if (!Notification.isSupported()) return { shown: false, reason: "unsupported" };
   /** @type {Electron.NotificationConstructorOptions} */
   const options = {
-    title: title || app.getName(),
+    title: title || "Hana",
     body: body || "",
     silent: false,
   };
@@ -5994,32 +5991,15 @@ wrapIpcBestEffortHandler("show-notification", (_event, title, body, agentId, raw
     // createFromPath 对不支持的格式/损坏文件返回空图；空图会顶掉默认 icon，故只在有效时设置。
     if (!icon.isEmpty()) options.icon = icon;
   }
-  const notificationId = `notification-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
-  const notif = new Notification({ ...options, id: notificationId });
-  desktopNotifications.add(notif);
-  if(desktopNotifications.size>100)desktopNotifications.delete(desktopNotifications.values().next().value);
-  const notificationDiagnostic = (phase, extra = {}) => writeDesktopLaunchDiagnostic(`notification-${phase}`, {
-    notificationId, hasTarget: !!notificationOptions.target, ...extra,
-  });
-  notif.on('show', () => notificationDiagnostic('shown'));
-  notif.on('failed', (_event, error) => {desktopNotifications.delete(notif);notificationDiagnostic('failed', { error: redactMainLogText(String(error || 'unknown')) });});
-  notif.on('close', () => desktopNotifications.delete(notif));
+  const notif = new Notification(options);
   notif.on("click", () => {
-    notificationDiagnostic('clicked');
-    desktopNotifications.delete(notif);
     if (mainWindow && !mainWindow.isDestroyed()) {
       if (mainWindow.isMinimized()) mainWindow.restore();
       mainWindow.show();
       mainWindow.focus();
-      if (notificationOptions.target) mainWindow.webContents.send('notification-click', notificationOptions.target);
     }
   });
-  notificationDiagnostic('requested');
   notif.show();
-  if(process.platform==='darwin'&&typeof Notification.getHistory==='function')setTimeout(()=>{
-    void Notification.getHistory().then(history=>notificationDiagnostic('history',{present:history.some(item=>item.id===notificationId)}))
-      .catch(error=>notificationDiagnostic('history-failed',{error:redactMainLogText(String(error?.message||error))}));
-  },1000);
   return { shown: true };
 });
 

@@ -77,7 +77,6 @@ export const SESSION_ACTION_LABEL_KEYS: Record<string, string> = {
 };
 
 function labelKeyFor(name: string, args?: Record<string, unknown>): string {
-  if(name==='notify'&&Array.isArray(args?.channels)&&args.channels.length>0&&args.channels.every(channel=>channel==='desktop'||channel==='auto'))return 'notify_desktop';
   const aliased = TOOL_LABEL_ALIASES[name];
   if (aliased) return aliased;
   if (name === 'session') {

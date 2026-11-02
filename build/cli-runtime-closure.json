@@ -77560,6 +77560,11 @@
       "provenance": [
         {
           "root": "server-bootstrap",
+          "from": "plugins/enigma/conductor.ts",
+          "kind": "import-statement"
+        },
+        {
+          "root": "server-bootstrap",
           "from": "plugins/enigma/host.ts",
           "kind": "import-statement"
         },
@@ -77584,7 +77589,7 @@
           "kind": "import-statement"
         }
       ],
-      "reason": "Reached via esbuild source module graph, imported by plugins/enigma/host.ts (import-statement); core/session-project-catalog-store.ts (import-statement); core/project-turn-context.ts (import-statement); +2 more importer(s)."
+      "reason": "Reached via esbuild source module graph, imported by plugins/enigma/conductor.ts (import-statement); plugins/enigma/host.ts (import-statement); core/session-project-catalog-store.ts (import-statement); +3 more importer(s)."
     },
     {
       "path": "shared/session-timing.ts",

@@ -186,13 +186,6 @@ export type DesktopNotificationFocusPolicy = 'always' | 'when_unfocused';
 
 export interface DesktopNotificationOptions {
   desktopFocusPolicy?: DesktopNotificationFocusPolicy;
-  target?: DesktopNotificationTarget;
-}
-export interface DesktopNotificationTarget {
-  connectionKey: string;
-  sessionPath?: string;
-  activityId?: string;
-  agentId?: string;
 }
 
 // ── 核心数据结构 ──
@@ -679,7 +672,6 @@ export interface PlatformApi {
 
   // ── Notification ──
   showNotification?(title: string, body: string, agentId?: string | null, options?: DesktopNotificationOptions): void;
-  onNotificationClick?(callback: (target: DesktopNotificationTarget) => void): (() => void) | void;
 
   // ── App info ──
   getAppVersion?(): Promise<string>;

@@ -206,11 +206,6 @@ contextBridge.exposeInMainWorld("hana", {
   startDrag: (filePaths) => ipcRenderer.send("start-drag", filePaths),
   // 系统通知（agentId 标识触发的助手，主进程据此设头像 icon；缺失则无 icon）
   showNotification: (title, body, agentId, options) => ipcRenderer.invoke("show-notification", title, body, agentId ?? null, options || null),
-  onNotificationClick: (callback) => {
-    const handler = (_event, target) => callback(target);
-    ipcRenderer.on('notification-click', handler);
-    return () => ipcRenderer.removeListener('notification-click', handler);
-  },
   // 窗口控制（Windows/Linux 自绘标题栏）
   getPlatform: () => ipcRenderer.invoke("get-platform"),
   windowMinimize: () => ipcRenderer.invoke("window-minimize"),

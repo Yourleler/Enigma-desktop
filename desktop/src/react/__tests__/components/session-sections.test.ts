@@ -381,6 +381,20 @@ describe('buildSessionProjectView', () => {
     });
   });
 
+  it('names an assigned folder project from its identity instead of a worker isolation path',()=>{
+    const id=autoProjectIdForCwd('/projects/shared-app');
+    const view=buildSessionProjectView([makeSession({cwd:'/managed/conversation-random-id',projectId:id})],{projects:[]});
+    expect(view.rootProjects[0]).toMatchObject({id,name:'shared-app'});
+  });
+  it('uses the workspace label for an older worker group instead of its internal directory id',()=>{
+    const view=buildSessionProjectView([makeSession({cwd:'/managed/conversation-random-id',workspaceLabel:'Read configuration'})],{projects:[]});
+    expect(view.rootProjects[0].name).toBe('Read configuration');
+  });
+  it('uses an existing worker title when legacy metadata has no workspace mount label',()=>{
+    const view=buildSessionProjectView([makeSession({cwd:'/managed/conversation-a158dbd1-4be5-4346-b546-3ed8fc3c551e',title:'Read configuration',workspaceLabel:null})],{projects:[]});
+    expect(view.rootProjects[0].name).toBe('Read configuration');
+  });
+
   it('surfaces empty catalog folders so users can drag projects into them', () => {
     const sections = buildSessionProjectView([], {
       folders: [{ id: 'folder-empty', name: '稍后整理', order: 0 }],

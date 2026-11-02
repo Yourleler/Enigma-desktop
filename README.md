@@ -15,6 +15,8 @@
 | 已安装桌面宿主与服务 | **0.452.251**，精确修复旧对话冻结的自我介绍模板，保留原人格和历史，已签名安装 |
 | 已安装桌面与 Web 界面 | **0.452.254**，修复标签滚到末端后箭头仍遮挡关闭按钮；原生关闭、恢复与拖动调序通过，剩余验收继续保留 |
 | Agent 底层 | Pi 的三个核心包均固定为 **1.4.0** |
+| 待安装的稳定更新 | **0.452.258** 修复空对话模型恢复、工作任务错误回传和项目归属；真实只读管家测试通过，见[本轮记录](docs/empty-session-model-and-worker-navigation-2026-11-02.md) |
+| 独立保留的实验 | 通知定位与诊断保留在`codex/notification-navigation`，不含在258稳定版内；系统异常已恢复，见[实测边界](docs/notification-and-native-acceptance-2026-11-02.md) |
 | 上游宿主基线 | OpenHanako / HanaAgent **0.450.0**；来源见 [FORK.md](FORK.md) |
 | 工程模块 | `packages/enigma-engineering`，内部 npm 包名 `enigma-next` |
 | 当前开发分支 | `codex/engineering-migration`；开发分支推送不等于更新 `main` |

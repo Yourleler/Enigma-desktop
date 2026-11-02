@@ -35,13 +35,13 @@ export function GuardianPanel() {
             maxInterventions: mode === "managed" ? budget : 0,
             allowedActions: actions,
           },
-        }) : engineeringRequest('/guardian/stop',sessionPath,{}),()=>{setNotice(action==='start'?'独立观察已启动':'独立观察已停止，主任务继续运行');return refresh();});
+        }) : engineeringRequest('/guardian/stop',sessionPath,{}),()=>{setNotice(action==='start'?'独立观察已启动':'独立观察已停止，主任务状态未改变');return refresh();});
   };
   const processLost=status && status.phase!=='stopped' && ['gone','changed'].includes(status.processState);
   const running = status && status.phase !== "stopped" && !processLost && !!status.pid;
   return (
     <section className="enigma-welcome-card enigma-guardian">
-      <h3>独立管家</h3>
+      <h3>旁路观察</h3>
       <p>
         单独的进程持续观察运行状况。你也可以随时问它任务有没有有效进展、在等什么，或应该怎样排障。
       </p>
@@ -53,7 +53,7 @@ export function GuardianPanel() {
       {(processLost||status?.phase==='host-unavailable')&&<p className="enigma-source-note">上一次观察没有正常连接到当前宿主。原任务和文件保留，可以核对下方记录后重新启动。</p>}
       {!running && (
         <>
-          <FormSelect label="管家方式" value={mode} onChange={setMode} options={[{value:'assist',label:'观察并给建议'},{value:'managed',label:'按允许范围托管'}]} />
+          <FormSelect label="观察方式" value={mode} onChange={setMode} options={[{value:'assist',label:'观察并给建议'},{value:'managed',label:'按允许范围托管'}]} />
           {mode === "managed" && (
             <>
               <p>

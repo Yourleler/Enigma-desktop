@@ -758,11 +758,6 @@
       "done": "📋 백그라운드 진행 상황을 봤어요",
       "failed": "📋 백그라운드 진행 상황을 보지 못했어요"
     },
-    "notify_desktop": {
-      "running": "🔔 {name}이 데스크톱 알림을 요청하고 있어요",
-      "done": "🔔 시스템 알림을 요청했어요",
-      "failed": "🔔 데스크톱 알림 요청에 실패했어요"
-    },
     "notify": {
       "running": "🔔 {name}이(가) 알림을 보내는 중",
       "done": "🔔 {name}이(가) 알림을 보냈어요",
@@ -3027,7 +3022,6 @@
     "cronEnabled": "활성화됨",
     "cronDisabled": "비활성화됨",
     "notifySent": "알림을 보냈어요: {title}",
-    "notifyDesktopRequested": "시스템 알림을 요청했어요: {title}. 표시는 알림 권한과 집중 모드 설정에 따라 달라요.",
     "notifyFailed": "알림 전송 실패: {msg}",
     "artifactCreated": "미리보기를 생성했어요: {title}",
     "pinnedAlreadyExists": "이미 고정 메모리에 있어요.",

@@ -84,8 +84,6 @@ function firstNonEmptyBucket(buckets: Map<ActivityBucket, ActivityItem[]> | unde
 
 export function ActivityPanel() {
   const activities = useStore(s => s.activities) as ActivityItem[];
-  const focusTarget = useStore(s => s.activityFocusTarget);
-  const appliedFocus=useRef('');
   const agents = useStore(s => s.agents);
   const currentAgentId = useStore(s => s.currentAgentId);
   const agentName = useStore(s => s.agentName);
@@ -150,18 +148,7 @@ export function ActivityPanel() {
     void fetchConfig({cacheKey:connectionKey,force:true}).then(data=>{if(current()&&!hbBusy.current&&configRevision===hbRevision.current)setHbEnabled(data.desk?.heartbeat_master!==false);}).catch(()=>{if(current())setHeartbeatError('巡检设置暂不可读取，请刷新后重试。');});
   },[setActivities,connectionKey]);
   const {visible,close:closePanel}=usePanel('activity',loadData,[currentAgentId,connectionKey]);
-  const close=useCallback(()=>{useStore.setState({activityFocusTarget:null});closePanel();},[closePanel]);
-  useEffect(()=>{
-    if(!visible||!focusTarget||focusTarget.connectionKey!==connectionKey)return;
-    const key=connectionKey+':'+focusTarget.revision;
-    if(appliedFocus.current===key)return;
-    const activity=activities.find(row=>row.id===focusTarget.id&&row.agentId===focusTarget.agentId);
-    if(!activity)return;
-    appliedFocus.current=key;
-    const bucket=activityBucket(activity.type);
-    selectedBuckets.current[focusTarget.agentId]=bucket;
-    setSelectedAgentId(focusTarget.agentId);setSelectedBucket(bucket);
-  },[visible,focusTarget,activities,connectionKey]);
+  const close=useCallback(()=>closePanel(),[closePanel]);
   const toggleHeartbeat=useCallback(async()=>{
     if(hbBusy.current||hbEnabled===null)return;
     const owns=capturePreviewContext(),next=!hbEnabled;hbRevision.current++;hbBusy.current=true;setHeartbeatBusy(true);setHeartbeatError('');
@@ -261,7 +248,6 @@ export function ActivityPanel() {
                         currentAgentId={currentAgentId}
                         agentName={agentName}
                         onPromote={promoteActivity}
-                        focusRevision={focusTarget?.connectionKey===connectionKey&&focusTarget.id===a.id&&focusTarget.agentId===a.agentId?focusTarget.revision:undefined}
                       />
                     ))}
                   </div>
@@ -281,18 +267,14 @@ function ActivityCard({
   currentAgentId,
   agentName,
   onPromote,
-  focusRevision,
 }: {
   activity: ActivityItem;
   agents: Agent[];
   currentAgentId: string | null;
   agentName: string;
   onPromote: (activity: ActivityItem) => Promise<void>;
-  focusRevision?: number;
 }) {
   const [open, setOpen] = useState(false);
-  const cardRef=useRef<HTMLDivElement>(null);
-  useEffect(()=>{if(focusRevision===undefined)return;setOpen(true);cardRef.current?.scrollIntoView?.({block:'nearest'});},[focusRevision]);
   const [promoting,setPromoting]=useState(false),[promoteError,setPromoteError]=useState('');
   const promoteBusy=useRef(false),alive=useRef(true);
   useEffect(()=>{alive.current=true;return()=>{alive.current=false;};},[]);
@@ -364,7 +346,7 @@ function ActivityCard({
   };
 
   return (
-    <div ref={cardRef} className={fp.activitySessionItem} data-open={open || undefined}>
+    <div className={fp.activitySessionItem} data-open={open || undefined}>
       <ChatResourceCard
         className={`${fp.activitySessionCard}${a.status === 'error' ? ` ${fp.activitySessionCardError}` : ''}`}
         icon={<AgentAvatar info={displayInfo} className={fp.activitySessionAvatar} alt={displayInfo.displayName} />}

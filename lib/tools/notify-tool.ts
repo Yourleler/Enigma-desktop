@@ -108,7 +108,6 @@ export function createNotifyTool({ onNotify }) {
             : null,
         });
         const sent = result?.ok !== false;
-        const desktopOnly = result?.channels?.length === 1 && result.channels[0] === 'desktop';
         const failure = Array.isArray(result?.deliveries)
           ? result.deliveries.find((d) => d?.status === "failed")?.error
           : null;
@@ -116,7 +115,7 @@ export function createNotifyTool({ onNotify }) {
           content: [{
             type: "text",
             text: sent
-              ? t(desktopOnly ? "error.notifyDesktopRequested" : "error.notifySent", { title })
+              ? t("error.notifySent", { title })
               : t("error.notifyFailed", { msg: failure || "delivery failed" }),
           }],
           details: { title, body, sent, result },

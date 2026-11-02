@@ -758,11 +758,6 @@
       "done": "📋 Caught up on the background tasks",
       "failed": "📋 The background tasks wouldn't report"
     },
-    "notify_desktop": {
-      "running": "🔔 {name} is requesting a desktop notification",
-      "done": "🔔 System notification requested",
-      "failed": "🔔 Desktop notification request failed"
-    },
     "notify": {
       "running": "🔔 {name} is sending a notification",
       "done": "🔔 {name} sent the notification",
@@ -3031,7 +3026,6 @@
     "cronEnabled": "enabled",
     "cronDisabled": "disabled",
     "notifySent": "Notification sent: {title}",
-    "notifyDesktopRequested": "Requested a system notification: {title}. Banner visibility depends on system permissions and Focus settings.",
     "notifyFailed": "Notification failed: {msg}",
     "artifactCreated": "Preview created: {title}",
     "pinnedAlreadyExists": "This is already in pinned memory.",

@@ -19,8 +19,21 @@ async function setup(){
   const manager=new ConversationConductor(host,'/owned/manager.jsonl');
   managers.push(manager);
   await manager.initialize(directory,{maxConcurrent:2,maxTasks:3,writableRepos:[],allowRewind:false,allowedModels:['test/model']});
-  return {directory,engine,manager};
+  return {directory,engine,manager,host};
 }
+
+it('retains the provider failure returned as a terminal message rather than a thrown exception',async()=>{
+  const {manager,engine,host,directory}=await setup(),ledger=await manager.load();
+  const workspace=await Workspace.open(directory),repo=path.join(directory,'source');await fs.mkdir(repo);await runProcess(['git','init','-q'],repo);await fs.writeFile(path.join(repo,'config.json'),'{}');await workspace.addRepo('main',repo,{access:'write'});
+  const native={model:{provider:'test',id:'model'},getLastAssistantText:()=>'',sendCustomMessage:vi.fn(async()=>{}),sessionManager:{getSessionId:()=> 'worker-pi',getBranch:()=>[{type:'message',message:{role:'assistant',stopReason:'error',errorMessage:'Worker model is outside its current manager grant'}}]}};
+  Object.assign(engine,{getSessionByPath:()=>native,listSessions:async()=>[{path:'/owned/manager.jsonl',cwd:directory,projectId:'cwd:'}],resolveModelWithCredentialsFresh:async()=>({model:native.model}),resolveSessionOwnership:()=>({agentId:'test'}),createDetachedSession:async()=>({sessionPath:'/owned/worker.jsonl',sessionId:'worker'}),saveSessionTitle:async()=>{},promptSession:async()=>{}});
+  Object.assign(host,{connect:async()=>{},setManagedModels:async()=>{}});
+  const task={id:'worker',title:'read config',goal:'read',requires:[],writeRepos:[],checks:[],status:'queued' as const};ledger.tasks.push(task);
+  await (manager as any).run(task);
+  expect(ledger.tasks[0].status).toBe('failed');
+  expect(ledger.tasks[0].error).toContain('outside its current manager grant');
+  expect(engine.setSessionProjectAssignment).toHaveBeenCalledWith({sessionPath:'/owned/worker.jsonl',projectId:'cwd:'});
+});
 
 it('rejects undelegated write scopes, unapproved models and unrelated conversation controls',async()=>{
   const {manager,engine}=await setup();

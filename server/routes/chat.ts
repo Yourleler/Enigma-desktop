@@ -363,7 +363,6 @@ export function toNotificationWsMessage(event: any, sessionPath: any = null) {
     agentId: event.agentId ?? null,
     desktopFocusPolicy,
     sessionPath: event.sessionPath ?? sessionPath ?? null,
-    ...(typeof event.activityId === 'string' && event.activityId ? { activityId: event.activityId } : {}),
   };
 }
 

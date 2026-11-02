@@ -1861,10 +1861,11 @@ export class SessionCoordinator {
         }
       }
     }
-    const restoredPromptModel = restore && !restoredPromptSnapshot
+    const restoredExecutionModel = restore
       && restoredSessionModelRef?.provider && restoredSessionModelRef?.modelId
       ? findModel(models.availableModels || [], restoredSessionModelRef.modelId, restoredSessionModelRef.provider)
       : null;
+    const restoredPromptModel = !restoredPromptSnapshot ? restoredExecutionModel : null;
     const promptPatchModel = restoredPromptSnapshot ? null : (effectiveModel || restoredPromptModel);
     // Preserve legacy `auto` until the target model is known. Collapsing it to
     // the model-agnostic Medium default here would ignore a model-level default
@@ -2153,11 +2154,11 @@ export class SessionCoordinator {
       tools: sessionTools,
       customTools: sessionCustomTools,
     };
-    // 正常恢复仍让 Pi 从 JSONL 解析模型。历史模型当前不可用时，传入仅承载原
-    // provider/id 的不可执行占位对象，避免 Pi 静默选择其他模型；真正发送由
-    // _assertSessionModelAvailable 拦截，直到用户显式切换模型。
-    if (effectiveModel || unavailableSessionModel) {
-      sessionOpts.model = effectiveModel || unavailableSessionModel;
+    // Pi 1.4 restores its saved model only when messages already exist. An empty
+    // worker can still have an explicit model_change before workspace reload.
+    // Pass that selection explicitly; unavailable identities remain non-executable.
+    if (effectiveModel || unavailableSessionModel || restoredExecutionModel) {
+      sessionOpts.model = effectiveModel || unavailableSessionModel || restoredExecutionModel;
     }
     const { session, modelFallbackMessage } = await createAgentSession(sessionOpts);
     if (modelFallbackMessage) {

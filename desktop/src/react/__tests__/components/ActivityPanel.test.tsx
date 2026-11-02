@@ -5,7 +5,6 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ActivityPanel } from '../../components/ActivityPanel';
 import { useStore } from '../../stores';
-import {previewConnectionKey} from '../../utils/preview-context';
 import {fetchConfig} from '../../hooks/use-config';
 import { hanaFetch } from '../../hooks/use-hana-fetch';
 
@@ -41,7 +40,6 @@ describe('ActivityPanel', () => {
       } as Response);
     });
     useStore.setState({
-      activityFocusTarget:null,
       activities: [{
         id: 'act_cover',
         type: 'beautify',
@@ -67,15 +65,6 @@ describe('ActivityPanel', () => {
   it('retains the selected category when an unrelated activity is refreshed',async()=>{
     const rows=[{id:'cron',type:'cron',agentId:'agent-hana',summary:'Scheduled result'},{id:'patrol',type:'heartbeat',agentId:'agent-hana',summary:'Patrol result'}];
     useStore.setState({activities:rows as never});render(<ActivityPanel/>);
-    fireEvent.click(screen.getByRole('tab',{name:/activity.patrolRuns/}));
-    await act(async()=>useStore.setState({activities:rows.map(row=>({...row})) as never}));
-    expect(screen.getByRole('tab',{name:/activity.patrolRuns/})).toHaveAttribute('aria-selected','true');
-  });
-  it('opens the notified record and lets the user select another category afterwards',async()=>{
-    const rows=[{...useStore.getState().activities[0],type:'cron'},{id:'patrol',type:'heartbeat',agentId:'agent-hana',summary:'Patrol result'}];
-    useStore.setState({activities:rows as never,activityFocusTarget:{id:'act_cover',agentId:'agent-hana',revision:1,connectionKey:previewConnectionKey()}});
-    render(<ActivityPanel/>);
-    expect(await screen.findByText('cover 已经生成')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('tab',{name:/activity.patrolRuns/}));
     await act(async()=>useStore.setState({activities:rows.map(row=>({...row})) as never}));
     expect(screen.getByRole('tab',{name:/activity.patrolRuns/})).toHaveAttribute('aria-selected','true');

@@ -7,13 +7,6 @@ const {
 } = policy;
 
 describe("desktop notification focus policy", () => {
-  it('preserves a scoped task destination but rejects incomplete or malformed targets',()=>{
-    const target={connectionKey:'local-1',activityId:'run-1',agentId:'agent-1'};
-    expect(normalizeDesktopNotificationOptions({target})).toEqual({desktopFocusPolicy:'always',target});
-    for(const target of [{sessionPath:'/chat.jsonl'},{connectionKey:'local-1',activityId:'run-1'},{connectionKey:'local-1',sessionPath:'bad\u0000path'}]){
-      expect(normalizeDesktopNotificationOptions({target})).toEqual({desktopFocusPolicy:'always'});
-    }
-  });
   it("keeps legacy notifications on the always policy", () => {
     expect(normalizeDesktopNotificationOptions(null)).toEqual({
       desktopFocusPolicy: "always",
