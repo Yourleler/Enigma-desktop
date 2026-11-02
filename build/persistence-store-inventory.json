@@ -470,7 +470,7 @@
       "schemaContract": {
         "kind": "protocol",
         "source": "plugins/enigma/change-workbench.ts",
-        "compatibility": "New isolated analysis directory; old engineering reports remain available independently."
+        "compatibility": "Read-only conversation summaries add no stored fields and reuse existing sealed file versions. Frozen source publications and analysis jobs keep their schemas; old engineering reports remain available independently. DATA_EPOCH remains unchanged."
       },
       "openEntry": [
         "ChangeWorkbench"

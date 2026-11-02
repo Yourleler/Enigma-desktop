@@ -3,6 +3,12 @@ export interface RuntimeClock {
   startedAt: number | null;
   elapsedMs: number | null;
   state: 'running' | 'paused' | 'done' | 'stopped' | 'unknown';
+  objective?: string;
+  turnCount?: number;
+  maxTurns?: number;
+  nextRunAt?: number | null;
+  reason?: string | null;
+  revision?: number;
 }
 export interface SessionTiming {
   sessionPath: string;

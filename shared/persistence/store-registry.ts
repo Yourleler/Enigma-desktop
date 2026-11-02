@@ -148,7 +148,7 @@ export const PERSISTENT_STORES: readonly StoreDescriptor[] = Object.freeze([
     identityContract: 'Session digest, publication UUID and job UUID; source access is revalidated before use.',
     checkpointPolicy: 'Preserve sources and verdicts; running processes are not captured as completed work.',
     restorePolicy: 'Interrupted jobs remain failed; repair queue and original user repositories are not replayed or restored.',
-    compatibility: 'New isolated analysis directory; old engineering reports remain available independently.',
+    compatibility: 'Read-only conversation summaries add no stored fields and reuse existing sealed file versions. Frozen source publications and analysis jobs keep their schemas; old engineering reports remain available independently. DATA_EPOCH remains unchanged.',
     siteRules: rules(['plugins/enigma/change-workbench.ts'], 'Writes session-bound analysis state and private generated source copies.'),
   }),
 

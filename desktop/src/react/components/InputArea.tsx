@@ -1,3 +1,4 @@
+import {ConversationProgress} from './input/ConversationProgress';
 import {InputQueue} from './input/InputQueue';
 import {ComposerSurface} from './input/ComposerSurface';
 import {ComposerEditor} from './input/ComposerEditor';
@@ -2408,6 +2409,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
       </div>
       <InputQueue editor={editor}/>
       <TokenMeterPill />
+      <ConversationProgress />
       {!expandedComposer&&draftSaveNotice}
       {historyNotice?.scope===historyScope&&<div className={styles['input-history-notice']} role="status"><span>{historyNotice.text}</span><button type="button" onClick={()=>navigateInputHistory(1)} data-tooltip="Command+Y 向后；Command+Z 向前。只切换输入，不发送消息">向后</button>{historyCursor.current&&<button type="button" onClick={()=>{historyCursor.current=null;navigateInputHistory(1);}}>返回草稿</button>}</div>}
       {pendingSessionSwitchPath&&<p role="status" className={styles['session-switch-hint']}>{locale?.startsWith('zh')?'正在打开目标对话，草稿就绪后即可输入…':'Opening the selected chat; input resumes when its draft is ready…'}</p>}

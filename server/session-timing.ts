@@ -3,6 +3,7 @@ import { createRequestContext } from './http/boundary.ts';
 import fs from 'node:fs/promises';
 import { timeMillis, type SessionTiming, type RuntimeClock } from '../shared/session-timing.ts';
 import { engineeringHost } from '../plugins/enigma/host.ts';
+import {safeJson} from './hono-helpers.ts';
 
 /** Only reads the session header, current run meter and lightweight task ledgers.
  * Never scans message bodies, repositories or asks a model for status. */
@@ -25,7 +26,7 @@ export async function readSessionTiming(engine: any, sessionPath: string, meter:
   if(loop){
     const start=timeMillis(loop.createdAt), activeSince=timeMillis(loop.activeSince);
     const elapsed=Number.isFinite(loop.activeElapsedMs)?loop.activeElapsedMs+(loop.status==='running'&&activeSince?Math.max(0,now-activeSince):0):start?Math.max(0,(loop.status==='running'?now:timeMillis(loop.updatedAt)||start)-start):null;
-    goal={kind:'goal',startedAt:start,elapsedMs:elapsed,state:loop.status==='running'?'running':loop.status==='paused'?'paused':loop.status==='completed'?'done':'stopped'};
+    goal={kind:'goal',startedAt:start,elapsedMs:elapsed,state:loop.status==='running'?'running':loop.status==='paused'?'paused':loop.status==='completed'?'done':'stopped',objective:loop.prompt,turnCount:loop.turnCount,maxTurns:loop.limits?.maxTurns,nextRunAt:timeMillis(loop.alarm?.wakeAt),reason:loop.pausedReason,revision:loop.updatedAt};
   }
   let conductor:RuntimeClock|null=null;
   if(engine.pluginManager?.getPlugin?.('enigma')?.status==='loaded'){
@@ -36,6 +37,26 @@ export async function readSessionTiming(engine: any, sessionPath: string, meter:
 }
 
 export function registerSessionTimingRoute(route:Hono,engine:any,snapshot:(path:string)=>any) {
+  route.post('/sessions/goal',async c=>{
+    try{
+      const body=await safeJson(c);
+      if(!['pause','resume','stop'].includes(body.action)||!body.sessionPath)return c.json({error:'请选择目标操作和对话'},400);
+      const ref=engine.resolveSessionRef({sessionPath:body.sessionPath}),sessionPath=ref.sessionPath||ref.currentLocator?.path;
+      if(!sessionPath||ref.lifecycle&&ref.lifecycle!=='active')return c.json({error:'对话不可操作'},409);
+      if(!createRequestContext(c,engine).authorize?.('sessions.write',{kind:'session',sessionId:ref.sessionId,sessionPath})?.allowed)return c.json({error:'insufficient_scope'},403);
+      const controller=engine.loopController,current=controller?.toolStatus(sessionPath);
+      if(!current||current.createdAt!==body.createdAt||current.updatedAt!==body.revision)return c.json({error:'目标状态已变化，请刷新后重试'},409);
+      if(!['running','paused'].includes(current.status))return c.json({error:'目标已经结束'},409);
+      const target=await controller.targetFromSessionRef(current.target,{ensure:false});
+      if(!target)return c.json({error:'目标对话已失效'},409);
+      const latest=controller.toolStatus(sessionPath);
+      if(latest?.createdAt!==body.createdAt||latest?.updatedAt!==body.revision)return c.json({error:'目标状态已变化，请刷新后重试'},409);
+      if(body.action==='pause')await controller.pause(target,'user');
+      else if(body.action==='stop')await controller.stop(target);
+      else await controller.resume(target);
+      return c.json(await readSessionTiming(engine,sessionPath,snapshot(sessionPath)));
+    }catch(error){return c.json({error:error instanceof Error?error.message:'目标操作失败'},400);}
+  });
   route.get('/sessions/timing',async c=>{
     try {
       if(!c.req.query('path')&&!c.req.query('sessionId'))return c.json({error:'Session is required'},400);

@@ -93,3 +93,13 @@ it('translates scope diagnostics instead of exposing engine copy verbatim',async
  render(<ChangeWorkbench/>);await screen.findByText('2 个文件 · 版本 version');fireEvent.click(screen.getByText('范围说明 · 2'));
  expect(screen.getByText(/已检查 24 \/ 139/)).toBeVisible();expect(screen.getByText(/未能提取符号入口/)).toBeVisible();expect(screen.queryByText(/Symbol outlines/)).toBeNull();
 });
+it('opens the exact file and frozen turn range requested by the composer',async()=>{
+ const {useChangesPanel}=await import('../../stores/changes-panel-store');
+ const original=vi.mocked(hanaFetch).getMockImplementation()!;
+ vi.mocked(hanaFetch).mockImplementation(async(url,options)=>String(url).includes('/source')?new Response(JSON.stringify({...publication,input:{source:'conversation',from:'turn',to:'turn'}})):original(url,options));
+ useChangesPanel.setState({navigation:{session:'/one',connection:'local',revision:99,from:'turn',to:'turn',repo:'repo',file:'docs/note.md',view:'diff'}});
+ render(<ChangeWorkbench/>);await screen.findByText('2 个文件 · 版本 version');
+ await waitFor(()=>expect(screen.getByRole('button',{name:'全量 Diff'})).toHaveAttribute('aria-pressed','true'));
+ const calls=vi.mocked(hanaFetch).mock.calls.filter(([,options])=>options?.method==='POST');expect(JSON.parse(calls[0][1]!.body as string).input).toEqual({source:'conversation',all:false,from:'turn',to:'turn'});
+ expect(screen.getByText('note')).toBeVisible();useChangesPanel.setState({navigation:undefined});
+});

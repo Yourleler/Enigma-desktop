@@ -9,6 +9,7 @@ import {desktopInputQueue} from '../../core/desktop-input-queue.ts';
 import {SessionChanges,parseGitStatusGroups} from './session-changes.ts';
 import {redact} from 'enigma-next/storage';
 import {explainReadingMaterial} from 'enigma-next';
+import {diffLines} from 'diff';
 
 const hash=(v:string|Buffer)=>createHash('sha256').update(v).digest('hex');
 const safe=(v:string)=>{if(!/^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,100}$/.test(v)||['__proto__','constructor','prototype'].includes(v))throw Error('记录标识无效');return v;};
@@ -27,6 +28,20 @@ export class ChangeWorkbench {
   private directory(session:string){return path.join(this.engine.hanakoHome,'change-workbench',hash(session));}
   private async save(file:string,value:unknown){await fs.mkdir(path.dirname(file),{recursive:true});const temp=file+'.'+randomUUID()+'.tmp';await fs.writeFile(temp,JSON.stringify(value),{mode:0o600});await fs.rename(temp,file);}
   private branch(session:string){return SessionManager.open(session).getBranch();}
+  async summary(session:string){
+    const ids=new Set(this.branch(session).map(e=>e.id)),store=conversationChanges(this.engine);
+    const turns=(await store.list(session)).filter(t=>!t.inputEntry||ids.has(t.inputEntry));
+    const sealed=turns.filter(t=>t.after),pending=turns.some(t=>!t.after);
+    if(!sealed.length)return {files:[],added:0,removed:0,pending,recorded:turns.length>0,gaps:[]};
+    const result=await store.compare(session,sealed[0].id,sealed.at(-1)!.id,ids);
+    const files=result.changes.map((file:any)=>{
+      const countable=(!file.before||typeof file.before.content==='string')&&(!file.after||typeof file.after.content==='string')&&file.change!=='unknown';
+      let added=0,removed=0;
+      if(countable)for(const part of diffLines(file.before?.content||'',file.after?.content||'')){if(part.added)added+=part.count||0;if(part.removed)removed+=part.count||0;}
+      return {repo:file.repo,repoName:result.roots?.find((r:any)=>r.id===file.repo)?.name||file.repo,file:file.file,change:file.change,added:countable?added:null,removed:countable?removed:null};
+    });
+    return {files,added:files.reduce((n,f)=>n+(f.added||0),0),removed:files.reduce((n,f)=>n+(f.removed||0),0),pending,recorded:true,gaps:result.gaps,from:sealed[0].id,to:sealed.at(-1)!.id,version:result.version};
+  }
   async catalog(session:string){
     const branch=this.branch(session),entryIds=new Set(branch.map(e=>e.id));
     const turns=(await conversationChanges(this.engine).list(session)).map(({before,after,operations,...t})=>({...t,onBranch:!t.inputEntry||entryIds.has(t.inputEntry),files:after?Object.keys(after.files).length:0}));

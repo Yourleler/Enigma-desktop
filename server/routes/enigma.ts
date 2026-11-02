@@ -61,6 +61,7 @@ export function createEnigmaRoute(engine: any) {
     return sessionPath;
   };
   route.get('/enigma/change-workbench',async c=>{try{return c.json(await readingWorkbench.catalog(await readingAccess(c)));}catch(error){return fail(c,error);}});
+  route.get('/enigma/change-workbench/summary',async c=>{try{return c.json(await readingWorkbench.summary(await readingAccess(c)));}catch(error){return fail(c,error);}});
   route.post('/enigma/change-workbench/source',async c=>{try{const body=await safeJson(c),sp=await readingAccess(c,false,body);return c.json(await readingWorkbench.capture(sp,body.input));}catch(error){return fail(c,error);}});
   route.get('/enigma/change-workbench/source',async c=>{try{return c.json(await readingWorkbench.source(await readingAccess(c),c.req.query('id')||''));}catch(error){return fail(c,error);}});
   route.get('/enigma/change-workbench/file',async c=>{try{return c.json(await readingWorkbench.file(await readingAccess(c),c.req.query('id')||'',c.req.query('repo')||'',c.req.query('file')||''));}catch(error){return fail(c,error);}});

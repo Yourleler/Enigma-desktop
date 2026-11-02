@@ -93,11 +93,7 @@ export function ThinkingLevelButton({ level, onChange, availableLevels }: {
       triggerBare
       triggerClassName={`${styles['thinking-pill']}${isOff ? '' : ` ${styles.active}`}`}
       renderTrigger={() => (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M9 18h6" /><path d="M10 22h4" />
-          <path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0018 8 6 6 0 006 8c0 1 .23 2.23 1.5 3.5.76.76 1.23 1.52 1.41 2.5" />
-          {isOff && <line x1="4" y1="4" x2="20" y2="20" strokeWidth="1.5" />}
-        </svg>
+        <span data-tooltip={`思考力度：${tLevel(`input.thinkingLevel.${activeLevel}`, THINKING_LEVEL_COPY[activeLevel].label)}`}>{tLevel(`input.thinkingLevel.${activeLevel}`, THINKING_LEVEL_COPY[activeLevel].label)}</span>
       )}
     />
   );

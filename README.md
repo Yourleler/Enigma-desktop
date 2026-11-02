@@ -12,11 +12,11 @@
 
 | 项目 | 当前状态 |
 | --- | --- |
-| 已安装桌面宿主与服务 | **0.452.265**，补齐管家指定资料传递、保存报告读取和无代码仓库的只读工作对话；正常配置继续使用Ferry模型 |
-| 已安装桌面与 Web 界面 | **0.452.265**，窄窗打开工作对话时收起遮挡，管家与侧边对话入口可重新展开；宽窗保持并排，原生侧边会话恢复已核对 |
+| 已安装桌面宿主与服务 | **0.452.266**，目标条连接暂停、继续与结束，变更摘要复用真实封存版本；正常配置继续使用Ferry模型 |
+| 已安装桌面与 Web 界面 | **0.452.266**，审批模式显示颜色与文字，模型后显示思考力度；新增目标条、累计变更清单和直接审查入口 |
 | Agent 底层 | Pi 的三个核心包均固定为 **1.4.0** |
-| 本轮交付 | 265已签名安装；768份保护文件无缺失，包含用户新建的侧边对话；模型、会话与草稿不变，浅色主题和巡检设置保留 |
-| 本轮记录 | [管家资料传递与面板往返](docs/conductor-inputs-and-navigation-2026-11-02.md)、[模型角色与侧边对话](docs/model-role-routing-2026-11-02.md)、[引用恢复](docs/quote-draft-recovery-2026-11-02.md) |
+| 本轮交付 | 266已签名安装，数据备份与正式原生核对见本轮记录 |
+| 本轮记录 | [输入框状态、目标与变更入口](docs/composer-goal-and-change-summary-2026-11-02.md)、[管家资料传递](docs/conductor-inputs-and-navigation-2026-11-02.md)、[模型角色与侧边对话](docs/model-role-routing-2026-11-02.md) |
 | 独立保留的实验 | 通知定位与诊断保留在`codex/notification-navigation`，不含在258稳定版内；系统异常已恢复，见[实测边界](docs/notification-and-native-acceptance-2026-11-02.md) |
 | 上游宿主基线 | OpenHanako / HanaAgent **0.450.0**；来源见 [FORK.md](FORK.md) |
 | 工程模块 | `packages/enigma-engineering`，内部 npm 包名 `enigma-next` |

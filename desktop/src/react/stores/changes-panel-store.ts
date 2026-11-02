@@ -1,2 +1,3 @@
 import { create } from 'zustand';
-export const useChangesPanel = create<{ session: string; connection: string; open: boolean }>(() => ({ session: '', connection: '', open: false }));
+export interface ChangeNavigation {session:string;connection:string;revision:number;from?:string;to?:string;repo?:string;file?:string;view:'diff'|'review'}
+export const useChangesPanel = create<{ session: string; connection: string; open: boolean; navigation?:ChangeNavigation }>(() => ({ session: '', connection: '', open: false }));

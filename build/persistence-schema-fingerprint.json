@@ -664,7 +664,7 @@
     ],
     "version": 3
   },
-  "payloadFingerprint": "sha256:495bd5d7efc2c3ba63fac5f76c78adefecf39c5a08d3f593f7ebac81b9f566e7",
+  "payloadFingerprint": "sha256:42271e45ccb22deadde6a601c2ebf36b4a0a5684d4020963e6011b439ff8776c",
   "registry": [
     {
       "affectedByEpochMigration": true,
@@ -1098,7 +1098,7 @@
       "protocolModules": [],
       "restorePolicy": "Interrupted jobs remain failed; repair queue and original user repositories are not replayed or restored.",
       "schemaContract": {
-        "compatibility": "New isolated analysis directory; old engineering reports remain available independently.",
+        "compatibility": "Read-only conversation summaries add no stored fields and reuse existing sealed file versions. Frozen source publications and analysis jobs keep their schemas; old engineering reports remain available independently. DATA_EPOCH remains unchanged.",
         "kind": "protocol",
         "source": "plugins/enigma/change-workbench.ts"
       },
@@ -3421,8 +3421,8 @@
   ],
   "review": {
     "classification": "compatible",
-    "compatibilityReason": "Schema 1 conductor tasks gain optional native-only kind and versioned input-file snapshots. Native-only workers retain model grants through modelSessions without repository-only tool restrictions. Version-checked read-only input copies live in existing manager-owned worker roots; source files are never modified. Changed or unavailable inputs invalidate completion of results that depend on them. Old tasks and absent optional fields remain readable. DATA_EPOCH stays 1.",
-    "payloadFingerprint": "sha256:495bd5d7efc2c3ba63fac5f76c78adefecf39c5a08d3f593f7ebac81b9f566e7"
+    "compatibilityReason": "Read-only change summary and goal controls reuse existing stores; no stored schema or DATA_EPOCH changes.",
+    "payloadFingerprint": "sha256:42271e45ccb22deadde6a601c2ebf36b4a0a5684d4020963e6011b439ff8776c"
   },
   "schemas": [
     {
@@ -3546,7 +3546,7 @@
       "contract": "frozen source publications, analysis jobs, findings and generated read-only workspaces; optional repo filter and unstaged source preserve prior publications; optional sourceCoverage and modelCoverage record file and request scope, while failed jobs may retain validated partial reading results; optional modelSynthesis retains original batch chapters and insights, source index scope, counted summary request and completion or failure state",
       "kind": "directory-contract",
       "module": "plugins/enigma/change-workbench.ts",
-      "sourceHash": "sha256:71b9f215ddb34ba942da4174909d4c4c933333a729e5fcd1115fca9c6f0b8e57",
+      "sourceHash": "sha256:19b88d4666e7aea3881e14d64baa28955ac2a3ca6bb4b4006d25aacf33ae0ef4",
       "storeId": "conversation-review-workbench"
     },
     {

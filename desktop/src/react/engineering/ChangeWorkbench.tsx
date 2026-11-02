@@ -13,6 +13,7 @@ import {ChangeOverview} from './ChangeOverview';
 import {ReadingChapter} from './ReadingChapter';
 import {ReadingCoverage} from './ReadingCoverage';
 import {readingText} from './reading-copy';
+import {useChangesPanel} from '../stores/changes-panel-store';
 import './ChangeWorkbench.css';
 
 const normalizeCatalog=(value:any)=>({turns:Array.isArray(value?.turns)?value.turns:[],repositories:Array.isArray(value?.repositories)?value.repositories:[],jobs:Array.isArray(value?.jobs)?value.jobs:[]});
@@ -49,6 +50,9 @@ export function ChangeWorkbench({initialMode='smart',active=true}:{initialMode?:
  const [severity,setSeverity]=useState('all'),[status,setStatus]=useState('all'),[reasons,setReasons]=useState<Record<string,string>>({}),[reviewed,setReviewed]=useState<string[]>([]);
  const streaming=useStore(s=>selectIsStreamingSession(s,session));
  const identity=JSON.stringify([connection,session]),generation=useRef(0),busyRef=useRef(false);
+ const requestedNavigation=useChangesPanel(s=>s.navigation);
+ const focusedNavigation=useRef<number|undefined>(undefined);
+ const currentNavigation=requestedNavigation?.session===session&&requestedNavigation.connection===(connection||'local')?requestedNavigation:undefined;
  const api=async(route:string,body?:any,signal?:AbortSignal)=>{const url='/api/enigma/change-workbench'+route+(route.includes('?')?'&':'?')+'sessionPath='+encodeURIComponent(session||'');const r=await hanaFetch(url,{...(body?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...body,sessionPath:session})}:{}),signal,timeout:body&&(route==='/source'||route==='/action'&&body.action==='recheck')?90_000:30_000,throwOnHttpError:false});const data=await r.json();if(!r.ok)throw Error(data.error||'操作失败');return data;};
  useEffect(()=>{let alive=true;sourceChosen.current=false;autoAttempt.current='';setHistoryPinned(false);setCatalogLoading(true);setCatalog(normalizeCatalog(null));generation.current++;busyRef.current=false;setPub(null);setJob(null);setReading(null);setError('');setBusy(false);setSelected('');setNavigation(undefined);setReviewed([]);setRepos([]);setExtension('all');setQuery('');setInclude('');setExclude('');setSeverity('all');setStatus('all');setReasons({});setContextFile(null);setLine(undefined);setFrom('');setTo('');setGitRepo('');setRefs({});api('').then(value=>{if(alive){setCatalog(normalizeCatalog(value));if(!sourceChosen.current)setSource(value.turns?.some((t:any)=>t.onBranch)?'all':value.repositories?.length?'working':'all');}}).catch(e=>{if(alive)setError(e.message);}).finally(()=>{if(alive)setCatalogLoading(false);});return()=>{alive=false;};},[identity]);
  useEffect(()=>{if(!polling||!job||job.status!=='running')return;let alive=true,pending=false;const epoch=generation.current;const timer=setInterval(()=>{if(pending)return;pending=true;api('/job?id='+encodeURIComponent(job.id)).then(value=>{if(alive&&epoch===generation.current){setJob(value);if(value.kind==='reading'&&value.result?.nodes)setReading(value.result);if(value.error)setError(value.error);}}).catch(e=>{if(alive&&epoch===generation.current)setError(e.message);}).finally(()=>{pending=false;});},900);return()=>{alive=false;clearInterval(timer);};},[job?.id,job?.status,identity,polling]);
@@ -65,6 +69,17 @@ export function ChangeWorkbench({initialMode='smart',active=true}:{initialMode?:
   const timer=setTimeout(()=>void capture(),250);return()=>clearTimeout(timer);
  },[sourceKey,polling,catalogLoading,ready,historyPinned,busy,job?.status,catalog]);
  const previousStreaming=useRef(streaming);
+ useEffect(()=>{
+  if(!currentNavigation)return;
+  sourceChosen.current=true;setHistoryPinned(false);autoAttempt.current='';setQuery('');setInclude('');setExclude('');setRepos([]);setExtension('all');setMode(currentNavigation.view);
+  if(currentNavigation.from&&currentNavigation.to){setSource('range');setFrom(currentNavigation.from);setTo(currentNavigation.to);}
+ },[currentNavigation?.revision]);
+ useEffect(()=>{
+  if(!currentNavigation?.file||!pub||focusedNavigation.current===currentNavigation.revision)return;
+  if(pub.input?.source!=='conversation'||pub.input.from!==currentNavigation.from||pub.input.to!==currentNavigation.to)return;
+  const match=pub.changes.find((f:any)=>f.repo===currentNavigation.repo&&f.file===currentNavigation.file);
+  if(match){setContinuous(false);navigateDiff(fileKey(match));setMode('diff');focusedNavigation.current=currentNavigation.revision;}
+ },[pub?.id,currentNavigation?.revision]);
  useEffect(()=>{const finished=previousStreaming.current&&!streaming;previousStreaming.current=streaming;if(!finished||historyPinned)return;const epoch=generation.current;void api('').then(value=>{if(epoch===generation.current){autoAttempt.current='';setCatalog(normalizeCatalog(value));}}).catch(()=>{});},[streaming,identity,historyPinned]);
  const analyze=(kind:'reading'|'review')=>run(async()=>{if(!pub)throw Error('请先查看变更范围');const epoch=generation.current;const chosen=models.find(m=>`${m.provider}/${m.id}`===model);const value=await api('/analyze',{source:pub.id,kind,...(chosen?{model:{provider:chosen.provider,id:chosen.id}}:{})});if(epoch===generation.current){setJob(value);setMode(kind==='review'?'review':'smart');}});
  const action=(type:string,finding?:string)=>run(async()=>{if(!job)return;const epoch=generation.current;const value=await api('/action',{job:job.id,action:type,finding,reason:finding?reasons[finding]:undefined});if(epoch===generation.current&&value.id){setJob(value);if(type==='recheck'){const latest=await api('/source?id='+value.publication);if(epoch===generation.current)setPub(latest);}}});

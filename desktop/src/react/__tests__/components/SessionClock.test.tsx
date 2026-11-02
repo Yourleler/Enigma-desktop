@@ -29,13 +29,17 @@ it('removes finished run clocks from the header but keeps the conversation start
  expect(screen.queryByText('00:10')).not.toBeInTheDocument();
 });
 it('shows only active elapsed time in the titlebar and keeps the start in its hint',async()=>{
- vi.mocked(hanaFetch).mockResolvedValue(new Response(JSON.stringify(snapshot())));
+ vi.mocked(hanaFetch).mockResolvedValue(new Response(JSON.stringify({...snapshot(),goal:null,run:{kind:'conversation',state:'running',startedAt:90000,elapsedMs:10000}})));
  render(<SessionClock compact inline/>);await act(async()=>{});
  expect(screen.getByTestId('session-clock')).not.toHaveTextContent('开始');
  expect(screen.getByText('00:10')).toBeVisible();
- expect(screen.getByTestId('session-clock').getAttribute('data-tooltip')).toContain('Goal 循环');
+ expect(screen.getByTestId('session-clock').getAttribute('data-tooltip')).toContain('本轮对话');
 });
 
 it('does not occupy the titlebar with an idle start timestamp',async()=>{
  vi.mocked(hanaFetch).mockResolvedValue(new Response(JSON.stringify({...snapshot(),goal:null,run:null})));render(<SessionClock inline/>);await act(async()=>{});expect(screen.queryByTestId('session-clock')).toBeNull();
+});
+it('leaves the active goal clock to the composer bar instead of duplicating it in the titlebar',async()=>{
+ vi.mocked(hanaFetch).mockResolvedValue(new Response(JSON.stringify(snapshot())));
+ render(<SessionClock inline/>);await act(async()=>{});expect(screen.queryByTestId('session-clock')).toBeNull();
 });

@@ -127,3 +127,8 @@ it('keeps completed source batches when only the synthesis reply fails',async()=
  const started=await f.api.analyze(f.session,f.source.id,'reading'),job=await untilDone(f.api,f.session,started.id);
  expect(job.status).toBe('failed');expect(job.result.modelCoverage.status).toBe('complete');expect(job.result.modelSynthesis.status).toBe('failed');expect(job.result.chapters.length).toBeGreaterThan(1);expect(job.result.modelSynthesis.chapters).toEqual(job.result.chapters);
 });
+it('summarizes sealed conversation changes without returning source bodies or claiming live totals',async()=>{
+ const f=await fixture();await fs.writeFile(path.join(f.work,'a.ts'),'old\n');const first=await f.capture.begin(f.session,'Update',null);await fs.writeFile(path.join(f.work,'a.ts'),'new\nnext\n');await f.capture.end(f.session,first);
+ const summary=await f.api.summary(f.session);expect(summary).toMatchObject({added:2,removed:1,from:first,to:first,pending:false});expect(summary.files[0]).toMatchObject({file:'a.ts',added:2,removed:1});expect(summary.files[0]).not.toHaveProperty('before');
+ const active=await f.capture.begin(f.session,'Next turn',null);const interim=await f.api.summary(f.session);expect(interim).toMatchObject({pending:true,to:first,added:2,removed:1});f.capture.release(f.session,active);
+});

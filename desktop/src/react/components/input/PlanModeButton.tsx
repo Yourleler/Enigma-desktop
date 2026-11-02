@@ -115,10 +115,13 @@ export function PlanModeButton({ mode, onChange, locked = false }: {
         className={`${styles['plan-mode-btn']} ${styles[`plan-mode-${mode}`] || ''}`}
         title={locked ? t('input.accessModeLocked') : label}
         aria-label={label}
+        aria-expanded={open}
+        data-approval-mode={mode}
         onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
         disabled={locked}
       >
         <PermissionModeIcon mode={mode} />
+        <span>{label}</span>
       </button>
       {open && (
         <div className={`${styles['thinking-dropdown']} ${styles['plan-mode-dropdown']}`} data-liquid="menu" data-menu-surface="" data-menu-position="absolute">
