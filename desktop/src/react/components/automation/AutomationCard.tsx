@@ -59,7 +59,7 @@ export function AutomationCard({
   const t = window.t ?? ((p: string) => p);
   const agents = useStore(s => s.agents);
   const currentAgentId = useStore(s => s.currentAgentId);
-  const fallbackAgentName = useStore(s => s.agentName) || 'Hanako';
+  const fallbackAgentName = useStore(s => s.agentName) || 'Enigma';
   const fallbackAgentYuan = useStore(s => s.agentYuan) || 'hanako';
   const baseline=useRef(job),busyRef=useRef(false),mounted=useRef(true);
   const [busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState('');

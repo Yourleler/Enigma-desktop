@@ -142,7 +142,7 @@ async function buildScreenshotPayloadForMessages(
 
   if (!payload.messages) return payload;
 
-  const assistantName = state.agentName || 'Hanako';
+  const assistantName = state.agentName || 'Enigma';
   const userName = state.userName || '我';
 
   for (const msg of payload.messages) {
@@ -372,7 +372,7 @@ async function resolveAssistantFallbackAvatar(state: StoreSnapshot): Promise<str
   try {
     return await fetchUrlAsDataUrl(resolveAssetUrl(fallbackSrc));
   } catch {
-    return userFallbackAvatar(state.agentName || 'Hana');
+    return userFallbackAvatar(state.agentName || 'Enigma');
   }
 }
 

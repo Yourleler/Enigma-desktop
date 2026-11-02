@@ -75,6 +75,8 @@ describe('MCP tool approval prompt', () => {
     }));
 
     await waitFor(() => expect(screen.getByText(/GitHub · search\/issues/)).toBeTruthy());
+    expect(screen.getByText('允许 Enigma 执行这次操作')).toBeTruthy();
+    expect(screen.queryByText('允许 Hana 执行这次操作')).toBeNull();
     openMenu();
 
     expect(screen.getByTestId('mcp-approve-session')).toBeTruthy();

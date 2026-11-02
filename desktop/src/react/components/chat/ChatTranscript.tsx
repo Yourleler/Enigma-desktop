@@ -39,7 +39,7 @@ export const ChatTranscript = memo(function ChatTranscript({
 }: Props) {
   const isStreaming = useStore(s => selectIsStreamingSession(s, sessionPath));
   const agents = useStore(s => s.agents);
-  const globalAgentName = useStore(s => s.agentName) || 'Hanako';
+  const globalAgentName = useStore(s => s.agentName) || 'Enigma';
   const globalYuan = useStore(s => s.agentYuan) || 'hanako';
   const selectedIds = useStore(s => selectSelectedIdsBySession(s, sessionPath));
   const userAvatarUrl = useStore(s => s.userAvatarUrl);

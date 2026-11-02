@@ -34,11 +34,15 @@ interface SessionConfirmationPromptProps {
 }
 
 function displayTitle(block: SessionConfirmationBlock) {
+  // Stored requests may predate the product rename. Localize only built-in
+  // approval headings; leave their subjects, parameters and history untouched.
+  if (block.kind === 'tool_action_approval') return textWithFallback('approval.toolAction.title', '允许 Enigma 执行这次操作');
+  if (block.kind === 'session_folders') return textWithFallback('approval.sessionFolders.title', '允许 Enigma 修改本对话的文件夹授权');
   if (block.kind === 'computer_app_approval') {
     const appName = block.subject?.label || textWithFallback('approval.computerApp.defaultAppName', 'this app');
     const translated = window.t?.('approval.computerApp.controlTitle', { appName });
     if (translated && translated !== 'approval.computerApp.controlTitle') return translated;
-    return `Allow Hana to control ${appName}`;
+    return `Allow Enigma to control ${appName}`;
   }
   return block.title;
 }

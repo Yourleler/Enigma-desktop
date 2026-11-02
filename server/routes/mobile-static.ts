@@ -203,12 +203,12 @@ const GUIDE_HTML = `<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Hana</title>
+<title>Enigma</title>
 <style>${PAGE_STYLE}</style>
 </head>
 <body>
 <main>
-  <h1>Hana</h1>
+  <h1>Enigma</h1>
   <p>尚未安装网页界面。在服务器上运行 <code>hana bundle pull</code> 获取，然后重启 <code>hana serve</code>。</p>
   <p class="en">No web frontend installed yet. Run <code>hana bundle pull</code> on the server, then restart <code>hana serve</code>.</p>
 </main>
@@ -221,12 +221,12 @@ const ERROR_HTML = `<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Hana</title>
+<title>Enigma</title>
 <style>${PAGE_STYLE}</style>
 </head>
 <body>
 <main>
-  <h1>Hana</h1>
+  <h1>Enigma</h1>
   <p>网页界面文件不可用（目录缺失或损坏）。请查看服务器日志，或重新运行 <code>hana bundle pull</code>。</p>
   <p class="en">The web frontend files are unavailable (missing or corrupted). Check the server logs, or re-run <code>hana bundle pull</code>.</p>
 </main>

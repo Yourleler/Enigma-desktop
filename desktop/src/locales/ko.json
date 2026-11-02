@@ -11,9 +11,9 @@
       "label": "Agent 생성"
     },
     "gallery": {
-      "title": "Hana Gallery",
+      "title": "Enigma Gallery",
       "upload": "직접 업로드",
-      "close": "Hana Gallery 닫기"
+      "close": "Enigma Gallery 닫기"
     },
     "notice": {
       "taskCreated": "Cover 백그라운드 작업을 만들었어요.",
@@ -45,7 +45,7 @@
     "openFullSession": "전체 대화 열기",
     "waitingReply": "답장을 기다리는 중...",
     "attachImage": "이미지 추가",
-    "serviceUnavailable": "Hana 서비스에 연결할 수 없어요",
+    "serviceUnavailable": "Enigma 서비스에 연결할 수 없어요",
     "createSessionFailed": "대화 생성에 실패했어요",
     "sendFailed": "보내기 실패"
   },
@@ -133,7 +133,7 @@
   },
   "announcement": {
     "title": "업데이트 완료 · v{version}",
-    "fallbackBody": "HanaAgent가 v{version}(으)로 업데이트되었습니다.",
+    "fallbackBody": "Enigma가 v{version}(으)로 업데이트되었습니다.",
     "confirm": "확인"
   },
   "skills": {
@@ -1134,7 +1134,7 @@
         "scheduledTaskCompletion": "예약 작업 완료",
         "patrolCompletion": "순찰 완료",
         "never": "사용 안 함",
-        "whenUnfocused": "HanaAgent에 포커스가 없을 때",
+        "whenUnfocused": "Enigma에 포커스가 없을 때",
         "whenSessionUnfocused": "완료된 채팅에 포커스가 없을 때",
         "always": "항상"
       }
@@ -1389,7 +1389,7 @@
       "updateChecking": "업데이트 확인 중…",
       "updateDownloading": "{agentName}이(가) 새 집을 준비하는 중",
       "updateReadyInstall": "v{version} 설치 준비 완료",
-      "updateInstalling": "업데이트를 설치하는 중입니다. HanaAgent가 자동으로 다시 시작됩니다…",
+      "updateInstalling": "업데이트를 설치하는 중입니다. Enigma가 자동으로 다시 시작됩니다…",
       "updateInstallManualHint": "다시 시작하여 업데이트를 누른 뒤 설치합니다. 종료만으로는 자동 설치하지 않습니다",
       "updateInstall": "재시작하여 업데이트",
       "updateInstallNow": "지금 재시작하여 업데이트",
@@ -1416,7 +1416,7 @@
       "updateManifestReleasedAtViaMirror": "배포 매니페스트 발행일: {date} (백업 소스 경유)",
       "updateCheckBtn": "업데이트 확인",
       "updateRetryBtn": "다시 시도",
-      "updateNeedInstall": "먼저 HanaAgent를 응용 프로그램 폴더로 이동하세요",
+      "updateNeedInstall": "먼저 Enigma를 응용 프로그램 폴더로 이동하세요",
       "updateDiskSpace": "디스크 공간이 부족하여 업데이트를 다운로드할 수 없습니다",
       "updateDigestCta": "이번 업데이트에서 얻는 것",
       "updateDigestTitle": "이번 업데이트에서 얻는 것",
@@ -1455,9 +1455,9 @@
       "mobileAccess": "모바일 접근",
       "desktopAccess": "컴퓨터 접근",
       "lanToggle": "LAN 기기 접근 허용",
-      "lanHint": "같은 LAN의 휴대폰과 컴퓨터가 이 HanaAgent Server에 접근할 수 있어요",
+      "lanHint": "같은 LAN의 휴대폰과 컴퓨터가 이 Enigma Server에 접근할 수 있어요",
       "port": "고정 포트",
-      "portHint": "북마크와 QR 코드에 사용합니다. 변경 후 Hana를 다시 시작해야 적용돼요",
+      "portHint": "북마크와 QR 코드에 사용합니다. 변경 후 Enigma를 다시 시작해야 적용돼요",
       "mobileUrl": "모바일 URL",
       "mobileUrlLanHint": "휴대폰 브라우저에서 이 주소를 여세요",
       "mobileUrlLocalHint": "현재는 이 컴퓨터에서만 접속할 수 있어요",
@@ -1470,7 +1470,7 @@
       "noLanAddresses": "LAN 주소를 찾지 못했어요",
       "qrCode": "QR 코드",
       "qrCodeHint": "스캔해서 PWA를 엽니다",
-      "restartRequired": "포트 변경을 저장했습니다. Hana를 다시 시작하면 적용됩니다",
+      "restartRequired": "포트 변경을 저장했습니다. Enigma를 다시 시작하면 적용됩니다",
       "saveNetwork": "접근 설정 저장",
       "mobileKeys": "모바일 키",
       "generateMobileKey": "모바일 접근 키 생성",
@@ -1490,21 +1490,21 @@
       "desktopKeyFailed": "생성 실패",
       "connectLanServer": "LAN 서버 연결",
       "remoteServerUrl": "서버 URL",
-      "remoteServerUrlHint": "다른 컴퓨터나 NAS의 HanaAgent Server URL을 입력하세요",
+      "remoteServerUrlHint": "다른 컴퓨터나 NAS의 Enigma Server URL을 입력하세요",
       "remoteServerKey": "접근 키",
       "remoteServerKeyHint": "그 서버 설정 페이지에서 생성한 컴퓨터 접근 키를 입력하세요",
       "remoteServerConnected": "LAN 서버 연결됨",
       "remoteServerFailed": "연결 실패",
-      "remoteConnection": "원격 Hana에 연결됨",
-      "remoteConnectionDesc": "접근 및 기기의 로컬 프로필, LAN 스위치, 접근 키는 로컬 Hana에만 속합니다.",
+      "remoteConnection": "원격 Enigma에 연결됨",
+      "remoteConnectionDesc": "접근 및 기기의 로컬 프로필, LAN 스위치, 접근 키는 로컬 Enigma에만 속합니다.",
       "remoteConnectionName": "연결 이름",
       "remoteConnectionKind": "연결 유형",
       "remoteConnectionUrl": "서버 URL",
       "remoteConnectionUnknown": "알 수 없음",
-      "remoteLocalOnlyNote": "이 컴퓨터의 LAN 접근, 기기 키, 로컬 계정을 관리하려면 먼저 로컬 Hana로 돌아가세요.",
-      "returnToLocal": "로컬 Hana로 돌아가기",
-      "returnedToLocal": "로컬 Hana로 돌아왔습니다",
-      "localConnectionUnavailable": "로컬 Hana 연결이 아직 준비되지 않았습니다",
+      "remoteLocalOnlyNote": "이 컴퓨터의 LAN 접근, 기기 키, 로컬 계정을 관리하려면 먼저 로컬 Enigma로 돌아가세요.",
+      "returnToLocal": "로컬 Enigma로 돌아가기",
+      "returnedToLocal": "로컬 Enigma로 돌아왔습니다",
+      "localConnectionUnavailable": "로컬 Enigma 연결이 아직 준비되지 않았습니다",
       "pairedDevices": "페어링된 기기",
       "noDevices": "페어링된 기기 없음",
       "revoke": "해제",
@@ -2222,7 +2222,7 @@
       "permissionReviewAll": "모두 검토",
       "permissionAllowlist": "허용 목록",
       "trustReadOnly": "읽기 전용 선언 신뢰",
-      "trustReadOnlyHint": "읽기 전용 여부는 서버가 스스로 밝힌 것이며 Hana가 확인할 수 없습니다. 켜면 읽기 전용으로 선언된 도구는 매번 검토하지 않습니다.",
+      "trustReadOnlyHint": "읽기 전용 여부는 서버가 스스로 밝힌 것이며 Enigma가 확인할 수 없습니다. 켜면 읽기 전용으로 선언된 도구는 매번 검토하지 않습니다.",
       "deferTitle": "지연 로딩",
       "deferScopeNote": "아래 설정은 이 커넥터뿐 아니라 모든 커넥터에 함께 적용됩니다.",
       "deferEnabled": "지연 로딩 허용",
@@ -2378,7 +2378,7 @@
       "compactionTitle": "컨텍스트 압축",
       "compactionSectionDescription": "자동 압축의 기본 전략과 채팅 컨텍스트 링에 실험적인 일회성 동작을 표시할지 설정해요.",
       "modelPersonaTitle": "모델 & 페르소나",
-      "modelPersonaDescription": "프로바이더가 Hana의 페르소나, 분위기, 출력 계약에 어떻게 적응하는지 관찰해요.",
+      "modelPersonaDescription": "프로바이더가 Enigma의 페르소나, 분위기, 출력 계약에 어떻게 적응하는지 관찰해요.",
       "memoryTitle": "메모리 실험",
       "memorySectionDescription": "실험적 메모리 시스템 기능이에요. 안정화되면 메모리 설정으로 이동해요.",
       "toolsTitle": "Agent 도구",
@@ -2493,7 +2493,7 @@
       "userLabel": "어떻게 부르면 될까요?",
       "placeholder": "당신의 이름",
       "agentLabel": "이 Agent를 뭐라고 부를까요?",
-      "agentPlaceholder": "Hanako",
+      "agentPlaceholder": "Enigma",
       "memoryTitle": "메모리 시스템",
       "memoryHint": "켜 두면 시스템이 대화가 끝날 때 채팅 내용을 정리해 메모리로 만듭니다. 메모리가 자주 업데이트되면 모델 캐시 적중률이 낮아질 수 있습니다. 메모리를 끄면 보통 비용이 더 적게 듭니다.",
       "back": "뒤로",
@@ -2986,7 +2986,7 @@
     "skillMissingName": "SKILL.md에 name 필드가 없어요",
     "skillNameInvalid": "스킬 이름이 유효하지 않아요 (\"{name}\"). 영문자, 숫자, 밑줄, 하이픈만 사용할 수 있어요.",
     "skillPathMustBeAbsolute": "경로는 절대 경로여야 해요: {path}",
-    "skillCannotAddSelfDir": "HanaAgent 자체의 스킬 디렉토리는 추가할 수 없어요",
+    "skillCannotAddSelfDir": "Enigma 자체의 스킬 디렉토리는 추가할 수 없어요",
     "skillInvalidName": "유효하지 않은 스킬 이름이에요",
     "skillExternalCannotDelete": "외부 호환 스킬은 여기서 삭제할 수 없어요",
     "skillNotExists": "스킬이 존재하지 않아요",
@@ -3202,7 +3202,7 @@
   },
   "main": {
     "tray": {
-      "show": "HanaAgent 표시",
+      "show": "Enigma 표시",
       "settings": "설정",
       "quit": "종료",
       "repairArtifacts": "구성 요소 복구…"
@@ -3211,22 +3211,22 @@
       "selectFolder": "작업 폴더 선택",
       "selectSkill": "스킬 선택",
       "selectPlugin": "플러그인 선택",
-      "launchFailedTitle": "HanaAgent 실행 실패",
-      "launchFailedBody": "HanaAgent v{version}\n\n{detail}\n\n상세 로그 저장 위치:\n{logPath}\n\n이 스크린샷이나 로그 파일을 개발자에게 보내주세요.",
-      "serverRestartFailed": "HanaAgent v{version}\n\nServer가 충돌 후 재시작에 실패했어요.\n{error}\n\n앱을 다시 시작해 주세요.",
-      "serverMultipleCrash": "HanaAgent v{version}\n\nServer가 여러 번 충돌했어요 ({reason}).\n\n앱을 다시 시작해 주세요.",
+      "launchFailedTitle": "Enigma 실행 실패",
+      "launchFailedBody": "Enigma v{version}\n\n{detail}\n\n상세 로그 저장 위치:\n{logPath}\n\n이 스크린샷이나 로그 파일을 개발자에게 보내주세요.",
+      "serverRestartFailed": "Enigma v{version}\n\nServer가 충돌 후 재시작에 실패했어요.\n{error}\n\n앱을 다시 시작해 주세요.",
+      "serverMultipleCrash": "Enigma v{version}\n\nServer가 여러 번 충돌했어요 ({reason}).\n\n앱을 다시 시작해 주세요.",
       "serverStartTimeout": "Server 시작 시간 초과",
       "serverKilledBySignal": "Server가 시그널로 종료되었어요 ({signal})",
       "serverExitedWithCode": "Server가 종료되었어요. 코드: {code}",
-      "serverFilesNotReady": "자동 업데이트가 방금 완료되었고, 새 버전 파일이 아직 디스크에 쓰이고 있어요 ({missing} 없음). {waited}초 동안 기다렸지만 준비되지 않았어요. 잠시 후 HanaAgent를 다시 시작해 주세요.",
-      "serverModuleMissing": "Server 시작 실패: 모듈 {module}을(를) 찾을 수 없어요.\n자동 업데이트가 완료된 직후 파일이 아직 디스크에 쓰이는 중일 때 자주 발생해요.\n권장: 1-2분 기다린 후 HanaAgent를 다시 시작해 주세요. 반복되면 GitHub에 신고해 주세요.",
-      "installFailedTitle": "HanaAgent 업데이트",
-      "installFailedBody": "업데이트 설치에 실패했어요:\n{error}\n\nHanaAgent를 다시 시작한 후 재시도하거나, 설정 페이지에서 수동으로 업데이트를 확인해 주세요.",
+      "serverFilesNotReady": "자동 업데이트가 방금 완료되었고, 새 버전 파일이 아직 디스크에 쓰이고 있어요 ({missing} 없음). {waited}초 동안 기다렸지만 준비되지 않았어요. 잠시 후 Enigma를 다시 시작해 주세요.",
+      "serverModuleMissing": "Server 시작 실패: 모듈 {module}을(를) 찾을 수 없어요.\n자동 업데이트가 완료된 직후 파일이 아직 디스크에 쓰이는 중일 때 자주 발생해요.\n권장: 1-2분 기다린 후 Enigma를 다시 시작해 주세요. 반복되면 GitHub에 신고해 주세요.",
+      "installFailedTitle": "Enigma 업데이트",
+      "installFailedBody": "업데이트 설치에 실패했어요:\n{error}\n\nEnigma를 다시 시작한 후 재시도하거나, 설정 페이지에서 수동으로 업데이트를 확인해 주세요.",
       "repairArtifactsTitle": "구성 요소 복구",
-      "repairArtifactsBody": "이 작업은 HanaAgent의 앱 구성 요소를 설치 당시 버전으로 재설정하고 앱을 다시 시작해요. 데이터(에이전트, 세션, 설정)는 영향을 받지 않아요.",
+      "repairArtifactsBody": "이 작업은 Enigma의 앱 구성 요소를 설치 당시 버전으로 재설정하고 앱을 다시 시작해요. 데이터(에이전트, 세션, 설정)는 영향을 받지 않아요.",
       "repairArtifactsConfirm": "복구 후 재시작",
       "repairArtifactsCancel": "취소",
-      "trainUpdateApplyFailedBody": "HanaAgent v{version}\n\n업데이트 적용 실패:\n{error}\n\n앱을 다시 시작해 주세요."
+      "trainUpdateApplyFailedBody": "Enigma v{version}\n\n업데이트 적용 실패:\n{error}\n\n앱을 다시 시작해 주세요."
     },
     "notification": {
       "ready": "알림이 준비되었어요",
@@ -3326,7 +3326,7 @@
     "inputHelp": "/help로 명령어 목록 보기"
   },
   "sandbox": {
-    "blocked": "[보안] {reason}\n\n이 작업은 HanaAgent의 샌드박스 보안 정책에 의해 차단되었어요. 이는 명령이 경로나 권한 경계를 넘었다는 뜻이에요. 먼저 현재 워크스페이스, 정확한 경로 표기, 대상 파일이 허용된 워크스페이스 또는 session 경로에 있어야 하는지 확인하세요. 차단된 경로와 이유를 사용자에게 설명하고, 사용자가 명확히 결정한 경우에만 샌드박스 설정 변경을 논의하세요.",
+    "blocked": "[보안] {reason}\n\n이 작업은 Enigma의 샌드박스 보안 정책에 의해 차단되었어요. 이는 명령이 경로나 권한 경계를 넘었다는 뜻이에요. 먼저 현재 워크스페이스, 정확한 경로 표기, 대상 파일이 허용된 워크스페이스 또는 session 경로에 있어야 하는지 확인하세요. 차단된 경로와 이유를 사용자에게 설명하고, 사용자가 명확히 결정한 경우에만 샌드박스 설정 변경을 논의하세요.",
     "blockedNeedsEscalation": "[보안] {reason}\n\n이 명령은 샌드박스 모드에서 차단되었어요. 현재 작업에 중요하고 읽기 전용 조회라면, sandbox_permissions=\"require_escalated\"와 한 문장짜리 justification을 붙여 다시 실행해 주세요. 사용자가 검토한 뒤 샌드박스 밖에서 실행돼요.",
     "noSudo": "sudo 사용이 금지되어 있어요",
     "noSu": "su 사용자 전환이 금지되어 있어요",
@@ -3377,7 +3377,7 @@
   "status.disconnected": "Connection lost",
   "status.reconnect": "Reconnect",
   "action.retry": "Retry",
-  "mobile.update.available": "새 Hana 버전이 준비됐어요",
+  "mobile.update.available": "새 Enigma 버전이 준비됐어요",
   "mobile.update.reload": "새로고침",
   "subagentAbort": "중지",
   "subagentAborted": "중지됨",
@@ -3459,7 +3459,7 @@
       "submitted": "동영상 생성을 제출했어요. 완료되면 아래 카드에 결과가 표시돼요."
     },
     "getCoverStyleGuide": {
-      "description": "사용자가 Markdown 문서의 커버/헤더 이미지를 생성·교체·최적화하려 할 때, 먼저 이 도구를 호출해 Hana의 커버 미학 가이드를 읽으세요. 그다음 글 내용을 바탕으로 이미지 프롬프트를 작성하거나 이미지를 선택하세요.",
+      "description": "사용자가 Markdown 문서의 커버/헤더 이미지를 생성·교체·최적화하려 할 때, 먼저 이 도구를 호출해 Enigma의 커버 미학 가이드를 읽으세요. 그다음 글 내용을 바탕으로 이미지 프롬프트를 작성하거나 이미지를 선택하세요.",
       "themeToneDesc": "현재 UI 테마 밝기. 확실하지 않으면 light를 전달하세요.",
       "userGuidanceDesc": "사용자의 추가 스타일 방향 (선택).",
       "workflow": {
@@ -3471,7 +3471,7 @@
       }
     },
     "getHtmlStyleGuide": {
-      "description": "전체 페이지 HTML(웹 페이지, 랜딩 페이지, 보고서, 조판 기사)을 생성하기 전에 이 도구를 호출해 Hana의 기본 미학 가이드를 받으세요. 인수 없이 호출하면 섹션 라우터를, section을 전달하면 섹션별 실제 가이드를 가져와요(색상과 타이포그래피는 필독). 이 도구는 가이드 텍스트만 반환하며 HTML을 생성·저장하지 않고, 채팅 내 인터랙티브 카드와는 무관해요.",
+      "description": "전체 페이지 HTML(웹 페이지, 랜딩 페이지, 보고서, 조판 기사)을 생성하기 전에 이 도구를 호출해 Enigma의 기본 미학 가이드를 받으세요. 인수 없이 호출하면 섹션 라우터를, section을 전달하면 섹션별 실제 가이드를 가져와요(색상과 타이포그래피는 필독). 이 도구는 가이드 텍스트만 반환하며 HTML을 생성·저장하지 않고, 채팅 내 인터랙티브 카드와는 무관해요.",
       "sectionDesc": "가져올 가이드 섹션. 생략하면 라우터(적용 범위 + 원칙 + 섹션 목록, 직접 사용 가능한 값 없음)를 받아요."
     },
     "applyCoverCandidate": {
@@ -3501,7 +3501,7 @@
     },
     "listCapabilities": {
       "description": "Beautify 도구가 현재 지원하는 미학 향상 기능 목록을 반환해요.",
-      "text": "Beautify는 현재 두 가지 기능을 제공해요. 1) Markdown 커버 워크플로: 먼저 커버 스타일 가이드를 읽고, 이미지를 준비(Media Generation, 향후 내장 갤러리, 로컬 파일)한 뒤 attachments 폴더에 복사하고 cover frontmatter를 기록해요. 2) 전체 페이지 HTML 미학 가이드: 웹 페이지/조판 페이지/보고서 생성 전 beautify_get-html-style-guide로 Hana 기본 아트 디렉션을 받으세요(인수 없이 호출하면 라우터, 필요 시 섹션별로 가져오기)."
+      "text": "Beautify는 현재 두 가지 기능을 제공해요. 1) Markdown 커버 워크플로: 먼저 커버 스타일 가이드를 읽고, 이미지를 준비(Media Generation, 향후 내장 갤러리, 로컬 파일)한 뒤 attachments 폴더에 복사하고 cover frontmatter를 기록해요. 2) 전체 페이지 HTML 미학 가이드: 웹 페이지/조판 페이지/보고서 생성 전 beautify_get-html-style-guide로 Enigma 기본 아트 디렉션을 받으세요(인수 없이 호출하면 라우터, 필요 시 섹션별로 가져오기)."
     }
   },
   "fileHistory": {
@@ -3594,17 +3594,17 @@
       "volcengineAdapterName": "Volcengine Seedream"
     },
     "beautify": {
-      "coverStyleGuide": "Hana Markdown 커버 기본 미학 가이드:\n\n1. 아트 스타일: 현대 Anime / 애니메이션 영화 키 비주얼. 전통적 동양 고정관념 상징을 기본 스타일로 사용하지 마세요.\n2. 질감: 강한 종이 질감, 인쇄 그레인, 미세 입자, 따뜻한 재료감. 종이 책에 끼워 넣은 한 장면처럼.\n3. 서사: 영화적, 스토리 중심, 문학적 분위기. 주제를 표현할 때 요약을 그대로 그리기보다 실제 장면, 캐릭터 행동, 조명, 소품 관계, 환경 흔적을 선호하세요.\n4. 내용: 글을 읽은 뒤 이미지 테마를 추출하세요. 요약을 한 단어씩 그리기보다 글의 기질을 시각화하세요.\n5. 판타지: 별하늘, 판타지, 문학적 이미지가 등장할 수 있지만, 장면에 자연스럽게 실어야 하며 현실적 무게와 감정적 정당성이 있어야 해요.\n6. 절제: 값싼 AI식 떠다니는 상징 누적을 피하세요. 초현실 요소는 서사적으로 필요할 때만 등장하세요.\n7. 테마: 라이트 모드는 부드러운 따뜻한 빛, 낮은 대비, 깨끗한 여백, 보이는 종이 섬유. 다크 모드는 낮은 조도, 절제된 하이라이트, 어두운 영역에서도 재료 층을 유지.\n8. 출력: 이미지 생성 도구 기본은 가로 3:2. 벤더가 지원하지 않으면 비슷한 가로 비율도 괜찮지만, 이미지를 늘리지 마세요.",
+      "coverStyleGuide": "Enigma Markdown 커버 기본 미학 가이드:\n\n1. 아트 스타일: 현대 Anime / 애니메이션 영화 키 비주얼. 전통적 동양 고정관념 상징을 기본 스타일로 사용하지 마세요.\n2. 질감: 강한 종이 질감, 인쇄 그레인, 미세 입자, 따뜻한 재료감. 종이 책에 끼워 넣은 한 장면처럼.\n3. 서사: 영화적, 스토리 중심, 문학적 분위기. 주제를 표현할 때 요약을 그대로 그리기보다 실제 장면, 캐릭터 행동, 조명, 소품 관계, 환경 흔적을 선호하세요.\n4. 내용: 글을 읽은 뒤 이미지 테마를 추출하세요. 요약을 한 단어씩 그리기보다 글의 기질을 시각화하세요.\n5. 판타지: 별하늘, 판타지, 문학적 이미지가 등장할 수 있지만, 장면에 자연스럽게 실어야 하며 현실적 무게와 감정적 정당성이 있어야 해요.\n6. 절제: 값싼 AI식 떠다니는 상징 누적을 피하세요. 초현실 요소는 서사적으로 필요할 때만 등장하세요.\n7. 테마: 라이트 모드는 부드러운 따뜻한 빛, 낮은 대비, 깨끗한 여백, 보이는 종이 섬유. 다크 모드는 낮은 조도, 절제된 하이라이트, 어두운 영역에서도 재료 층을 유지.\n8. 출력: 이미지 생성 도구 기본은 가로 3:2. 벤더가 지원하지 않으면 비슷한 가로 비율도 괜찮지만, 이미지를 늘리지 마세요.",
       "htmlStyleGuide": {
-        "router": "Hana HTML 미학 규율. 전체 페이지 HTML을 생성하기 전에 아래 섹션을 먼저 가져오세요. 이 라우터 텍스트만으로 생성하지 마세요. 이 규율은 독립 전체 페이지 HTML(웹 페이지, 조판 페이지, 보고서, 랜딩 페이지)만 다루며, 채팅 내 인터랙티브 카드와는 무관해요.\n\n적용 범위: 사용자가 스타일을 명시했다면 사용자를 따르세요. 이 규율은 물러납니다(가독성만 뒷받침). 사용자가 아무것도 지정하지 않았다면 이 규율을 따르세요.\n\n기질: 문학적, 정제됨, 고요함. 정교하게 제본된 사적인 수첩 한 페이지 같아요. 이미지: 종이 원고, 송체 세리프, 수묵, 선지 질감, 책벌레 같은 고요함.\n\n다섯 원칙:\n1. 종이에서 태어남: 간격은 페이지 여백처럼, 색은 먹 농도처럼 읽혀요.\n2. 절제가 품질: 박스보다 한 줄, 겹친 단색보다 투명도 레이어링을 선호.\n3. 조용한 피드백: hover는 부드러운 숨결, 전환은 부드러운 페이드. 튀거나 깜빡이지 않음.\n4. 위계는 질서: 글자 크기/굵기/밝기/컨테이너로 위계를 만드세요. 읽기 페이지는 순수 조판, 구조 페이지는 카드 그룹.\n5. 일관성이 신뢰: 같은 요소는 페이지 전체에서 같은 크기/간격/동작을 유지.\n\n섹션 목록 (section 매개변수로 beautify_get-html-style-guide 호출):\n- color: 필수\n- typography: 필수\n- layout: 전체 페이지/다중 블록/복잡 레이아웃에 필요\n- components: 카드/표/버튼/배지/링크 사용 시 (<a>가 있으면 읽기)\n- imagery: 아이콘/이미지가 있을 때\n- motion: 인터랙티브 페이지/애니메이션이 있을 때\n- anti-patterns: 강력 권장. 값싼 AI 느낌을 피함",
-        "color": "Hana HTML 미학 · 색상\n\n**단일 액센트 색**: `#537D96` (슬레이트 블루), hover `#456A80`, 연한 워시 `rgba(83,125,150,.08)`. 페이지 전체에서 유일한 유색 액센트. 두 번째 기본색을 도입하지 마세요. 액센트 시각 비중 ≤ 5%, 페인트가 아닌 문장 부호.\n\n**배경 (순백 금지)**: 페이지 베이스 `#F8F4ED` (따뜻한 종이), 카드/raised `#FCFAF5`. 전체 대비는 낮게.\n\n**텍스트 (따뜻한 중립, 차가운 청회색 금지)**: 본문 `#3B3D3F`, 보조 `#6B6F73`, muted/메타 `#8E9196`. 순검 `#000` 금지.\n\n**선과 테두리**: 따뜻한 톤 헤어라인 `rgba(122,96,88,.18)`. 영역 구분은 선+여백, 단색 블록 아님.\n\n**오버레이 (투명도 레이어링, 단색 겹침 아님)**: 네 단계 `rgba(0,0,0,.03 / .05 / .08 / .15)`.\n\n**시맨틱 색 (저채도, 절제)**: 성공 `#7BAE7F`, 위험 `#8B3A3A`, 코랄 액센트 `#EC8F8D` (아껴 사용). 필요할 때만.\n\n**엄격 규칙**: 회색은 따뜻해야 함(황토 언더톤). 차가운 청회색 금지. 큰 순백 배경/순검 텍스트 금지. 그라데이션 배경, 고채도, 네온 금지.\n\n이 가이드는 따뜻한 종이 단일 팔레트만 정의해요. 사용자가 다크 모드나 다른 스타일을 명시하면 사용자 지시를 따르세요 (이 가이드는 물러나고 가독성·대비만 뒷받침).",
-        "typography": "Hana HTML 미학 · 타이포그래피\n\n**세리프 (본체, 제목·본문 위계)**: `'EB Garamond','Noto Serif SC','Source Han Serif SC','Songti SC','STSong','SimSun',serif`\n\n스택의 시스템 fallback(`Songti SC` / `SimSun` / serif 등)은 백스톱: 앞 폰트가 없는 글자는 시스템 세리프로 떨어져도 레이아웃이 깨지지 않아요.\n\n**UI/기능 텍스트 (버튼, 라벨, 폼, 내비)**: `system-ui,-apple-system,'PingFang SC',sans-serif`\n\n**코드/숫자 지표**: `'JetBrains Mono',ui-monospace,monospace`. 숫자 정렬에 `font-variant-numeric:tabular-nums`.\n\n**굵기**: 400 / 500만. 600+·합성 bold 금지. 위계는 크기+밝기+자간으로, bold 쌓기 아님.\n\n**타입 스케일**:\n\n| Level | rem | Usage |\n|---|---|---|\n| display | 2 – 2.4 | 페이지 메인 타이틀 / hero |\n| h1 | 1.6 | 장 제목 |\n| h2 | 1.25 | 섹션 제목 (선택: 왼쪽 룰 `border-left:2px solid #537D96;padding-left:8px;border-radius:0`) |\n| h3 | 1.05 | 소제목 |\n| body | 1 (16px) | 본문, `line-height:1.7` |\n| small | 0.85 | 보조/캡션 |\n\n**한·영 혼합**: 한글 세리프 본문은 약간 높은 행간(1.7–1.8). 한글 제목은 `letter-spacing:.01em` 가능.",
-        "layout": "Hana HTML 미학 · 레이아웃\n\n**간격 리듬**: `4 / 8 / 16 / 24 / 40`. 스케일 밖 마법 숫자 금지.\n\n**콘텐츠 너비**: 읽기 본문 `max-width:60–72ch`(약 680–760px), 중앙. 랜딩은 더 넓어도 되지만 텍스트 영역은 읽기 가능한 줄 길이 유지.\n\n**여백**: 블록 간 40, 블록 내부 16–24. 여백은 위계 도구, 낭비 아님.\n\n**반응형**: 모바일 단일 열, 더 큰 줄 간격, 터치 타깃 ≥ 44px. 좁은 화면 브레이크포인트 ~880 / ~480.\n\n**레이아웃 모드 (콘텐츠 유형별 하나 선택)**:\n\n| Type | Orientation | Means |\n|---|---|---|\n| Reading / editorial | 순수 조판 층 | 여백+타입 스케일, 카드 없음. 중앙 본문, 읽기 가능한 줄 길이 |\n| Structural / dashboard | 카드/그룹 | `#FCFAF5` 카드+헤어라인. 그룹 제목 |\n| Landing / showcase | 에디토리얼 hero+섹션 | 큰 제목+절제된 이미지+단일 액센트를 문장 부호로. 마케팅 잡동사니 없음 |\n| Interactive | 중앙 콘텐츠, 절제된 컨트롤 | 조용한 모션, 명확한 상태 |\n\n연속 읽기는 순수 조판으로 흐름 유지. 밀집 기능 장면은 카드로 블록 강화. 하나만 선택, 둘 다 쓰지 마세요.",
-        "components": "Hana HTML 미학 · 컴포넌트\n\n배경 변수는 color 섹션을 따릅니다. 기본값은 아래.\n\n```css\n/* 区块标题 */\nh2 { font-family: serif; font-size: 1.25rem; font-weight: 500; color: #3B3D3F;\n     border-left: 2px solid #537D96; padding-left: 8px; border-radius: 0; margin: 1.6em 0 .6em; }\n\n/* 卡片 / 面板（仅结构型场景用） */\n.card { background: #FCFAF5; border: 1px solid rgba(122,96,88,.18); border-radius: 4px;\n        padding: 1rem 1.25rem; }\n\n/* 分隔线 */\nhr { border: none; border-top: 1px solid rgba(122,96,88,.18); margin: 1.5rem 0; }\n\n/* 表格：细线、紧凑、左对齐表头 */\ntable { width: 100%; border-collapse: collapse; font-size: .9rem; }\nth { text-align: left; font-weight: 500; color: #6B6F73; padding: 6px 8px;\n     border-bottom: 1px solid rgba(122,96,88,.18); }\ntd { padding: 5px 8px; border-bottom: 1px solid rgba(0,0,0,.05); color: #3B3D3F; }\ntr:last-child td { border-bottom: none; }\n\n/* 列表 */\nul, ol { padding-left: 18px; }\nli { margin: .2em 0; }\nli::marker { color: #537D96; }\n\n/* 引用 */\nblockquote { border-left: 2px solid #537D96; padding: 4px 0 4px 12px;\n             color: #6B6F73; font-style: italic; border-radius: 0; }\n\n/* 代码 */\npre { background: #F8F4ED; border: 1px solid rgba(122,96,88,.18); border-radius: 4px;\n      padding: 8px 12px; overflow-x: auto; }\ncode { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: .85rem; color: #3B3D3F; }\n\n/* 按钮：方角、描边优先、hover 微底色，无 :active 缩放 */\n.btn { font-family: sans-serif; border: 1px solid rgba(122,96,88,.18); border-radius: 4px;\n       background: transparent; color: #537D96; padding: 6px 14px; cursor: pointer;\n       transition: background .15s cubic-bezier(.16,1,.3,1); }\n.btn:hover { background: rgba(83,125,150,.08); }\n/* 主行动按钮可用 background:#537D96;color:#FCFAF5 实色，但每屏 ≤ 1 个 */\n\n/* 徽章 / 标签 */\n.tag { display: inline-flex; padding: 2px 8px; font-size: .75rem; font-weight: 500;\n       border-radius: 4px; background: rgba(83,125,150,.08); color: #456A80; }\n\n/* 链接：accent 色 + 细下划线，hover 加深；不按钮化、不去下划线 */\na { color: #537D96; text-decoration: underline; text-decoration-thickness: 1px;\n    text-underline-offset: 2px; text-decoration-color: rgba(83,125,150,.4);\n    transition: color .15s cubic-bezier(.16,1,.3,1), text-decoration-color .15s cubic-bezier(.16,1,.3,1); }\na:hover { color: #456A80; text-decoration-color: currentColor; }\n\n/* focus：可见但克制（motion 章节原则的具体值） */\n:focus-visible { outline: 1px solid #537D96; outline-offset: 2px; }\n```\n\n**깊이와 그림자**: 위계는 주로 헤어라인+여백+약한 배경 변화. elevation이 필요하면 가장 옅은 그림자 `box-shadow: 0 1px 4px rgba(59,61,63,.09)`. 무거운 drop shadow, glow, 다층 drop-shadow 금지.",
-        "imagery": "Hana HTML 미학 · 이미지\n\n- **아이콘**: 순수 inline SVG, stroke 기반 선형(feather류), `stroke=\"currentColor\" stroke-width=\"1.5\" fill=\"none\"`. **이모지 금지**, 채움 아이콘 금지.\n- **장식**: 떠다니는 상징/별/거품 등 값싼 AI 장식 누적 금지. faint-glow 모티프(부드럽고 눈부시지 않음)는 문장 부호처럼 아껴 사용.\n- **이미지 비율**: hero 16:9, 에디토리얼 일러 4:3, 그리드 썸네일 3:2. `object-fit:cover`+적절한 `object-position`, 늘리기 금지.\n- **모서리 반경**: 이미지/카드는 작은 4px(각진 쪽). 큰 pill rounding 금지.\n- **실제 이미지 자산이 없을 때**: **외부 이미지 호스트 핫링크 금지**(unsplash/picsum 등, 프라이버시·오프라인 깨짐). 플레이스홀더는 단색 블록(`#FCFAF5`+헤어라인) 또는 자체 inline SVG(선형, 저채도, color 섹션 준수). 외부 링크보다 여백 선호. 사용자 제공 로컬/기존 자산은 예외.",
-        "motion": "Hana HTML 미학 · 모션\n\n- **조용함**: 전환은 부드럽고 짧음. 세 단계 `0.1 / 0.15 / 0.25`. easing 입장 `cubic-bezier(.16,1,.3,1)`, 퇴장 `cubic-bezier(.7,0,.84,0)`.\n- **hover는 부드러운 숨결**(색/불투명도 미세 변화). 스케일·바운스 없음.\n- **금지**: `:active` 스케일 바운스, 깜빡임, 회전 쇼, 주의를 끄는 자동 캐러셀.\n- **상태는 명확하고 예측 가능**: focus는 보이지만 절제된 표시(components의 :focus-visible 값). disabled는 불투명도 낮춤.\n- `prefers-reduced-motion: reduce`를 존중하고 필수 아닌 모션은 끔.",
-        "antiPatterns": "Hana HTML 미학 · 안티패턴\n\n| ❌ 피할 것 | ✅ 대신 |\n|---|---|\n| Material Design 느낌 / ripple | 종이 수첩의 절제 |\n| glassmorphism frosted glass, blur 쇼 | 단색 바탕+헤어라인 |\n| 큰 순백 `#fff` 배경 | 따뜻한 종이 `#F8F4ED` |\n| 순검 `#000` 텍스트 | 따뜻한 먹 `#3B3D3F` |\n| 차가운 청회색 중립 | 따뜻한 톤 회색 |\n| 두 번째 primary / 색 쌓기 | 단일 액센트 `#537D96` |\n| 네온, 고채도, 그라데이션 배경 | 저채도, 낮은 대비 |\n| 무거운 drop shadow / glow | 가장 옅은 그림자 또는 헤어라인만 |\n| 큰 pill rounding | 각진 모서리 / 작은 4px |\n| 아이콘/장식으로 이모지 | SVG stroke 아이콘 |\n| 600+ bold로 위계 쌓기 | 크기+밝기+400/500 |\n| bounce/scale/spin 애니메이션 | 부드러운 페이드, 숨결 |\n| 떠다니는 장식 상징 누적 | 여백+절제된 faint glow |",
-        "mustReadFirst": "{section}을(를) 가져오기 전에 필수 섹션을 읽으세요. 아직 가져오지 않음: {missing}. beautify_get-html-style-guide로 해당 필수 섹션을 먼저 가져온 뒤(모든 Hana 페이지에 필요), {section}으로 돌아오세요.",
+        "router": "Enigma HTML 미학 규율. 전체 페이지 HTML을 생성하기 전에 아래 섹션을 먼저 가져오세요. 이 라우터 텍스트만으로 생성하지 마세요. 이 규율은 독립 전체 페이지 HTML(웹 페이지, 조판 페이지, 보고서, 랜딩 페이지)만 다루며, 채팅 내 인터랙티브 카드와는 무관해요.\n\n적용 범위: 사용자가 스타일을 명시했다면 사용자를 따르세요. 이 규율은 물러납니다(가독성만 뒷받침). 사용자가 아무것도 지정하지 않았다면 이 규율을 따르세요.\n\n기질: 문학적, 정제됨, 고요함. 정교하게 제본된 사적인 수첩 한 페이지 같아요. 이미지: 종이 원고, 송체 세리프, 수묵, 선지 질감, 책벌레 같은 고요함.\n\n다섯 원칙:\n1. 종이에서 태어남: 간격은 페이지 여백처럼, 색은 먹 농도처럼 읽혀요.\n2. 절제가 품질: 박스보다 한 줄, 겹친 단색보다 투명도 레이어링을 선호.\n3. 조용한 피드백: hover는 부드러운 숨결, 전환은 부드러운 페이드. 튀거나 깜빡이지 않음.\n4. 위계는 질서: 글자 크기/굵기/밝기/컨테이너로 위계를 만드세요. 읽기 페이지는 순수 조판, 구조 페이지는 카드 그룹.\n5. 일관성이 신뢰: 같은 요소는 페이지 전체에서 같은 크기/간격/동작을 유지.\n\n섹션 목록 (section 매개변수로 beautify_get-html-style-guide 호출):\n- color: 필수\n- typography: 필수\n- layout: 전체 페이지/다중 블록/복잡 레이아웃에 필요\n- components: 카드/표/버튼/배지/링크 사용 시 (<a>가 있으면 읽기)\n- imagery: 아이콘/이미지가 있을 때\n- motion: 인터랙티브 페이지/애니메이션이 있을 때\n- anti-patterns: 강력 권장. 값싼 AI 느낌을 피함",
+        "color": "Enigma HTML 미학 · 색상\n\n**단일 액센트 색**: `#537D96` (슬레이트 블루), hover `#456A80`, 연한 워시 `rgba(83,125,150,.08)`. 페이지 전체에서 유일한 유색 액센트. 두 번째 기본색을 도입하지 마세요. 액센트 시각 비중 ≤ 5%, 페인트가 아닌 문장 부호.\n\n**배경 (순백 금지)**: 페이지 베이스 `#F8F4ED` (따뜻한 종이), 카드/raised `#FCFAF5`. 전체 대비는 낮게.\n\n**텍스트 (따뜻한 중립, 차가운 청회색 금지)**: 본문 `#3B3D3F`, 보조 `#6B6F73`, muted/메타 `#8E9196`. 순검 `#000` 금지.\n\n**선과 테두리**: 따뜻한 톤 헤어라인 `rgba(122,96,88,.18)`. 영역 구분은 선+여백, 단색 블록 아님.\n\n**오버레이 (투명도 레이어링, 단색 겹침 아님)**: 네 단계 `rgba(0,0,0,.03 / .05 / .08 / .15)`.\n\n**시맨틱 색 (저채도, 절제)**: 성공 `#7BAE7F`, 위험 `#8B3A3A`, 코랄 액센트 `#EC8F8D` (아껴 사용). 필요할 때만.\n\n**엄격 규칙**: 회색은 따뜻해야 함(황토 언더톤). 차가운 청회색 금지. 큰 순백 배경/순검 텍스트 금지. 그라데이션 배경, 고채도, 네온 금지.\n\n이 가이드는 따뜻한 종이 단일 팔레트만 정의해요. 사용자가 다크 모드나 다른 스타일을 명시하면 사용자 지시를 따르세요 (이 가이드는 물러나고 가독성·대비만 뒷받침).",
+        "typography": "Enigma HTML 미학 · 타이포그래피\n\n**세리프 (본체, 제목·본문 위계)**: `'EB Garamond','Noto Serif SC','Source Han Serif SC','Songti SC','STSong','SimSun',serif`\n\n스택의 시스템 fallback(`Songti SC` / `SimSun` / serif 등)은 백스톱: 앞 폰트가 없는 글자는 시스템 세리프로 떨어져도 레이아웃이 깨지지 않아요.\n\n**UI/기능 텍스트 (버튼, 라벨, 폼, 내비)**: `system-ui,-apple-system,'PingFang SC',sans-serif`\n\n**코드/숫자 지표**: `'JetBrains Mono',ui-monospace,monospace`. 숫자 정렬에 `font-variant-numeric:tabular-nums`.\n\n**굵기**: 400 / 500만. 600+·합성 bold 금지. 위계는 크기+밝기+자간으로, bold 쌓기 아님.\n\n**타입 스케일**:\n\n| Level | rem | Usage |\n|---|---|---|\n| display | 2 – 2.4 | 페이지 메인 타이틀 / hero |\n| h1 | 1.6 | 장 제목 |\n| h2 | 1.25 | 섹션 제목 (선택: 왼쪽 룰 `border-left:2px solid #537D96;padding-left:8px;border-radius:0`) |\n| h3 | 1.05 | 소제목 |\n| body | 1 (16px) | 본문, `line-height:1.7` |\n| small | 0.85 | 보조/캡션 |\n\n**한·영 혼합**: 한글 세리프 본문은 약간 높은 행간(1.7–1.8). 한글 제목은 `letter-spacing:.01em` 가능.",
+        "layout": "Enigma HTML 미학 · 레이아웃\n\n**간격 리듬**: `4 / 8 / 16 / 24 / 40`. 스케일 밖 마법 숫자 금지.\n\n**콘텐츠 너비**: 읽기 본문 `max-width:60–72ch`(약 680–760px), 중앙. 랜딩은 더 넓어도 되지만 텍스트 영역은 읽기 가능한 줄 길이 유지.\n\n**여백**: 블록 간 40, 블록 내부 16–24. 여백은 위계 도구, 낭비 아님.\n\n**반응형**: 모바일 단일 열, 더 큰 줄 간격, 터치 타깃 ≥ 44px. 좁은 화면 브레이크포인트 ~880 / ~480.\n\n**레이아웃 모드 (콘텐츠 유형별 하나 선택)**:\n\n| Type | Orientation | Means |\n|---|---|---|\n| Reading / editorial | 순수 조판 층 | 여백+타입 스케일, 카드 없음. 중앙 본문, 읽기 가능한 줄 길이 |\n| Structural / dashboard | 카드/그룹 | `#FCFAF5` 카드+헤어라인. 그룹 제목 |\n| Landing / showcase | 에디토리얼 hero+섹션 | 큰 제목+절제된 이미지+단일 액센트를 문장 부호로. 마케팅 잡동사니 없음 |\n| Interactive | 중앙 콘텐츠, 절제된 컨트롤 | 조용한 모션, 명확한 상태 |\n\n연속 읽기는 순수 조판으로 흐름 유지. 밀집 기능 장면은 카드로 블록 강화. 하나만 선택, 둘 다 쓰지 마세요.",
+        "components": "Enigma HTML 미학 · 컴포넌트\n\n배경 변수는 color 섹션을 따릅니다. 기본값은 아래.\n\n```css\n/* 区块标题 */\nh2 { font-family: serif; font-size: 1.25rem; font-weight: 500; color: #3B3D3F;\n     border-left: 2px solid #537D96; padding-left: 8px; border-radius: 0; margin: 1.6em 0 .6em; }\n\n/* 卡片 / 面板（仅结构型场景用） */\n.card { background: #FCFAF5; border: 1px solid rgba(122,96,88,.18); border-radius: 4px;\n        padding: 1rem 1.25rem; }\n\n/* 分隔线 */\nhr { border: none; border-top: 1px solid rgba(122,96,88,.18); margin: 1.5rem 0; }\n\n/* 表格：细线、紧凑、左对齐表头 */\ntable { width: 100%; border-collapse: collapse; font-size: .9rem; }\nth { text-align: left; font-weight: 500; color: #6B6F73; padding: 6px 8px;\n     border-bottom: 1px solid rgba(122,96,88,.18); }\ntd { padding: 5px 8px; border-bottom: 1px solid rgba(0,0,0,.05); color: #3B3D3F; }\ntr:last-child td { border-bottom: none; }\n\n/* 列表 */\nul, ol { padding-left: 18px; }\nli { margin: .2em 0; }\nli::marker { color: #537D96; }\n\n/* 引用 */\nblockquote { border-left: 2px solid #537D96; padding: 4px 0 4px 12px;\n             color: #6B6F73; font-style: italic; border-radius: 0; }\n\n/* 代码 */\npre { background: #F8F4ED; border: 1px solid rgba(122,96,88,.18); border-radius: 4px;\n      padding: 8px 12px; overflow-x: auto; }\ncode { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: .85rem; color: #3B3D3F; }\n\n/* 按钮：方角、描边优先、hover 微底色，无 :active 缩放 */\n.btn { font-family: sans-serif; border: 1px solid rgba(122,96,88,.18); border-radius: 4px;\n       background: transparent; color: #537D96; padding: 6px 14px; cursor: pointer;\n       transition: background .15s cubic-bezier(.16,1,.3,1); }\n.btn:hover { background: rgba(83,125,150,.08); }\n/* 主行动按钮可用 background:#537D96;color:#FCFAF5 实色，但每屏 ≤ 1 个 */\n\n/* 徽章 / 标签 */\n.tag { display: inline-flex; padding: 2px 8px; font-size: .75rem; font-weight: 500;\n       border-radius: 4px; background: rgba(83,125,150,.08); color: #456A80; }\n\n/* 链接：accent 色 + 细下划线，hover 加深；不按钮化、不去下划线 */\na { color: #537D96; text-decoration: underline; text-decoration-thickness: 1px;\n    text-underline-offset: 2px; text-decoration-color: rgba(83,125,150,.4);\n    transition: color .15s cubic-bezier(.16,1,.3,1), text-decoration-color .15s cubic-bezier(.16,1,.3,1); }\na:hover { color: #456A80; text-decoration-color: currentColor; }\n\n/* focus：可见但克制（motion 章节原则的具体值） */\n:focus-visible { outline: 1px solid #537D96; outline-offset: 2px; }\n```\n\n**깊이와 그림자**: 위계는 주로 헤어라인+여백+약한 배경 변화. elevation이 필요하면 가장 옅은 그림자 `box-shadow: 0 1px 4px rgba(59,61,63,.09)`. 무거운 drop shadow, glow, 다층 drop-shadow 금지.",
+        "imagery": "Enigma HTML 미학 · 이미지\n\n- **아이콘**: 순수 inline SVG, stroke 기반 선형(feather류), `stroke=\"currentColor\" stroke-width=\"1.5\" fill=\"none\"`. **이모지 금지**, 채움 아이콘 금지.\n- **장식**: 떠다니는 상징/별/거품 등 값싼 AI 장식 누적 금지. faint-glow 모티프(부드럽고 눈부시지 않음)는 문장 부호처럼 아껴 사용.\n- **이미지 비율**: hero 16:9, 에디토리얼 일러 4:3, 그리드 썸네일 3:2. `object-fit:cover`+적절한 `object-position`, 늘리기 금지.\n- **모서리 반경**: 이미지/카드는 작은 4px(각진 쪽). 큰 pill rounding 금지.\n- **실제 이미지 자산이 없을 때**: **외부 이미지 호스트 핫링크 금지**(unsplash/picsum 등, 프라이버시·오프라인 깨짐). 플레이스홀더는 단색 블록(`#FCFAF5`+헤어라인) 또는 자체 inline SVG(선형, 저채도, color 섹션 준수). 외부 링크보다 여백 선호. 사용자 제공 로컬/기존 자산은 예외.",
+        "motion": "Enigma HTML 미학 · 모션\n\n- **조용함**: 전환은 부드럽고 짧음. 세 단계 `0.1 / 0.15 / 0.25`. easing 입장 `cubic-bezier(.16,1,.3,1)`, 퇴장 `cubic-bezier(.7,0,.84,0)`.\n- **hover는 부드러운 숨결**(색/불투명도 미세 변화). 스케일·바운스 없음.\n- **금지**: `:active` 스케일 바운스, 깜빡임, 회전 쇼, 주의를 끄는 자동 캐러셀.\n- **상태는 명확하고 예측 가능**: focus는 보이지만 절제된 표시(components의 :focus-visible 값). disabled는 불투명도 낮춤.\n- `prefers-reduced-motion: reduce`를 존중하고 필수 아닌 모션은 끔.",
+        "antiPatterns": "Enigma HTML 미학 · 안티패턴\n\n| ❌ 피할 것 | ✅ 대신 |\n|---|---|\n| Material Design 느낌 / ripple | 종이 수첩의 절제 |\n| glassmorphism frosted glass, blur 쇼 | 단색 바탕+헤어라인 |\n| 큰 순백 `#fff` 배경 | 따뜻한 종이 `#F8F4ED` |\n| 순검 `#000` 텍스트 | 따뜻한 먹 `#3B3D3F` |\n| 차가운 청회색 중립 | 따뜻한 톤 회색 |\n| 두 번째 primary / 색 쌓기 | 단일 액센트 `#537D96` |\n| 네온, 고채도, 그라데이션 배경 | 저채도, 낮은 대비 |\n| 무거운 drop shadow / glow | 가장 옅은 그림자 또는 헤어라인만 |\n| 큰 pill rounding | 각진 모서리 / 작은 4px |\n| 아이콘/장식으로 이모지 | SVG stroke 아이콘 |\n| 600+ bold로 위계 쌓기 | 크기+밝기+400/500 |\n| bounce/scale/spin 애니메이션 | 부드러운 페이드, 숨결 |\n| 떠다니는 장식 상징 누적 | 여백+절제된 faint glow |",
+        "mustReadFirst": "{section}을(를) 가져오기 전에 필수 섹션을 읽으세요. 아직 가져오지 않음: {missing}. beautify_get-html-style-guide로 해당 필수 섹션을 먼저 가져온 뒤(모든 Enigma 페이지에 필요), {section}으로 돌아오세요.",
         "invalidSection": "알 수 없는 섹션 {section}. 유효 섹션: {valid}. section 없이 호출하면 라우터를 받아요."
       },
       "themeTone": {
@@ -3622,35 +3622,35 @@
     "next": "다음"
   },
   "mobile": {
-    "startupFailed": "HanaAgent 시작에 실패했어요",
+    "startupFailed": "Enigma 시작에 실패했어요",
     "auth": {
       "scopeError": "워크스페이스 접근 권한이 부족합니다. 기기 접근 키를 다시 입력해 주세요.",
       "loginFailed": "로그인 실패",
-      "title": "Hana 모바일 접속",
+      "title": "Enigma 모바일 접속",
       "deviceHelp": "기존 데이터 호환을 위해 남겨 둔 이전 액세스 키 로그인입니다.",
       "tabLabel": "로그인 방식",
       "deviceTab": "이전 키",
       "deviceField": "이전 키",
       "submit": "로그인"
     },
-    "loading": "Hana에 연결하는 중...",
+    "loading": "Enigma에 연결하는 중...",
     "closeSidebar": "사이드바 닫기"
   },
   "approval": {
     "toolAction": {
-      "title": "Hana가 이 작업을 수행하도록 허용",
+      "title": "Enigma가 이 작업을 수행하도록 허용",
       "body": "현재 세션은 먼저 묻기 모드예요. 이 작업은 로컬 또는 외부 상태를 변경해요."
     },
     "confirm": "승인",
     "reject": "거부",
     "computerApp": {
-      "title": "Hana가 컴퓨터를 사용하도록 허용",
-      "body": "Hana가 현재 작업을 계속하려고 이 앱을 제어하려 해요.",
-      "controlTitle": "Hana가 {appName}을(를) 제어하도록 허용할까요",
+      "title": "Enigma가 컴퓨터를 사용하도록 허용",
+      "body": "Enigma가 현재 작업을 계속하려고 이 앱을 제어하려 해요.",
+      "controlTitle": "Enigma가 {appName}을(를) 제어하도록 허용할까요",
       "defaultAppName": "이 앱"
     },
     "sessionFolders": {
-      "title": "Hana가 이 대화의 폴더 권한을 변경하도록 허용",
+      "title": "Enigma가 이 대화의 폴더 권한을 변경하도록 허용",
       "body": "확인하면 이 폴더가 현재 대화의 추가 샌드박스 디렉터리가 돼요. 작업 디렉터리나 프롬프트는 변경하지 않아요.",
       "addLabel": "권한 디렉터리 추가",
       "removeLabel": "권한 디렉터리 제거"

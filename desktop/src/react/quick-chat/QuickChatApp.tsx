@@ -322,7 +322,7 @@ export function QuickChatApp() {
         if (cancelled) return;
 
         await applyAgentIdentity({
-          agentName: healthData.agent || 'Hanako',
+          agentName: healthData.agent || 'Enigma',
           userName: healthData.user || window.t?.('common.user') || 'User',
           ui: { avatars: false, agents: false, welcome: true },
         });
@@ -336,7 +336,7 @@ export function QuickChatApp() {
         });
         if (!preferred) {
           useStore.setState({
-            agentName: healthData.agent || 'Hanako',
+            agentName: healthData.agent || 'Enigma',
             agentYuan: 'hanako',
           });
         }

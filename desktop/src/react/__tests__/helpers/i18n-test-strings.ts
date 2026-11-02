@@ -14,7 +14,7 @@ const ZH_STRINGS: Record<string, string> = {
   'input.thinkingDesc.xhigh': '极致推理',
   'input.thinkingDesc.max': '极致推理',
   'input.thinkingDesc.low': '轻量推理',
-  'approval.computerApp.controlTitle': '是否允许 Hana 控制 {appName}',
+  'approval.computerApp.controlTitle': '是否允许 Enigma 控制 {appName}',
   'approval.computerApp.defaultAppName': '这个应用',
   'chat.workflowInline.running': '◐ 运行中',
   'chat.workflowInline.done': '✓ 已完成',

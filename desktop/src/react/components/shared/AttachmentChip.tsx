@@ -6,6 +6,7 @@
 
 import { memo, type ReactNode } from 'react';
 import styles from './AttachmentChip.module.css';
+import { Tooltip, type TooltipTriggerProps } from '../../ui/Tooltip';
 
 interface AttachmentChipProps {
   icon: ReactNode;
@@ -13,7 +14,8 @@ interface AttachmentChipProps {
   onRemove?: () => void;
   removeLabel?: string;
   className?: string;
-  variant?: 'normal' | 'expired';
+  variant?: 'normal' | 'expired' | 'quote';
+  tooltip?: ReactNode;
 }
 
 export const AttachmentChip = memo(function AttachmentChip({
@@ -23,12 +25,13 @@ export const AttachmentChip = memo(function AttachmentChip({
   removeLabel = `移除 ${name}`,
   className,
   variant = 'normal',
+  tooltip,
 }: AttachmentChipProps) {
-  return (
-    <span className={`${styles.chip}${variant === 'expired' ? ` ${styles.expired}` : ''}${className ? ` ${className}` : ''}`}>
+  const chip = (trigger?: TooltipTriggerProps) => (
+    <span {...trigger} tabIndex={tooltip ? 0 : undefined} className={`${styles.chip}${variant !== 'normal' ? ` ${styles[variant]}` : ''}${className ? ` ${className}` : ''}`}>
       <span className={styles.name}>
         <span className={styles.icon}>{icon}</span>
-        {name}
+        <span className={styles.text}>{name}</span>
       </span>
       {onRemove && (
         <button type="button" className={styles.remove} onClick={onRemove} aria-label={removeLabel} title={removeLabel}>
@@ -39,4 +42,5 @@ export const AttachmentChip = memo(function AttachmentChip({
       )}
     </span>
   );
+  return tooltip ? <Tooltip content={tooltip} placement="top" align="start" variant="panel">{chip}</Tooltip> : chip();
 });

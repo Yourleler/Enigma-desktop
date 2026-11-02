@@ -182,7 +182,7 @@ describe('computer app approval prompt', () => {
   it('renders the current session pending input confirmation above the input box and posts confirmation', async () => {
     render(React.createElement(InputArea));
 
-    expect(screen.getByText('是否允许 Hana 控制 Mock Notes')).toBeTruthy();
+    expect(screen.getByText('是否允许 Enigma 控制 Mock Notes')).toBeTruthy();
     expect(screen.queryByText('Hana 想控制这个应用来继续当前任务。')).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: '同意' }));
@@ -226,7 +226,7 @@ describe('computer app approval prompt', () => {
 
     render(React.createElement(InputArea));
 
-    expect(screen.getByText('是否允许 Hana 控制 Mock Notes')).toBeTruthy();
+    expect(screen.getByText('是否允许 Enigma 控制 Mock Notes')).toBeTruthy();
   });
 
   it('re-enables approval actions when a new pending confirmation replaces the submitted one', async () => {

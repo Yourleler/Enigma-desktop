@@ -24,7 +24,7 @@ const i18n = {
   locale: "zh",
 
   /** 默认 agent 名（占位符 {name} 的 fallback） */
-  defaultName: "Hanako",
+  defaultName: "Enigma",
 
   /**
    * 加载语言包
@@ -87,7 +87,7 @@ const i18n = {
   /**
    * 翻译
    * @param {string} path   如 "sidebar.title"
-   * @param {object} [vars] 占位符变量，如 { name: "Hana", n: 3 }
+   * @param {object} [vars] 占位符变量，如 { name: "Enigma", n: 3 }
    * @returns {string}
    */
   t(path, vars) {

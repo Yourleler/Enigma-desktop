@@ -12,8 +12,10 @@ export function QuotedSelectionCard() {
       {quotedSelections.map((selection, index) => (
         <AttachmentChip
           key={`${selection.sourceKind}:${selection.sourceFilePath || selection.sourceSessionPath || ''}:${selection.sourceMessageId || ''}:${selection.updatedAt || index}`}
-          icon={<TextCursorIcon />}
+          icon={<QuoteIcon />}
           name={selection.text}
+          variant="quote"
+          tooltip={<><strong>{selection.sourceKind === 'chat' ? (selection.sourceRole === 'user' ? '引用用户消息' : '引用助手回复') : selection.sourceTitle}</strong><br/>{selection.text}</>}
           removeLabel={`移除引用 ${index + 1}`}
           onRemove={() => removeQuotedSelection(index)}
         />
@@ -22,10 +24,10 @@ export function QuotedSelectionCard() {
   );
 }
 
-function TextCursorIcon() {
+function QuoteIcon() {
   return (
     <svg
-      data-icon="text-cursor"
+      data-icon="quote"
       width="14"
       height="14"
       viewBox="0 0 24 24"
@@ -36,9 +38,7 @@ function TextCursorIcon() {
       strokeLinejoin="round"
       aria-hidden="true"
     >
-      <path d="M8 5h8" />
-      <path d="M12 5v14" />
-      <path d="M8 19h8" />
+      <path d="M10 6H4v7h6V6Zm0 7c0 4-2 6-5 7M21 6h-6v7h6V6Zm0 7c0 4-2 6-5 7" />
     </svg>
   );
 }

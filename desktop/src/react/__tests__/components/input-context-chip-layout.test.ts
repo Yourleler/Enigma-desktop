@@ -22,11 +22,13 @@ describe('input context chip layout', () => {
     expect(attachedFiles).toMatch(/display:\s*contents/);
   });
 
-  it('uses the same shorter chip width for file and text quote references', () => {
+  it('keeps file chips compact while giving quotes two readable lines within the composer', () => {
     const css = readCss('desktop/src/react/components/shared/AttachmentChip.module.css');
     const chip = cssRule(css, '.chip');
 
     expect(chip).toMatch(/max-width:\s*140px/);
+    expect(cssRule(css, '.quote')).toMatch(/max-width:\s*min\(36rem,\s*100%\)/);
+    expect(cssRule(css, '.quote .text')).toMatch(/-webkit-line-clamp:\s*2/);
   });
 
   it('keeps inline file badges compact with ellipsis instead of wrapping long names', () => {
