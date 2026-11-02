@@ -10,6 +10,7 @@ import { useStore } from './index';
 import type { StoreState } from './index';
 import { updateLayout } from '../components/SidebarLayout';
 import type { PreviewItem } from '../types';
+import {capturePreviewContext} from '../utils/preview-context';
 import type { PreviewSlice } from './preview-slice';
 import { schedulePersistCurrentWorkspaceUiState } from './workspace-ui-state-actions';
 import {
@@ -69,11 +70,8 @@ let _legacyArtifactCounter = 0;
 let previewOpenEpoch = 0;
 export function beginPreviewOpen(): () => boolean {
   const epoch=++previewOpenEpoch;
-  const scope=useStore.getState();
-  return()=>{
-    const current=useStore.getState();
-    return epoch===previewOpenEpoch&&current.deskBasePath===scope.deskBasePath&&current.currentSessionPath===scope.currentSessionPath&&current.activeServerConnectionId===scope.activeServerConnectionId;
-  };
+  const owns=capturePreviewContext(true);
+  return()=>epoch===previewOpenEpoch&&owns();
 }
 
 // ── Internal write primitive ──

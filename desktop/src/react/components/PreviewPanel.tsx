@@ -18,6 +18,8 @@ import { closePreview, consumePreviewAnchor, setMarkdownPreviewActive, upsertPre
 import {alignPreviewAnchor,findPreviewAnchor} from '../utils/preview-anchor';
 import { PreviewEditor, type PreviewEditorHandle, type PreviewEditorStats } from './PreviewEditor';
 import { PreviewRenderer } from './preview/PreviewRenderer';
+import {PreviewRefreshNotice} from './preview/PreviewRefreshNotice';
+import {capturePreviewContext,previewConnectionKey} from '../utils/preview-context';
 import { TabBar } from './preview/TabBar';
 import {DocumentNavigation} from './preview/DocumentNavigation';
 import { FloatingActions } from './preview/FloatingActions';
@@ -148,6 +150,8 @@ export function PreviewPanel({embedded=false,visible=true,itemId,panelId='previe
   const [csvSource,setCsvSource]=useState(false);
   useEffect(()=>setCsvSource(false),[activeTabId]);
   const previewItem = previewItems.find(a => a.id === activeTabId) ?? null;
+  const connectionKey=useStore(previewConnectionKey);
+  const ownsPreview=useMemo(()=>capturePreviewContext(),[connectionKey,activeTabId]);
   const markdownPreviewActive = !!previewItem && markdownPreviewIds.includes(previewItem.id);
   const editable = isEditable(previewItem) && !markdownPreviewActive && (previewItem?.type!=='csv'||csvSource);
   const markdownFile = isMarkdownFile(previewItem);
@@ -171,13 +175,15 @@ export function PreviewPanel({embedded=false,visible=true,itemId,panelId='previe
   }, [previewItem, markdownPreviewActive]);
 
   const handleEditorContentChange = useCallback((content: string, fileVersion?: PreviewItem['fileVersion']) => {
-    if (!previewItem) return;
+    if (!previewItem||!ownsPreview()) return;
+    const current=useStore.getState().previewItems.find(item=>item.id===previewItem.id);
+    if(!current||current.type!==previewItem.type||current.filePath!==previewItem.filePath)return;
     upsertPreviewItem({
-      ...previewItem,
+      ...current,
       content,
-      fileVersion: fileVersion === undefined ? previewItem.fileVersion : fileVersion,
+      fileVersion: fileVersion === undefined ? current.fileVersion : fileVersion,
     });
-  }, [previewItem]);
+  }, [previewItem,ownsPreview]);
 
   const handleEditorStatsChange = useCallback((stats: PreviewEditorStats) => {
     setEditorStats(stats);
@@ -435,6 +441,7 @@ export function PreviewPanel({embedded=false,visible=true,itemId,panelId='previe
       <div className={previewStyles.previewPanelInner} data-preview-panel-inner="">
         {!embedded&&previewExpanded && <button className="enigma-preview-return" onClick={() => closePreview()}><AppIcon name="chevronLeft" size={16}/>返回对话<span>已打开的文件会保留</span></button>}
         {!embedded&&<TabBar />}
+        {previewOpen&&previewItem&&<PreviewRefreshNotice key={previewItem.id} item={previewItem}/>}
         {previewItem?.type==='csv'&&isEditable(previewItem)&&<div className="enigma-csv-mode" role="group" aria-label="CSV 显示方式"><button aria-pressed={!csvSource} onClick={()=>setCsvSource(false)}>表格预览</button><button aria-pressed={csvSource} onClick={()=>setCsvSource(true)}>编辑 CSV</button></div>}
         {previewOpen&&previewItem&&(['markdown','code','text','html'].includes(previewItem.type)||previewItem.type==='csv'&&csvSource)&&!['missing','unavailable'].includes(previewItem.status||'')&&<DocumentNavigation
           documentId={previewItem.id} contentType={previewItem.type} language={previewItem.language} findOpen={findOpen} headings={markdownHeadings} activeHeadingId={activeHeadingId} editable={editable} wrapLines={wrapLines}

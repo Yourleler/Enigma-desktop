@@ -12,10 +12,11 @@
  * - 文件系统 source of truth，直接对接文件读写
  */
 
-import { forwardRef, useEffect, useRef, useCallback, useImperativeHandle, useLayoutEffect, useState, Fragment } from 'react';
+import { forwardRef, useEffect, useRef, useCallback, useImperativeHandle, useLayoutEffect, useState,useMemo, Fragment } from 'react';
 import { EditorContextMenu } from './preview/EditorContextMenu';
 import { PreviewSaveNotice } from './preview/PreviewSaveNotice';
 import { EditorDraftRecovery, editorRecoveryKey, type EditorDraftCopy } from '../stores/editor-draft-recovery';
+import {capturePreviewContext} from '../utils/preview-context';
 import { isContextMenuButton } from '../stores/selection-actions';
 import {
   EditorView, keymap, highlightActiveLine, drawSelection,
@@ -131,6 +132,8 @@ const EDITOR_HOST_MIN_SIZE_PX = 1;
 interface SaveJob {
   text: string;
   revision: number;
+  identity:string;
+  owns:()=>boolean;
 }
 
 interface PendingIncomingContent {
@@ -332,7 +335,8 @@ function attachmentSourcesFromAppDrag(dataTransfer: DataTransfer | null): Markdo
     }));
 }
 
-async function writeMarkdownAttachment(source: MarkdownAttachmentSource, plan: MarkdownAttachmentPlan): Promise<void> {
+async function writeMarkdownAttachment(source: MarkdownAttachmentSource, plan: MarkdownAttachmentPlan,valid:()=>boolean): Promise<void> {
+  if(!valid())throw new Error('文件或连接已切换，已停止添加附件。');
   let copied = false;
   if (source.path && typeof window.platform?.copyFile === 'function') {
     copied = await window.platform.copyFile(source.path, plan.attachmentPath);
@@ -346,6 +350,7 @@ async function writeMarkdownAttachment(source: MarkdownAttachmentSource, plan: M
     throw new Error('writeFileBinary unavailable');
   }
   const base64 = arrayBufferToBase64(await source.file.arrayBuffer());
+  if(!valid())throw new Error('文件或连接已切换，已停止添加附件。');
   const ok = await window.platform.writeFileBinary(plan.attachmentPath, base64);
   if (ok === false) {
     throw new Error(`failed to write attachment: ${source.name}`);
@@ -399,6 +404,9 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
   function PreviewEditor({ content, filePath, remoteContentRef, fileVersion, saveDocument, mode, language, onSelectionChange, onSelectionCommit, onQuoteRange, onStatsChange, onContentChange, initialScrollSnapshot, contentHash, onScrollSnapshotChange, readOnly = false, wrapLines = true, draftScope }, ref) {
     const incomingFileVersionKey = fileVersionIdentity(fileVersion ?? null);
     const remoteIdentityKey=JSON.stringify(remoteContentRef?[remoteContentRef.kind,remoteContentRef.mountId,remoteContentRef.rootId,remoteContentRef.subdir,remoteContentRef.name,remoteContentRef.contentPath]:null);
+    const sourceIdentity=JSON.stringify([filePath,remoteIdentityKey,draftScope]);
+    const identityRef=useRef(sourceIdentity);identityRef.current=sourceIdentity;
+    const owns=useMemo(()=>capturePreviewContext(),[sourceIdentity]);
     const containerRef = useRef<HTMLDivElement>(null);
     const viewRef = useRef<EditorView | null>(null);
     const languageLoadRef=useRef<Promise<void>>(Promise.resolve());
@@ -563,7 +571,8 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
       getTopVisibleLine: () => viewRef.current ? topVisibleLine(viewRef.current) : 0,
     }));
 
-    const createCheckpointIfDue = useCallback(async (fp: string) => {
+    const createCheckpointIfDue = useCallback(async (fp: string,valid:()=>boolean) => {
+      if(!valid())return;
       const now = Date.now();
       if (lastCheckpointAtRef.current > 0 && now - lastCheckpointAtRef.current < CHECKPOINT_INTERVAL) return;
       const reason: UserEditCheckpointReason = lastCheckpointAtRef.current > 0
@@ -573,9 +582,9 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
         await requestUserEditCheckpoint(fp, reason);
       } catch (err) {
         console.warn('[PreviewEditor] checkpoint failed:', err);
-        showSaveError('settings.saveFailed', err);
+        if(valid())showSaveError('settings.saveFailed', err);
       } finally {
-        lastCheckpointAtRef.current = now;
+        if(valid())lastCheckpointAtRef.current = now;
       }
     }, []);
 
@@ -585,6 +594,8 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
       position: number | null = null,
     ) => {
       const fp = filePathRef.current;
+      const isOwned=capturePreviewContext(),identity=identityRef.current;
+      const valid=()=>isOwned()&&identityRef.current===identity&&viewRef.current===view;
       if (!fp) throw new Error('markdown file path required');
       if (sources.length === 0) return;
 
@@ -597,11 +608,11 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
           mimeType: source.mimeType,
           index: i,
         });
-        await writeMarkdownAttachment(source, plan);
+        await writeMarkdownAttachment(source, plan,valid);
         plans.push(plan);
       }
 
-      insertMarkdownAt(view, plans.map(plan => plan.markdown).join('\n'), position);
+      if(valid())insertMarkdownAt(view, plans.map(plan => plan.markdown).join('\n'), position);
     }, []);
 
     const emitStatsIfChanged = useCallback((view: EditorView) => {
@@ -645,20 +656,23 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
       catch { setRecoveryError('文件已保存，但恢复副本暂未清理；下次打开仍会核对磁盘内容。'); }
     };
 
-    const performSave = useCallback(async ({ text, revision }: SaveJob) => {
+    const performSave = useCallback(async ({ text, revision,identity,owns:jobOwns }: SaveJob) => {
+      const valid=()=>jobOwns()&&identityRef.current===identity;
+      if(!valid())return;
       const fp = filePathRef.current;
       const saveRemoteDocument = saveDocumentRef.current;
       const savedCopyId = recoveryCopy.current?.id ?? null;
       if ((!fp && !saveRemoteDocument) || saveBlockedRef.current) return;
 
       try {
-        if (fp) await createCheckpointIfDue(fp);
-        if (revision !== docRevisionRef.current || fp !== filePathRef.current || saveBlockedRef.current) return;
+        if (fp) await createCheckpointIfDue(fp,valid);
+        if (!valid()||revision !== docRevisionRef.current || fp !== filePathRef.current || saveBlockedRef.current) return;
         const expectedVersion = diskVersionRef.current;
         let nextVersion: FileVersion | null | undefined;
 
         if (saveRemoteDocument) {
           const result = await saveRemoteDocument(text, expectedVersion);
+          if(!valid())return;
           if (!result?.ok) {
             if (result?.conflict) {
               const tFn = window.t ?? ((p: string) => p);
@@ -673,6 +687,7 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
           if (!fp) return;
           if (window.platform?.writeFileIfUnchanged) {
             const result = await window.platform.writeFileIfUnchanged(fp, text, expectedVersion);
+            if(!valid())return;
             if (!result?.ok) {
               if (result?.conflict) {
                 const tFn = window.t ?? ((p: string) => p);
@@ -685,6 +700,7 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
             if (result.version) diskVersionRef.current = result.version;
           } else {
             const ok = await window.platform?.writeFile(fp, text);
+            if(!valid())return;
             if (ok === false) throw new Error('write-file returned false');
             nextVersion = undefined;
           }
@@ -701,6 +717,7 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
           contentCbRef.current?.(text, nextVersion);
         }
       } catch (err) {
+        if(!valid())return;
         console.warn('[PreviewEditor] write failed:', err);
         setSaveIssue({ conflict: saveBlockedRef.current, message: getErrorMessage(err) });
         showSaveError('settings.saveFailed', err);
@@ -720,9 +737,9 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
     }, [performSave]);
 
     const saveToFile = useCallback((text: string, revision: number = docRevisionRef.current) => {
-      pendingSaveRef.current = { text, revision };
+      pendingSaveRef.current = { text, revision,identity:sourceIdentity,owns };
       drainSaveQueue();
-    }, [drainSaveQueue]);
+    }, [drainSaveQueue,sourceIdentity,owns]);
 
     const applyIncomingContent = useCallback((nextContent: string, options: { publish?: boolean; version?: FileVersion | null } = {}) => {
       const view = viewRef.current;
@@ -814,19 +831,20 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
 
     const refreshConflict = useCallback(async () => {
       const path = filePathRef.current, remote = remoteContentRefRef.current;
+      const identity=identityRef.current,isOwned=capturePreviewContext();
       setRefreshingConflict(true);
       try {
         const snapshot = isRemoteWorkbenchContentRef(remote)
           ? await readRemotePreviewItem({ id: 'conflict-read', title: '', content: '', type: 'text', remoteContentRef: remote })
           : path && window.platform?.readFileSnapshot ? await window.platform.readFileSnapshot(path) : null;
-        if (path !== filePathRef.current || remote !== remoteContentRefRef.current) return;
+        if (!isOwned()||identityRef.current!==identity||path !== filePathRef.current || remote !== remoteContentRefRef.current) return;
         if (!snapshot) throw new Error('无法读取文件，请检查文件是否仍存在，再重试。');
         const version = 'version' in snapshot ? snapshot.version : snapshot.fileVersion;
         if (!version) throw new Error('没有取得文件版本，请重新打开文件后再保存。');
         applyIncomingContent(snapshot.content, { publish: true, version });
       } catch (error) {
-        setSaveIssue({ conflict: true, message: getErrorMessage(error) });
-      } finally { setRefreshingConflict(false); }
+        if(isOwned()&&identityRef.current===identity)setSaveIssue({ conflict: true, message: getErrorMessage(error) });
+      } finally { if(isOwned()&&identityRef.current===identity)setRefreshingConflict(false); }
     }, [applyIncomingContent]);
 
     const resolveConflict = (keepDraft: boolean, expected: PendingIncomingContent) => {

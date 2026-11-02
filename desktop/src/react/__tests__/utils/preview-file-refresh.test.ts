@@ -148,6 +148,23 @@ describe('refreshPreviewItemsFromFile', () => {
     expect(mockUpsertPreviewItem).toHaveBeenCalledTimes(1);
   });
 
+  it('does not recreate a preview removed while its file read was pending',async()=>{
+    mockState.previewItems=[{id:'cleared',type:'markdown',title:'note.md',content:'old',filePath:'/tmp/note.md'}];
+    let done!:(value:any)=>void;vi.mocked(window.platform!.readFileSnapshot!).mockReturnValueOnce(new Promise(resolve=>{done=resolve;}));
+    const {refreshPreviewItemsFromFile}=await import('../../utils/preview-file-refresh');const pending=refreshPreviewItemsFromFile('/tmp/note.md');
+    mockState.previewItems=[];done({content:'late text',version:{mtimeMs:2,size:9}});await pending;
+    expect(mockUpsertPreviewItem).not.toHaveBeenCalled();
+  });
+
+  it('keeps a newly loaded version when a prior refresh finishes afterward',async()=>{
+    const original={id:'note',type:'markdown',title:'note.md',content:'old',filePath:'/tmp/note.md',fileVersion:{mtimeMs:1,size:3}};
+    mockState.previewItems=[original];let done!:(value:any)=>void;
+    vi.mocked(window.platform!.readFileSnapshot!).mockReturnValueOnce(new Promise(resolve=>{done=resolve;}));
+    const {refreshPreviewItemsFromFile}=await import('../../utils/preview-file-refresh');const pending=refreshPreviewItemsFromFile('/tmp/note.md');
+    mockState.previewItems=[{...original,content:'newest',fileVersion:{mtimeMs:3,size:6}}];done({content:'intermediate',version:{mtimeMs:2,size:12}});await pending;
+    expect(mockUpsertPreviewItem).not.toHaveBeenCalled();
+  });
+
   it('retries unchanged reads when the caller expects a file change', async () => {
     const oldVersion = { mtimeMs: 10, size: 20, sha256: 'old' };
     const newVersion = { mtimeMs: 11, size: 30, sha256: 'new' };

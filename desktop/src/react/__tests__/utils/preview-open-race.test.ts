@@ -33,3 +33,11 @@ it('does not bring the previous workspace file into a later workspace',async()=>
   useStore.setState({deskBasePath:'/workspace/b'});finish(snapshot('# Old'));await pending;
   expect(useStore.getState().activeTabId).toBeNull();
 });
+it('rejects a read after the connection label is reused for another server identity',async()=>{
+ let done!:(value:unknown)=>void;window.platform={readFileSnapshot:vi.fn(()=>new Promise(resolve=>{done=resolve;}))} as unknown as Window['platform'];
+ const {createLocalServerConnection}=await import('../../services/server-connection');const connection=createLocalServerConnection({serverPort:'3199'})!;
+ useStore.setState({activeServerConnectionId:'local',serverConnections:{local:{...connection,serverId:'first-server'}}});
+ const pending=openFilePreview('/same/note.md','note.md','md',{origin:'desk'});
+ useStore.setState({serverConnections:{local:{...connection,serverId:'different-server'}}});done(snapshot('previous server content'));await pending;
+ expect(useStore.getState().previewItems).toEqual([]);
+});

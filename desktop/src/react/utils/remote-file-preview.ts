@@ -21,6 +21,7 @@ import { extOfName, inferKindByExt, isMediaKind } from './file-kind';
 import { openMediaViewerForRef } from './open-media-viewer';
 import { showError } from './ui-helpers';
 import { isWebRuntime } from './platform-runtime';
+import {capturePreviewContext,currentPreviewReadTarget,previewConnectionKey} from './preview-context';
 import { openMediaPreview } from './media-preview';
 
 export { isWebRuntime };
@@ -120,21 +121,6 @@ function fileVersionFromContentHeaders(headers: Headers): FileVersion | undefine
   return { mtimeMs, size };
 }
 
-function newestKnownFileVersion(
-  ...versions: Array<FileVersion | null | undefined>
-): FileVersion | undefined {
-  let newest: FileVersion | undefined;
-  for (const version of versions) {
-    if (!version || !Number.isFinite(version.mtimeMs) || !Number.isFinite(version.size)) continue;
-    if (!newest || version.mtimeMs > newest.mtimeMs) {
-      newest = version;
-      continue;
-    }
-    if (version.mtimeMs === newest.mtimeMs && version.size > newest.size) newest = version;
-  }
-  return newest;
-}
-
 function remoteContentRefWithVersion(
   ref: RemoteWorkbenchContentRef | undefined,
   version: FileVersion | undefined,
@@ -160,6 +146,7 @@ async function readContentForPreview(contentPath: string, previewType: string): 
 }
 
 const REMOTE_REFRESH_RETRY_DELAYS_MS = [80, 240, 600] as const;
+const remoteRefreshes=new Map<string,symbol>();
 
 export interface RemoteWorkbenchRefreshOptions {
   retryMissing?: boolean;
@@ -175,25 +162,22 @@ async function readRemotePreviewContentWithRetry(
   contentPath: string,
   item: PreviewItem,
   options: RemoteWorkbenchRefreshOptions,
-): Promise<PreviewContentSnapshot> {
+  valid:()=>boolean,
+): Promise<PreviewContentSnapshot|undefined> {
   const retryDelaysMs = options.retryDelaysMs ?? REMOTE_REFRESH_RETRY_DELAYS_MS;
-  let lastRead: PreviewContentSnapshot = { content: '' };
   for (let attempt = 0; ; attempt += 1) {
+    if(!valid())return;
     if(item.type==='media'||item.type==='docx'||item.type==='xlsx') {
       const response=await hanaFetch(contentPath,{method:'HEAD'});
       return {content:'',fileVersion:fileVersionFromContentHeaders(response.headers)};
     }
-    const office = item.type === 'docx' || item.type === 'xlsx';
-    const converted = office ? await readOfficePreviewItem(item) : null;
-    const nextRead = converted ? {content:converted.content,fileVersion:converted.fileVersion ?? undefined}
-      : await readContentForPreview(appendCacheBustQuery(contentPath, attempt), item.type);
+    const nextRead = await readContentForPreview(appendCacheBustQuery(contentPath, attempt), item.type);
     const canRetry = attempt < retryDelaysMs.length;
+    if(!valid())return;
     const shouldRetryUnchanged = options.retryUnchanged && nextRead.content === item.content;
     if (!canRetry || !shouldRetryUnchanged) return nextRead;
-    lastRead = nextRead;
     await delay(retryDelaysMs[attempt] ?? 0);
   }
-  return lastRead;
 }
 
 async function openRemoteContentPreview({
@@ -335,18 +319,22 @@ export async function refreshPreviewItemsFromRemoteWorkbenchTarget(
   options: RemoteWorkbenchRefreshOptions = {},
 ): Promise<void> {
   const normalized = normalizeWorkbenchContentRef(target);
+  const owned=capturePreviewContext(true),key=JSON.stringify([previewConnectionKey(),normalized.mountId,normalized.subdir,normalized.name]),token=Symbol();
+  remoteRefreshes.set(key,token);
   const state = useStore.getState();
   const matching = (state.previewItems || []).filter(item =>
     refsPointToSameWorkbenchFile(item.remoteContentRef, normalized));
-  for (const item of matching) {
+  try{for (const item of matching) {
+    const valid=()=>owned()&&remoteRefreshes.get(key)===token&&!!currentPreviewReadTarget(item);
     const contentPath = item.remoteContentRef?.contentPath || encodeWorkbenchContentPath(normalized);
-    const read = await readRemotePreviewContentWithRetry(contentPath, item, options);
-    const nextVersion = newestKnownFileVersion(
-      read.fileVersion,
-      item.fileVersion,
-      normalized.version ?? undefined,
-      item.remoteContentRef?.version ?? undefined,
-    );
+    let read:PreviewContentSnapshot|undefined;
+    try{read=await readRemotePreviewContentWithRetry(contentPath, item, options,valid);}catch(error){const current=currentPreviewReadTarget(item);if(valid()&&current)upsertPreviewItem({...current,loadError:getErrorMessage(error)});continue;}
+    if(!read||!valid())return;
+    const current=currentPreviewReadTarget(item)!;
+    // Content and version must come from the same response. A list/watcher
+    // version cannot safely stamp bytes returned from another point in time.
+    const nextVersion=read.fileVersion;
+    if(['markdown','code','csv','text'].includes(item.type)&&!nextVersion){upsertPreviewItem({...current,loadError:'刷新没有取得对应文件版本，原预览已保留，请重新读取。'});continue;}
     const remoteContentRef = item.remoteContentRef
       ? {
           ...item.remoteContentRef,
@@ -354,14 +342,15 @@ export async function refreshPreviewItemsFromRemoteWorkbenchTarget(
         }
       : item.remoteContentRef;
     upsertPreviewItem({
-      ...item,
+      ...current,
       content: read.content,
       fileVersion: nextVersion,
       remoteContentRef,
       status: 'available',
       missingAt: null,
+      loadError:undefined,
     });
-  }
+  }}finally{if(remoteRefreshes.get(key)===token)remoteRefreshes.delete(key);}
 }
 
 export async function openWorkbenchFilePreview(input: WorkbenchPreviewInput): Promise<void> {

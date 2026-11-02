@@ -94,7 +94,7 @@ describe('remote file preview workbench refs', () => {
     } as Partial<StoreState>);
     mockHanaFetch
       .mockResolvedValueOnce(new Response('old', { status: 200 }))
-      .mockResolvedValueOnce(new Response('new', { status: 200 }));
+      .mockResolvedValueOnce(new Response('new', { status: 200,headers:{'X-Hana-File-MtimeMs':'2','X-Hana-File-Size':'3'} }));
 
     await refreshPreviewItemsFromRemoteWorkbenchTarget(target, {
       retryUnchanged: true,
@@ -104,8 +104,25 @@ describe('remote file preview workbench refs', () => {
     const item = useStore.getState().previewItems[0];
     expect(mockHanaFetch).toHaveBeenCalledTimes(2);
     expect(item.content).toBe('new');
-    expect(item.fileVersion).toEqual({ mtimeMs: 2, size: 8 });
-    expect(item.remoteContentRef?.version).toEqual({ mtimeMs: 2, size: 8 });
+    expect(item.fileVersion).toEqual({ mtimeMs: 2, size: 3 });
+    expect(item.remoteContentRef?.version).toEqual({ mtimeMs: 2, size: 3 });
+  });
+
+  it('does not give unversioned response bytes the newer timestamp from a watcher',async()=>{
+    const {refreshPreviewItemsFromRemoteWorkbenchTarget}=await import('../../utils/remote-file-preview');
+    const target:RemoteWorkbenchContentRef={kind:'workbench-file',mountId:'docs',subdir:'',name:'note.md',contentPath:'/content',version:{mtimeMs:9,size:12}};
+    const item={id:'note',type:'markdown',title:'note',content:'verified old',fileVersion:{mtimeMs:1,size:12},remoteContentRef:target};useStore.setState({previewItems:[item]});
+    mockHanaFetch.mockResolvedValueOnce(new Response('unversioned data',{status:200}));await refreshPreviewItemsFromRemoteWorkbenchTarget(target);
+    expect(useStore.getState().previewItems[0]).toMatchObject({content:'verified old',fileVersion:{mtimeMs:1,size:12},loadError:expect.stringContaining('没有取得对应文件版本')});
+  });
+
+  it('keeps cleared previews and another connection untouched by a late remote read',async()=>{
+    const {refreshPreviewItemsFromRemoteWorkbenchTarget}=await import('../../utils/remote-file-preview');
+    const target:RemoteWorkbenchContentRef={kind:'workbench-file',mountId:'docs',subdir:'',name:'note.md',contentPath:'/content'};
+    const item={id:'note',type:'markdown',title:'note',content:'old',remoteContentRef:target};useStore.setState({previewItems:[item]});let done!:(value:Response)=>void;
+    mockHanaFetch.mockImplementationOnce(()=>new Promise(resolve=>{done=resolve;}));const pending=refreshPreviewItemsFromRemoteWorkbenchTarget(target);
+    useStore.setState({previewItems:[],serverPort:'11111'});done(new Response('late',{headers:{'X-Hana-File-MtimeMs':'2','X-Hana-File-Size':'4'}}));await pending;
+    expect(useStore.getState().previewItems).toEqual([]);
   });
 
   it('uses the content response version when opening a remote workbench document', async () => {
