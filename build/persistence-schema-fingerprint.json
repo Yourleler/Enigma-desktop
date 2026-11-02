@@ -664,7 +664,7 @@
     ],
     "version": 3
   },
-  "payloadFingerprint": "sha256:27ec1638db119594e5d541bfb6644f46684ed1691961778d78009938833a51e1",
+  "payloadFingerprint": "sha256:f91246bb10e459eb4531c3ebd4c08ebd817449de12faabac364126c9b2ec112b",
   "registry": [
     {
       "affectedByEpochMigration": true,
@@ -3414,8 +3414,8 @@
   ],
   "review": {
     "classification": "compatible",
-    "compatibilityReason": "Session prompt snapshot schema remains version 1. On Enigma restore, only the exact obsolete host introduction prefix is corrected in the frozen base/final prompt, with all remaining bytes and capability fields preserved. Existing serialized sidecar and manifest writes persist this correction. Other products, custom prompts and message JSONL are unchanged; no DATA_EPOCH migration is required.",
-    "payloadFingerprint": "sha256:27ec1638db119594e5d541bfb6644f46684ed1691961778d78009938833a51e1"
+    "compatibilityReason": "Desktop main now retains live notification objects, dispatches scoped activation targets, and appends content-free delivery phase diagnostics. Window bounds, release bookmarks, update marker readers, SQLite schemas, registry mappings and existing serialized shapes are unchanged. The reviewed delta is solely the desktop-window-version-state whole-module source hash; no DATA_EPOCH migration is required.",
+    "payloadFingerprint": "sha256:f91246bb10e459eb4531c3ebd4c08ebd817449de12faabac364126c9b2ec112b"
   },
   "schemas": [
     {
@@ -3640,7 +3640,7 @@
       "contract": "desktop window bounds, release announcement bookmark, and update cache version marker readers",
       "kind": "directory-contract",
       "module": "desktop/main.cjs",
-      "sourceHash": "sha256:6390d0a8f576a668a3976565309eb65be7bb5e18cd35a9aa60ac9495c6ac0bec",
+      "sourceHash": "sha256:0533d7faee134fff2a2ceb4f3070efb8801726209d43a9f8cb6f4270e82d2068",
       "storeId": "desktop-window-version-state"
     },
     {

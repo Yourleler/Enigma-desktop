@@ -758,6 +758,11 @@
       "done": "📋 背景任務的進展看完了",
       "failed": "📋 沒看到背景任務的進展"
     },
+    "notify_desktop": {
+      "running": "🔔 {name} 正在請求本機通知",
+      "done": "🔔 已請求系統顯示通知",
+      "failed": "🔔 本機通知請求失敗"
+    },
     "notify": {
       "running": "🔔 {name} 正在發通知",
       "done": "🔔 {name} 把通知發出去了",
@@ -3022,6 +3027,7 @@
     "cronEnabled": "已啟用",
     "cronDisabled": "已停用",
     "notifySent": "已傳送通知: {title}",
+    "notifyDesktopRequested": "已請求系統顯示通知：{title}。橫幅顯示取決於系統通知權限和專注模式。",
     "notifyFailed": "通知傳送失敗: {msg}",
     "artifactCreated": "已建立預覽: {title}",
     "pinnedAlreadyExists": "這條已經在置頂記憶裡了。",

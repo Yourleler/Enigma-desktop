@@ -199,6 +199,7 @@ export class NotificationService {
         agentId: context.agentId || null,
         desktopFocusPolicy: payload.desktopFocusPolicy,
         ...(sessionPath ? { sessionPath } : {}),
+        ...(typeof payload.activityId === 'string' && payload.activityId ? { activityId: payload.activityId } : {}),
       });
       return { channel: CHANNEL_DESKTOP, status: "sent" };
     } catch (err) {

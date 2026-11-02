@@ -758,6 +758,11 @@
       "done": "📋 バックグラウンドの進み具合を確認した",
       "failed": "📋 バックグラウンドの進み具合が分からなかった"
     },
+    "notify_desktop": {
+      "running": "🔔 {name} がデスクトップ通知を要求中",
+      "done": "🔔 システム通知を要求しました",
+      "failed": "🔔 デスクトップ通知の要求に失敗"
+    },
     "notify": {
       "running": "🔔 {name} は通知を送信中",
       "done": "🔔 {name} は通知を送った",
@@ -3022,6 +3027,7 @@
     "cronEnabled": "有効化しました",
     "cronDisabled": "無効化しました",
     "notifySent": "通知を送信しました: {title}",
+    "notifyDesktopRequested": "システム通知を要求しました: {title}。表示は通知権限と集中モードの設定によります。",
     "notifyFailed": "通知の送信に失敗しました: {msg}",
     "artifactCreated": "プレビューを作成しました: {title}",
     "pinnedAlreadyExists": "これは既にピン留めメモリにあります。",

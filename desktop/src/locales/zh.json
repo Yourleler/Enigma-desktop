@@ -759,6 +759,11 @@
       "done": "📋 后台任务的进展看完了",
       "failed": "📋 没看到后台任务的进展"
     },
+    "notify_desktop": {
+      "running": "🔔 {name} 正在请求本机通知",
+      "done": "🔔 已请求系统显示通知",
+      "failed": "🔔 本机通知请求失败"
+    },
     "notify": {
       "running": "🔔 {name} 正在发通知",
       "done": "🔔 {name} 把通知发出去了",
@@ -3022,6 +3027,7 @@
     "cronEnabled": "已启用",
     "cronDisabled": "已禁用",
     "notifySent": "已发送通知: {title}",
+    "notifyDesktopRequested": "已请求系统显示通知：{title}。是否显示横幅取决于系统通知权限和专注模式。",
     "notifyFailed": "通知发送失败: {msg}",
     "artifactCreated": "已创建预览: {title}",
     "pinnedAlreadyExists": "这条已经在置顶记忆里了。",

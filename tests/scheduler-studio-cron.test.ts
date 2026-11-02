@@ -559,6 +559,7 @@ describe("Scheduler studio cron", () => {
           desktopFocusPolicy: "always",
           sessionPath: "/sessions/cron.jsonl",
           idempotencyKey: "activity-completion:cron:agent-a:/sessions/cron.jsonl",
+          activityId: expect.any(String),
         }),
         { agentId: "agent-a" },
       );

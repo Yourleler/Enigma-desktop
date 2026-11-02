@@ -415,6 +415,7 @@ export class Scheduler {
         body: t(bodyKey, { label: entry.label || entry.summary }),
         channels: ["desktop"],
         desktopFocusPolicy: mode,
+        activityId: entry.id,
         ...(typeof sessionPath === "string" && sessionPath ? { sessionPath } : {}),
         idempotencyKey: `activity-completion:${entry.type}:${entry.agentId}:${completionIdentity}`,
       }, {

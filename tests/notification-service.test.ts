@@ -56,6 +56,7 @@ describe("NotificationService", () => {
         title: "完成",
         body: "这一轮已经结束",
         sessionPath: "/tmp/finished.jsonl",
+        activityId: "scheduled-1",
       },
       { agentId: "hana" },
     );
@@ -66,6 +67,7 @@ describe("NotificationService", () => {
       agentId: "hana",
       desktopFocusPolicy: "always",
       sessionPath: "/tmp/finished.jsonl",
+      activityId: "scheduled-1",
     });
   });
 

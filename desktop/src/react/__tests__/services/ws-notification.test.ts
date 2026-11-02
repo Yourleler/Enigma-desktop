@@ -21,6 +21,7 @@ vi.mock('../../services/stream-key-dispatcher', () => ({ dispatchStreamKey: vi.f
 
 import { handleServerMessage } from '../../services/ws-message-handler';
 import { useStore } from '../../stores';
+import { previewConnectionKey } from '../../utils/preview-context';
 
 describe('ws-message-handler desktop notification', () => {
   beforeEach(() => {
@@ -97,6 +98,7 @@ describe('ws-message-handler desktop notification', () => {
 
     expect(showNotification).toHaveBeenCalledWith('完成', '这一轮已经结束', 'a2', {
       desktopFocusPolicy: 'always',
+      target: {connectionKey:previewConnectionKey(),sessionPath:'/tmp/finished.jsonl'},
     });
   });
 
@@ -116,6 +118,7 @@ describe('ws-message-handler desktop notification', () => {
 
     expect(showNotification).toHaveBeenCalledWith('完成', '这一轮已经结束', 'a2', {
       desktopFocusPolicy: 'when_unfocused',
+      target: {connectionKey:previewConnectionKey(),sessionPath:'/tmp/finished.jsonl'},
     });
   });
 });

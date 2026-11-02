@@ -8,6 +8,7 @@
  */
 
 import { useStore } from './stores';
+import { openNotificationTarget } from './services/notification-navigation';
 import { hanaFetch } from './hooks/use-hana-fetch';
 import { applyAgentIdentity, loadAgents, loadAvatars } from './stores/agent-actions';
 import { loadPendingNewSessionPermissionDefault, loadSessions, pendingNewSessionIdentityPatch, switchSession } from './stores/session-actions';
@@ -346,6 +347,7 @@ export async function initApp(): Promise<void> {
       loadSessions();
     }
   });
+  platform.onNotificationClick?.(target => { void openNotificationTarget(target); });
 
   // 21. Skill Viewer overlay（主进程 / 设置窗口 → 渲染进程）
   window.hana?.onShowSkillViewer?.((data: any) => {

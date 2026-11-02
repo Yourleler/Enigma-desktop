@@ -3,6 +3,9 @@ import { describe, expect, it } from "vitest";
 import { toNotificationWsMessage } from "../server/routes/chat.ts";
 
 describe("chat route notification messages", () => {
+  it('retains a background activity target alongside its session',()=>{
+    expect(toNotificationWsMessage({agentId:'agent-a',activityId:'run-a',sessionPath:'/activity/run.jsonl'})).toMatchObject({agentId:'agent-a',activityId:'run-a',sessionPath:'/activity/run.jsonl'});
+  });
   it("carries the triggering agentId through to the desktop client", () => {
     expect(toNotificationWsMessage({
       type: "notification",

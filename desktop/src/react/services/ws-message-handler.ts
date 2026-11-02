@@ -9,6 +9,7 @@
 import { streamBufferManager } from '../hooks/use-stream-buffer';
 import { dispatchStreamKey } from './stream-key-dispatcher';
 import { useStore } from '../stores';
+import { previewConnectionKey } from '../utils/preview-context';
 import { updateKeyed } from '../stores/create-keyed-slice';
 import { sessionScopedKey, sessionScopedListIncludes, sessionScopedValue } from '../stores/session-slice';
 import { browserStateForPath, setBrowserStateForPath } from '../stores/browser-slice';
@@ -772,6 +773,11 @@ export function handleServerMessage(msg: any): void {
         // 缺失时透传 null，主进程退回无 icon，禁止从当前焦点 agent 兜底。
         window.hana.showNotification(msg.title, msg.body, msg.agentId ?? null, {
           desktopFocusPolicy: resolveNotificationDesktopFocusPolicy(msg),
+          ...((msg.sessionPath || msg.activityId && msg.agentId) ? { target: {
+            connectionKey: previewConnectionKey(),
+            ...(msg.sessionPath ? { sessionPath: msg.sessionPath } : {}),
+            ...(msg.activityId && msg.agentId ? { activityId: msg.activityId, agentId: msg.agentId } : {}),
+          } } : {}),
         });
       }
       break;

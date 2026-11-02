@@ -656,7 +656,7 @@ export class HanaEngine {
       getUsageLedger: () => this._usageLedger,
     });
     this._notifications = new NotificationService({
-      emitDesktop: ({ title, body, agentId, desktopFocusPolicy, sessionPath }) => {
+      emitDesktop: ({ title, body, agentId, desktopFocusPolicy, sessionPath, activityId }) => {
         this._hubCallbacks?.eventBus?.emit({
           type: "notification",
           title,
@@ -664,6 +664,7 @@ export class HanaEngine {
           agentId: agentId || null,
           desktopFocusPolicy,
           ...(sessionPath ? { sessionPath } : {}),
+          ...(activityId ? { activityId } : {}),
         }, sessionPath || null);
       },
       getBridgeManager: () => this._hubCallbacks?.hub?.bridgeManager || null,
