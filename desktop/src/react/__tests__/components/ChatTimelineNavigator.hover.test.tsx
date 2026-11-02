@@ -63,7 +63,7 @@ describe('Conversation navigation', () => {
     expect(search).toHaveFocus();
     fireEvent.change(search, { target: { value: '超时' } });
     expect(fireEvent.keyDown(search, { key: 'Enter' })).toBe(false);
-    expect(onJump).toHaveBeenCalledWith(anchors[1]);
+    expect(onJump).toHaveBeenCalledWith(anchors[1],'超时');
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(screen.getByRole('button', { name: '打开对话目录' })).toHaveFocus();
   });
@@ -98,6 +98,26 @@ describe('Conversation navigation', () => {
     expect(screen.getByRole('tooltip')).toHaveTextContent('已完成检查');
     expect(screen.getByRole('tooltip').textContent).toMatch(/\d{2}:\d{2}/);
   });
+  it('updates an open preview when the corresponding reply changes',()=>{
+    const view=render(<ConversationRail anchors={[{...anchors[0],replyPreview:'Earlier reply'},anchors[1]]} activeId="u0" onJump={vi.fn()}/>);
+    fireEvent.mouseEnter(screen.getByRole('button',{name:/^第 1 轮/}));
+    view.rerender(<ConversationRail anchors={[{...anchors[0],replyPreview:'Updated reply'},anchors[1]]} activeId="u0" onJump={vi.fn()}/>);
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Updated reply');expect(screen.getByRole('tooltip')).not.toHaveTextContent('Earlier reply');
+  });
+  it('closes a preview when its anchor is removed by a history change',()=>{
+    const view=render(<ConversationRail anchors={anchors} activeId="u0" onJump={vi.fn()}/>);
+    fireEvent.mouseEnter(screen.getByRole('button',{name:/^第 1 轮/}));
+    view.rerender(<ConversationRail anchors={[anchors[1]]} activeId="u1" onJump={vi.fn()}/>);
+    expect(screen.queryByRole('tooltip')).toBeNull();
+  });
+  it('searches the entire loaded input and shows the matching text beyond its preview limit',()=>{
+    const long=buildTimelineAnchors([{type:'message',data:{id:'long',role:'user',text:'前面的说明。'.repeat(200)+'末尾关键字紫苑203需要保留。'}}]);
+    render(<ConversationRail anchors={long} activeId="long" onJump={vi.fn()}/>);
+    fireEvent.click(screen.getByRole('button',{name:'打开对话目录'}));
+    fireEvent.change(screen.getByRole('textbox',{name:'筛选对话目录'}),{target:{value:'紫苑203'}});
+    expect(screen.getByRole('dialog')).toHaveTextContent('紫苑203');expect(screen.getByText('紫苑203').tagName).toBe('MARK');
+  });
+
   it('recovers visible reply text from older rendered messages without showing thinking', () => {
     const result=buildTimelineAnchors([
       {type:'message',data:{id:'u',role:'user',text:'input'}},

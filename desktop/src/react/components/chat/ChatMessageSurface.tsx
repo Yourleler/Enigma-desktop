@@ -57,11 +57,11 @@ export const ChatMessageSurface = memo(function ChatMessageSurface({
   const anchorsCache = useRef<TimelineAnchor[]>(EMPTY_TIMELINE_ANCHORS);
   const timelineAnchors = useMemo(() => {
     const next = active ? buildTimelineAnchors(items) : EMPTY_TIMELINE_ANCHORS;
-    // Streaming assistant tokens do not move the prompt landmarks. Keep their
-    // identity stable so every token does not trigger a full layout measurement.
+    // Keep visible preview data current. Geometry is keyed by message identity
+    // inside the navigator, separately from the bounded reply excerpt.
     if (next.length === anchorsCache.current.length && next.every((anchor, i) => {
       const previous = anchorsCache.current[i];
-      return anchor.messageId === previous.messageId && anchor.preview === previous.preview && anchor.timestamp === previous.timestamp;
+      return anchor.messageId === previous.messageId && anchor.preview === previous.preview && anchor.timestamp === previous.timestamp && anchor.replyPreview === previous.replyPreview && anchor.searchText === previous.searchText;
     })) return anchorsCache.current;
     anchorsCache.current = next;
     return next;
@@ -134,24 +134,33 @@ export const ChatMessageSurface = memo(function ChatMessageSurface({
   }, [active, bottomScroll, emitScrollButton, sessionPath]);
 
   const prevFirstId = useRef<string | undefined>(undefined);
-  useEffect(() => {
+  const prependPosition=useRef<{messageId?:string;offset?:number;top:number;height:number}|null>(null);
+  useLayoutEffect(() => {
     const firstId = items.find((item) => item.type === 'message')?.data.id;
     const el = ref.current;
     if (el && prevFirstId.current && firstId !== prevFirstId.current) {
-      const prevHeight = el.dataset.prevScrollHeight;
-      if (prevHeight) {
-        el.scrollTop += el.scrollHeight - Number(prevHeight);
+      const saved=prependPosition.current;
+      const anchor=saved?.messageId?messageElementsRef.current.get(saved.messageId):null;
+      if(saved){
+        // Native scroll anchoring may already have moved the viewport. Apply
+        // only the remaining delta rather than adding the page height twice.
+        el.scrollTop=anchor&&saved.offset!==undefined
+          ? el.scrollTop+anchor.getBoundingClientRect().top-el.getBoundingClientRect().top-saved.offset
+          : saved.top+el.scrollHeight-saved.height;
       }
+      prependPosition.current=null;
     }
     prevFirstId.current = firstId;
   }, [items]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = ref.current;
     if (el && loadingMore) {
-      el.dataset.prevScrollHeight = String(el.scrollHeight);
-    }
-  }, [loadingMore]);
+      bottomScroll.cancelFollow();
+      const bounds=el.getBoundingClientRect(),anchor=[...messageElementsRef.current].find(([,node])=>node.getBoundingClientRect().bottom>bounds.top+16);
+      prependPosition.current={top:el.scrollTop,height:el.scrollHeight,...(anchor?{messageId:anchor[0],offset:anchor[1].getBoundingClientRect().top-bounds.top}:{})};
+    } else if(!loadingMore) prependPosition.current=null;
+  }, [loadingMore,bottomScroll]);
 
   useLayoutEffect(() => {
     if (active) bottomScroll.armInstantLanding();
@@ -167,8 +176,11 @@ export const ChatMessageSurface = memo(function ChatMessageSurface({
   }, [bottomScroll, items.length]);
 
   const prevLen = useRef(items.length);
+  const prevFirstForFollow=useRef(items.find(item=>item.type==='message')?.data.id);
   useEffect(() => {
-    if (items.length > prevLen.current && active) {
+    const first=items.find(item=>item.type==='message')?.data.id;
+    const prepended=!!prevFirstForFollow.current&&first!==prevFirstForFollow.current&&items.some(item=>item.type==='message'&&item.data.id===prevFirstForFollow.current);
+    if (items.length > prevLen.current && active && !prepended) {
       const last = items[items.length - 1];
       if (last?.type === 'message' && last.data.role === 'user') {
         bottomScroll.scrollToBottom({ mode: 'instant', forceSticky: true });
@@ -177,6 +189,7 @@ export const ChatMessageSurface = memo(function ChatMessageSurface({
       }
     }
     prevLen.current = items.length;
+    prevFirstForFollow.current=first;
   }, [items, items.length, active, bottomScroll]);
 
   const { t } = useI18n();

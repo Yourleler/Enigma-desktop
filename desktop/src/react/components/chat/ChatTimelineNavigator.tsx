@@ -3,6 +3,7 @@ import type { RefObject } from 'react';
 import { ConversationRail } from './ConversationRail';
 import styles from './Chat.module.css';
 import type { TimelineAnchor } from './timeline-anchors';
+import {createDocumentHighlights,findTextRanges} from '../../utils/text-search-ranges';
 
 interface MarkerLayout {
   targetTop: number;
@@ -62,11 +63,18 @@ export const ChatTimelineNavigator = memo(function ChatTimelineNavigator({
 }: Props) {
   const [layouts, setLayouts] = useState<Record<string, MarkerLayout>>({});
   const [activeId, setActiveId] = useState<string | null>(null);
+  const anchorIdentities=anchors.map(anchor=>anchor.messageId).join('\0');
+  const latestAnchors=useRef(anchors);latestAnchors.current=anchors;
+  const queryHighlights=useRef<ReturnType<typeof createDocumentHighlights>>(null);
+  const clearQueryHighlights=useCallback(()=>{queryHighlights.current?.clear();queryHighlights.current=null;},[]);
+  useEffect(()=>clearQueryHighlights,[clearQueryHighlights]);
+  useEffect(()=>{if(!active)clearQueryHighlights();},[active,clearQueryHighlights]);
   const rafRef = useRef<number | null>(null);
   const measureRafRef = useRef<number | null>(null);
   const shouldMeasure = active && anchors.length > 0;
 
   const measure = useCallback(() => {
+    const anchors=latestAnchors.current;
     const panel = scrollRef.current;
     if (!panel || anchors.length === 0) {
       setLayouts(prev => (Object.keys(prev).length === 0 ? prev : {}));
@@ -92,9 +100,10 @@ export const ChatTimelineNavigator = memo(function ChatTimelineNavigator({
     }
 
     setLayouts(prev => (layoutsEqual(prev, next) ? prev : next));
-  }, [anchors, messageElementsRef, scrollRef]);
+  }, [anchorIdentities, messageElementsRef, scrollRef]);
 
   const updateActive = useCallback(() => {
+    const anchors=latestAnchors.current;
     const panel = scrollRef.current;
     if (!panel || anchors.length === 0) {
       setActiveId(null);
@@ -120,7 +129,7 @@ export const ChatTimelineNavigator = memo(function ChatTimelineNavigator({
       }
     }
     setActiveId(nextId);
-  }, [anchors, layouts, scrollRef]);
+  }, [anchorIdentities, layouts, scrollRef]);
 
   useLayoutEffect(() => {
     if (!shouldMeasure) {
@@ -176,21 +185,29 @@ export const ChatTimelineNavigator = memo(function ChatTimelineNavigator({
     };
   }, [scrollRef, shouldMeasure, updateActive]);
 
-  const jumpTo = useCallback((anchor: TimelineAnchor) => {
+  const jumpTo = useCallback((anchor: TimelineAnchor, query?:string) => {
     const panel = scrollRef.current;
     const layout = layouts[anchor.messageId];
     if (!panel || !layout) return;
     onBeforeJump?.();
     const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    panel.scrollTo({ top: layout.targetTop, behavior: reduced ? 'auto' : 'smooth' });
     const target = messageElementsRef.current?.get(anchor.messageId);
+    clearQueryHighlights();
+    let top=layout.targetTop;
+    if(target&&query){
+      const ranges=findTextRanges(target,query,100),first=ranges[0];
+      const rect=first&&typeof first.getBoundingClientRect==='function'?first.getBoundingClientRect():null;
+      if(rect&&rect.height>0)top=Math.min(Math.max(0,panel.scrollHeight-panel.clientHeight),Math.max(0,panel.scrollTop+rect.top-panel.getBoundingClientRect().top-24));
+      queryHighlights.current=createDocumentHighlights(target,'enigma-timeline');queryHighlights.current?.set(ranges,0);
+    }
+    panel.scrollTo({ top, behavior: reduced ? 'auto' : 'smooth' });
     if (target) {
       target.classList.remove(styles.locateFlash);
       void target.offsetWidth;
       target.classList.add(styles.locateFlash);
     }
     setActiveId(anchor.messageId);
-  }, [layouts, scrollRef, onBeforeJump, messageElementsRef]);
+  }, [layouts, scrollRef, onBeforeJump, messageElementsRef,clearQueryHighlights]);
 
   const renderedAnchors = useMemo(
     () => anchors.filter(anchor => layouts[anchor.messageId]),

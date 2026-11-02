@@ -8,6 +8,8 @@ export interface TimelineAnchor {
   timestamp: number | null;
   label: string;
   preview?: string;
+  /** Full loaded input for directory filtering; display excerpts remain bounded. */
+  searchText?: string;
   replyPreview?: string;
   role: ChatMessage['role'];
   markerWidthEm: number;
@@ -140,6 +142,7 @@ export function buildTimelineAnchors(
       role: message.role,
       label: formatTimelinePromptPreview(previewSource),
       preview: formatTimelinePromptPreview(previewSource, 600),
+      searchText: previewSource,
       ...(replies.has(message.id) ? { replyPreview: replies.get(message.id) } : {}),
       markerWidthEm: measureTimelineMarkerWidthEm(previewLength),
     };

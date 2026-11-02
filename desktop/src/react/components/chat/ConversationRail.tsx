@@ -4,11 +4,12 @@ import type { TimelineAnchor } from './timeline-anchors';
 import { formatTimelineAnchorLabel } from './timeline-anchors';
 import styles from './ConversationRail.module.css';
 import { AppIcon } from '../../ui/app-icons';
+import {literalSearchIndex,matchCenteredSnippet} from '../../../../../shared/history-search.ts';
 
 interface Props {
   anchors: TimelineAnchor[];
   activeId: string | null;
-  onJump: (anchor: TimelineAnchor) => void;
+  onJump: (anchor: TimelineAnchor, query?: string) => void;
   hasMore?: boolean;
   loadingMore?: boolean;
   onLoadMore?: () => void;
@@ -20,17 +21,20 @@ export function ConversationRail({ anchors, activeId, onJump, hasMore, loadingMo
   const nav = useRef<HTMLElement>(null), trigger = useRef<HTMLButtonElement>(null), popup = useRef<HTMLDivElement>(null);
   const markers = useRef<HTMLDivElement>(null);
   const [directory, setDirectory] = useState(false), [query, setQuery] = useState('');
-  const [hover, setHover] = useState<{ anchor: TimelineAnchor; element: HTMLElement } | null>(null);
+  const [hover, setHover] = useState<{ messageId: string; element: HTMLElement } | null>(null);
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const activeIndex = anchors.findIndex(anchor => anchor.messageId === activeId);
-  const hoverIndex = anchors.findIndex(anchor => anchor.messageId === hover?.anchor.messageId);
-  const filtered = useMemo(() => anchors.filter(anchor => (anchor.preview || anchor.label).toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())), [anchors, query]);
+  const hoverIndex = anchors.findIndex(anchor => anchor.messageId === hover?.messageId);
+  const filtered = useMemo(() => anchors.filter(anchor => (anchor.searchText || anchor.preview || anchor.label).toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())), [anchors, query]);
   const closeHover = () => { clearTimeout(timer.current); timer.current = setTimeout(() => setHover(null), 140); };
   const closeDirectory = () => { setDirectory(false); trigger.current?.focus(); };
-  const jump = (anchor: TimelineAnchor) => { onJump(anchor); setHover(null); if (directory) closeDirectory(); };
+  const jump = (anchor: TimelineAnchor) => { if(directory&&query.trim())onJump(anchor,query.trim());else onJump(anchor); setHover(null); if (directory) closeDirectory(); };
 
   useEffect(() => () => clearTimeout(timer.current), []);
+  useEffect(()=>{
+    if(hover && hoverIndex<0){clearTimeout(timer.current);setHover(null);}
+  },[hover,hoverIndex]);
   useLayoutEffect(() => {
     const list = markers.current;
     // Scroll only this rail, never the transcript or the whole window. Manual
@@ -75,7 +79,7 @@ export function ConversationRail({ anchors, activeId, onJump, hasMore, loadingMo
     if (directory) popup.current?.querySelector('input')?.focus();
   }, [directory]);
   if (!anchors.length) return null;
-  const preview = hover?.anchor;
+  const preview = hoverIndex>=0 ? anchors[hoverIndex] : undefined;
   return <nav ref={nav} className={styles.rail} aria-label="对话快速跳转">
     <button ref={trigger} type="button" className={styles.directoryTrigger} aria-label="打开对话目录" aria-expanded={directory} aria-haspopup="dialog" data-tooltip={`对话目录 · 已加载 ${anchors.length} 轮\n在刻度上滚动浏览；悬停预览，点击定位`} onClick={() => { setHover(null); setDirectory(value => !value); }}>
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true"><path d="M5 7h14M5 12h10M5 17h12"/></svg>
@@ -83,9 +87,9 @@ export function ConversationRail({ anchors, activeId, onJump, hasMore, loadingMo
     <div ref={markers} className={styles.markers} data-tooltip-managed="" aria-label="滚动浏览对话轮次">
       {anchors.map((anchor,index) => {
         const selected = anchor.messageId === activeId;
-        return <button key={anchor.messageId} type="button" className={`${styles.marker} ${selected ? styles.selected : ''}`} data-near={hoverIndex >= 0 && Math.abs(hoverIndex-index) === 1 || undefined} aria-label={`第 ${index + 1} 轮：${anchor.label}`} aria-describedby={hover?.anchor.messageId === anchor.messageId && !directory ? previewId : undefined} aria-current={selected ? 'step' : undefined} tabIndex={selected || (activeIndex < 0 && index === 0) ? 0 : -1}
-          onMouseEnter={event => { clearTimeout(timer.current); if (!directory) setHover({ anchor, element: event.currentTarget }); }} onMouseLeave={closeHover}
-          onFocus={event => { clearTimeout(timer.current); if (!directory) setHover({ anchor, element: event.currentTarget }); }} onBlur={closeHover}
+        return <button key={anchor.messageId} type="button" className={`${styles.marker} ${selected ? styles.selected : ''}`} data-near={hoverIndex >= 0 && Math.abs(hoverIndex-index) === 1 || undefined} aria-label={`第 ${index + 1} 轮：${anchor.label}`} aria-describedby={hover?.messageId === anchor.messageId && !directory ? previewId : undefined} aria-current={selected ? 'step' : undefined} tabIndex={selected || (activeIndex < 0 && index === 0) ? 0 : -1}
+          onMouseEnter={event => { clearTimeout(timer.current); if (!directory) setHover({ messageId:anchor.messageId, element: event.currentTarget }); }} onMouseLeave={closeHover}
+          onFocus={event => { clearTimeout(timer.current); if (!directory) setHover({ messageId:anchor.messageId, element: event.currentTarget }); }} onBlur={closeHover}
           onClick={() => jump(anchor)} onKeyDown={event => {
             if (!['ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.key)) return;
             event.preventDefault();
@@ -117,11 +121,18 @@ export function ConversationRail({ anchors, activeId, onJump, hasMore, loadingMo
           if (event.key === 'ArrowDown') { event.preventDefault(); popup.current?.querySelector<HTMLButtonElement>('[data-turn]')?.focus(); }
         }}/>
         <div className={styles.directoryList}>
-          {filtered.map(anchor => <button key={anchor.messageId} data-turn="" aria-current={anchor.messageId === activeId ? 'step' : undefined} onClick={() => jump(anchor)}><small>第 {anchors.indexOf(anchor) + 1} 轮{anchor.timestamp ? ` · ${formatTimelineAnchorLabel(anchor.timestamp)}` : ''}</small><span>{anchor.preview || anchor.label}</span></button>)}
+          {filtered.map(anchor => <button key={anchor.messageId} data-turn="" aria-current={anchor.messageId === activeId ? 'step' : undefined} onClick={() => jump(anchor)}><small>第 {anchors.indexOf(anchor) + 1} 轮{anchor.timestamp ? ` · ${formatTimelineAnchorLabel(anchor.timestamp)}` : ''}</small><span><DirectoryExcerpt anchor={anchor} query={query}/></span></button>)}
           {!filtered.length && <p>已加载的提问中没有匹配内容。</p>}
         </div>
         <footer>{hasMore && <button disabled={loadingMore} onClick={onLoadMore}>{loadingMore ? '正在加载…' : '加载更早的对话'}</button>}{onFind && <button onClick={() => { closeDirectory(); onFind(); }}>全文查找 <kbd>⌘ / Ctrl F</kbd></button>}</footer>
       </> : preview && <><header><strong>第 {anchors.indexOf(preview) + 1} 轮{preview.messageId===activeId?' · 正在阅读':''}</strong><small>{preview.timestamp ? formatTimelineAnchorLabel(preview.timestamp) : '时间未记录'}</small></header><div className={styles.previewBody}><span className={styles.previewRole}>{preview.role==='user'?'你的输入':'助手回复'}</span><p>{preview.preview || preview.label}</p>{preview.replyPreview&&<><span className={styles.previewRole}>助手回复</span><p>{preview.replyPreview}</p></>}</div><small>滚动浏览轮次 · 点击定位 · ↑ ↓ 切换</small></>}
     </div>, document.body)}
   </nav>;
+}
+
+function DirectoryExcerpt({anchor,query}:{anchor:TimelineAnchor;query:string}){
+  const term=query.trim();
+  if(!term)return <>{anchor.preview||anchor.label}</>;
+  const text=matchCenteredSnippet(anchor.searchText||anchor.preview||anchor.label,term),at=literalSearchIndex(text,term);
+  return at<0?<>{text}</>:<>{text.slice(0,at)}<mark className={styles.match}>{text.slice(at,at+term.length)}</mark>{text.slice(at+term.length)}</>;
 }

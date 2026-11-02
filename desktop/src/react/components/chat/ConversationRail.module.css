@@ -44,3 +44,6 @@
 .preview p { font-size: 12px; line-height: 1.55; }
 @media (max-height: 520px) { .rail { max-height:38%; } }
 @media(any-pointer:coarse) { .rail {width:40px;} .marker {height:30px;} .directoryTrigger {width:40px;height:40px;flex-basis:40px;} }
+.match {background:var(--search-match-bg);color:var(--search-match-text);border-radius:3px;padding:0 2px;box-shadow:0 0 0 1px var(--search-match-outline);font-weight:600;}
+::highlight(enigma-timeline-results) {background:var(--search-match-bg);color:var(--search-match-text);}
+::highlight(enigma-timeline-current) {background:var(--search-active-bg);color:var(--search-active-text);text-decoration:underline;}
