@@ -193,7 +193,7 @@ function seedSession() {
     connected: true,
     pendingNewSession: false,
     pendingDraftId:null,
-    drafts:{},draftDocs:{},
+    drafts:{},draftDocs:{},draftQuotes:{},
     streamingSessions: [],
     inlineErrors: {},
     attachedFiles: [{
@@ -308,6 +308,31 @@ describe('InputArea media send', () => {
     act(()=>{mocks.editorJson=fresh;useStore.getState().setDraft('/session/media.jsonl','new text while preparing',fresh);useStore.getState().addAttachedFile({path:'/tmp/new.txt',name:'new.txt'});});
     release('IMAGE_BASE64');await waitFor(()=>expect(mocks.wsSend).toHaveBeenCalledTimes(1));
     expect(JSON.parse(mocks.wsSend.mock.calls[0][0]).text).toContain('first message');expect(mocks.clearContent).not.toHaveBeenCalled();expect(useStore.getState().drafts.sess_media).toBe('new text while preparing');expect(useStore.getState().attachedFiles).toEqual([{path:'/tmp/new.txt',name:'new.txt'}]);
+  });
+
+  it.each([false,true])('consumes only the submitted quote after async send (switch session: %s)',async switched=>{
+    const original={text:'source to send',sourceKind:'chat' as const,sourceTitle:'Reply',charCount:14};
+    const later={...original,text:'keep this new quote',charCount:19};
+    useStore.getState().addQuotedSelection(original);
+    let release!:(value:string)=>void;window.platform.readFileBase64=vi.fn(()=>new Promise<string>(r=>release=r));render(<InputArea/>);
+    fireEvent.click(screen.getByTestId('send'));await waitFor(()=>expect(window.platform.readFileBase64).toHaveBeenCalled());
+    act(()=>{
+      if(switched)useStore.setState({currentSessionPath:'/session/other.jsonl',currentSessionId:'other',attachedFiles:[]});
+      useStore.getState().addQuotedSelection(later);
+    });
+    release('IMAGE_BASE64');await waitFor(()=>expect(mocks.wsSend).toHaveBeenCalledTimes(1));
+    expect(JSON.stringify(JSON.parse(mocks.wsSend.mock.calls[0][0]))).toContain('source to send');
+    expect(JSON.stringify(JSON.parse(mocks.wsSend.mock.calls[0][0]))).not.toContain('keep this new quote');
+    expect(useStore.getState().quotedSelections).toEqual([later]);
+    expect(useStore.getState().draftQuotes.sess_media).toEqual(switched?[]:[later]);
+  });
+
+  it('keeps an unsent quote when message delivery fails',async()=>{
+    const quote={text:'keep source',sourceKind:'chat' as const,sourceTitle:'Reply',charCount:11};
+    useStore.getState().addQuotedSelection(quote);mocks.socketAvailable=false;
+    render(<InputArea/>);fireEvent.click(screen.getByTestId('send'));
+    await waitFor(()=>expect(window.platform.readFileBase64).toHaveBeenCalled());
+    expect(mocks.wsSend).not.toHaveBeenCalled();expect(useStore.getState().draftQuotes.sess_media).toEqual([quote]);
   });
 
   it.each(['missing','closed','throws'])('preserves composer data when the socket is %s',async failure=>{

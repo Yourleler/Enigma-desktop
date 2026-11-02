@@ -8,7 +8,7 @@ import { createAgentSlice, type AgentSlice } from './agent-slice';
 import { createChannelSlice, type ChannelSlice } from './channel-slice';
 import { createDeskSlice, type DeskSlice } from './desk-slice';
 import { createModelSlice, type ModelSlice } from './model-slice';
-import { createInputSlice, type InputSlice } from './input-slice';
+import { createInputSlice, currentInputDraftKey, type InputSlice } from './input-slice';
 import { createChatSlice, type ChatSlice } from './chat-slice';
 import { createChatFindSlice, type ChatFindSlice } from './chat-find-slice';
 import { createToastSlice, type ToastSlice } from './toast-slice';
@@ -89,6 +89,17 @@ export const useStore = create<StoreState>()((set, _get, _api) => ({
 configureMessageLiveVersionSessionKeyResolver((sessionPath) => (
   sessionScopedKey(useStore.getState(), sessionPath)
 ));
+
+// All activation paths (home, restored, deleted-agent and quick-chat sessions)
+// share the same quote projection. Changing views never deletes saved context.
+useStore.subscribe((state, previous) => {
+  const key = currentInputDraftKey(state);
+  const changedSession = key !== currentInputDraftKey(previous);
+  if (!changedSession && state.draftQuotes === previous.draftQuotes) return;
+  const quotes = state.draftQuotes[key] ?? [];
+  useStore.setState({ quotedSelections: quotes, quotedSelection: quotes[0] ?? null,
+    ...(changedSession ? { quoteCandidate: null } : {}) });
+});
 
 // Re-export slice types
 export type {

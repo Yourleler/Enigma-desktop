@@ -664,7 +664,7 @@
     ],
     "version": 3
   },
-  "payloadFingerprint": "sha256:fb82fb8cb25b8e1c6f275a1b1072c3ceffd013999c85b8eb38b7cfd23efa09d8",
+  "payloadFingerprint": "sha256:e19024b43fe08a8728763448b28518717f0d59ab134d9e73bbe6692f709ec504",
   "registry": [
     {
       "affectedByEpochMigration": true,
@@ -2746,7 +2746,7 @@
       ],
       "restorePolicy": "Restore the full file atomically before opening clients. Restart clients to obtain the restored revision baseline; never replay stale conditional mutations as unconditional writes.",
       "schemaContract": {
-        "compatibility": "Draft file version 1 is retained. Optional sequence and per-key revisions support conditional writes; absent fields normalize to zero/empty. Meaningful rich-text atoms may accompany empty text. Legacy readers keep text/doc fields but cannot preserve concurrency metadata, so downgrade requires a fresh client/server baseline; no claim of conditional-write protection across an old writer.",
+        "compatibility": "Draft file version 1 is retained. Optional sequence, per-key revisions and source quote arrays support conditional writes and quote-only drafts; absent fields normalize to zero/empty. Quote records retain source identity and text, excluding transient screen geometry. New clients require the quotes capability before syncing quote drafts; new servers reject legacy writes that omit existing quotes. Older servers can discard this additive field, so downgrade requires preserving the full draft backup and a fresh client/server baseline. No claim of quote or concurrency protection across an old server writer.",
         "kind": "runtime-source",
         "source": "core/input-drafts-store.ts"
       },
@@ -3414,8 +3414,8 @@
   ],
   "review": {
     "classification": "compatible",
-    "compatibilityReason": "Empty sessions restore their existing model_change selection explicitly instead of using the agent default. Managed workers populate the existing projectId and error fields; existing cancellation status is preserved. JSONL entry formats, ledger schema versions, SQLite tables and registry mappings do not change. Source digests were reviewed; no DATA_EPOCH migration is required.",
-    "payloadFingerprint": "sha256:fb82fb8cb25b8e1c6f275a1b1072c3ceffd013999c85b8eb38b7cfd23efa09d8"
+    "compatibilityReason": "Optional quotes preserve source excerpts in version 1 input drafts. New servers protect stored quotes from clients that omit them; new clients keep a local recovery journal until a quotes-capable server acknowledges. Existing entries load without migration. Source geometry is transient, and backups are required for downgrade to an older server that does not understand quotes. DATA_EPOCH remains 1.",
+    "payloadFingerprint": "sha256:e19024b43fe08a8728763448b28518717f0d59ab134d9e73bbe6692f709ec504"
   },
   "schemas": [
     {
@@ -3880,10 +3880,10 @@
       "protocolModules": [
         {
           "module": "shared/input-drafts.ts",
-          "sourceHash": "sha256:c1367e14d80b5834813a533d3c9ef3a76cfc6d7380f95a55cbc27e89334afd84"
+          "sourceHash": "sha256:70389d0f483852db701db8bdcd23c9ad5a85376078c49e61bb7dc1b25a1e0e86"
         }
       ],
-      "sourceHash": "sha256:7d1a4ddaa468717f57b408404d79cea0673538e393b1996964cb163d2535985f",
+      "sourceHash": "sha256:3da19015b20d5d503890712fa93bd43f754d1ce487fe71d55851d995142c1fbb",
       "storeId": "session-drafts-and-projects"
     },
     {

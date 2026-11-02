@@ -14,6 +14,7 @@ export function QuotedSelectionCard() {
           key={`${selection.sourceKind}:${selection.sourceFilePath || selection.sourceSessionPath || ''}:${selection.sourceMessageId || ''}:${selection.updatedAt || index}`}
           icon={<TextCursorIcon />}
           name={selection.text}
+          removeLabel={`移除引用 ${index + 1}`}
           onRemove={() => removeQuotedSelection(index)}
         />
       ))}

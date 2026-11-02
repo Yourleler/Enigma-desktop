@@ -12,7 +12,7 @@
  */
 import { Hono } from "hono";
 import { safeJson } from "../hono-helpers.ts";
-import { normalizeInputDraftSurface, INPUT_DRAFT_MAX_ENTRY_CHARS } from "../../shared/input-drafts.ts";
+import { normalizeInputDraftSurface, normalizeInputDraftQuotes, INPUT_DRAFT_MAX_ENTRY_CHARS } from "../../shared/input-drafts.ts";
 
 export function createInputDraftsRoute(engine) {
   const route = new Hono();
@@ -37,10 +37,12 @@ export function createInputDraftsRoute(engine) {
       if (!surface) return c.json({ error: "input draft surface is invalid" }, 400);
       if (typeof body.text !== "string") return c.json({ error: "draft text must be a string" }, 400);
       if (body.expectedRevision !== undefined && (!Number.isSafeInteger(body.expectedRevision) || body.expectedRevision < 0)) return c.json({ error: "invalid draft revision" }, 400);
-      if (JSON.stringify({text:body.text,doc:body.doc}).length > INPUT_DRAFT_MAX_ENTRY_CHARS - 100) return c.json({error:"draft is too large; original retained"},413);
+      if (body.quotes !== undefined && (!Array.isArray(body.quotes) || normalizeInputDraftQuotes(body.quotes).length !== body.quotes.length)) return c.json({ error: "invalid draft quotes; original retained" }, 400);
+      if (JSON.stringify({text:body.text,doc:body.doc,quotes:body.quotes}).length > INPUT_DRAFT_MAX_ENTRY_CHARS - 100) return c.json({error:"draft is too large; original retained"},413);
       const entry = {
         text: typeof body.text === "string" ? body.text : "",
         doc: body.doc,
+        quotes: body.quotes,
         updatedAt: Date.now(),
         expectedRevision: body.expectedRevision,
       };

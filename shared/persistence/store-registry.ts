@@ -771,7 +771,7 @@ export const PERSISTENT_STORES: readonly StoreDescriptor[] = Object.freeze([
     format: "json",
     schemaSource: runtimeSource("core/input-drafts-store.ts", "InputDraftsStore and SessionProjectCatalogStore normalizers"),
     protocolModules: ['shared/input-drafts.ts'],
-    compatibility: 'Draft file version 1 is retained. Optional sequence and per-key revisions support conditional writes; absent fields normalize to zero/empty. Meaningful rich-text atoms may accompany empty text. Legacy readers keep text/doc fields but cannot preserve concurrency metadata, so downgrade requires a fresh client/server baseline; no claim of conditional-write protection across an old writer.',
+    compatibility: 'Draft file version 1 is retained. Optional sequence, per-key revisions and source quote arrays support conditional writes and quote-only drafts; absent fields normalize to zero/empty. Quote records retain source identity and text, excluding transient screen geometry. New clients require the quotes capability before syncing quote drafts; new servers reject legacy writes that omit existing quotes. Older servers can discard this additive field, so downgrade requires preserving the full draft backup and a fresh client/server baseline. No claim of quote or concurrency protection across an old server writer.',
     checkpointPolicy: 'Preserve the entire input-drafts.v1.json document including revision tombstones; client recovery journals remain in their browser profile and are never copied into another user profile.',
     restorePolicy: 'Restore the full file atomically before opening clients. Restart clients to obtain the restored revision baseline; never replay stale conditional mutations as unconditional writes.',
 

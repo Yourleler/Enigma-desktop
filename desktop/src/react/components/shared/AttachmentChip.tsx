@@ -11,6 +11,7 @@ interface AttachmentChipProps {
   icon: ReactNode;
   name: string;
   onRemove?: () => void;
+  removeLabel?: string;
   className?: string;
   variant?: 'normal' | 'expired';
 }
@@ -19,6 +20,7 @@ export const AttachmentChip = memo(function AttachmentChip({
   icon,
   name,
   onRemove,
+  removeLabel = `移除 ${name}`,
   className,
   variant = 'normal',
 }: AttachmentChipProps) {
@@ -29,8 +31,8 @@ export const AttachmentChip = memo(function AttachmentChip({
         {name}
       </span>
       {onRemove && (
-        <button className={styles.remove} onClick={onRemove}>
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <button type="button" className={styles.remove} onClick={onRemove} aria-label={removeLabel} title={removeLabel}>
+          <svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
           </svg>
         </button>

@@ -2185,11 +2185,15 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
       if(ownsComposer){
         current.setAttachedFiles(withoutSubmittedFiles(current.attachedFiles,clickedAttachedFiles));
         if(clickedDocContextAttached&&current.previewOpen&&current.previewItems.find(item=>item.id===current.activeTabId)?.filePath===clickedDoc?.path)setDocContextAttached(false);
-        if(clickedQuotes.length>0)current.setQuotedSelections(current.quotedSelections.filter(quote=>!clickedQuotes.some(sent=>JSON.stringify(sent)===JSON.stringify(quote))));
       }else{
         const key=sessionScopedKey(current,sessionRef.sessionPath)||sessionRef.sessionPath;
         const files=sessionScopedValue(current,current.attachedFilesBySession,sessionRef.sessionPath)||[];
         useStore.setState({attachedFilesBySession:{...current.attachedFilesBySession,[key]:withoutSubmittedFiles(files,clickedAttachedFiles)}});
+      }
+      if(clickedQuotes.length>0){
+        const latest=useStore.getState();
+        const quotes=sessionScopedValue(latest,latest.draftQuotes,targetKey)||[];
+        latest.setDraftQuotes(targetKey,quotes.filter(quote=>!clickedQuotes.some(sent=>JSON.stringify(sent)===JSON.stringify(quote))));
       }
       upsertOptimisticSessionFirstMessage(sessionPathForSend, text, new Date().toISOString());
     } catch(error){addToast(error instanceof Error?error.message:'消息未发送，输入已保留','error');} finally {
@@ -2353,17 +2357,16 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
     }
   }, [continuingDeletedAgentSession, currentSessionPath, t]);
 
+  const inputContext = <InputContextRow attachedFiles={attachedFiles} removeAttachedFile={removeAttachedFile} hasQuotedSelection={quotedSelections.length > 0}/>;
+  const draftSaveNotice = <DraftSaveNotice draftKey={draftKey ? (sessionScopedKey(useStore.getState(),draftKey)||draftKey) : null}/>;
+
   return (
     <ComposerSurface focused={imageFocus&&!expandedComposer} modalActive={imageFocus||expandedComposer} onDismiss={()=>setPreviewReset(value=>value+1)}>
     <div
       className={`${styles['input-surface']}${surface === 'mobile' ? ` ${styles['input-surface-mobile']}` : ''}`}
       ref={inputSurfaceRef}
     >
-      <InputContextRow
-        attachedFiles={attachedFiles}
-        removeAttachedFile={removeAttachedFile}
-        hasQuotedSelection={quotedSelections.length > 0}
-      />
+      {!expandedComposer&&inputContext}
       <InputStatusBars
         slashBusy={slashBusy}
         slashBusyLabel={slashCommands.find(c => c.name === slashBusy)?.busyLabel || t('common.executing')}
@@ -2405,7 +2408,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
       </div>
       <InputQueue editor={editor}/>
       <TokenMeterPill />
-      <DraftSaveNotice draftKey={draftKey ? (sessionScopedKey(useStore.getState(),draftKey)||draftKey) : null}/>
+      {!expandedComposer&&draftSaveNotice}
       {historyNotice?.scope===historyScope&&<div className={styles['input-history-notice']} role="status"><span>{historyNotice.text}</span><button type="button" onClick={()=>navigateInputHistory(1)} data-tooltip="Command+Y 向后；Command+Z 向前。只切换输入，不发送消息">向后</button>{historyCursor.current&&<button type="button" onClick={()=>{historyCursor.current=null;navigateInputHistory(1);}}>返回草稿</button>}</div>}
       {pendingSessionSwitchPath&&<p role="status" className={styles['session-switch-hint']}>{locale?.startsWith('zh')?'正在打开目标对话，草稿就绪后即可输入…':'Opening the selected chat; input resumes when its draft is ready…'}</p>}
       <div className={styles['input-stack']}>
@@ -2432,7 +2435,7 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
             onCompositionStart={() => { isComposing.current = true; }}
             onCompositionEnd={() => { isComposing.current = false; }}
           >
-            <ComposerEditor editor={editor} expanded={expandedComposer} onClose={closeExpandedComposer} onAttach={handleAttach} scope={historyScope} locked={inputLocked} onPinnedChange={setImageFocus} resetPreview={previewReset}/>
+            <ComposerEditor editor={editor} expanded={expandedComposer} expandedContext={<>{inputContext}{draftSaveNotice}</>} onClose={closeExpandedComposer} onAttach={handleAttach} scope={historyScope} locked={inputLocked} onPinnedChange={setImageFocus} resetPreview={previewReset}/>
           </div>
           <InputControlBar
             t={t}

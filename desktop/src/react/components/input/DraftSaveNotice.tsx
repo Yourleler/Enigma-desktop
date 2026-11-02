@@ -1,6 +1,9 @@
 import {useEffect,useState} from 'react';
 import {chooseDraftVersion,flushInputDrafts,getDraftRecoveryCopies,restoreDraftCopy,retryInputDraft,useDraftSaveState} from '../../stores/input-draft-persistence';
 import './DraftSaveNotice.css';
+function draftPreview(entry:{text:string;quotes?:{text:string;sourceTitle:string}[]}|null|undefined){
+ return [entry?.text,...(entry?.quotes||[]).map(quote=>`引用 · ${quote.sourceTitle}\n${quote.text}`)].filter(Boolean).join('\n\n')||'（空草稿）';
+}
 export function DraftSaveNotice({draftKey}:{draftKey:string|null}){
  const savedStatus=useDraftSaveState(s=>draftKey?s.items[draftKey]:undefined),[expanded,setExpanded]=useState(false);
  const status=savedStatus||{state:'saved' as const,localDurable:true};
@@ -17,10 +20,10 @@ export function DraftSaveNotice({draftKey}:{draftKey:string|null}){
   {['offline','local-error','rejected'].includes(status.state)&&<button type="button" onClick={()=>{retryInputDraft(draftKey);flushInputDrafts();}}>重试保存</button>}
   {status.state==='conflict'&&<>
    <button type="button" onClick={()=>setExpanded(v=>!v)} aria-expanded={expanded}>比较版本</button>
-   {expanded&&<div className="enigma-draft-compare"><strong>已同步版本</strong><pre>{status.remote?.text||'（空草稿）'}</pre><button type="button" onClick={()=>chooseDraftVersion(draftKey,'remote')}>使用已同步版本</button><button type="button" onClick={()=>chooseDraftVersion(draftKey,'local')}>保留当前输入并同步</button></div>}
+   {expanded&&<div className="enigma-draft-compare"><strong>已同步版本</strong><pre>{draftPreview(status.remote)}</pre><button type="button" onClick={()=>chooseDraftVersion(draftKey,'remote')}>使用已同步版本</button><button type="button" onClick={()=>chooseDraftVersion(draftKey,'local')}>保留当前输入并同步</button></div>}
   </>}
   {(status.state!=='saved'||copies.length>0)&&status.state!=='conflict'&&<button type="button" onClick={()=>setExpanded(v=>!v)} aria-expanded={expanded}>恢复副本</button>}
-  {expanded&&status.state!=='conflict'&&copies.length>0&&<div className="enigma-draft-compare">{copies.map(copy=><article key={copy.id}><time>{new Date(copy.updatedAt).toLocaleString()}</time><pre>{copy.text||'（空草稿）'}</pre><button type="button" onClick={()=>restoreDraftCopy(copy)}>恢复此副本</button></article>)}</div>}
+  {expanded&&status.state!=='conflict'&&copies.length>0&&<div className="enigma-draft-compare">{copies.map(copy=><article key={copy.id}><time>{new Date(copy.updatedAt).toLocaleString()}</time><pre>{draftPreview(copy)}</pre><button type="button" onClick={()=>restoreDraftCopy(copy)}>恢复此副本</button></article>)}</div>}
   {expanded&&status.state!=='conflict'&&!copies.length&&<span>没有需要恢复的未同步副本。</span>}
  </div>;
 }

@@ -72,7 +72,7 @@ export class InputDraftsStore {
   getAll(surface) {
     const data = this._load();
     const bucket = data.surfaces[surface];
-    return { protocol: 2, home: bucket?.home || null, sessions: { ...(bucket?.sessions || {}) }, revisions: { ...(bucket?.revisions || {}) } };
+    return { protocol: 2, capabilities: { quotes: true }, home: bucket?.home || null, sessions: { ...(bucket?.sessions || {}) }, revisions: { ...(bucket?.revisions || {}) } };
   }
 
   _set(surface, key, rawEntry) {
@@ -80,6 +80,11 @@ export class InputDraftsStore {
     const current = key === HOME_DRAFT_KEY ? bucket.home : bucket.sessions[key] || null;
     const revision = bucket.revisions[key] || 0;
     if (rawEntry.expectedRevision !== undefined && rawEntry.expectedRevision !== revision) {
+      return { conflict: true, revision, entry: current };
+    }
+    // An older renderer cannot see quote cards. Do not let it erase them while
+    // saving what appears to be an empty or text-only composer.
+    if (current?.quotes?.length && rawEntry.quotes === undefined) {
       return { conflict: true, revision, entry: current };
     }
     const entry = normalizeInputDraftEntry(rawEntry);

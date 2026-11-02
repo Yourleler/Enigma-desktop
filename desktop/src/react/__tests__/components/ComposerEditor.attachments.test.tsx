@@ -18,7 +18,7 @@ function Harness(){
  const [expanded,setExpanded]=useState(false),[pinned,setPinned]=useState(false),[reset,setReset]=useState(0);
  const editor=useEditor({extensions:createInputEditorExtensions(''),content:{type:'doc',content:[{type:'paragraph',content:[{type:'text',text:'before '},badge('first.png'),{type:'text',text:' after'}]}]}});
  if(editor)liveEditor=editor;
- return <ComposerSurface focused={pinned&&!expanded} onDismiss={()=>setReset(v=>v+1)}><div data-liquid="composer"><button onClick={()=>setExpanded(true)}>扩大输入</button><ComposerEditor editor={editor} expanded={expanded} onClose={()=>setExpanded(false)} onAttach={()=>editor?.commands.insertContent(badge('picked.png'))} scope="fixture" onPinnedChange={setPinned} resetPreview={reset}/></div></ComposerSurface>;
+ return <ComposerSurface focused={pinned&&!expanded} onDismiss={()=>setReset(v=>v+1)}><div data-liquid="composer"><button onClick={()=>setExpanded(true)}>扩大输入</button><ComposerEditor editor={editor} expanded={expanded} expandedContext={<div>引用的来源段落<button>移除引用</button></div>} onClose={()=>setExpanded(false)} onAttach={()=>editor?.commands.insertContent(badge('picked.png'))} scope="fixture" onPinnedChange={setPinned} resetPreview={reset}/></div></ComposerSurface>;
 }
 beforeEach(()=>{vi.stubGlobal('ResizeObserver',class{observe(){}disconnect(){}});window.platform={getFileUrl:(path:string)=>`https://images.test${path}`} as never;});
 afterEach(()=>{cleanup();vi.unstubAllGlobals();delete (window as any).platform;});
@@ -31,6 +31,7 @@ describe('one persistent attachment editor',()=>{
   for(let i=0;i<3;i++){
    fireEvent.click(screen.getByText('扩大输入'));
    expect(screen.getByRole('dialog',{name:'展开编辑消息'})).toContainElement(first);
+   expect(screen.getByRole('dialog',{name:'展开编辑消息'})).toContainElement(screen.getByRole('button',{name:'移除引用'}));
    expect(screen.getByRole('img',{name:'first.png'})).toBe(first);
    fireEvent.click(screen.getByRole('button',{name:'完成编辑'}));
    expect(screen.getByRole('img',{name:'first.png'})).toBe(first);

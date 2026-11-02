@@ -2,6 +2,7 @@ import type { AudioWaveform } from './chat-types';
 import type { JSONContent } from '@tiptap/core';
 import { sessionScopedKey } from './session-slice';
 import { notifyDraftCleared, notifyDraftSet } from './input-draft-sync';
+import { HOME_DRAFT_KEY, type InputDraftQuote } from '../../../../shared/input-drafts';
 
 export interface AttachedFile {
   fileId?: string;
@@ -28,30 +29,20 @@ export interface FloatingAnchorRect {
   height: number;
 }
 
-export interface QuotedSelection {
-  text: string;
-  sourceTitle: string;
-  sourceKind: 'preview' | 'chat';
-  sourceFilePath?: string;
-  sourceSessionPath?: string;
-  sourceMessageId?: string;
-  sourceRole?: 'user' | 'assistant';
-  lineStart?: number;
-  lineEnd?: number;
+export interface QuotedSelection extends InputDraftQuote {
   selectionAnchorKind?: 'native' | 'codemirror';
-  charCount: number;
   anchorRect?: FloatingAnchorRect;
-  updatedAt?: number;
 }
 
 export interface InputSlice {
   attachedFiles: AttachedFile[];
   /** 按 session path 存储的附件（权威源） */
   attachedFilesBySession: Record<string, AttachedFile[]>;
-  /** 按 session path 存储的草稿文本（内存级，关窗口清空） */
+  /** 按稳定 session identity 存储，同步到本机恢复日志与服务。 */
   drafts: Record<string, string>;
-  /** 按 session path 存储的输入框富文本草稿（内存级，关窗口清空） */
+  /** 输入框富文本草稿，与文本、引用一起保存。 */
   draftDocs: Record<string, JSONContent>;
+  draftQuotes: Record<string, QuotedSelection[]>;
   /** 草稿持久化 hydrate 完成时间戳（0 = 未 hydrate）；InputArea 恢复 effect 依赖它重跑 */
   draftsHydratedAt: number;
   deskContextAttached: boolean;
@@ -69,7 +60,9 @@ export interface InputSlice {
   clearAttachedFiles: () => void;
   /** 清理指定 session 的附件；只有目标仍是当前 session 时才同步清空可见附件。 */
   clearAttachedFilesForSession: (sessionPath: string) => void;
-  setDraft: (sessionPath: string, text: string, doc?: JSONContent | null) => void;
+  setDraft: (sessionPath: string, text: string, doc?: JSONContent | null, quotes?: QuotedSelection[]) => void;
+  setDraftQuotes: (sessionPath: string, quotes: QuotedSelection[]) => void;
+  /** Clear editor text/doc; quote cards are consumed separately from the sent snapshot. */
   clearDraft: (sessionPath: string) => void;
   setDeskContextAttached: (attached: boolean) => void;
   toggleDeskContext: () => void;
@@ -86,6 +79,26 @@ export interface InputSlice {
   setQuotedSelection: (sel: QuotedSelection) => void;
   /** @deprecated Use clearQuotedSelections and clearQuoteCandidate. */
   clearQuotedSelection: () => void;
+}
+
+export function currentInputDraftKey(state: { currentSessionPath?: string | null }): string {
+  const path = state.currentSessionPath || HOME_DRAFT_KEY;
+  return sessionScopedKey(state as any, path) || path;
+}
+
+function updateDraftQuotes(state: InputSlice, path: string, quotes: QuotedSelection[]): Partial<InputSlice> {
+  const key = sessionScopedKey(state as any, path) || path;
+  const draftQuotes = { ...state.draftQuotes, [key]: quotes };
+  if (key !== path) delete draftQuotes[path];
+  const text = state.drafts[key] ?? state.drafts[path] ?? '';
+  const doc = state.draftDocs[key] ?? state.draftDocs[path] ?? null;
+  notifyDraftSet(key, text, doc, quotes);
+  return {
+    draftQuotes,
+    // Quote-only edits count as a local draft, including a pending removal.
+    drafts: { ...state.drafts, [key]: text },
+    ...(currentInputDraftKey(state as any) === key ? { quotedSelections: quotes, quotedSelection: quotes[0] ?? null } : {}),
+  };
 }
 
 function syncCurrentSessionAttachments(state: InputSlice & { currentSessionPath?: string | null }, files: AttachedFile[]) {
@@ -111,6 +124,7 @@ export const createInputSlice = (
   attachedFilesBySession: {},
   drafts: {},
   draftDocs: {},
+  draftQuotes: {},
   draftsHydratedAt: 0,
   deskContextAttached: false,
   docContextAttached: false,
@@ -142,7 +156,7 @@ export const createInputSlice = (
         ...(state.currentSessionPath === sessionPath ? { attachedFiles: [] } : {}),
       };
     }),
-  setDraft: (sessionPath, text, doc) =>
+  setDraft: (sessionPath, text, doc, quotes) =>
     set((s) => {
       const key = sessionScopedKey(s as any, sessionPath) || sessionPath;
       const prevText = Object.prototype.hasOwnProperty.call(s.drafts, key)
@@ -162,7 +176,8 @@ export const createInputSlice = (
         : prevDoc === undefined;
       // 内容未变则保持 drafts/draftDocs 引用不变，避免 InputArea 订阅方空转，
       // 也让「恢复走 emitUpdate」时不会 update→setDraft→effect 死循环。
-      if (sameText && sameDoc && prevText !== undefined) {
+      const nextQuotes = quotes ?? s.draftQuotes[key] ?? s.draftQuotes[sessionPath] ?? [];
+      if (sameText && sameDoc && prevText !== undefined && (quotes === undefined || quotes === s.draftQuotes[key])) {
         return {};
       }
       const drafts = { ...s.drafts, [key]: text };
@@ -171,9 +186,12 @@ export const createInputSlice = (
       else delete draftDocs[key];
       if (key !== sessionPath) delete drafts[sessionPath];
       if (key !== sessionPath) delete draftDocs[sessionPath];
-      notifyDraftSet(key, text, doc ?? null);
-      return { drafts, draftDocs };
+      notifyDraftSet(key, text, doc ?? null, nextQuotes);
+      const draftQuotes = { ...s.draftQuotes, [key]: nextQuotes };
+      if (key !== sessionPath) delete draftQuotes[sessionPath];
+      return { drafts, draftDocs, draftQuotes };
     }),
+  setDraftQuotes: (path, quotes) => set(s => updateDraftQuotes(s, path, quotes)),
   clearDraft: (sessionPath) =>
     set((s) => {
       const key = sessionScopedKey(s as any, sessionPath) || sessionPath;
@@ -183,7 +201,9 @@ export const createInputSlice = (
       delete rest[sessionPath];
       delete draftDocs[key];
       delete draftDocs[sessionPath];
-      notifyDraftCleared(key);
+      const quotes = s.draftQuotes[key] ?? s.draftQuotes[sessionPath] ?? [];
+      if (quotes.length) { rest[key] = ''; notifyDraftSet(key, '', null, quotes); }
+      else notifyDraftCleared(key);
       return { drafts: rest, draftDocs };
     }),
   setDeskContextAttached: (attached) => set({ deskContextAttached: attached }),
@@ -197,17 +217,11 @@ export const createInputSlice = (
   setQuoteCandidate: (sel) => set({ quoteCandidate: sel }),
   clearQuoteCandidate: () => set({ quoteCandidate: null }),
   addQuotedSelection: (sel) =>
-    set((s) => {
-      const quotedSelections = [...s.quotedSelections, sel];
-      return { quotedSelections, quotedSelection: quotedSelections[0] ?? null };
-    }),
+    set(s => updateDraftQuotes(s, currentInputDraftKey(s as any), [...s.quotedSelections, sel])),
   removeQuotedSelection: (index) =>
-    set((s) => {
-      const quotedSelections = s.quotedSelections.filter((_, i) => i !== index);
-      return { quotedSelections, quotedSelection: quotedSelections[0] ?? null };
-    }),
-  clearQuotedSelections: () => set({ quotedSelections: [], quotedSelection: null }),
-  setQuotedSelections: (sels) => set({ quotedSelections: sels, quotedSelection: sels[0] ?? null }),
-  setQuotedSelection: (sel) => set({ quotedSelections: [sel], quotedSelection: sel }),
-  clearQuotedSelection: () => set({ quoteCandidate: null, quotedSelections: [], quotedSelection: null }),
+    set(s => updateDraftQuotes(s, currentInputDraftKey(s as any), s.quotedSelections.filter((_, i) => i !== index))),
+  clearQuotedSelections: () => set(s => updateDraftQuotes(s, currentInputDraftKey(s as any), [])),
+  setQuotedSelections: (sels) => set(s => updateDraftQuotes(s, currentInputDraftKey(s as any), sels)),
+  setQuotedSelection: (sel) => set(s => updateDraftQuotes(s, currentInputDraftKey(s as any), [sel])),
+  clearQuotedSelection: () => set(s => ({ ...updateDraftQuotes(s, currentInputDraftKey(s as any), []), quoteCandidate: null })),
 });

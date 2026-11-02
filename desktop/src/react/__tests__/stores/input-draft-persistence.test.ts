@@ -7,14 +7,14 @@ vi.mock('../../hooks/use-hana-fetch',()=>({hanaFetch:vi.fn()}));
 vi.mock('../../services/server-connection',()=>({hasServerConnection:()=>true}));
 const request=vi.mocked(hanaFetch);
 const response=(data:unknown,status=200)=>({ok:status<400,status,json:async()=>data}) as Response;
-const empty=()=>response({protocol:2,home:null,sessions:{},revisions:{}});
+const empty=()=>response({protocol:2,capabilities:{quotes:true},home:null,sessions:{},revisions:{}});
 let dispose:(()=>void)|undefined;
 function start(){dispose=initInputDraftPersistence();}
 function set(text:string,key='__home__'){useStore.getState().setDraft(key,text);}
 const puts=()=>request.mock.calls.filter(([,options])=>options?.method==='PUT');
 beforeEach(()=>{
  vi.useFakeTimers();localStorage.clear();sessionStorage.clear();request.mockReset();
- useStore.setState({drafts:{},draftDocs:{},draftsHydratedAt:0,activeServerConnection:null,activeServerConnectionId:'local',serverPort:'1',serverToken:'test',connected:false});
+ useStore.setState({drafts:{},draftDocs:{},draftQuotes:{},currentSessionPath:null,currentSessionId:null,draftsHydratedAt:0,activeServerConnection:null,activeServerConnectionId:'local',serverPort:'1',serverToken:'test',connected:false});
  request.mockImplementation(async(_path,options)=>options?.method==='PUT'?response({ok:true,revision:1}):empty());
 });
 afterEach(()=>{dispose?.();dispose=undefined;vi.useRealTimers();vi.restoreAllMocks();});
@@ -75,4 +75,43 @@ it('recognizes an already-accepted deletion after its acknowledgment was lost',a
 it('retries a pending draft after credentials rotate during the previous write',async()=>{
  start();await hydrateInputDrafts();let release!:(r:Response)=>void;request.mockImplementationOnce(()=>new Promise(r=>release=r));set('kept through rotation');await vi.advanceTimersByTimeAsync(600);expect(puts()).toHaveLength(1);
  useStore.setState({serverToken:'rotated-test-token'});await vi.advanceTimersByTimeAsync(1);expect(puts()).toHaveLength(1);release(response({revision:2}));await vi.advanceTimersByTimeAsync(10);expect(puts()).toHaveLength(2);expect(useDraftSaveState.getState().items.__home__.state).toBe('saved');
+});
+
+const quote=(text='unsent source')=>({text,sourceKind:'chat' as const,sourceTitle:'Assistant message',sourceSessionPath:'/sessions/source.jsonl',sourceMessageId:'message-one',charCount:text.length});
+it('recovers a quote-only draft before debounce, then writes and hydrates its source metadata',async()=>{
+ start();await hydrateInputDrafts();useStore.getState().addQuotedSelection(quote());
+ const saved=getDraftRecoveryCopies('__home__')[0];expect(saved.quotes).toEqual([quote()]);expect(saved.text).toBe('');expect(puts()).toHaveLength(0);
+ dispose?.();useStore.setState({drafts:{},draftDocs:{},draftQuotes:{}});start();expect(useStore.getState().quotedSelections).toEqual([quote()]);
+ await hydrateInputDrafts();await vi.advanceTimersByTimeAsync(5);expect(JSON.parse(puts()[0][1]!.body as string).quotes).toEqual([quote()]);
+ dispose?.();useStore.setState({drafts:{},draftDocs:{},draftQuotes:{}});start();request.mockResolvedValueOnce(response({protocol:2,capabilities:{quotes:true},home:saved,sessions:{},revisions:{__home__:1}}));
+ await hydrateInputDrafts();expect(useStore.getState().quotedSelections).toEqual([quote()]);
+});
+it('keeps quote removal across reload and never restores the older server card',async()=>{
+ start();request.mockResolvedValueOnce(response({protocol:2,capabilities:{quotes:true},home:{text:'',quotes:[quote()]},sessions:{},revisions:{__home__:1}}));await hydrateInputDrafts();
+ useStore.getState().removeQuotedSelection(0);expect(getDraftRecoveryCopies('__home__')[0].quotes).toEqual([]);
+ dispose?.();useStore.setState({drafts:{},draftDocs:{},draftQuotes:{}});start();expect(useStore.getState().quotedSelections).toEqual([]);
+ await hydrateInputDrafts();await vi.advanceTimersByTimeAsync(5);expect(JSON.parse(puts()[0][1]!.body as string)).toMatchObject({text:'',quotes:[],expectedRevision:1});
+});
+it('detects different quotes as a conflict even when both text fields are empty',async()=>{
+ start();await hydrateInputDrafts();request.mockResolvedValueOnce(response({conflict:true,revision:3,entry:{text:'',quotes:[quote('other window')]}},409));
+ useStore.getState().addQuotedSelection(quote());await vi.advanceTimersByTimeAsync(600);
+ expect(useDraftSaveState.getState().items.__home__.state).toBe('conflict');expect(useStore.getState().quotedSelections).toEqual([quote()]);
+ chooseDraftVersion('__home__','remote');expect(useStore.getState().quotedSelections).toEqual([quote('other window')]);expect(puts()).toHaveLength(1);
+});
+it('separates quotes by conversation, home and connection without persisting view switches',async()=>{
+ start();await hydrateInputDrafts();useStore.getState().addQuotedSelection(quote('home'));useStore.setState({currentSessionPath:'/one',currentSessionId:'one'});
+ expect(useStore.getState().quotedSelections).toEqual([]);useStore.getState().addQuotedSelection(quote('one'));useStore.setState({currentSessionPath:'/two',currentSessionId:'two'});
+ expect(useStore.getState().quotedSelections).toEqual([]);useStore.setState({currentSessionPath:'/one',currentSessionId:'one'});expect(useStore.getState().quotedSelections).toEqual([quote('one')]);
+ useStore.setState({currentSessionPath:null,currentSessionId:null});expect(useStore.getState().quotedSelections).toEqual([quote('home')]);
+ useStore.setState({activeServerConnectionId:'server-B'});await vi.advanceTimersByTimeAsync(5);expect(useStore.getState().quotedSelections).toEqual([]);
+ useStore.setState({activeServerConnectionId:'local'});await vi.advanceTimersByTimeAsync(5);expect(useStore.getState().quotedSelections).toEqual([quote('home')]);
+});
+it('does not send quote drafts to a text-only server and keeps the recovery copy',async()=>{
+ start();request.mockResolvedValueOnce(response({protocol:2,home:null,sessions:{},revisions:{}}));await hydrateInputDrafts();useStore.getState().addQuotedSelection(quote());await vi.advanceTimersByTimeAsync(600);
+ expect(puts()).toHaveLength(0);expect(useDraftSaveState.getState().items.__home__.state).toBe('unsupported');expect(getDraftRecoveryCopies('__home__')[0].quotes).toEqual([quote()]);
+ await hydrateInputDrafts();await vi.advanceTimersByTimeAsync(5);expect(puts()).toHaveLength(1);expect(useDraftSaveState.getState().items.__home__.state).toBe('saved');
+});
+it('clearing submitted text preserves a quote added while send preparation was pending',async()=>{
+ start();await hydrateInputDrafts();set('sent text');useStore.getState().addQuotedSelection(quote('added later'));useStore.getState().clearDraft('__home__');
+ expect(useStore.getState().quotedSelections).toEqual([quote('added later')]);expect(getDraftRecoveryCopies('__home__')[0]).toMatchObject({text:'',quotes:[quote('added later')]});
 });

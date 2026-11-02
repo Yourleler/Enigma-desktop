@@ -301,6 +301,7 @@ function clearSessionRuntimeCaches(path: string): void {
     const sessionRegistryFilesByPath = deleteSessionScopedStateValue(s, s.sessionRegistryFilesByPath || {}, path);
     const drafts = deleteSessionScopedStateValue(s, s.drafts || {}, path);
     const draftDocs = deleteSessionScopedStateValue(s, s.draftDocs || {}, path);
+    const draftQuotes = deleteSessionScopedStateValue(s, s.draftQuotes || {}, path);
     const activeSessionStreams = deleteSessionScopedStateValue(s, s.activeSessionStreams || {}, path);
     const computerOverlayBySession = deleteSessionScopedStateValue(s, s.computerOverlayBySession || {}, path);
     const scrollPositions = deleteSessionScopedStateValue(s, s.scrollPositions || {}, path);
@@ -320,6 +321,7 @@ function clearSessionRuntimeCaches(path: string): void {
       sessionRegistryFilesByPath,
       drafts,
       draftDocs,
+      draftQuotes,
       sessionStreams,
       activeSessionStreams,
       browserBySession,
@@ -911,7 +913,7 @@ export async function switchSession(path: string): Promise<void> {
       });
     }
 
-    useStore.getState().clearQuotedSelection();
+    useStore.setState({ quoteCandidate: null });
 
     emitSessionPermissionMode(data.permissionMode || data.accessMode);
     if (data.thinkingLevel) {
@@ -1035,7 +1037,7 @@ async function switchDeletedAgentSession(path: string, version: number): Promise
   });
   if (version !== _switchVersion) return;
 
-  useStore.getState().clearQuotedSelection();
+  useStore.setState({ quoteCandidate: null });
   emitSessionPermissionMode('read_only');
 
   const hasData = !!sessionScopedValue(useStore.getState() as Record<string, any>, useStore.getState().chatSessions, path);
@@ -1256,14 +1258,17 @@ export async function ensureSession(expectedPendingDraftId?: string | null): Pro
     stageDetachedSessionForActivation(data, ref, latestState);
     // Session creation is not message delivery. Transfer the latest home draft
     // before activation so input typed while creation awaited is not discarded.
-    const homeText=latestState.drafts?.[HOME_DRAFT_KEY],homeDoc=latestState.draftDocs?.[HOME_DRAFT_KEY];
-    if(homeText!==undefined||homeDoc)useStore.getState().setDraft?.(ref.sessionId,homeText||'',homeDoc);
+    const homeText=latestState.drafts?.[HOME_DRAFT_KEY],homeDoc=latestState.draftDocs?.[HOME_DRAFT_KEY],homeQuotes=latestState.draftQuotes?.[HOME_DRAFT_KEY];
+    if(homeText!==undefined||homeDoc||homeQuotes?.length)useStore.getState().setDraft?.(ref.sessionId,homeText||'',homeDoc,homeQuotes);
     await switchSession(ref.sessionPath);
     const activated = useStore.getState() as Record<string, any>;
     if (activated.currentSessionId === ref.sessionId && activated.currentSessionPath === ref.sessionPath) {
       // The session now owns this draft. Retain the home copy if another
       // pending view changed it during activation.
-      if(activated.drafts?.[HOME_DRAFT_KEY]===homeText&&activated.draftDocs?.[HOME_DRAFT_KEY]===homeDoc)activated.clearDraft?.(HOME_DRAFT_KEY);
+      if(activated.drafts?.[HOME_DRAFT_KEY]===homeText&&activated.draftDocs?.[HOME_DRAFT_KEY]===homeDoc&&activated.draftQuotes?.[HOME_DRAFT_KEY]===homeQuotes){
+        activated.setDraftQuotes?.(HOME_DRAFT_KEY,[]);
+        activated.clearDraft?.(HOME_DRAFT_KEY);
+      }
       useStore.setState({ pendingDraftId: null });
     }
     return ref;

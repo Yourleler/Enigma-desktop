@@ -1,7 +1,9 @@
 import type {JSONContent} from '@tiptap/core';
+import type {InputDraftQuote} from '../../../../shared/input-drafts';
 export interface DraftRecord {
   id:string;scope:string;tab:string;key:string;text:string;doc:JSONContent|null;
   baseRevision?:number;updatedAt:number;
+  quotes?:InputDraftQuote[];
 }
 const PREFIX='enigma-draft-recovery-v2:';
 /** One immutable record per edit. Acknowledging one window cannot delete another's copy. */

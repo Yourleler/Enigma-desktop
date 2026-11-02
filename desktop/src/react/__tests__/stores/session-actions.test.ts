@@ -48,7 +48,9 @@ const initialStateFactory = (): MockState => ({
   attachedFilesBySession: {} as Record<string, unknown>,
   drafts: {} as Record<string, string>,
   draftDocs: {} as Record<string, unknown>,
-  setDraft: vi.fn((key:string,text:string,doc:unknown)=>{const drafts=mockState.drafts as Record<string,string>,docs=mockState.draftDocs as Record<string,unknown>;drafts[key]=text;if(doc)docs[key]=doc;else delete docs[key];}),
+  draftQuotes: {} as Record<string, unknown>,
+  setDraft: vi.fn((key:string,text:string,doc:unknown,quotes?:unknown)=>{const drafts=mockState.drafts as Record<string,string>,docs=mockState.draftDocs as Record<string,unknown>;drafts[key]=text;if(doc)docs[key]=doc;else delete docs[key];if(quotes)(mockState.draftQuotes as Record<string,unknown>)[key]=quotes;}),
+  setDraftQuotes: vi.fn((key:string,quotes:unknown)=>{(mockState.draftQuotes as Record<string,unknown>)[key]=quotes;}),
   clearDraft: vi.fn(),
   streamingSessions: [] as string[],
   unreadOutputSessionPaths: [] as string[],
@@ -818,6 +820,7 @@ function mockPermissionDefault(mode = 'ask') {
 
     it('transfers home draft on activation and keeps it until message delivery', async () => {
       const homeDoc = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: '晚上好啊' }] }] };
+      const homeQuotes=[{text:'quoted source',sourceKind:'chat',sourceTitle:'Reply',charCount:13}];
       Object.assign(mockState, {
         pendingNewSession: true,
         pendingDraftId: 'draft-home-consume',
@@ -826,6 +829,7 @@ function mockPermissionDefault(mode = 'ask') {
         selectedFolder: '/workspace-home',
         drafts: { __home__: '晚上好啊' },
         draftDocs: { __home__: homeDoc },
+        draftQuotes: { __home__: homeQuotes },
         attachedFiles: [{
           fileId: 'sf_home',
           path: '/tmp/hana/session-files/home.png',
@@ -861,6 +865,8 @@ function mockPermissionDefault(mode = 'ask') {
       expect(drafts.sess_home_consume).toBe('晚上好啊');
       expect(drafts['/session/home-consume.jsonl']).toBeUndefined();
       expect(draftDocs.sess_home_consume).toBe(homeDoc);
+      expect((mockState.draftQuotes as Record<string,unknown>).sess_home_consume).toEqual(homeQuotes);
+      expect((mockState.draftQuotes as Record<string,unknown>).__home__).toEqual([]);
       expect(draftDocs['/session/home-consume.jsonl']).toBeUndefined();
       expect((mockState.attachedFilesBySession as Record<string, unknown[]>).sess_home_consume)
         .toEqual([{

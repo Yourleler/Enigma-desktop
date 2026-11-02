@@ -2115,7 +2115,7 @@
       "schemaContract": {
         "kind": "runtime-source",
         "source": "core/input-drafts-store.ts",
-        "compatibility": "Draft file version 1 is retained. Optional sequence and per-key revisions support conditional writes; absent fields normalize to zero/empty. Meaningful rich-text atoms may accompany empty text. Legacy readers keep text/doc fields but cannot preserve concurrency metadata, so downgrade requires a fresh client/server baseline; no claim of conditional-write protection across an old writer."
+        "compatibility": "Draft file version 1 is retained. Optional sequence, per-key revisions and source quote arrays support conditional writes and quote-only drafts; absent fields normalize to zero/empty. Quote records retain source identity and text, excluding transient screen geometry. New clients require the quotes capability before syncing quote drafts; new servers reject legacy writes that omit existing quotes. Older servers can discard this additive field, so downgrade requires preserving the full draft backup and a fresh client/server baseline. No claim of quote or concurrency protection across an old server writer."
       },
       "openEntry": [
         "new InputDraftsStore",

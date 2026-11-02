@@ -162,7 +162,7 @@ describe('draft sync notifications', () => {
     });
 
     slice.setDraft('/agents/a/sessions/s1.jsonl', 'hello', { type: 'doc' } as any);
-    expect(onSet).toHaveBeenCalledWith('sess-1', 'hello', { type: 'doc' });
+    expect(onSet).toHaveBeenCalledWith('sess-1', 'hello', { type: 'doc' }, []);
 
     slice.clearDraft('/agents/a/sessions/s1.jsonl');
     expect(onClear).toHaveBeenCalledWith('sess-1');
@@ -173,7 +173,7 @@ describe('draft sync notifications', () => {
     registerDraftSyncListener({ onSet, onClear: vi.fn() });
     const slice = makeSlice();
     slice.setDraft('__home__', 'home text');
-    expect(onSet).toHaveBeenCalledWith('__home__', 'home text', null);
+    expect(onSet).toHaveBeenCalledWith('__home__', 'home text', null, []);
     expect(slice.drafts['__home__']).toBe('home text');
   });
 

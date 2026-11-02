@@ -16,6 +16,7 @@
 | 已安装桌面与 Web 界面 | **0.452.254**，修复标签滚到末端后箭头仍遮挡关闭按钮；原生关闭、恢复与拖动调序通过，剩余验收继续保留 |
 | Agent 底层 | Pi 的三个核心包均固定为 **1.4.0** |
 | 待安装的稳定更新 | **0.452.258** 修复空对话模型恢复、工作任务错误回传和项目归属；真实只读管家测试通过，见[本轮记录](docs/empty-session-model-and-worker-navigation-2026-11-02.md) |
+| 后续源码修复 | **0.452.260** 补齐引用草稿持久化、会话隔离及放大编辑器内的引用显示；Web与完整回归通过，尚未安装。见[引用恢复记录](docs/quote-draft-recovery-2026-11-02.md) |
 | 独立保留的实验 | 通知定位与诊断保留在`codex/notification-navigation`，不含在258稳定版内；系统异常已恢复，见[实测边界](docs/notification-and-native-acceptance-2026-11-02.md) |
 | 上游宿主基线 | OpenHanako / HanaAgent **0.450.0**；来源见 [FORK.md](FORK.md) |
 | 工程模块 | `packages/enigma-engineering`，内部 npm 包名 `enigma-next` |

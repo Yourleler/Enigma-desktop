@@ -53,7 +53,7 @@ describe("InputDraftsStore", () => {
   it("quarantines a corrupt file and restarts from empty state", () => {
     fs.writeFileSync(filePath(), "{ not json !!!");
     const store = new InputDraftsStore({ hanakoHome: home });
-    expect(store.getAll("electron")).toEqual({ protocol: 2, home: null, sessions: {}, revisions: {} });
+    expect(store.getAll("electron")).toEqual({ protocol: 2, capabilities: { quotes: true }, home: null, sessions: {}, revisions: {} });
     const quarantined = fs.readdirSync(home).filter((f) => f.includes(".corrupt-"));
     expect(quarantined).toHaveLength(1);
     // 新状态可正常写入

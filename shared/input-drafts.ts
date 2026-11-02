@@ -11,6 +11,42 @@ export const HOME_DRAFT_KEY = "__home__";
 export const INPUT_DRAFT_MAX_ENTRY_CHARS = 512 * 1024;
 export const INPUT_DRAFT_MAX_SESSIONS_PER_SURFACE = 200;
 
+/** Committed source context; screen selection geometry is deliberately transient. */
+export interface InputDraftQuote {
+  text: string;
+  sourceTitle: string;
+  sourceKind: 'preview' | 'chat';
+  sourceFilePath?: string;
+  sourceSessionPath?: string;
+  sourceMessageId?: string;
+  sourceRole?: 'user' | 'assistant';
+  lineStart?: number;
+  lineEnd?: number;
+  charCount: number;
+  updatedAt?: number;
+}
+
+export function normalizeInputDraftQuotes(raw: unknown): InputDraftQuote[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.flatMap((value) => {
+    if (!value || typeof value.text !== 'string' || !value.text.trim()
+      || typeof value.sourceTitle !== 'string' || !['preview', 'chat'].includes(value.sourceKind)) return [];
+    const quote: InputDraftQuote = {
+      text: value.text, sourceTitle: value.sourceTitle, sourceKind: value.sourceKind,
+      charCount: Number.isSafeInteger(value.charCount) && value.charCount >= value.text.length ? value.charCount : value.text.length,
+    };
+    for (const key of ['sourceFilePath', 'sourceSessionPath', 'sourceMessageId'] as const) {
+      if (typeof value[key] === 'string') quote[key] = value[key];
+    }
+    if (value.sourceRole === 'user' || value.sourceRole === 'assistant') quote.sourceRole = value.sourceRole;
+    for (const key of ['lineStart', 'lineEnd'] as const) {
+      if (Number.isSafeInteger(value[key]) && value[key] > 0) quote[key] = value[key];
+    }
+    if (Number.isFinite(value.updatedAt)) quote.updatedAt = value.updatedAt;
+    return [quote];
+  });
+}
+
 const INPUT_DRAFT_SURFACE_SET = new Set(INPUT_DRAFT_SURFACES);
 
 export function normalizeInputDraftSurface(value: any) {
@@ -34,20 +70,22 @@ export function hasInputDraftDocumentContent(doc: any): boolean {
 }
 
 /** 归一化单条草稿；空文本/非法输入返回 null（语义 = 删除该条目） */
-export function normalizeInputDraftEntry(raw: any) {
+export function normalizeInputDraftEntry(raw: any): { text: string; doc?: any; quotes?: InputDraftQuote[]; updatedAt: number } | null {
   if (!raw || typeof raw !== "object") return null;
   const text = typeof raw.text === "string" ? raw.text : "";
-  if (!text.trim() && !hasInputDraftDocumentContent(raw.doc)) return null;
+  const quotes = normalizeInputDraftQuotes(raw.quotes);
+  if (!text.trim() && !hasInputDraftDocumentContent(raw.doc) && !quotes.length) return null;
   const doc = raw.doc && typeof raw.doc === "object" && !Array.isArray(raw.doc) ? raw.doc : undefined;
   const updatedAt = Number.isFinite(raw.updatedAt) ? raw.updatedAt : Date.now();
-  let entry = doc ? { text, doc, updatedAt } : { text, updatedAt };
+  const context = quotes.length ? { quotes } : {};
+  let entry = doc ? { text, doc, updatedAt, ...context } : { text, updatedAt, ...context };
   // 超限先丢 doc（恢复时前端用纯文本重建富文本），text 仍超限则截断落盘。
   // 内存中的草稿始终完整，截断只影响落盘影子——明确的设计取舍，见 spec §4。
   if (doc && serializedChars(entry) > INPUT_DRAFT_MAX_ENTRY_CHARS) {
-    entry = { text, updatedAt };
+    entry = { text, updatedAt, ...context };
   }
   if (serializedChars(entry) > INPUT_DRAFT_MAX_ENTRY_CHARS) {
-    entry = { text: text.slice(0, INPUT_DRAFT_MAX_ENTRY_CHARS), updatedAt };
+    entry = { text: text.slice(0, INPUT_DRAFT_MAX_ENTRY_CHARS), updatedAt, ...context };
   }
   return entry;
 }

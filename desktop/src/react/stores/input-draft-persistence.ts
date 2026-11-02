@@ -6,15 +6,16 @@ import {hasServerConnection} from '../services/server-connection';
 import {useStore} from './index';
 import {resolveWorkspaceUiSurface} from './workspace-ui-state-actions';
 import {registerDraftSyncListener} from './input-draft-sync';
-import {HOME_DRAFT_KEY,hasInputDraftDocumentContent} from '../../../../shared/input-drafts.ts';
+import {HOME_DRAFT_KEY,hasInputDraftDocumentContent,normalizeInputDraftQuotes,type InputDraftQuote} from '../../../../shared/input-drafts.ts';
 import {DraftRecoveryJournal,type DraftRecord} from './draft-recovery-journal';
 
-type Entry={text:string;doc?:JSONContent|null}|null;
+type Entry={text:string;doc?:JSONContent|null;quotes?:InputDraftQuote[]}|null;
 export interface DraftSaveStatus {state:'pending'|'saved'|'offline'|'conflict'|'local-error'|'unsupported'|'rejected';remote?:Entry;revision?:number;localDurable?:boolean}
 export const useDraftSaveState=create<{items:Record<string,DraftSaveStatus>}>(()=>({items:{}}));
 const pending=new Map<string,DraftRecord>(),revisions=new Map<string,number>(),timers=new Map<string,ReturnType<typeof setTimeout>>(),inflight=new Map<string,string>(),failures=new Map<string,number>(),durability=new Map<string,boolean>();
 let generation=0;
 let scope='',tab='',ready=false,journal:DraftRecoveryJournal|null=null,cleanupRuntime:(()=>void)|undefined;
+let supportsQuotes=false;
 let hydration:Promise<void>|null=null;
 function endpointIdentity(url:string|undefined):string {if(!url)return 'local';try{const u=new URL(url);return u.origin+u.pathname;}catch{return 'unresolved';}}
 function currentScope():string {
@@ -29,9 +30,10 @@ function id(){return crypto.randomUUID();}
 function apply(key:string,entry:Entry){
   const s=useStore.getState(),drafts={...s.drafts,[key]:entry?.text||''},draftDocs={...s.draftDocs};
   if(entry?.doc)draftDocs[key]=entry.doc;else delete draftDocs[key];
-  useStore.setState({drafts,draftDocs,draftsHydratedAt:Date.now()});
+  const draftQuotes={...s.draftQuotes,[key]:normalizeInputDraftQuotes(entry?.quotes)};
+  useStore.setState({drafts,draftDocs,draftQuotes,draftsHydratedAt:Date.now()});
 }
-function sameEntry(a:Entry,b:Entry){const normalized=(entry:Entry)=>!entry?.text.trim()&&!hasInputDraftDocumentContent(entry?.doc)?null:entry;const left=normalized(a),right=normalized(b);return (left?.text||'')===(right?.text||'')&&JSON.stringify(left?.doc||null)===JSON.stringify(right?.doc||null);}
+function sameEntry(a:Entry,b:Entry){const normalized=(entry:Entry)=>!entry?.text.trim()&&!hasInputDraftDocumentContent(entry?.doc)&&!entry?.quotes?.length?null:entry;const left=normalized(a),right=normalized(b);return (left?.text||'')===(right?.text||'')&&JSON.stringify(left?.doc||null)===JSON.stringify(right?.doc||null)&&JSON.stringify(normalizeInputDraftQuotes(left?.quotes))===JSON.stringify(normalizeInputDraftQuotes(right?.quotes));}
 function storeRecord(record:DraftRecord,previous?:DraftRecord):boolean {
   try{if(!journal)throw Error('Local recovery storage unavailable');journal.write(record,previous);durability.set(record.key,true);return true;}
   catch{durability.set(record.key,false);setStatus(record.key,{state:'local-error'});return false;}
@@ -43,7 +45,8 @@ function switchScope(){
   for(const key of timers.keys())clearTimer(key);pending.clear();revisions.clear();inflight.clear();failures.clear();durability.clear();ready=false;hydration=null;scope=next;
   useDraftSaveState.setState({items:{}});
   // Do not carry home/session text into another server's workspace.
-  if(previousScope)useStore.setState({drafts:{},draftDocs:{},draftsHydratedAt:Date.now()});
+  supportsQuotes=false;
+  if(previousScope)useStore.setState({drafts:{},draftDocs:{},draftQuotes:{},quoteCandidate:null,draftsHydratedAt:Date.now()});
   if(!scope)return;
   try{
     const records=journal?.list(scope)||[];
@@ -52,9 +55,9 @@ function switchScope(){
     }
   }catch{/* A storage read failure must not clear the editor. */}
 }
-function recordChange(key:string,text:string,doc:JSONContent|null){
+function recordChange(key:string,text:string,doc:JSONContent|null,quotes:InputDraftQuote[]=[]){
   switchScope();if(!scope)return;
-  const previous=pending.get(key),record:DraftRecord={id:id(),scope,tab,key,text,doc,updatedAt:Date.now(),baseRevision:previous?.baseRevision??revisions.get(key)};
+  const previous=pending.get(key),record:DraftRecord={id:id(),scope,tab,key,text,doc,quotes:normalizeInputDraftQuotes(quotes),updatedAt:Date.now(),baseRevision:previous?.baseRevision??revisions.get(key)};
   pending.set(key,record);
   const local=storeRecord(record,previous);
   const prior=useDraftSaveState.getState().items[key];
@@ -64,9 +67,10 @@ function recordChange(key:string,text:string,doc:JSONContent|null){
 async function push(key:string,keepalive=false):Promise<void>{
   const record=pending.get(key);if(!record||record.scope!==scope||scope!==currentScope()||inflight.has(key))return;
   if(!ready){await hydrateInputDrafts();return;}
+  if(record.quotes?.length&&!supportsQuotes){setStatus(key,{state:'unsupported'});return;}
   const status=useDraftSaveState.getState().items[key];if(status?.state==='conflict'||status?.state==='unsupported'||status?.state==='rejected')return;
   const request=requestScope(),epoch=generation,operation=id();inflight.set(key,operation);
-  const body={surface:resolveWorkspaceUiSurface(),text:record.text,doc:record.doc,expectedRevision:record.baseRevision??revisions.get(key)??0,
+  const body={surface:resolveWorkspaceUiSurface(),text:record.text,doc:record.doc,quotes:record.quotes||[],expectedRevision:record.baseRevision??revisions.get(key)??0,
     ...(key===HOME_DRAFT_KEY?{scope:'home'}:key.includes('/')||key.includes('\\')?{sessionPath:key}:{sessionId:key})};
   try{
     const response=await hanaFetch('/api/input-drafts',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),throwOnHttpError:false,timeout:10000,keepalive});
@@ -100,7 +104,7 @@ export function chooseDraftVersion(key:string,choice:'local'|'remote'){
   }else{record.baseRevision=status.revision;storeRecord(record);setStatus(key,{state:'pending'});schedule(key,0);}
 }
 export function restoreDraftCopy(record:DraftRecord){
-  if(record.scope!==scope)return;apply(record.key,record);recordChange(record.key,record.text,record.doc);
+  if(record.scope!==scope)return;apply(record.key,record);recordChange(record.key,record.text,record.doc,record.quotes);
 }
 /** Only unedited keys hydrate from the server; a local pending deletion also counts as an edit. */
 export async function hydrateInputDrafts():Promise<void>{
@@ -111,19 +115,21 @@ export async function hydrateInputDrafts():Promise<void>{
       const response=await hanaFetch(`/api/input-drafts?surface=${resolveWorkspaceUiSurface()}`,{timeout:10000});
       const data=await response.json();if(epoch!==generation||startedScope!==scope||request!==requestScope())return;
       ready=data.protocol===2;
+      supportsQuotes=data.capabilities?.quotes===true;
       const entries:Record<string,Entry>={[HOME_DRAFT_KEY]:data.home||null,...data.sessions};
       for(const key of new Set([...Object.keys(entries),...Object.keys(data.revisions||{}),...pending.keys()])){
         const local=pending.get(key),remote=entries[key]||null,revision=Number.isSafeInteger(data.revisions?.[key])?data.revisions[key]:0;
         const current=useStore.getState(),hasMemory=Object.prototype.hasOwnProperty.call(current.drafts,key);
         if(local){
-          if(!ready){setStatus(key,{state:'unsupported'});continue;}
+          if(!ready||(local.quotes?.length&&!supportsQuotes)){setStatus(key,{state:'unsupported'});continue;}
+          if(useDraftSaveState.getState().items[key]?.state==='unsupported')setStatus(key,{state:'pending'});
           if(local.baseRevision===undefined){
             local.baseRevision=revision;storeRecord(local);
             if(remote&&!sameEntry(remote,local)){setStatus(key,{state:'conflict',remote,revision});continue;}
           }
           if(useDraftSaveState.getState().items[key]?.state!=='conflict')schedule(key,0);
         }else if(!hasMemory){revisions.set(key,revision);if(remote)apply(key,remote);}
-        else if(sameEntry({text:current.drafts[key],doc:current.draftDocs[key]},remote))revisions.set(key,revision);
+        else if(sameEntry({text:current.drafts[key],doc:current.draftDocs[key],quotes:current.draftQuotes[key]},remote))revisions.set(key,revision);
         // A focus/reconnect read must never advance the base revision under an
         // editor still showing another version; its next write must conflict.
 

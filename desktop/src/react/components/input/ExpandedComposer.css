@@ -5,6 +5,8 @@
 .enigma-compose-dialog small { display:block; color:var(--text-muted); font:12px/1.6 var(--font-ui); }
 .enigma-compose-dialog header button { border:0; border-radius:var(--radius-sm); padding:var(--space-6) var(--space-12); font:13px/1.6 var(--font-ui); background:var(--accent-light); color:var(--accent); cursor:pointer; }
 .enigma-compose-dialog > div { flex:1; min-height:0; overflow:auto; }
+.enigma-compose-dialog > .enigma-compose-context { flex:none; max-height:min(180px,22dvh); padding-top:var(--space-8,8px); }
+.enigma-compose-dialog > .enigma-compose-context:empty { display:none; }
 .enigma-compose-actions { display:flex;flex-shrink:0;gap:var(--space-8, 8px); }
 .enigma-composer-editor-host { min-width:0; }
 .enigma-compose-editor-slot > .enigma-composer-editor-host { min-height:100%; }

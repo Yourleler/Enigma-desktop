@@ -74,6 +74,26 @@ describe("input drafts route", () => {
     expect((await app.request("/api/input-drafts?surface=bogus")).status).toBe(400);
     expect((await put({ surface: "electron", text: "x" })).status).toBe(400);
   });
+
+  it('persists quote-only drafts, protects them from older clients and clears explicitly', async () => {
+    const quote={text:'source excerpt',sourceKind:'preview',sourceTitle:'Guide',sourceFilePath:'/workspace/guide.md',lineStart:8,lineEnd:9,charCount:14,anchorRect:{left:100}};
+    const first=await(await put({surface:'electron',scope:'home',text:'',quotes:[quote]})).json();
+    expect(first.entry.quotes[0]).toMatchObject({text:'source excerpt',sourceFilePath:'/workspace/guide.md',lineStart:8});
+    expect(first.entry.quotes[0].anchorRect).toBeUndefined();
+    expect(new InputDraftsStore({hanakoHome:home}).getAll('electron').home.quotes).toEqual(first.entry.quotes);
+    expect((await put({surface:'electron',scope:'home',text:'',expectedRevision:first.revision})).status).toBe(409);
+    const cleared=await(await put({surface:'electron',scope:'home',text:'',quotes:[],expectedRevision:first.revision})).json();
+    expect(cleared.entry).toBeNull();
+    expect((await put({surface:'electron',scope:'home',text:'',quotes:[quote],expectedRevision:first.revision})).status).toBe(409);
+  });
+
+  it('rejects malformed or oversized quotes without losing the existing draft', async () => {
+    await put({surface:'pwa',scope:'home',text:'keep'});
+    for(const quotes of [[{text:'missing source'}],{text:'not an array'},[{text:'x'.repeat(600000),sourceKind:'chat',sourceTitle:'reply'}]]){
+      expect([400,413]).toContain((await put({surface:'pwa',scope:'home',text:'',quotes})).status);
+    }
+    expect(store.getAll('pwa').home.text).toBe('keep');
+  });
 });
 
 it('uses conditional revisions to reject stale writes including a stale clear after reload',async()=>{

@@ -1,4 +1,5 @@
 import type { JSONContent } from '@tiptap/core';
+import type { InputDraftQuote } from '../../../../shared/input-drafts';
 
 /**
  * 草稿变更通知通道：input-slice 是唯一收口点，持久化实现由
@@ -6,7 +7,7 @@ import type { JSONContent } from '@tiptap/core';
  * （测试环境、server 未连接前的输入都安全）。
  */
 export interface DraftSyncListener {
-  onSet(key: string, text: string, doc: JSONContent | null): void;
+  onSet(key: string, text: string, doc: JSONContent | null, quotes: InputDraftQuote[]): void;
   onClear(key: string): void;
 }
 
@@ -16,8 +17,8 @@ export function registerDraftSyncListener(next: DraftSyncListener | null): void 
   listener = next;
 }
 
-export function notifyDraftSet(key: string, text: string, doc: JSONContent | null): void {
-  listener?.onSet(key, text, doc);
+export function notifyDraftSet(key: string, text: string, doc: JSONContent | null, quotes: InputDraftQuote[] = []): void {
+  listener?.onSet(key, text, doc, quotes);
 }
 
 export function notifyDraftCleared(key: string): void {
