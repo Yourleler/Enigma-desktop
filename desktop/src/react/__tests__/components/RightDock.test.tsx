@@ -22,9 +22,20 @@ vi.mock('../../components/right-workspace/AgentActivityCard',()=>({AgentActivity
 vi.mock('../../components/right-workspace/SessionStatusCard',()=>({SessionStatusCard:()=>null}));
 beforeEach(()=>{vi.stubGlobal('ResizeObserver',class{observe(){}disconnect(){}});useStore.setState({currentSessionPath:'/session/a',pendingSessionSwitchPath:null,activeServerConnectionId:'local',deskBasePath:'/workspace',jianOpen:true,previewOpen:false,previewItems:[],openTabs:[],activeTabId:null});useRightDock.setState({views:{}});useEngineering.setState({snapshot:null,active:'',paneOpen:false});});
 afterEach(cleanup);
+it('ignores animated selection overflow after the last tab reaches the titlebar edge',()=>{
+ render(<><div id="enigma-titlebar-workspace"/><RightDock/></>);
+ const list=screen.getByRole('tablist',{name:'工作面板'});
+ expect(list.closest('#enigma-titlebar-workspace')).not.toBeNull();
+ Object.defineProperties(list,{clientWidth:{configurable:true,value:240},scrollWidth:{configurable:true,value:646}});
+ [...list.querySelectorAll<HTMLElement>('[data-dock-tab-id]')].forEach((tab,index)=>Object.defineProperties(tab,{offsetLeft:{value:index*155},offsetWidth:{value:155}}));
+ list.scrollLeft=380;fireEvent.scroll(list);
+ expect(screen.queryByRole('button',{name:'向右滚动工作标签'})).toBeNull();
+ expect(screen.getByRole('button',{name:'向左滚动工作标签'})).toBeEnabled();
+});
 it('reveals overflow in either direction without changing the selected panel',()=>{
  const {container}=render(<RightDock/>),list=screen.getByRole('tablist',{name:'工作面板'}),viewport=container.querySelector('.enigma-dock-tabs-viewport')!;
  Object.defineProperties(list,{clientWidth:{configurable:true,value:240},scrollWidth:{configurable:true,value:620}});
+ [...list.querySelectorAll<HTMLElement>('[data-dock-tab-id]')].forEach((tab,index)=>Object.defineProperties(tab,{offsetLeft:{value:index*155},offsetWidth:{value:155}}));
  const scrollTo=vi.fn(({left})=>{list.scrollLeft=left;fireEvent.scroll(list)});Object.defineProperty(list,'scrollTo',{value:scrollTo});
  fireEvent.scroll(list);
  expect(viewport).toHaveAttribute('data-overflow-right');expect(viewport).not.toHaveAttribute('data-overflow-left');
@@ -42,6 +53,7 @@ it('reveals overflow in either direction without changing the selected panel',()
 it('keeps keyboard-selected tabs inside the fade instead of underneath its arrow',()=>{
  const {container}=render(<RightDock/>),list=screen.getByRole('tablist',{name:'工作面板'});
  Object.defineProperties(list,{clientWidth:{configurable:true,value:240},scrollWidth:{configurable:true,value:480}});
+ [...list.querySelectorAll<HTMLElement>('[data-dock-tab-id]')].forEach((tab,index)=>Object.defineProperties(tab,{offsetLeft:{value:index*120},offsetWidth:{value:120}}));
  vi.spyOn(list,'getBoundingClientRect').mockReturnValue({left:0,right:240,width:240} as DOMRect);
  [...container.querySelectorAll<HTMLElement>('[data-dock-tab-id]')].forEach((element,i)=>vi.spyOn(element,'getBoundingClientRect').mockImplementation(()=>({left:i*120-list.scrollLeft,right:(i+1)*120-list.scrollLeft,width:120} as DOMRect)));
  fireEvent.keyDown(screen.getByRole('tab',{name:'文件'}),{key:'ArrowRight'});

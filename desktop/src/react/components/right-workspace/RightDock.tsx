@@ -42,6 +42,12 @@ const toolIcons: Record<string, AppIconName> = {
   artifacts: 'file', environment: 'command', review: 'shield', memory: 'memory',
   skills: 'skill', handoff: 'arrowEnter', documents: 'file', acceptance: 'check',
 };
+function tabScrollLimit(list:HTMLElement){
+  // Optical stretch and layout transitions may extend scrollWidth beyond the
+  // final tab. That decoration must not leave an arrow covering its close button.
+  const end=Math.max(0,...Array.from(list.querySelectorAll<HTMLElement>('[data-dock-tab-id]'),tab=>tab.offsetLeft+tab.offsetWidth));
+  return Math.max(0,end-list.clientWidth);
+}
 export function RightDock(){
   const scope=useStore(dockScope),session=useStore(s=>s.currentSessionPath),connection=useStore(s=>s.activeServerConnectionId||'local');
   const previewOpen=useStore(s=>s.previewOpen),openTabs=useStore(s=>s.openTabs),items=useStore(s=>s.previewItems),activeFile=useStore(s=>s.activeTabId),visible=useStore(s=>s.jianOpen);
@@ -57,7 +63,7 @@ export function RightDock(){
   const [scrollEdges,setScrollEdges]=useState({left:false,right:false});
   const updateScrollEdges=useCallback(()=>{
     const list=strip.current;
-    const left=!!list&&list.scrollLeft>1,right=!!list&&list.scrollWidth-list.clientWidth-list.scrollLeft>1;
+    const left=!!list&&list.scrollLeft>1,right=!!list&&tabScrollLimit(list)-list.scrollLeft>1;
     setScrollEdges(previous=>previous.left===left&&previous.right===right?previous:{left,right});
   },[]);
   const alignActiveTab=useCallback(()=>{
@@ -65,7 +71,7 @@ export function RightDock(){
     if(list&&tab&&list.clientWidth){
       const a=list.getBoundingClientRect(),b=tab.getBoundingClientRect(),inset=28;
       const delta=b.width>list.clientWidth-inset*2?b.left-a.left-inset:b.right>a.right-inset?b.right-a.right+inset:b.left<a.left+inset?b.left-a.left-inset:0;
-      if(delta)list.scrollLeft=Math.max(0,Math.min(list.scrollWidth-list.clientWidth,list.scrollLeft+delta));
+      if(delta)list.scrollLeft=Math.max(0,Math.min(tabScrollLimit(list),list.scrollLeft+delta));
     }
     updateScrollEdges();
   },[updateScrollEdges]);
@@ -100,7 +106,8 @@ export function RightDock(){
   useEffect(()=>()=>stripObserver.current?.disconnect(),[]);
   const scrollTabs=(direction:-1|1)=>{
     const list=strip.current;if(!list)return;
-    list.scrollTo({left:Math.max(0,Math.min(list.scrollWidth-list.clientWidth,list.scrollLeft+direction*Math.max(80,list.clientWidth*.7))),behavior:reduceMotion?'instant':'smooth'});
+    list.scrollTo({left:Math.max(0,Math.min(tabScrollLimit(list),list.scrollLeft+direction*Math.max(80,list.clientWidth*.7))),behavior:reduceMotion?'instant':'smooth'});
+    updateScrollEdges();
   };
   const choose=(tab:DockTab)=>{
     const state=useStore.getState(),incoming=state.pendingSessionSwitchPath;
