@@ -359,7 +359,7 @@ describe('PreviewRenderer HTML isolation', () => {
     expect(cover).toBeTruthy();
 
     fireEvent.contextMenu(cover!, { clientX: 44, clientY: 72 });
-    fireEvent.click(screen.getByRole('button', { name: 'preview.cover.deleteCover' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: '删除封面' }));
 
     await waitFor(() => {
       expect(window.platform?.writeFileIfUnchanged).toHaveBeenCalledWith(

@@ -12,6 +12,15 @@ afterEach(() => {
 });
 
 describe('markdown cover editor field', () => {
+  it('does not let a read-only editor remove its cover through the context menu',()=>{
+    const parent=document.createElement('div');document.body.append(parent);
+    const source='---\ncover:\n  image: cover.png\n---\n# Read only';
+    const view=new EditorView({parent,state:EditorState.create({doc:source,extensions:[EditorState.readOnly.of(true),markdownImageContextFacet.of({filePath:'/tmp/readonly.md',getFileUrl:p=>`file://${p}`}),markdownCoverField]})});
+    const cover=parent.querySelector('.cm-markdown-cover')!;
+    cover.dispatchEvent(new MouseEvent('contextmenu',{bubbles:true,cancelable:true}));
+    const remove=[...document.querySelectorAll<HTMLButtonElement>('.markdown-cover-menu button')].find(b=>b.textContent==='删除封面');
+    remove?.click();expect(view.state.doc.toString()).toBe(source);view.destroy();
+  });
   it('renders cover frontmatter as an editor widget without exposing raw YAML text', () => {
     const parent = document.createElement('div');
     document.body.appendChild(parent);
@@ -159,13 +168,13 @@ describe('markdown cover editor field', () => {
     const notPrevented = cover!.dispatchEvent(event);
 
     expect(notPrevented).toBe(false);
-    const menu = parent.querySelector('.markdown-cover-menu') as HTMLElement | null;
+    const menu = document.querySelector('.markdown-cover-menu') as HTMLElement | null;
     expect(menu).toBeInstanceOf(HTMLElement);
     expect(menu?.style.left).toBe('18px');
     expect(menu?.style.top).toBe('24px');
     expect([...menu!.querySelectorAll('button')].map(button => button.textContent)).toEqual([
       '保存图片',
-      '自定义提示词生成图片',
+      '重新生成封面',
       '删除封面',
     ]);
 
@@ -203,7 +212,7 @@ describe('markdown cover editor field', () => {
       clientX: 18,
       clientY: 24,
     }));
-    const deleteButton = [...parent.querySelectorAll('.markdown-cover-menu button')]
+    const deleteButton = [...document.querySelectorAll('.markdown-cover-menu button')]
       .find(button => button.textContent === '删除封面') as HTMLButtonElement | undefined;
 
     deleteButton?.click();

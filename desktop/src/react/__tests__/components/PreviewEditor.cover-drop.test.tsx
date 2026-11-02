@@ -9,6 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PreviewEditor, type PreviewEditorHandle } from '../../components/PreviewEditor';
 import { clearAppFileDragPayload, writeAppFileDragPayload } from '../../utils/app-file-drag';
 import type { PlatformApi } from '../../types';
+import {useStore} from '../../stores';
 
 const mocks = vi.hoisted(() => ({
   hanaFetch: vi.fn(),
@@ -118,6 +119,26 @@ describe('PreviewEditor markdown cover drop', () => {
     clearAppFileDragPayload();
     cleanup();
     elementRectSpy.mockRestore();
+  });
+
+  it('resolves a Web document cover and inline image through its workbench mount', async () => {
+    useStore.setState({serverPort:'3199',serverToken:'test-token',activeServerConnection:null,activeServerConnectionId:null,serverConnections:{}});
+    const {container}=render(<PreviewEditor content={'---\ncover:\n  image: ../images/cover.svg\n---\n# Demo\n\n![Body](../images/cover.svg)\n'} remoteContentRef={{kind:'workbench-file',mountId:'docs',rootId:'docs',subdir:'notes',name:'note.md',contentPath:'/api/workbench/content?mountId=docs&subdir=notes&name=note.md'}} mode="markdown" />);
+    await waitFor(()=>expect(container.querySelector('.cm-markdown-cover img')).toBeTruthy());
+    const image=container.querySelector('.cm-markdown-cover img') as HTMLImageElement;
+    const url=new URL(image.getAttribute('src')!, 'http://wrong-origin.invalid');
+    expect(url.origin).toBe('http://127.0.0.1:3199');
+    expect(url.searchParams.get('mountId')).toBe('docs');
+    expect(url.searchParams.get('subdir')).toBe('images');
+    expect(url.searchParams.get('name')).toBe('cover.svg');
+    expect(url.searchParams.get('token')).toBe('test-token');
+    const prompt=vi.spyOn(window,'prompt').mockReturnValue('Test cover');
+    fireEvent.contextMenu(image);
+    fireEvent.click(document.querySelector('[role="menuitem"]:nth-child(2)')!);
+    await waitFor(()=>expect(mocks.hanaFetch).toHaveBeenCalledWith('/api/desk/beautify/cover',expect.objectContaining({body:expect.stringContaining('"mountId":"docs"')})));
+    const body=JSON.parse(mocks.hanaFetch.mock.calls.at(-1)![1].body);
+    expect(body.filePath).toBeUndefined();expect(body.target.name).toBe('note.md');
+    prompt.mockRestore();
   });
 
   it('replaces an existing editor cover when a workspace image is dropped on it', async () => {

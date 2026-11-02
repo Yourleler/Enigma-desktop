@@ -33,7 +33,10 @@ import { languages } from '@codemirror/language-data';
 import { markdownHighlight, codeHighlight } from '../editor/highlight';
 import { markdownTheme, codeTheme } from '../editor/theme';
 import { markdownBlockDecoField, markdownDecoPlugin, markdownImageContextFacet } from '../editor/md-decorations';
-import { markdownCoverField } from '../editor/cover-field';
+import { markdownCoverField, markdownCoverTargetFacet } from '../editor/cover-field';
+import {useStore} from '../stores';
+import {resolveServerConnection} from '../services/server-connection';
+import {workbenchMarkdownOptions} from '../utils/workbench-markdown';
 import {
   markdownBlockHandlePlugin,
   type MarkdownBlockMenuRequest,
@@ -955,10 +958,10 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
           syntaxHighlighting(isMd ? markdownHighlight : codeHighlight),
         ),
         c.conceal.of(isMd ? [
-          markdownImageContextFacet.of({
-            filePath,
-            getFileUrl: window.platform?.getFileUrl,
-          }),
+          markdownImageContextFacet.of(!filePath && isRemoteWorkbenchContentRef(remoteContentRef) && resolveServerConnection(useStore.getState())
+            ? workbenchMarkdownOptions(remoteContentRef, resolveServerConnection(useStore.getState())!)
+            : {filePath,getFileUrl:window.platform?.getFileUrl}),
+          markdownCoverTargetFacet.of(filePath ? {filePath} : isRemoteWorkbenchContentRef(remoteContentRef) ? {target:remoteContentRef} : null),
           markdownDecoPlugin,
           markdownCoverField,
           markdownBlockDecoField,

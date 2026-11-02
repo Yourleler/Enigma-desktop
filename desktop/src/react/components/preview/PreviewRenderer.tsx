@@ -6,15 +6,13 @@
  */
 
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type DragEvent, type MouseEvent, type ReactNode } from 'react';
+import {openMarkdownCoverMenu} from '../../utils/markdown-cover-menu';
 import { renderMarkdownPreview } from '../../utils/markdown';
 import {
   parseMarkdownCover,
-  removeMarkdownCover,
   resolveMarkdownCoverImagePath,
   stripMarkdownFrontMatterForPreview,
-  updateMarkdownCoverLayout,
   type MarkdownCover,
-  type MarkdownCoverLayoutPatch,
 } from '../../utils/markdown-cover';
 import {
   dispatchCoverNotice,
@@ -37,8 +35,11 @@ import { openInternalLink, resolveLinkTarget, type LinkOpenContext } from '../..
 import { showError } from '../../utils/ui-helpers';
 import { hanaFetch } from '../../hooks/use-hana-fetch';
 import { useStore } from '../../stores';
-import { upsertPreviewItem } from '../../stores/preview-actions';
-import { isRemoteWorkbenchContentRef, normalizeWorkbenchContentRef, saveRemoteWorkbenchContent } from '../../utils/remote-file-preview';
+import {upsertPreviewItem} from '../../stores/preview-actions';
+import {capturePreviewContext,previewConnectionKey} from '../../utils/preview-context';
+import {beginMarkdownCoverDrag,type CoverLayout} from '../../utils/markdown-cover-drag';
+import {mutateMarkdownCover,markdownCoverFileIdentity,type CoverMutation} from '../../utils/markdown-cover-mutation';
+import { isRemoteWorkbenchContentRef, normalizeWorkbenchContentRef } from '../../utils/remote-file-preview';
 import { useMermaidDiagrams } from '../../hooks/use-mermaid-diagrams';
 import { LinkContextMenu, type LinkContextMenuState } from '../shared/LinkContextMenu';
 import { DocumentReferencesBlock, MarkdownPropertiesBlock } from './MarkdownChrome';
@@ -215,7 +216,7 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
-function coverLayout(cover: MarkdownCover): Required<MarkdownCoverLayoutPatch> {
+function coverLayout(cover: MarkdownCover): CoverLayout {
   return {
     displayWidth: clamp(cover.displayWidth ?? 100, 40, 100),
     displayHeight: clamp(cover.displayHeight ?? 320, 160, 720),
@@ -227,16 +228,11 @@ function coverLayout(cover: MarkdownCover): Required<MarkdownCoverLayoutPatch> {
 function remoteWorkbenchCoverImageUrl(previewItem: PreviewItem, image: string | null | undefined): string | null {
   if (!image || !isRemoteWorkbenchContentRef(previewItem.remoteContentRef)) return null;
   if (isExternalCoverImagePath(image)) return image;
-  const normalized = normalizeWorkbenchContentRef(previewItem.remoteContentRef);
-  const parts = image.replace(/^\.?\//, '').split('/').filter(Boolean);
-  const name = parts.pop();
-  if (!name) return null;
-  const subdir = [normalized.subdir, ...parts].filter(Boolean).join('/');
-  const params = new URLSearchParams();
-  params.set('mountId', normalized.mountId || normalized.rootId || 'default');
-  params.set('subdir', subdir);
-  params.set('name', name);
-  return `/api/workbench/content?${params.toString()}`;
+  const connection=resolveServerConnection(useStore.getState());
+  if(!connection)return null;
+  const context=workbenchMarkdownOptions(previewItem.remoteContentRef,connection);
+  const path=resolveMarkdownCoverImagePath(context.filePath||undefined,image);
+  return path?context.getFileUrl?.(path)||null:null;
 }
 
 function markdownCoverTargetForPreviewItem(previewItem: PreviewItem): MarkdownCoverTargetInput | null {
@@ -254,41 +250,19 @@ function markdownCoverTargetForPreviewItem(previewItem: PreviewItem): MarkdownCo
   };
 }
 
-async function writeMarkdownPreviewContent(previewItem: PreviewItem, content: string) {
-  if (isRemoteWorkbenchContentRef(previewItem.remoteContentRef)) {
-    const result = await saveRemoteWorkbenchContent(previewItem.remoteContentRef, content, previewItem.fileVersion ?? null);
-    return { result, nextVersion: result.version ?? null };
-  }
-  if (!previewItem.filePath || !window.platform?.writeFileIfUnchanged) return null;
-  const result = await window.platform.writeFileIfUnchanged(previewItem.filePath, content, previewItem.fileVersion || null);
-  return { result, nextVersion: result?.version ?? null };
-}
-
 function MarkdownCoverView({ previewItem, cover }: { previewItem: PreviewItem; cover: MarkdownCover }) {
+  const connectionKey=useStore(previewConnectionKey);
+  const coverIdentity=JSON.stringify([previewItem.id,markdownCoverFileIdentity(previewItem),cover.image]);
+  const owns=useMemo(()=>capturePreviewContext(),[connectionKey,coverIdentity]);
   const [layout, setLayout] = useState(() => coverLayout(cover));
-  const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
+  const closeMenu=useRef<()=>void>(()=>{});
   const [coverDropActive, setCoverDropActive] = useState(false);
   const layoutRef = useRef(layout);
-  const dragRef = useRef<null | {
-    kind: 'position' | 'height';
-    startY: number;
-    startLayout: Required<MarkdownCoverLayoutPatch>;
-  }>(null);
-
-  useEffect(() => {
-    setLayout(coverLayout(cover));
-  }, [cover.displayHeight, cover.displayWidth, cover.positionX, cover.positionY, cover.image]);
-
-  useEffect(() => {
-    layoutRef.current = layout;
-  }, [layout]);
-
-  useEffect(() => {
-    if (!menu) return;
-    const close = () => setMenu(null);
-    window.addEventListener('pointerdown', close);
-    return () => window.removeEventListener('pointerdown', close);
-  }, [menu]);
+  const dragCancel=useRef<()=>void>(()=>{}),dragging=useRef(false),pending=useRef(false),request=useRef(0),mounted=useRef(false);
+  const committed=useRef(layout),lastMutation=useRef<CoverMutation|null>(null);
+  const [saveError,setSaveError]=useState(''),[saving,setSaving]=useState(false);
+  useEffect(()=>{mounted.current=true;pending.current=false;setSaving(false);setSaveError('');return()=>{mounted.current=false;request.current++;dragCancel.current();closeMenu.current();};},[connectionKey,coverIdentity]);
+  useEffect(()=>{committed.current=coverLayout(cover);if(!pending.current&&!dragging.current){layoutRef.current=committed.current;setLayout(committed.current);}},[cover.displayHeight,cover.displayWidth,cover.positionX,cover.positionY,cover.image]);
 
   const remoteImageUrl = remoteWorkbenchCoverImageUrl(previewItem, cover.image);
   const imagePath = remoteImageUrl ? null : resolveMarkdownCoverImagePath(previewItem.filePath, cover.image);
@@ -297,110 +271,34 @@ function MarkdownCoverView({ previewItem, cover }: { previewItem: PreviewItem; c
     : imagePath ? window.platform?.getFileUrl?.(imagePath) || imagePath : null);
   const coverTarget = useMemo(() => markdownCoverTargetForPreviewItem(previewItem), [previewItem]);
 
-  const persistLayout = useCallback(async (nextLayout: Required<MarkdownCoverLayoutPatch>) => {
-    const writeNext = async (content: string, version: PreviewItem['fileVersion']) => {
-      const nextContent = updateMarkdownCoverLayout(content, nextLayout);
-      const result = await writeMarkdownPreviewContent({ ...previewItem, fileVersion: version }, nextContent);
-      return { result: result?.result, nextContent, nextVersion: result?.nextVersion };
-    };
-
-    let { result, nextContent, nextVersion } = await writeNext(previewItem.content, previewItem.fileVersion);
-    if (!result?.ok && result?.conflict && previewItem.filePath && window.platform?.readFileSnapshot) {
-      const snapshot = await window.platform.readFileSnapshot(previewItem.filePath);
-      if (snapshot?.content != null) {
-        ({ result, nextContent, nextVersion } = await writeNext(snapshot.content, snapshot.version));
-      }
-    }
-
-    if (result?.ok) {
-      upsertPreviewItem({ ...previewItem, content: nextContent, fileVersion: nextVersion });
-      return;
-    }
-    dispatchCoverNotice(
-      window.t?.('preview.coverLayoutSaveFailed') ?? 'Failed to save cover layout. The file may have been modified externally.',
-      'error',
-    );
-  }, [previewItem]);
-
-  const deleteCover = useCallback(async () => {
-    setMenu(null);
-    const writeNext = async (content: string, version: PreviewItem['fileVersion']) => {
-      const nextContent = removeMarkdownCover(content);
-      if (nextContent === content) return { result: { ok: true, version }, nextContent, nextVersion: version };
-      const result = await writeMarkdownPreviewContent({ ...previewItem, fileVersion: version }, nextContent);
-      return { result: result?.result, nextContent, nextVersion: result?.nextVersion };
-    };
-
-    let { result, nextContent, nextVersion } = await writeNext(previewItem.content, previewItem.fileVersion);
-    if (!result?.ok && result?.conflict && previewItem.filePath && window.platform?.readFileSnapshot) {
-      const snapshot = await window.platform.readFileSnapshot(previewItem.filePath);
-      if (snapshot?.content != null) {
-        ({ result, nextContent, nextVersion } = await writeNext(snapshot.content, snapshot.version));
-      }
-    }
-
-    if (result?.ok) {
-      upsertPreviewItem({ ...previewItem, content: nextContent, fileVersion: nextVersion });
-      dispatchCoverNotice(window.t?.('preview.coverDeleted') ?? 'Cover removed.', 'success');
-      return;
-    }
-    dispatchCoverNotice(
-      window.t?.('preview.coverDeleteFailed') ?? 'Failed to remove cover. The file may have been modified externally.',
-      'error',
-    );
-  }, [previewItem]);
-
-  const finishDrag = useCallback(() => {
-    const drag = dragRef.current;
-    dragRef.current = null;
-    if (drag) void persistLayout(layoutRef.current);
-  }, [persistLayout]);
-
-  useEffect(() => {
-    const onMove = (event: PointerEvent) => {
-      const drag = dragRef.current;
-      if (!drag) return;
-      const dy = event.clientY - drag.startY;
-      if (drag.kind === 'height') {
-        setLayout(prev => ({
-          ...prev,
-          displayHeight: clamp(drag.startLayout.displayHeight + dy, 160, 720),
-        }));
-      } else {
-        const delta = (dy / Math.max(1, drag.startLayout.displayHeight)) * 100;
-        setLayout(prev => ({
-          ...prev,
-          positionY: clamp(drag.startLayout.positionY - delta, 0, 100),
-        }));
-      }
-    };
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', finishDrag);
-    window.addEventListener('pointercancel', finishDrag);
-    return () => {
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', finishDrag);
-      window.removeEventListener('pointercancel', finishDrag);
-    };
-  }, [finishDrag]);
-
-  const beginDrag = useCallback((kind: 'position' | 'height', event: React.PointerEvent) => {
-    event.preventDefault();
-    setMenu(null);
-    dragRef.current = {
-      kind,
-      startY: event.clientY,
-      startLayout: layout,
-    };
-  }, [layout]);
+  const submit=useCallback(async(mutation:CoverMutation)=>{
+    if(!owns())return;
+    const serial=++request.current;lastMutation.current=mutation;pending.current=true;setSaving(true);setSaveError('');
+    try{
+      const result=await mutateMarkdownCover(previewItem,mutation);
+      if(!mounted.current||serial!==request.current)return;
+      if(result){const savedCover=parseMarkdownCover(result.content);if(savedCover){committed.current=coverLayout(savedCover);layoutRef.current=committed.current;setLayout(committed.current);}}
+    }catch(error){if(mounted.current&&serial===request.current){layoutRef.current=committed.current;setLayout(committed.current);const message=error instanceof Error?error.message:'';setSaveError(/hanaFetch|EACCES|EPERM|Failed to fetch|NetworkError/.test(message)?'封面未保存。请检查文件写入权限和连接后重试。':message||'封面保存未确认，请重试。');}}
+    finally{if(mounted.current&&serial===request.current){pending.current=false;setSaving(false);}}
+  },[previewItem,owns]);
+  const deleteCover=()=>{closeMenu.current();void submit({kind:'remove'});};
+  const beginDrag=useCallback((kind:'position'|'height',event:React.PointerEvent)=>{
+    if(event.button!==0)return;
+    dragCancel.current();closeMenu.current();dragging.current=true;
+    dragCancel.current=beginMarkdownCoverDrag(event.nativeEvent,{kind,layout:layoutRef.current,
+      preview:next=>{layoutRef.current=next;if(mounted.current)setLayout(next);},
+      commit:next=>{void submit({kind:'layout',layout:next});},end:()=>{dragging.current=false;},
+    });
+  },[submit]);
+  const cancelDrag=()=>{dragCancel.current();dragging.current=false;};
 
   const saveImage = useCallback(async () => {
-    setMenu(null);
-    await saveMarkdownCoverImage(imagePath);
-  }, [imagePath]);
+    closeMenu.current();
+    await saveMarkdownCoverImage(imagePath,remoteImageUrl?{url:remoteImageUrl,name:cover.image.split('/').pop()||'cover.png'}:undefined);
+  }, [imagePath,remoteImageUrl,cover.image]);
 
   const regenerateWithPrompt = useCallback(async () => {
-    setMenu(null);
+    closeMenu.current();
     await regenerateMarkdownCoverWithPrompt(coverTarget);
   }, [coverTarget]);
 
@@ -431,6 +329,7 @@ function MarkdownCoverView({ previewItem, cover }: { previewItem: PreviewItem; c
   if (!imageUrl) return null;
 
   return (
+    <>
     <div
       className={`markdown-cover${coverDropActive ? ' markdown-cover-drop-active' : ''}`}
       style={{
@@ -440,9 +339,14 @@ function MarkdownCoverView({ previewItem, cover }: { previewItem: PreviewItem; c
         marginRight: 'auto',
       }}
       onContextMenu={(event) => {
-        event.preventDefault();
+        cancelDrag();event.preventDefault();
         event.stopPropagation();
-        setMenu({ x: event.clientX, y: event.clientY });
+        closeMenu.current();
+        closeMenu.current=openMarkdownCoverMenu(event.currentTarget,{x:event.clientX,y:event.clientY},[
+          {label:'保存图片',run:()=>{void saveImage();}},
+          {label:'重新生成封面',run:()=>{void regenerateWithPrompt();}},
+          {label:'删除封面',danger:true,run:deleteCover},
+        ]);
       }}
       onDragOver={handleCoverDragOver}
       onDragLeave={handleCoverDragLeave}
@@ -459,20 +363,14 @@ function MarkdownCoverView({ previewItem, cover }: { previewItem: PreviewItem; c
         className="markdown-cover-resize"
         role="separator"
         aria-orientation="horizontal"
+        aria-label="调整封面高度" aria-valuemin={160} aria-valuemax={720} aria-valuenow={layout.displayHeight} tabIndex={0}
+        title="拖动调整高度；方向键微调，Esc取消拖动"
+        onKeyDown={event=>{if(!['ArrowUp','ArrowDown','Home','End'].includes(event.key))return;event.preventDefault();const next={...layoutRef.current,displayHeight:clamp(event.key==='Home'?160:event.key==='End'?720:layoutRef.current.displayHeight+(event.key==='ArrowUp'?-16:16),160,720)};layoutRef.current=next;setLayout(next);void submit({kind:'layout',layout:next});}}
         onPointerDown={(event) => beginDrag('height', event)}
       />
-      {menu && (
-        <div
-          className="markdown-cover-menu"
-          style={{ left: `${menu.x}px`, top: `${menu.y}px` }}
-          onPointerDown={(event) => event.stopPropagation()}
-        >
-          <button type="button" onClick={saveImage}>{t('preview.cover.saveImage')}</button>
-          <button type="button" onClick={regenerateWithPrompt}>{t('preview.cover.regenerateWithPrompt')}</button>
-          <button type="button" className="markdown-cover-menu-danger" onClick={deleteCover}>{t('preview.cover.deleteCover')}</button>
-        </div>
-      )}
     </div>
+    {(saving||saveError)&&<div className="markdown-cover-save-notice" role={saveError?'alert':'status'}>{saving?'正在保存封面…':saveError}{saveError&&<button onClick={()=>lastMutation.current&&void submit(lastMutation.current)}>重试保存封面</button>}</div>}
+    </>
   );
 }
 

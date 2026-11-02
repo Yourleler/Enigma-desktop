@@ -193,7 +193,7 @@ export function PreviewPanel({embedded=false,visible=true,itemId,panelId='previe
     const body = previewBodyRef.current;
     if (!body || markdownHeadings.length === 0) return null;
     const bodyTop = body.getBoundingClientRect().top + 56;
-    let current: MarkdownHeading | null = markdownHeadings[0] || null;
+    let current: MarkdownHeading | null = null;
     for (const heading of markdownHeadings) {
       const el = body.querySelector<HTMLElement>(`.preview-markdown #${escapeCssId(heading.id)}`);
       if (!el) continue;
@@ -254,7 +254,7 @@ export function PreviewPanel({embedded=false,visible=true,itemId,panelId='previe
     let cancelled=false;
     const restore = () => {
       if(cancelled||useStore.getState().activeTabId!==previewItem.id||useStore.getState().previewAnchorRequests[previewItem.id])return;
-      if (snapshot.contentHash === contentHash && Number.isFinite(snapshot.scrollTop)) {
+      if (Number.isFinite(snapshot.scrollTop) && (snapshot.contentHash === contentHash || snapshot.scrollTop <= 2)) {
         body.scrollTop = Math.max(0, snapshot.scrollTop);
         body.scrollLeft = Math.max(0, snapshot.scrollLeft || 0);
         return;

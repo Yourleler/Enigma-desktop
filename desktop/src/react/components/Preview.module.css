@@ -240,41 +240,6 @@
     transform: scaleX(1);
 }
 
-.previewPanelBody :global(.markdown-cover-menu) {
-    position: fixed;
-    z-index: 1000;
-    min-width: 176px;
-    padding: var(--space-4);
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--overlay-light);
-    background: var(--bg-card);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
-}
-
-.previewPanelBody :global(.markdown-cover-menu button) {
-    display: block;
-    width: 100%;
-    padding: var(--space-7) var(--space-9);
-    border: 0;
-    border-radius: var(--radius-sm);
-    background: transparent;
-    color: var(--text);
-    font-size: var(--fs-caption);
-    text-align: left;
-    cursor: default;
-}
-
-.previewPanelBody :global(.markdown-cover-menu button:hover) {
-    background: var(--overlay-light);
-}
-
-.previewPanelBody :global(.markdown-cover-menu button.markdown-cover-menu-danger) {
-    margin-top: var(--space-4);
-    border-top: 1px solid var(--overlay-light);
-    border-radius: 0 0 var(--radius-sm) var(--radius-sm);
-    color: var(--danger, #b45a5a);
-}
-
 /* ── 网格标题：margin 整格 / 半格呼吸放 padding（不参与 collapse），
       content 总高凑整格；全部 longhand，勿动左右 auto ── */
 .previewPanelBody :global(.preview-markdown) h1 {

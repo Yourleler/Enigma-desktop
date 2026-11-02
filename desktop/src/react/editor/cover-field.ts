@@ -1,6 +1,6 @@
 import { EditorView, WidgetType, Decoration } from '@codemirror/view';
 import type { DecorationSet } from '@codemirror/view';
-import { EditorState, RangeSetBuilder, StateField, Transaction } from '@codemirror/state';
+import { EditorState, RangeSetBuilder, StateField, Transaction, Facet } from '@codemirror/state';
 import {
   findMarkdownCoverRenderRange,
   parseMarkdownCover,
@@ -15,7 +15,12 @@ import {
   regenerateMarkdownCoverWithPrompt,
   saveMarkdownCoverImage,
 } from '../utils/markdown-cover-actions';
+import {beginMarkdownCoverDrag,type CoverLayout} from '../utils/markdown-cover-drag';
+import {openMarkdownCoverMenu} from '../utils/markdown-cover-menu';
+import type {MarkdownCoverTargetInput} from '../utils/markdown-cover-generation';
 import { markdownImageContextFacet } from './md-decorations';
+
+export const markdownCoverTargetFacet=Facet.define<MarkdownCoverTargetInput|null,MarkdownCoverTargetInput|null>({combine:values=>values[0]??null});
 
 function clamp(value: number | undefined, min: number, max: number, fallback: number): number {
   if (!Number.isFinite(value)) return fallback;
@@ -33,6 +38,7 @@ function resolveCoverImageUrl(imagePath: string | null, getFileUrl?: (path: stri
 }
 
 function updateCoverLayout(view: EditorView, patch: MarkdownCoverLayoutPatch): void {
+  if(view.state.readOnly)return;
   const source = view.state.doc.toString();
   const nextSource = updateMarkdownCoverLayout(source, patch);
   if (nextSource === source) return;
@@ -43,6 +49,7 @@ function updateCoverLayout(view: EditorView, patch: MarkdownCoverLayoutPatch): v
 }
 
 function deleteCover(view: EditorView): void {
+  if(view.state.readOnly)return;
   const source = view.state.doc.toString();
   const nextSource = removeMarkdownCover(source);
   if (nextSource === source) return;
@@ -70,6 +77,7 @@ class MarkdownCoverWidget extends WidgetType {
     readonly markdownFilePath?: string,
     readonly getFileUrl?: (path: string) => string | undefined,
     readonly isTopCover = false,
+    readonly target: MarkdownCoverTargetInput|null = null,
   ) {
     super();
   }
@@ -106,7 +114,7 @@ class MarkdownCoverWidget extends WidgetType {
     const src = resolveCoverImageUrl(imagePath, this.getFileUrl);
     if (!src) {
       wrapper.classList.add('cm-markdown-cover-missing');
-      wrapper.textContent = 'Cover 图片不可用';
+      wrapper.textContent = '封面图片不可用';
       return wrapper;
     }
 
@@ -121,106 +129,35 @@ class MarkdownCoverWidget extends WidgetType {
     resize.className = 'cm-markdown-cover-resize';
     wrapper.appendChild(resize);
 
-    let menu: HTMLElement | null = null;
-    let drag: null | {
-      kind: 'position' | 'height';
-      startY: number;
-      startHeight: number;
-      startPositionY: number;
-    } = null;
-
-    const closeMenu = () => {
-      menu?.remove();
-      menu = null;
-      window.removeEventListener('pointerdown', closeMenu);
-    };
-
-    const makeMenuButton = (label: string, action: () => void) => {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.textContent = label;
-      button.addEventListener('click', () => {
-        closeMenu();
-        action();
-      });
-      return button;
-    };
-
+    let closeMenu=()=>{};
+    let cancelDrag=()=>{};
     const openMenu = (event: MouseEvent) => {
-      event.preventDefault();
-      event.stopPropagation();
-      closeMenu();
-      menu = document.createElement('div');
-      menu.className = 'markdown-cover-menu';
-      menu.style.left = `${event.clientX}px`;
-      menu.style.top = `${event.clientY}px`;
-      menu.addEventListener('pointerdown', (pointerEvent) => pointerEvent.stopPropagation());
-      menu.appendChild(makeMenuButton('保存图片', () => {
-        void saveMarkdownCoverImage(imagePath);
-      }));
-      menu.appendChild(makeMenuButton('自定义提示词生成图片', () => {
-        void regenerateMarkdownCoverWithPrompt(this.markdownFilePath);
-      }));
-      const deleteButton = makeMenuButton('删除封面', () => deleteCover(view));
-      deleteButton.className = 'markdown-cover-menu-danger';
-      menu.appendChild(deleteButton);
-      wrapper.appendChild(menu);
-      window.addEventListener('pointerdown', closeMenu);
+      event.preventDefault();event.stopPropagation();cancelDrag();closeMenu();
+      const target=this.target || (this.markdownFilePath?{filePath:this.markdownFilePath}:null);
+      const remote=this.target?.target;
+      closeMenu=openMarkdownCoverMenu(wrapper,{x:event.clientX,y:event.clientY},[
+        {label:'保存图片',run:()=>{void saveMarkdownCoverImage(remote?null:imagePath,remote?{url:src,name:this.cover.image.split('/').pop()||'cover.png'}:undefined);}},
+        ...(!view.state.readOnly?[
+          ...(target?[{label:'重新生成封面',run:()=>{void regenerateMarkdownCoverWithPrompt(target);}}]:[]),
+          {label:'删除封面',danger:true,run:()=>deleteCover(view)},
+        ]:[]),
+      ]);
     };
 
-    const finishDrag = () => {
-      if (!drag) return;
-      drag = null;
-      updateCoverLayout(view, {
-        displayWidth,
-        displayHeight: parseCssNumber(wrapper.style.height, displayHeight),
-        positionX,
-        positionY: parseCssNumber(img.style.objectPosition.split(/\s+/)[1], positionY),
-      });
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', finishDrag);
-      window.removeEventListener('pointercancel', finishDrag);
+    const renderLayout=(next:CoverLayout)=>{wrapper.style.height=`${next.displayHeight}px`;resize.setAttribute('aria-valuenow',String(next.displayHeight));img.style.objectPosition=`${next.positionX}% ${next.positionY}%`;};
+    const beginDrag=(kind:'position'|'height',event:PointerEvent)=>{
+      if(view.state.readOnly)return;
+      cancelDrag();
+      cancelDrag=beginMarkdownCoverDrag(event,{kind,layout:{displayWidth,displayHeight:parseCssNumber(wrapper.style.height,displayHeight),positionX,positionY:parseCssNumber(img.style.objectPosition.split(/\s+/)[1],positionY)},window:wrapper.ownerDocument.defaultView||window,preview:renderLayout,commit:next=>updateCoverLayout(view,next)});
     };
-
-    const onMove = (event: PointerEvent) => {
-      if (!drag) return;
-      const dy = event.clientY - drag.startY;
-      if (drag.kind === 'height') {
-        const nextHeight = clamp(drag.startHeight + dy, 160, 720, displayHeight);
-        wrapper.style.height = `${nextHeight}px`;
-        return;
-      }
-      const nextPositionY = clamp(
-        drag.startPositionY - ((dy / Math.max(1, drag.startHeight)) * 100),
-        0,
-        100,
-        positionY,
-      );
-      img.style.objectPosition = `${positionX}% ${nextPositionY}%`;
-    };
-
-    const beginDrag = (kind: 'position' | 'height', event: PointerEvent) => {
-      event.preventDefault();
-      event.stopPropagation();
-      drag = {
-        kind,
-        startY: event.clientY,
-        startHeight: parseCssNumber(wrapper.style.height, displayHeight),
-        startPositionY: parseCssNumber(img.style.objectPosition.split(/\s+/)[1], positionY),
-      };
-      window.addEventListener('pointermove', onMove);
-      window.addEventListener('pointerup', finishDrag);
-      window.addEventListener('pointercancel', finishDrag);
-    };
-
+    resize.setAttribute('role','separator');resize.setAttribute('aria-label','调整封面高度');resize.setAttribute('aria-orientation','horizontal');resize.setAttribute('aria-valuemin','160');resize.setAttribute('aria-valuemax','720');resize.setAttribute('aria-valuenow',String(displayHeight));resize.tabIndex=view.state.readOnly?-1:0;
+    resize.addEventListener('keydown',event=>{if(view.state.readOnly||!['ArrowUp','ArrowDown','Home','End'].includes(event.key))return;event.preventDefault();updateCoverLayout(view,{displayHeight:clamp(event.key==='Home'?160:event.key==='End'?720:parseCssNumber(wrapper.style.height,displayHeight)+(event.key==='ArrowUp'?-16:16),160,720,displayHeight)});view.dom.querySelector<HTMLElement>('.cm-markdown-cover-resize')?.focus({preventScroll:true});});
     img.addEventListener('pointerdown', (event) => beginDrag('position', event));
     resize.addEventListener('pointerdown', (event) => beginDrag('height', event));
     wrapper.addEventListener('contextmenu', openMenu);
     wrapper.__hanaMarkdownCoverCleanup = () => {
       closeMenu();
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', finishDrag);
-      window.removeEventListener('pointercancel', finishDrag);
+      cancelDrag();
     };
 
     return wrapper;
@@ -249,6 +186,7 @@ function buildMarkdownCoverEditorState(state: EditorState): MarkdownCoverEditorS
       imageContext.filePath || undefined,
       imageContext.getFileUrl || undefined,
       hasTopCover,
+      state.facet(markdownCoverTargetFacet),
     ),
   }));
   const coverLine = state.doc.lineAt(range.from);

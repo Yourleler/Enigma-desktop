@@ -90,6 +90,15 @@ describe('PreviewPanel markdown editor status', () => {
     } as Partial<StoreState>);
   });
 
+  it('keeps the document top visible after a cover metadata update instead of jumping to the first heading',async()=>{
+    useStore.setState({markdownPreviewIds:['note'],previewItems:[{id:'note',type:'markdown',title:'note.md',filePath:'/tmp/note.md',content:'---\ncover:\n  image: cover.svg\n  displayHeight: 320\n---\n# Body\nText'}],previewReadingPositions:{note:{preview:{scrollTop:0,anchorId:'body',contentHash:'old-content',updatedAt:1}}}});
+    const rect=vi.spyOn(HTMLElement.prototype,'getBoundingClientRect').mockImplementation(function(this:HTMLElement){return {top:this.tagName==='H1'?400:0,left:0,right:800,bottom:640,width:800,height:640,x:0,y:0,toJSON:()=>({})} as DOMRect;});
+    render(<PreviewPanel/>);
+    await waitFor(()=>expect(document.querySelector('.preview-markdown h1')).toBeTruthy());
+    expect(document.getElementById('previewBody')!.scrollTop).toBe(0);
+    rect.mockRestore();
+  });
+
   it('shows selected and total character counts for editable markdown', () => {
     render(<PreviewPanel />);
 

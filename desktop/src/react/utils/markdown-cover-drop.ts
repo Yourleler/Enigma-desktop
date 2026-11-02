@@ -14,6 +14,7 @@ import {
   refreshPreviewDocumentTarget,
   type PreviewDocumentTarget,
 } from './preview-document-refresh';
+import {capturePreviewContext} from './preview-context';
 import { encodeWorkbenchContentPath } from './remote-file-preview';
 import type { RemoteWorkbenchContentRef } from '../types';
 
@@ -108,6 +109,7 @@ export async function applyMarkdownCoverImageDrop({
   target?: WorkbenchMarkdownCoverTarget | RemoteWorkbenchContentRef | null;
   dataTransfer?: DataTransfer | null;
 }): Promise<boolean> {
+  const owns=capturePreviewContext();
   const targetInput = coverTargetInput(filePath, target);
   if (!targetInput) return false;
   const payload = readAppFileDragPayload(dataTransfer);
@@ -116,36 +118,30 @@ export async function applyMarkdownCoverImageDrop({
   if (!imageFilePath && !imageFile) return false;
 
   try {
-    const useUpload = Boolean(target) && imageFile;
+    const useUpload = !!imageFile && (!!target || !imageFilePath);
+    const encoded=useUpload?await fileToBase64(imageFile!):undefined;
+    if(!owns())return true;
     const result = useUpload
-      ? await applyMarkdownCoverImage({
-        ...targetInput,
-        image: {
-          filename: imageFile.name || 'cover.png',
-          contentBase64: await fileToBase64(imageFile),
-        },
-      })
-      : await applyMarkdownCoverImage({
-        ...targetInput,
-        imageFilePath: imageFilePath!,
-      });
+      ? await applyMarkdownCoverImage({...targetInput,image:{filename:imageFile!.name||'cover.png',contentBase64:encoded!}})
+      : await applyMarkdownCoverImage({...targetInput,imageFilePath:imageFilePath!});
+    if(!owns())return true;
     // 显式判别收窄（=== false）：见 markdown-cover-actions.ts 同型注释，
     // 兼容 tsconfig.test.json 的非严格编译闭包。
     if (result.ok === false) {
-      dispatchCoverNotice(`Cover 更新失败：${result.error}`, 'error');
+      dispatchCoverNotice(`封面更新失败：${result.error}`, 'error');
       return true;
     }
 
     try {
       await refreshPreviewDocumentTarget(previewDocumentTargetFromCoverInput(targetInput));
-      dispatchCoverNotice('Cover 已更新。', 'success');
+      if(owns())dispatchCoverNotice('封面已更新。', 'success');
     } catch (refreshErr) {
       const message = refreshErr instanceof Error ? refreshErr.message : String(refreshErr);
-      dispatchCoverNotice(`Cover 已更新，但刷新失败：${message}`, 'error');
+      if(owns())dispatchCoverNotice(`封面已更新，但刷新失败：${message}`, 'error');
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    dispatchCoverNotice(`Cover 更新失败：${message}`, 'error');
+    if(owns())dispatchCoverNotice(`封面更新失败：${message}`, 'error');
   } finally {
     if (payload) clearAppFileDragPayload(payload.dragId);
   }
