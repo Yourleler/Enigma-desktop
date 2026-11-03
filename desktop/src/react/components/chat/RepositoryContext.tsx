@@ -22,7 +22,7 @@ export function useRepositoryContext(){
 export async function addConversationRepository(selected?:string){
  const folder=selected||await window.platform?.selectFolder?.();if(!folder)return;
  const state=useStore.getState(),sp=state.pendingNewSession?null:state.currentSessionPath;
- if(sp){const response=await hanaFetch('/api/sessions/authorized-folders',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:sp,action:'add',folder}),throwOnHttpError:false});const data=await response.json().catch(()=>null);if(!response.ok)throw Error(data?.error||'目录未添加');state.setSessionAuthorizedFolders(sp,data.authorizedFolders||[]);}
+ if(sp){const response=await hanaFetch('/api/sessions/authorized-folders',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:sp,action:'add',folder}),throwOnHttpError:false});const data=await response.json().catch(()=>null);if(!response.ok)throw Error(data?.error||'目录未添加');state.setSessionAuthorizedFolders(sp,data?.authorizedFolders||[]);}
  else {const r=await hanaFetch('/api/enigma/repositories/context',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({roots:[folder]}),throwOnHttpError:false});const data=await r.json().catch(()=>null);if(!r.ok||!data?.repositories?.length)throw Error(data?.error||'目录不存在');if(!state.selectedFolder)await applyFolder(folder);else addWorkspaceFolder(folder);}
 }
 export function RepositoryContextBar({compact=false}:{compact?:boolean}){

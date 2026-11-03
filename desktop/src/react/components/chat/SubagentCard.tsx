@@ -77,14 +77,14 @@ export const SubagentCard = memo(function SubagentCard({ block }: SubagentCardPr
       const res = await hanaFetch(`/api/task/${encodeURIComponent(block.taskId)}/abort`, { method: 'POST', throwOnHttpError: false });
       const data = await res.json().catch(() => null);
       if (res.ok) setStatus('aborted');
-      else if (res.status === 404) setAbortError('任务已结束或不存在');
-      else setAbortError(data?.error === 'task type does not support abort' ? '该任务不支持中途停止' : (data?.error || '停止失败，请重试'));
+      else if (res.status === 404) setAbortError(t('subagentAbortMissing'));
+      else setAbortError(data?.error === 'task type does not support abort' ? t('subagentAbortUnsupported') : (data?.error || t('subagentAbortFailed')));
     } catch {
-      setAbortError('网络异常，停止请求未送达');
+      setAbortError(t('subagentAbortNetwork'));
     } finally {
       setAborting(false);
     }
-  }, [aborting, block.taskId]);
+  }, [aborting, block.taskId, t]);
 
   const displayLabel = block.label || block.reuseInstance || null;
   const statusLabel = isInterrupted

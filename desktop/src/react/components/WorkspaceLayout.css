@@ -86,10 +86,10 @@ body.enigma-surface #enigma-titlebar-workspace .enigma-dock-tab-close { max-widt
 body.enigma-surface #enigma-titlebar-workspace { container:enigma-dock-head/inline-size; }
 @container enigma-dock-head (max-width:570px) {
  body.enigma-surface #enigma-titlebar-workspace .enigma-dock-tab button[role="tab"] { padding-inline:var(--space-7, 7px); }
- body.enigma-surface #enigma-titlebar-workspace .enigma-dock-tab .enigma-dock-tab-close { position:absolute;left:var(--space-4, 4px);top:50%;transform:translateY(-50%);width:22px;max-width:none;height:22px;min-height:0;padding:0;display:grid;place-items:center;border-radius:6px;pointer-events:none; }
- body.enigma-surface #enigma-titlebar-workspace .enigma-dock-tab:is(:hover,:has(:focus-visible)) .enigma-dock-tab-close { pointer-events:auto;opacity:1; }
- body.enigma-surface #enigma-titlebar-workspace .enigma-dock-tab:is(:hover,:has(:focus-visible)) [role="tab"] > :first-child { opacity:0; }
- body.enigma-surface #enigma-titlebar-workspace .enigma-dock-tab:not(:hover,:has(:focus-visible)) .enigma-dock-tab-close { opacity:0; }
+ body.enigma-surface #enigma-titlebar-workspace .enigma-dock-tab:not(.active) .enigma-dock-tab-close { position:absolute;left:var(--space-4, 4px);top:50%;transform:translateY(-50%);width:22px;max-width:none;height:22px;min-height:0;padding:0;display:grid;place-items:center;border-radius:6px;pointer-events:none; }
+ body.enigma-surface #enigma-titlebar-workspace .enigma-dock-tab:not(.active):is(:hover,:has(:focus-visible)) .enigma-dock-tab-close { pointer-events:auto;opacity:1; }
+ body.enigma-surface #enigma-titlebar-workspace .enigma-dock-tab:not(.active):is(:hover,:has(:focus-visible)) [role="tab"] > :first-child { opacity:0; }
+ body.enigma-surface #enigma-titlebar-workspace .enigma-dock-tab:not(.active):not(:hover,:has(:focus-visible)) .enigma-dock-tab-close { opacity:0; }
 }
 @container enigma-dock-head (max-width:430px) {
  body.enigma-surface #enigma-titlebar-workspace .enigma-dock-tab:not(.active) button[role="tab"] { padding-inline:var(--space-5, 5px);gap:0; }
