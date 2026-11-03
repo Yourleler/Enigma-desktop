@@ -11,7 +11,10 @@
     display: block;
     width: 100%;
     min-width: 0;
-    overflow-x: hidden;
+    /* clip, not hidden: hidden turns the page into a vertical scroller, so the
+       4px fade-up on open briefly overflowed, showed a scrollbar and narrowed
+       the content, which then snapped wider: a visible stretch on open. */
+    overflow-x: clip;
 }
 
 .surface {
