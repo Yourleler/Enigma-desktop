@@ -213,7 +213,9 @@ body.enigma-surface :is([data-liquid="control"],.enigma-token-popover)[data-liqu
 body.enigma-surface[data-enigma-tone]:not(.enigma-glass-off) [data-liquid="composer"][data-liquid-surface] {
   background:transparent;
   --glass-fill:color-mix(in srgb,var(--eg-card) var(--glass-composer-mix,38%),transparent);
-  --glass-blur:var(--glass-composer-blur,5.35px);
+  /* Text now passes under the whole card; a light floor keeps refracted
+     lines from reading as a doubled copy at the low end of the slider. */
+  --glass-blur:max(5px,var(--glass-composer-blur,5.35px));
 }
 @media (prefers-reduced-transparency:reduce),(prefers-contrast:more) {
   body.enigma-surface[data-enigma-tone]:not(.enigma-glass-off) [data-liquid="composer"][data-liquid-surface] {

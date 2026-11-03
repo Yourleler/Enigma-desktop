@@ -306,9 +306,17 @@ export function SettingsContent({
 }
 
 /** 初始化：加载 port/token → i18n → agents → 头像 → config */
+let settingsInitialized = false;
 async function initSettings() {
   const platform = window.platform;
   const store = useSettingsStore.getState();
+  // Reopening keeps the last snapshot on screen and refreshes it in place,
+  // instead of flashing the loading mask and reloading the locale each time.
+  if (settingsInitialized) {
+    await loadAgents().catch(() => {});
+    await Promise.all([loadAvatars(), loadSettingsSnapshot({ retainSameKeyData: true })]).catch(() => {});
+    return;
+  }
   store.set({ ready: false });
 
   // 超时保护：15 秒后强制显示，防止无限白屏
@@ -356,12 +364,10 @@ async function initSettings() {
     // agents
     await loadAgents();
 
-    // avatars
-    await loadAvatars();
+    // avatars + unified backend settings truth source.
+    await Promise.all([loadAvatars(), loadSettingsSnapshot()]);
 
-    // Unified backend settings truth source.
-    await loadSettingsSnapshot();
-
+    settingsInitialized = true;
     store.set({ ready: true });
   } catch (err) {
     console.error('[settings] init failed:', err);

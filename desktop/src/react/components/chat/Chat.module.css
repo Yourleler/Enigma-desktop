@@ -2185,7 +2185,9 @@
     top: 0;
     left: 0;
     right: 0;
-    bottom: calc(var(--chat-scrollbar-bottom-inset) + var(--space-24));
+    /* Messages run under the whole composer so its glass refracts one
+       continuous scene instead of a scene cut mid-card. */
+    bottom: 0;
     overflow: hidden;
 }
 
@@ -2206,7 +2208,7 @@
 /* 静默滚动条：默认 thumb 透明（track 已是 transparent），hover 或正在滚动时才显色。
    不改宽度，避免布局抖动。is-scrolling class 由 Panel 的 scroll handler 在滚动时打上、800ms 无滚动后摘掉。 */
 .sessionPanel::-webkit-scrollbar-track {
-    margin-bottom: var(--chat-scrollbar-bottom-inset);
+    margin-bottom: calc(var(--chat-scrollbar-bottom-inset) * 2 + var(--space-24));
 }
 
 .sessionPanel::-webkit-scrollbar-thumb {
@@ -2277,7 +2279,7 @@
 
 .sessionFooter {
     /* 和 sessionPanel 的切点对齐：遮挡发生在输入卡片中部，同时在滚到底时额外留一行左右呼吸空间。 */
-    height: calc(var(--chat-scrollbar-bottom-inset) + var(--space-24) + 5rem);
+    height: calc(var(--chat-scrollbar-bottom-inset) * 2 + var(--space-24) * 2 + 5rem);
     flex-shrink: 0;
 }
 

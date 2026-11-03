@@ -125,7 +125,12 @@ const ToolIndicator = memo(function ToolIndicator({ tool, agentName }: { tool: T
   const verb = row.verbKey ? tr(row.verbKey, {}, row.verbFallback || '') : presentation.label;
   const icon = row.verbKey ? row.icon : presentation.icon;
   const approvalUnavailable=tool.details?.errorCode==='TOOL_APPROVAL_UNAVAILABLE'||tool.error?.includes('execution context cannot ask the user');
-  const errorText = tool.error ? (approvalUnavailable ? '这次操作需要确认，原执行模式未能弹出审批。操作没有执行。' : tool.error) : '';
+  const reviewerTimedOut=(tool.details?.confirmation as { reasonCode?: string } | undefined)?.reasonCode==='approval_review_failed';
+  const errorText = tool.error ? (approvalUnavailable
+    ? (reviewerTimedOut
+      ? '自动审核模型超时没有给出结论，按规则转人工确认；但这次运行不能弹出审批，所以操作没有执行。'
+      : '这次操作需要你确认，但当时的运行方式不能弹出审批，所以操作没有执行。')
+    : tool.error) : '';
   const expandable = !!(row.command || row.diff || row.params || errorText);
 
   // 如果 args 里有 tag 类型信息（如 agent 名）
