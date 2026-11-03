@@ -34,6 +34,15 @@ body.enigma-surface {
   --aurora-c: rgb(144 160 239 / 20%);
   --aurora-ribbon: rgb(174 132 234 / 20%);
   --aurora-filament: rgb(255 255 255 / 64%);
+  /* Chrome text sits on the thinnest material (the window gutter). It keeps
+     the muted hierarchy but clears 4.5:1 over the saturated ribbon. */
+  --eg-chrome-muted: #514a5e;
+  --permission-auto: #376a80;
+  --permission-auto-rgb: 55, 106, 128;
+  --permission-auto-border: rgba(var(--permission-auto-rgb), 0.32);
+  --permission-auto-bg: rgba(var(--permission-auto-rgb), 0.08);
+  /* Floating layers lift by offset and soft blur, not by darker rims. */
+  --glass-float-shadow: 0 18px 44px -14px var(--glass-shadow),0 3px 10px -2px var(--shade-indigo-7);
   background: var(--eg-page);
 }
 body.enigma-surface[data-enigma-tone="dark"] {
@@ -66,6 +75,9 @@ body.enigma-surface[data-enigma-tone="dark"] {
   --aurora-c: rgb(147 104 227 / 26%);
   --aurora-ribbon: rgb(65 204 170 / 20%);
   --aurora-filament: rgb(182 234 228 / 24%);
+  --eg-chrome-muted: #b3bdcc;
+  --permission-auto: #7db4ca;
+  --permission-auto-rgb: 125, 180, 202;
 }
 body.enigma-surface::before {
   content: ''; position: fixed; inset: -15%; z-index: -1; pointer-events: none;
@@ -199,30 +211,39 @@ body.enigma-surface :is(.enigma-toolbar,[data-liquid="composer"]) {
   --glass-fill: color-mix(in srgb,var(--eg-card) var(--glass-control-mix,14%),transparent);
   --glass-blur: var(--glass-control-blur,1.5px);
 }
-/* The live usage pill is a control too. Give it the slider's fill/blur,
-   without changing the transparent endpoint or filtering its text. */
+/* The live usage pill is a control too. It follows the slider's fill/blur
+   without filtering its text. It floats over the scrolling transcript, so it
+   keeps a 20% cover floor and enough blur that passing glyphs read as
+   texture rather than competing text. */
 body.enigma-surface [data-liquid="control"] {
-  --glass-fill: color-mix(in srgb,var(--eg-card) var(--glass-control-cover,10%),var(--glass-clear-fill));
-  --glass-blur: var(--glass-control-blur,1.5px);
+  --glass-fill: color-mix(in srgb,var(--eg-card) calc(var(--glass-control-cover,10%) * .8 + 20%),var(--glass-clear-fill));
+  --glass-blur: calc(var(--glass-control-blur,1.5px) + 4px);
 }
 body.enigma-surface :is([data-liquid="control"],.enigma-token-popover)[data-liquid-surface]::after {
   opacity: var(--glass-control-edge-opacity,1);
 }
 /* More specific than the opaque base input-wrapper rule, independent of CSS
-   chunk load order. The slider controls the real composer backdrop and fill. */
+   chunk load order. The slider controls the real composer backdrop and fill;
+   the text-entry layer keeps a 20% cover floor so the placeholder and caret
+   never sit on raw wallpaper, and still reaches the slider's dense end. */
 body.enigma-surface[data-enigma-tone]:not(.enigma-glass-off) [data-liquid="composer"][data-liquid-surface] {
   background:transparent;
-  --glass-fill:color-mix(in srgb,var(--eg-card) var(--glass-composer-mix,38%),transparent);
-  --glass-blur:var(--glass-composer-blur,5.35px);
+  --glass-fill:color-mix(in srgb,var(--eg-card) calc(var(--glass-composer-mix,38%) * .8 + 20%),transparent);
+  --glass-blur:calc(var(--glass-composer-blur,5.35px) + 3px);
 }
 @media (prefers-reduced-transparency:reduce),(prefers-contrast:more) {
   body.enigma-surface[data-enigma-tone]:not(.enigma-glass-off) [data-liquid="composer"][data-liquid-surface] {
     background:var(--eg-card);backdrop-filter:none;-webkit-backdrop-filter:none;
   }
 }
+/* Menus and popovers float over readable text, so the tint keeps a cover
+   floor (shared with [data-menu-surface]) and the blur stops glyph ghosting. */
 body.enigma-surface :is(.enigma-surface-menu,.enigma-token-popover) {
-  --glass-fill: color-mix(in srgb,var(--eg-card) var(--glass-menu-mix,54%),transparent);
-  --glass-blur: 10px;
+  --glass-fill: color-mix(in srgb,var(--eg-card) max(86%,var(--glass-menu-mix,54%)),transparent);
+  --glass-blur: 18px;
+}
+body.enigma-surface[data-enigma-tone] :is(.enigma-surface-menu,.enigma-token-popover,[data-menu-surface])[data-liquid-surface] {
+  box-shadow: var(--glass-float-shadow);
 }
 body.enigma-surface .enigma-workspace-shell {
   margin: var(--space-8) var(--space-8) var(--space-8) 0; height: calc(100% - 16px); padding: var(--space-4) 0;
@@ -270,14 +291,17 @@ body.enigma-surface.enigma-glass-off .enigma-workspace-shell { background:var(--
 }
 
 /* Shared material families: compact sheets can refract, while large/scrolled
-   frames use one stable backdrop instead of scrolling a pseudo-element. */
-body.enigma-surface [data-liquid="sheet"] { --glass-fill:color-mix(in srgb,var(--eg-card) var(--glass-frame-mix,57%),transparent); --glass-blur:14px; border-radius:22px; }
+   frames use one stable backdrop instead of scrolling a pseudo-element.
+   Frames sit above the workspace, so their cover is compressed toward opaque
+   (57% → 74% at the default tint) instead of matching the content layer. */
+body.enigma-surface :is([data-liquid="sheet"],[data-glass-frame]) { --glass-frame-cover:calc(var(--glass-frame-mix,57%) * .6 + 40%); }
+body.enigma-surface [data-liquid="sheet"] { --glass-fill:color-mix(in srgb,var(--eg-card) var(--glass-frame-cover,74%),transparent); --glass-blur:18px; border-radius:22px; }
 body.enigma-surface [data-glass-frame], body.enigma-surface .enigma-modal[data-glass-frame], body.enigma-surface .enigma-panel[data-glass-frame] {
   --glass-light-opacity: 0;
-  background:radial-gradient(ellipse var(--glass-spot-width,340px) var(--glass-spot-height,200px) at var(--glass-pointer-x,50%) var(--glass-pointer-y,50%),rgb(var(--glass-aura-rgb) / calc(var(--glass-light-opacity,0) * var(--glass-spot-strength,.22))),transparent 80%),linear-gradient(140deg,color-mix(in srgb,var(--glass-edge) 6%,transparent),transparent 58%),color-mix(in srgb,var(--eg-card) var(--glass-frame-mix,57%),transparent);
+  background:radial-gradient(ellipse var(--glass-spot-width,340px) var(--glass-spot-height,200px) at var(--glass-pointer-x,50%) var(--glass-pointer-y,50%),rgb(var(--glass-aura-rgb) / calc(var(--glass-light-opacity,0) * var(--glass-spot-strength,.22))),transparent 80%),linear-gradient(140deg,color-mix(in srgb,var(--glass-edge) 6%,transparent),transparent 58%),color-mix(in srgb,var(--eg-card) var(--glass-frame-cover,74%),transparent);
   border:1px solid var(--eg-stroke-strong);
-  box-shadow:inset 0 1px 0 var(--glass-edge),inset 0 -1px 0 var(--glass-edge-low),0 18px 48px -20px var(--glass-shadow);
-  backdrop-filter:blur(14px) saturate(1.18); -webkit-backdrop-filter:blur(14px) saturate(1.18);
+  box-shadow:inset 0 1px 0 var(--glass-edge),inset 0 -1px 0 var(--glass-edge-low),0 24px 60px -24px var(--glass-shadow),0 4px 14px -6px var(--glass-shadow);
+  backdrop-filter:blur(18px) saturate(1.18); -webkit-backdrop-filter:blur(18px) saturate(1.18);
 }
 body.enigma-surface .enigma-modal[data-glass-frame] > :is(header,footer) { background:transparent; }
 /* Panels sit over readable conversation text, so they need their own cover. */
@@ -297,11 +321,16 @@ body.enigma-surface [data-glass-frame="settings"] {
       rgb(var(--glass-aura-rgb) / calc(var(--glass-light-opacity,0) * .037)) 55%,
       rgb(var(--glass-aura-rgb) / calc(var(--glass-light-opacity,0) * .008)) 78%,
       var(--glass-aura-clear) 100%),
-    color-mix(in srgb,var(--eg-card) var(--glass-frame-mix,57%),transparent);
+    color-mix(in srgb,var(--eg-card) var(--glass-settings-cover,84%),transparent);
 }
+/* Settings is a long-reading top layer: the backdrop may tint it, but
+   blurred page glyphs must not read through it (84% floor at the default). */
+body.enigma-surface [data-glass-frame="settings"] { --glass-settings-cover:max(84%,var(--glass-frame-cover,74%)); }
 body.enigma-surface .settings-panel { --bg-card:color-mix(in srgb,var(--eg-card) 32%,transparent); }
 body.enigma-surface .settings-panel [data-settings-surface="card"] { background:color-mix(in srgb,var(--eg-card) 28%,transparent); }
-body.enigma-surface .settings-panel input:not([type="range"]):not([type="checkbox"]),body.enigma-surface .settings-panel textarea { background:color-mix(in srgb,var(--eg-card) 36%,transparent); }
+/* Fields are inset wells, not more card: on a dense frame a card-tinted
+   input would disappear into it. Their own border and focus ring stay. */
+body.enigma-surface .settings-panel input:not([type="range"]):not([type="checkbox"]),body.enigma-surface .settings-panel textarea { background:color-mix(in srgb,var(--eg-secondary) 52%,transparent); }
 body.enigma-surface [data-settings-navigation] { background:color-mix(in srgb,var(--eg-sidebar) 28%,transparent); }
 body.enigma-surface [data-settings-navigation] > button[aria-current="page"] { background:transparent; box-shadow:none; }
 body.enigma-surface [data-glass-frame="hint"] { color:var(--eg-text); border-radius:11px; background:color-mix(in srgb,var(--eg-card) 92%,transparent); }
