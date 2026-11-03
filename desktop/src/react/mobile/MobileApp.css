@@ -186,4 +186,51 @@ body,
     padding-right: var(--panel-edge-gap);
     padding-left: var(--panel-edge-gap);
   }
+
+  /* Touch titlebar: every icon control gets a 40px hit box (the 28px desktop
+     size is too small for a thumb) and the same 4px rhythm, so neighbouring
+     buttons never share an edge. Icons keep their size; only the box grows.
+     The tone-qualified selectors outrank the desktop surface layout rules. */
+  .mobile-desktop-root .titlebar,
+  body.enigma-surface[data-enigma-tone] .mobile-desktop-root > .titlebar {
+    padding-inline: var(--space-4) var(--space-4);
+  }
+
+  .mobile-desktop-root .titlebar .tb-toggle,
+  .mobile-desktop-root .titlebar .tb-right-group > .enigma-menu-trigger,
+  .mobile-desktop-root .titlebar #enigma-titlebar-chat-tools .enigma-compact-tools > .enigma-menu-trigger.enigma-menu-trigger {
+    box-sizing: border-box;
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
+    min-height: 40px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 10px;
+  }
+
+  .mobile-desktop-root .titlebar .tb-toggle-left,
+  .mobile-desktop-root .titlebar .tb-toggle-right {
+    margin-inline: 0;
+  }
+
+  .mobile-desktop-root .titlebar .tb-right-group,
+  body.enigma-surface .mobile-desktop-root > .titlebar .tb-right-group {
+    gap: var(--space-4);
+  }
+
+  .mobile-desktop-root .titlebar .tb-conversation-group,
+  body.enigma-surface .mobile-desktop-root > .titlebar .tb-conversation-group {
+    gap: var(--space-4);
+  }
+
+  /* Title text needs no extra inset next to a 40px toggle. */
+  .mobile-desktop-root .titlebar .tb-center-title,
+  body.enigma-surface .mobile-desktop-root > .titlebar .tb-center-title {
+    padding-inline: var(--space-4) var(--space-8);
+  }
+
+  .mobile-desktop-root .titlebar .enigma-repository-context > button {
+    min-height: 40px;
+  }
 }

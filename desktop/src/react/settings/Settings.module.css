@@ -7348,6 +7348,15 @@ a.about-link:hover {
  .settings-search-shell { margin:0;min-width:0; }
  .settings-search-results { grid-column:1/-1;max-height:200px;overflow:auto; }
  .settings-main { padding:var(--space-16); }
+ /* Touch-size rows: the return button, tab picker and search share one 40px
+    height and the same 16px inset, so the header reads as one aligned strip. */
+ .settings-header-modal { min-height:56px;box-sizing:border-box; }
+ .settings-compact-navigation { height:40px; }
+ .settings-search-shell { min-height:40px; }
+ .settings-search-input { height:40px; }
+ /* The picker below already names the current tab; keep the heading for
+    assistive tech but stop repeating it in large type beside “设置”. */
+ .settings-header-tab-title { position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap; }
 }
 @container settings-pane (max-width:380px) {
  .settings-main .theme-options { grid-template-columns:minmax(0,1fr); }
