@@ -156,10 +156,6 @@ body.enigma-surface :is(.input-wrapper,[class*="input-wrapper"]) { background: v
 body.enigma-surface :is(.input-wrapper,[class*="input-wrapper"]):focus-within { border-color: var(--eg-stroke-strong); box-shadow: var(--eg-shadow-soft); }
 body.enigma-surface :is(button,a,input,textarea,select,summary):focus-visible { outline: 2px solid var(--eg-link); outline-offset: 2px; }
 body.enigma-surface ::selection { background: color-mix(in srgb, var(--eg-link) 20%, transparent); }
-/* Browser-owned surfaces follow the material: thumbs take the ink tint
-   instead of neutral grey, and the caret carries the accent. */
-body.enigma-surface * { scrollbar-color: color-mix(in srgb, var(--eg-text) 24%, transparent) transparent; }
-body.enigma-surface :is(input, textarea, [contenteditable="true"]) { caret-color: var(--eg-accent); }
 body.enigma-surface .main-content:has(.enigma-toolbar) { padding-top: var(--titlebar-h, 44px); box-sizing: border-box; }
 /* Native shell already lays out the titlebar as a separate row. Web's
    mobile shell overlays it and retains the inset above. */
