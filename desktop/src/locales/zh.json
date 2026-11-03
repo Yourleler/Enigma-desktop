@@ -2767,11 +2767,67 @@
       "status": {
         "available": "可用",
         "expired": "已过期"
-      }
+      },
+      "emptyHint": "在输入框点 ＋ 或把文件拖进对话即可添加；助手生成的文件也会出现在这里。",
+      "noMatch": "没有匹配的附件"
     },
     "jian": {
       "collapse": "收起自动整理说明",
       "expand": "展开自动整理说明"
+    },
+    "dock": {
+      "label": "工作面板",
+      "scrollLeft": "向左滚动工作标签",
+      "scrollRight": "向右滚动工作标签",
+      "scrollLeftHint": "查看左侧标签；也可横向滚动",
+      "scrollRightHint": "查看右侧标签；也可横向滚动",
+      "menuSwitch": "切换到此面板",
+      "menuRestore": "重新添加",
+      "tabs": {
+        "files": {
+          "label": "文件",
+          "hint": "项目目录与本次对话的附件"
+        },
+        "changes": {
+          "label": "变更",
+          "hint": "代码变更、智能阅读和完整差异"
+        },
+        "browser": {
+          "label": "浏览器",
+          "hint": "浏览网页，切换标签保留页面"
+        },
+        "tasks": {
+          "label": "任务",
+          "hint": "进度、协作助手和任务详情"
+        },
+        "terminal": {
+          "label": "终端",
+          "hint": "在选定工作目录运行命令"
+        },
+        "sidechat": {
+          "label": "侧边对话",
+          "hint": "独立提问、传文件或处理问题，主对话继续保留",
+          "menuHint": "独立提问或处理问题"
+        },
+        "agents": {
+          "label": "协作助手",
+          "hint": "子任务、执行记录和父对话定位",
+          "menuHint": "查看子任务及执行记录"
+        }
+      },
+      "empty": {
+        "changesTitle": "还没有代码变更",
+        "changesBody": "在项目里开始对话；助手修改文件后，可以在这里逐项审阅差异。",
+        "changesAction": "开始对话",
+        "tasksTitle": "还没有任务进展",
+        "tasksBody": "向助手描述要完成的工作后，这里会显示计划步骤、协作助手和运行状态。",
+        "tasksAction": "描述一个任务",
+        "toolsTitle": "打开项目工具",
+        "toolsBody": "沿用当前对话的目录。没有目录的项目也可以管理任务；代码功能需要在“仓库”中关联代码目录。",
+        "toolsAction": "打开工具",
+        "addTitle": "添加工作面板",
+        "addBody": "点击上方＋，选择文件、浏览器、变更或其他工具。"
+      }
     }
   },
   "desk": {
@@ -3501,7 +3557,15 @@
     "legacyImageUpgrade": "此图片预览已升级，点此在新查看器打开",
     "coverLayoutSaveFailed": "Cover 布局保存失败，文件可能已被外部修改。",
     "coverDeleted": "已删除封面。",
-    "coverDeleteFailed": "封面删除失败，文件可能已被外部修改。"
+    "coverDeleteFailed": "封面删除失败，文件可能已被外部修改。",
+    "pendingSave": {
+      "label": "文件保存状态",
+      "failed": "修改尚未保存到文件。预览显示的是草稿，可回到源码重试保存。",
+      "conflict": "文件有外部更新，自动保存已暂停。预览显示的是你的草稿，请回到源码比较后再决定。",
+      "draft": "有一份尚未写入文件的草稿。预览显示的是磁盘上的版本，回到源码可恢复并比较。",
+      "recovered": "已恢复一份未保存的草稿，自动保存已暂停。预览显示的是该草稿；回到源码与磁盘版本比较后再决定如何保存。",
+      "action": "回到源码处理"
+    }
   },
   "mediaViewer": {
     "ariaLabel": "媒体预览",

@@ -33,13 +33,20 @@ import {readAppFileDragPayload,clearAppFileDragPayload} from '../../utils/app-fi
 import './RightDock.css';
 
 type TabInfo={id:DockTab;label:string;icon:AppIconName|'browser'|'changes';hint:string};
-const fixed:TabInfo[]=[
-  {id:'files',label:'文件',icon:'project',hint:'项目目录与本次对话的附件'},
-  {id:'changes',label:'变更',icon:'changes',hint:'代码变更、智能阅读和完整差异'},
-  {id:'browser',label:'浏览器',icon:'browser',hint:'浏览网页，切换标签保留页面'},
-  {id:'tasks',label:'任务',icon:'activity',hint:'进度、协作助手和任务详情'},
-  {id:'terminal',label:'终端',icon:'command',hint:'在选定工作目录运行命令'},
+/** Locale lookup that keeps the Chinese source text when no translation is loaded. */
+function tr(key:string,fallback:string){
+  const value=window.t?.(`rightWorkspace.dock.${key}`);
+  return typeof value==='string'&&value&&value!==`rightWorkspace.dock.${key}`?value:fallback;
+}
+const fixedTabs:{id:DockTab;icon:TabInfo['icon'];label:string;hint:string}[]=[
+  {id:'files',icon:'project',label:'文件',hint:'项目目录与本次对话的附件'},
+  {id:'changes',icon:'changes',label:'变更',hint:'代码变更、智能阅读和完整差异'},
+  {id:'browser',icon:'browser',label:'浏览器',hint:'浏览网页，切换标签保留页面'},
+  {id:'tasks',icon:'activity',label:'任务',hint:'进度、协作助手和任务详情'},
+  {id:'terminal',icon:'command',label:'终端',hint:'在选定工作目录运行命令'},
 ];
+const tabText=(id:string,label:string,hint:string)=>({label:tr(`tabs.${id}.label`,label),hint:tr(`tabs.${id}.hint`,hint)});
+const localizedFixedTabs=():TabInfo[]=>fixedTabs.map(tab=>({...tab,...tabText(tab.id,tab.label,tab.hint)}));
 const toolIcons: Record<string, AppIconName> = {
   project: 'project', plan: 'diary', collaboration: 'team', conductor: 'team',
   timeline: 'clock', observer: 'activity', reading: 'read', materials: 'layers',
@@ -61,6 +68,9 @@ export function RightDock(){
   const scope=useStore(dockScope),session=useStore(s=>s.currentSessionPath),connection=useStore(s=>s.activeServerConnectionId||'local');
   const previewOpen=useStore(s=>s.previewOpen),openTabs=useStore(s=>s.openTabs),items=useStore(s=>s.previewItems),activeFile=useStore(s=>s.activeTabId),visible=useStore(s=>s.jianOpen);
   const view=useRightDock(s=>s.views[scope]);
+  // Subscribe to the locale so translated tab labels refresh on language change.
+  useStore(s=>s.locale);
+  const fixed=localizedFixedTabs(),sidechatText=tabText('sidechat','侧边对话','独立提问、传文件或处理问题，主对话继续保留'),agentsText=tabText('agents','协作助手','子任务、执行记录和父对话定位');
   const engineering=useEngineering(s=>s.snapshot),engineeringActive=useEngineering(s=>s.active),engineeringTabs=useEngineering(s=>s.tabs);
   const active=view?.tab||'files';
   const [visited,setVisited]=useState<Record<string,Set<string>>>({}),[draftOrder,setDraftOrder]=useState<DockTab[]|null>(null),[fileDrop,setFileDrop]=useState(false),[dropError,setDropError]=useState('');
@@ -90,7 +100,7 @@ export function RightDock(){
   const fileId=active.startsWith('preview:')?active.slice(8):view?.fileId;
   const toolsLabel=groups.find(g=>`group:${g.id}`===engineeringActive)?.label||'工具';
   const customIds=[...new Set([...(view?.order||[]),active,...(view?.hidden||[])])].filter(id=>id.startsWith('tool:')&&groups.some(group=>group.id===id.slice(5)));
-  const available:TabInfo[]=[...fixed,...(active==='sidechat'||view?.order?.includes('sidechat')?[{id:'sidechat' as DockTab,label:'侧边对话',icon:'chat' as AppIconName,hint:'独立提问、传文件或处理问题，主对话继续保留'}]:[]),...(active==='agents'||view?.order?.includes('agents')?[{id:'agents' as DockTab,label:'协作助手',icon:'team' as AppIconName,hint:'子任务、执行记录和父对话定位'}]:[]),...customIds.map(id=>({id,label:id==='tool:reading'?'代码阅读':groups.find(g=>g.id===id.slice(5))!.label,icon:toolIcons[id.slice(5)] || 'layers',hint:id==='tool:reading'?'浏览仓库源码、符号与调用关系':'打开项目工具'})),...(active==='tools'&&engineering?.connected&&engineeringActive?[{id:'tools' as DockTab,label:toolsLabel,icon:toolIcons[engineeringTabs.find(tab=>tab.id===engineeringActive)?.group || ''] || 'layers',hint:'已打开的项目工具'}]:[]),...fileTabs.map(item=>({id:`preview:${item!.id}` as DockTab,label:item!.title,icon:'file' as AppIconName,hint:item!.filePath||item!.title}))];
+  const available:TabInfo[]=[...fixed,...(active==='sidechat'||view?.order?.includes('sidechat')?[{id:'sidechat' as DockTab,...sidechatText,icon:'chat' as AppIconName}]:[]),...(active==='agents'||view?.order?.includes('agents')?[{id:'agents' as DockTab,...agentsText,icon:'team' as AppIconName}]:[]),...customIds.map(id=>({id,label:id==='tool:reading'?'代码阅读':groups.find(g=>g.id===id.slice(5))!.label,icon:toolIcons[id.slice(5)] || 'layers',hint:id==='tool:reading'?'浏览仓库源码、符号与调用关系':'打开项目工具'})),...(active==='tools'&&engineering?.connected&&engineeringActive?[{id:'tools' as DockTab,label:toolsLabel,icon:toolIcons[engineeringTabs.find(tab=>tab.id===engineeringActive)?.group || ''] || 'layers',hint:'已打开的项目工具'}]:[]),...fileTabs.map(item=>({id:`preview:${item!.id}` as DockTab,label:item!.title,icon:'file' as AppIconName,hint:item!.filePath||item!.title}))];
   const availableIds=available.map(t=>t.id),ordered=(draftOrder||orderedDockTabs(view,availableIds)).filter(id=>availableIds.includes(id)),tabs=ordered.map(id=>available.find(t=>t.id===id)!);
   const resolved=tabs.some(t=>t.id===active)?active:tabs[0]?.id||null;
   useEffect(()=>{
@@ -110,7 +120,13 @@ export function RightDock(){
     stripObserver.current?.disconnect();stripObserver.current=null;strip.current?.removeEventListener('scroll',updateScrollEdges);strip.current=list;
     if(!list)return;
     list.addEventListener('scroll',updateScrollEdges,{passive:true});alignActiveTab();
-    if(typeof ResizeObserver!=='undefined'){stripObserver.current=new ResizeObserver(alignActiveTab);stripObserver.current.observe(list);}
+    if(typeof ResizeObserver!=='undefined'){
+      // Arrows are flex siblings, so the strip itself narrows whenever one
+      // appears. Re-align only when the viewport (window/dock width) changes;
+      // strip-only resizes just refresh the edges, keeping a manual scroll.
+      stripObserver.current=new ResizeObserver(entries=>{if(entries.some(entry=>entry.target!==list))alignActiveTab();else updateScrollEdges();});
+      stripObserver.current.observe(list);if(list.parentElement)stripObserver.current.observe(list.parentElement);
+    }
   },[alignActiveTab,updateScrollEdges]);
   useEffect(()=>()=>stripObserver.current?.disconnect(),[]);
   const scrollTabs=(direction:-1|1)=>{
@@ -162,6 +178,7 @@ export function RightDock(){
   const canFileDrop=(event:React.DragEvent)=>!dragging.current&&!(event.target as HTMLElement).closest('.enigma-side-conversation')&&(readAppFileDragPayload(event.dataTransfer)||event.dataTransfer.types.includes('Files'));
   const preserveTreeMove=(event:React.DragEvent)=>readAppFileDragPayload(event.dataTransfer)?.source==='workspace'&&!!(event.target as HTMLElement).closest('[data-desk-tree]');
   const previewShown=visible&&!!resolved?.startsWith('preview:');
+  const scrollButton=(side:'left'|'right')=><button type="button" className={`enigma-dock-scroll enigma-dock-scroll-${side}`} data-visible={scrollEdges[side]||undefined} disabled={!scrollEdges[side]} aria-hidden={!scrollEdges[side]} tabIndex={scrollEdges[side]?0:-1} aria-label={side==='left'?tr('scrollLeft','向左滚动工作标签'):tr('scrollRight','向右滚动工作标签')} data-tooltip={side==='left'?tr('scrollLeftHint','查看左侧标签；也可横向滚动'):tr('scrollRightHint','查看右侧标签；也可横向滚动')} onClick={()=>scrollTabs(side==='left'?-1:1)}><AppIcon name={side==='left'?'chevronLeft':'chevronRight'} size={15}/></button>;
   return <div ref={root} className="enigma-right-dock" data-right-dock="" data-liquid="sidebar" data-file-drop={fileDrop||undefined} onClickCapture={event=>{if(suppressClick.current){suppressClick.current=false;event.preventDefault();event.stopPropagation();}}}
     onDragEnterCapture={event=>{if(canFileDrop(event)&&!preserveTreeMove(event)){event.preventDefault();event.stopPropagation();event.dataTransfer.dropEffect='copy';setFileDrop(true);}}}
     onDragOverCapture={event=>{if(canFileDrop(event)&&!preserveTreeMove(event)){event.preventDefault();event.stopPropagation();event.dataTransfer.dropEffect='copy';setFileDrop(true);}}}
@@ -171,7 +188,9 @@ export function RightDock(){
     <OpenPreviewDocumentWatchBridge/>
     <HeaderSlot id="enigma-titlebar-workspace"><header className="enigma-dock-header">
       <div className="enigma-dock-tabs-viewport" data-overflow-left={scrollEdges.left||undefined} data-overflow-right={scrollEdges.right||undefined}>
-      <div className="enigma-dock-tabs" data-reordering={!!draftOrder||undefined} role="tablist" aria-label="工作面板" ref={bindStrip} data-glass-segmented="" onWheel={event=>{if(strip.current&&strip.current.scrollWidth>strip.current.clientWidth)strip.current.scrollLeft+=Math.abs(event.deltaX)>Math.abs(event.deltaY)?event.deltaX:event.deltaY;}}>
+      {/* Arrows are flex siblings of the strip: they take their own space instead of covering tabs. */}
+      {scrollButton('left')}
+      <div className="enigma-dock-tabs" data-reordering={!!draftOrder||undefined} role="tablist" aria-label={tr('label','工作面板')} ref={bindStrip} data-glass-segmented="" onWheel={event=>{if(strip.current&&strip.current.scrollWidth>strip.current.clientWidth)strip.current.scrollLeft+=Math.abs(event.deltaX)>Math.abs(event.deltaY)?event.deltaX:event.deltaY;}}>
         <GlassSelection selection={`${resolved}:${ordered.join(',')}`} selector=".enigma-dock-tab.active" layoutCoordinates/>
         {tabs.map((tab,index)=><motion.div layout="position" key={tab.id} transition={{layout:{duration:reduceMotion?0:0.18}}} className={`enigma-dock-tab${resolved===tab.id?' active':''}`} data-dock-tab-id={tab.id} data-drag-placeholder={dragGhost?.tab.id===tab.id||undefined} onPointerDown={event=>startDrag(tab,event)} onDragStartCapture={event=>event.preventDefault()}>
           <button role="tab" id={`dock-tab-${index}`} aria-selected={resolved===tab.id} aria-controls="enigma-dock-body" tabIndex={resolved===tab.id?0:-1} data-tooltip={`${tab.label} · ${tab.hint}\n拖动调整顺序`} onClick={()=>choose(tab.id)} onKeyDown={event=>{
@@ -181,15 +200,15 @@ export function RightDock(){
           <button className="enigma-dock-tab-close" onPointerDown={event=>event.stopPropagation()} aria-label={`关闭${tab.id.startsWith('preview:')?'文件':'面板'} ${tab.label}`} data-tooltip="关闭标签；可通过＋重新添加" onClick={()=>hideDockTab(scope,tab.id,availableIds)}><AppIcon name="close" size={13}/></button>
         </motion.div>)}
       </div>
-      {(['left','right'] as const).map(side=><button key={side} type="button" className={`enigma-dock-scroll enigma-dock-scroll-${side}`} data-visible={scrollEdges[side]||undefined} disabled={!scrollEdges[side]} aria-hidden={!scrollEdges[side]} tabIndex={scrollEdges[side]?0:-1} aria-label={side==='left'?'向左滚动工作标签':'向右滚动工作标签'} data-tooltip={side==='left'?'查看左侧标签；也可横向滚动':'查看右侧标签；也可横向滚动'} onClick={()=>scrollTabs(side==='left'?-1:1)}><AppIcon name={side==='left'?'chevronLeft':'chevronRight'} size={15}/></button>)}
+      {scrollButton('right')}
       </div>
       <div className="enigma-dock-actions">
         <button aria-label="搜索文件" data-tooltip="搜索项目文件或对话附件" onClick={search}><DockIcon name="search"/></button>
         <SurfaceMenu label="添加面板" hint="恢复已关闭面板、添加文件或项目工具" icon={<AppIcon name="add" size={17}/>}>
           <button onClick={()=>picker.current?.click()}>打开文件…<small>选择本机文件，固定为独立标签</small></button>
-          {fixed.map(tab=><button key={tab.id} onClick={()=>choose(tab.id)}><DockIcon name={tab.icon}/>{tab.label}<small>{tabs.some(t=>t.id===tab.id)?'切换到此面板':'重新添加'}</small></button>)}
-          <button onClick={()=>choose('sidechat')}><AppIcon name="chat" size={16}/>侧边对话<small>独立提问或处理问题</small></button>
-          <button onClick={()=>choose('agents')}><AppIcon name="team" size={16}/>协作助手<small>查看子任务及执行记录</small></button>
+          {fixed.map(tab=><button key={tab.id} onClick={()=>choose(tab.id)}><DockIcon name={tab.icon}/>{tab.label}<small>{tabs.some(t=>t.id===tab.id)?tr('menuSwitch','切换到此面板'):tr('menuRestore','重新添加')}</small></button>)}
+          <button onClick={()=>choose('sidechat')}><AppIcon name="chat" size={16}/>{sidechatText.label}<small>{tr('tabs.sidechat.menuHint','独立提问或处理问题')}</small></button>
+          <button onClick={()=>choose('agents')}><AppIcon name="team" size={16}/>{agentsText.label}<small>{tr('tabs.agents.menuHint','查看子任务及执行记录')}</small></button>
           {fileTabs.filter(item=>(view?.hidden||[]).includes(`preview:${item!.id}`)).map(item=><button key={item!.id} onClick={()=>choose(`preview:${item!.id}`)}>重新打开 {item!.title}</button>)}
           {toolSections.map(section=><div key={section.label} className="enigma-feature-section"><div className="enigma-menu-section-title">{section.label}</div>{section.ids.filter(id=>id!=='reading'&&id!=='conductor').map(id=><button key={id} onClick={()=>choose(`tool:${id}`)}><AppIcon name={toolIcons[id] || 'layers'} size={16}/>{groups.find(group=>group.id===id)?.label}</button>)}</div>)}
         </SurfaceMenu>
@@ -206,15 +225,15 @@ export function RightDock(){
           <RightWorkspacePanel filesOnly active={show('files')}/>
         </FileSplitPane>
       </section>
-      {hasVisited('changes')&&<section key={`changes:${scope}`} hidden={!show('changes')} inert={!show('changes')} aria-hidden={!show('changes')} className="enigma-dock-section">{session?<ChangeWorkbench active={visible&&show('changes')}/>:<DockEmpty icon="changes" title="还没有代码变更" action={{label:'开始对话',onClick:focusComposer}}>在项目里开始对话；助手修改文件后，可以在这里逐项审阅差异。</DockEmpty>}</section>}
+      {hasVisited('changes')&&<section key={`changes:${scope}`} hidden={!show('changes')} inert={!show('changes')} aria-hidden={!show('changes')} className="enigma-dock-section">{session?<ChangeWorkbench active={visible&&show('changes')}/>:<DockEmpty icon="changes" title={tr('empty.changesTitle','还没有代码变更')} action={{label:tr('empty.changesAction','开始对话'),onClick:focusComposer}}>{tr('empty.changesBody','在项目里开始对话；助手修改文件后，可以在这里逐项审阅差异。')}</DockEmpty>}</section>}
       {hasVisited('browser')&&<section key={`browser:${scope}`} hidden={!show('browser')} inert={!show('browser')} aria-hidden={!show('browser')} className="enigma-dock-section"><SidebarBrowser sessionPath={view?.browserSession===undefined?session:view.browserSession}/></section>}
       {hasVisited('terminal')&&<section key={`terminal:${scope}:${view?.terminalRoot||''}`} hidden={!show('terminal')} inert={!show('terminal')} aria-hidden={!show('terminal')} className="enigma-dock-section"><Suspense fallback={<p>正在打开终端…</p>}><WorkspaceTerminal root={view?.terminalRoot} active={show('terminal')}/></Suspense></section>}
       {hasVisited('agents')&&<section hidden={!show('agents')} inert={!show('agents')} aria-hidden={!show('agents')} className="enigma-dock-section"><SubagentPanel/></section>}
       {hasVisited('sidechat')&&<section key={`sidechat:${scope}`} hidden={!show('sidechat')} inert={!show('sidechat')} aria-hidden={!show('sidechat')} className="enigma-dock-section"><SideConversation scope={scope} active={show('sidechat')}/></section>}
-      {hasVisited('tasks')&&<section hidden={!show('tasks')} inert={!show('tasks')} aria-hidden={!show('tasks')} className="enigma-dock-section enigma-dock-task-list"><div className="enigma-dock-task-intro"><h3>任务概览</h3><p>当前对话的计划、协作和运行信息。</p>{engineering?.connected&&<div><button onClick={()=>openGroup('plan')}>计划</button><button onClick={()=>openGroup('acceptance')}>检查结果</button><button onClick={()=>openGroup('observer')}>运行诊断</button></div>}</div><SessionClock compact/><SessionTodoCard/><WorkflowCard/><AgentActivityCard/><SessionStatusCard/><DockEmpty icon="activity" title="还没有任务进展" action={{label:'描述一个任务',onClick:focusComposer}}>向助手描述要完成的工作后，这里会显示计划步骤、协作助手和运行状态。</DockEmpty></section>}
-      {(resolved==='tools'||resolved?.startsWith('tool:'))&&<section className="enigma-dock-section">{engineering?.connected?<EngineeringPanel embedded/>:<DockEmpty icon="layers" title="打开项目工具" action={{label:'打开工具',onClick:()=>void openProjectTool(resolved?.startsWith('tool:')?resolved.slice(5):'project')}}>沿用当前对话的目录。没有目录的项目也可以管理任务；代码功能需要在“仓库”中关联代码目录。</DockEmpty>}</section>}
+      {hasVisited('tasks')&&<section hidden={!show('tasks')} inert={!show('tasks')} aria-hidden={!show('tasks')} className="enigma-dock-section enigma-dock-task-list"><div className="enigma-dock-task-intro"><h3>任务概览</h3><p>当前对话的计划、协作和运行信息。</p>{engineering?.connected&&<div><button onClick={()=>openGroup('plan')}>计划</button><button onClick={()=>openGroup('acceptance')}>检查结果</button><button onClick={()=>openGroup('observer')}>运行诊断</button></div>}</div><SessionClock compact/><SessionTodoCard/><WorkflowCard/><AgentActivityCard/><SessionStatusCard/><DockEmpty icon="activity" title={tr('empty.tasksTitle','还没有任务进展')} action={{label:tr('empty.tasksAction','描述一个任务'),onClick:focusComposer}}>{tr('empty.tasksBody','向助手描述要完成的工作后，这里会显示计划步骤、协作助手和运行状态。')}</DockEmpty></section>}
+      {(resolved==='tools'||resolved?.startsWith('tool:'))&&<section className="enigma-dock-section">{engineering?.connected?<EngineeringPanel embedded/>:<DockEmpty icon="layers" title={tr('empty.toolsTitle','打开项目工具')} action={{label:tr('empty.toolsAction','打开工具'),onClick:()=>void openProjectTool(resolved?.startsWith('tool:')?resolved.slice(5):'project')}}>{tr('empty.toolsBody','沿用当前对话的目录。没有目录的项目也可以管理任务；代码功能需要在“仓库”中关联代码目录。')}</DockEmpty>}</section>}
       {!(show('files')&&inlineItem?.id===fileId)&&<PreviewPanel embedded watchDocuments={false} visible={previewShown} itemId={fileId||null}/>}
-      {!resolved&&<DockEmpty icon="add" title="添加工作面板">点击上方＋，选择文件、浏览器、变更或其他工具。</DockEmpty>}
+      {!resolved&&<DockEmpty icon="add" title={tr('empty.addTitle','添加工作面板')}>{tr('empty.addBody','点击上方＋，选择文件、浏览器、变更或其他工具。')}</DockEmpty>}
     </div>
   </div>;
 }

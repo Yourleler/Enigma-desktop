@@ -63,6 +63,14 @@ it('keeps keyboard-selected tabs inside the fade instead of underneath its arrow
  fireEvent.keyDown(screen.getByRole('tab',{name:'终端'}),{key:'Home'});
  expect(list.scrollLeft).toBe(0);expect(screen.queryByRole('button',{name:'向左滚动工作标签'})).toBeNull();
 });
+it('lays scroll arrows out beside the tab strip instead of on top of its tabs',()=>{
+ const {container}=render(<RightDock/>),list=screen.getByRole('tablist',{name:'工作面板'});
+ const [left,right]=container.querySelectorAll<HTMLButtonElement>('.enigma-dock-scroll');
+ // Flex siblings own their lane; hidden arrows are disabled and out of the tab order.
+ expect(list.previousElementSibling).toBe(left);expect(list.nextElementSibling).toBe(right);
+ expect(left.parentElement).toHaveClass('enigma-dock-tabs-viewport');
+ expect(left).toBeDisabled();expect(left).toHaveAttribute('tabindex','-1');expect(right).toBeDisabled();
+});
 it('does not move restored file tabs when they are selected for the first time',()=>{
  const scope=dockScope(useStore.getState());patchDockView(scope,{tab:'files',order:['files','changes','browser','tasks']});
  useStore.setState({openTabs:['first','second','third'],previewItems:['first','second','third'].map(id=>({id,title:`${id}.md`,type:'markdown',content:id}))});
