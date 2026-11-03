@@ -944,3 +944,20 @@
 :global(.enigma-compact-session-list) .sessionItemTitle {font-size:13px;line-height:1.55;font-weight:400;}
 :global(.enigma-compact-session-list) .sessionItemActive .sessionItemTitle {font-weight:500;}
 :global(.enigma-compact-session-list) .projectSessionList {margin-left:10px;padding-left:8px;}
+
+/* Visual guidance: hover must not look like the selected conversation.
+   Hover is a neutral wash; the current conversation gets an accent wash,
+   a leading indicator and a heavier title so it reads at a glance in every theme. */
+@media (any-hover: hover) and (any-pointer: fine) {
+    :global(.enigma-compact-session-list) .sessionItem:hover { background: color-mix(in srgb, var(--text) 6%, transparent); }
+}
+:global(.enigma-compact-session-list) .sessionItemActive,
+:global(.enigma-compact-session-list) .sessionItemActive:hover { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+:global(.enigma-compact-session-list) .sessionItemActive::before { content: ''; position: absolute; left: 0; top: 25%; bottom: 25%; width: 3px; border-radius: 3px; background: var(--accent); }
+:global(.enigma-compact-session-list) .sessionItemActive .sessionItemTitle { color: var(--accent); font-weight: 600; }
+.sessionItem:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 70%, transparent); outline-offset: -2px; }
+/* Group labels ("项目" / "最近对话") read as section headers, not as faint body text. */
+.sidebarSectionHeading > button { color: color-mix(in srgb, var(--text) 72%, var(--text-muted)); font-weight: 600; letter-spacing: 0.02em; }
+.sidebarSectionHeading > button:hover { color: var(--text); }
+.sidebarSectionHeading > button:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 70%, transparent); outline-offset: 1px; }
+.sidebarSectionEmpty { font-size: 12px; }

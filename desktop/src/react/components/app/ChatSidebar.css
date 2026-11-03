@@ -14,3 +14,13 @@ body.enigma-surface .enigma-sidebar-tools-compact button {display:grid;place-ite
 body.enigma-surface .enigma-sidebar-list-column .sidebar-header {padding:var(--space-18, 18px) var(--space-14, 14px) var(--space-10, 10px);}
 body.enigma-surface .enigma-sidebar-list-column .enigma-new-chat {margin:0 var(--space-8, 8px) var(--space-16, 16px);padding:var(--space-8, 8px) var(--space-10, 10px);gap:var(--space-10, 10px);}
 body.enigma-surface .sidebar-title {font-size:15px;letter-spacing:-.015em;}
+
+/* Visual guidance: "新对话" is the sidebar's one primary action, so it carries a
+   quiet accent wash instead of looking like another conversation row. */
+body.enigma-surface .enigma-sidebar-list-column .enigma-new-chat {background:color-mix(in srgb,var(--accent) 9%,transparent);color:var(--accent);font-weight:500;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 18%,transparent);}
+body.enigma-surface .enigma-sidebar-list-column .enigma-new-chat:hover {background:color-mix(in srgb,var(--accent) 15%,transparent);}
+body.enigma-surface .enigma-sidebar-list-column .enigma-new-chat :is(svg,.enigma-icon) {color:var(--accent);}
+body.enigma-surface .enigma-sidebar-list-column .enigma-new-chat:focus-visible {outline:2px solid color-mix(in srgb,var(--accent) 70%,transparent);outline-offset:1px;}
+/* Rail: the current page gets a leading indicator, not just a tint, and keyboard focus is visible. */
+.enigma-sidebar-rail button[aria-pressed="true"]::before {content:'';position:absolute;left:-4px;top:25%;bottom:25%;width:3px;border-radius:3px;background:var(--accent);}
+.enigma-sidebar-rail button:focus-visible {outline:2px solid color-mix(in srgb,var(--accent) 70%,transparent);outline-offset:1px;}

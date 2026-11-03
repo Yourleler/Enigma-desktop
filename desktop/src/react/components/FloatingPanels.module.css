@@ -813,6 +813,18 @@
     font-weight: 600;
 }
 
+/* Selected platform must differ from hover: accent label, accent wash and ring. */
+.bridgeTab.bridgeTabActive {
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.bridgeTab:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--accent) 70%, transparent);
+    outline-offset: 1px;
+}
+
 .bridgeTabDot {
     width: 7px;
     height: 7px;
