@@ -16,6 +16,19 @@ function preferredWidth(variable:string,key:string,fallback:number):number {
   return Number.isFinite(explicit)&&explicit>0?explicit:Number.isFinite(saved)&&saved>0?saved:fallback;
 }
 let resolving=false;
+let layoutMotionTimer=0,layoutMotionFrame=0;
+/** Animate a panel opening/closing (manual toggle or auto-collapse) for one
+ * transition; window resizes stay instant so intermediate widths never overflow. */
+function animatePanelToggle():void {
+  const body=document.body;
+  if(body.classList.contains('resizing'))return;
+  body.classList.add('enigma-layout-animating');
+  clearTimeout(layoutMotionTimer);cancelAnimationFrame(layoutMotionFrame);
+  const end=performance.now()+220;
+  const follow=()=>{syncTitlebarDividers();if(performance.now()<end)layoutMotionFrame=requestAnimationFrame(follow);};
+  layoutMotionFrame=requestAnimationFrame(follow);
+  layoutMotionTimer=window.setTimeout(()=>{body.classList.remove('enigma-layout-animating');syncTitlebarDividers();},240);
+}
 export function updateLayout(intent?:LayoutIntent):void {
   if(resolving)return;
   resolving=true;
@@ -64,6 +77,7 @@ export function SidebarLayout({ restorePreference = true }: { restorePreference?
     let frame = 0;
     const schedule = () => { if (!frame) frame = requestAnimationFrame(() => { frame = 0; updateLayout(); }); };
     const unsubscribe = useStore.subscribe((s, previous) => {
+      if (s.sidebarOpen !== previous.sidebarOpen || s.jianOpen !== previous.jianOpen) animatePanelToggle();
       if (['sidebarOpen','jianOpen','previewOpen','currentTab','currentChannel','layoutDrawer'].some(key => s[key as keyof typeof s] !== previous[key as keyof typeof previous])) schedule();
     });
     const unsubscribeEngineering = useEngineering.subscribe((s, previous) => {

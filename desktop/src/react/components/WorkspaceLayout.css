@@ -25,6 +25,9 @@ body.enigma-surface .mobile-desktop-app :is(.sidebar-inner,.jian-sidebar-inner) 
 .app #previewPanel [data-preview-panel-inner] { max-width:100%; min-width:0 !important; }
 .enigma-preview-return { display:flex; align-items:center; gap:var(--enigma-spacing-5); flex-shrink:0; border:0; border-bottom:1px solid var(--border); background:transparent; color:var(--text); padding:var(--enigma-spacing-7) var(--enigma-spacing-14); font:inherit; font-size:13px; cursor:pointer; }
 .enigma-preview-return span { margin-left:auto; color:var(--text-muted); }
+/* Open/close (manual or auto-collapse) animates the column width; plain window
+   resizes keep allocating the target width at once (see SidebarLayout). */
+body.enigma-surface.enigma-layout-animating :is(.app,.enigma-workspace-frame) > :is(.sidebar,.jian-sidebar) { transition:width var(--enigma-duration-21) cubic-bezier(.22,.7,.25,1); }
 body.resizing :is(.app,.enigma-workspace-frame) > :is(.sidebar,.jian-sidebar),
 body.enigma-motion-off :is(.app,.enigma-workspace-frame) > :is(.sidebar,.jian-sidebar),
 body.enigma-motion-off .app :is(.sidebar-inner,.jian-sidebar-inner) { transition:none !important; }
