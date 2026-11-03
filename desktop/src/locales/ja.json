@@ -678,7 +678,15 @@
     "failed": "⚠ 何かおかしいようです · {n} ステップ",
     "countWithFail": "{total} 個のツール（{fail} 個失敗）",
     "count": "{n} 個のツール",
-    "running": "{n} 個のツール実行中"
+    "running": "{n} 個のツール実行中",
+    "kind": {
+      "command": "{n} 件のコマンドを実行",
+      "read": "{n} 件のファイルを読み取り",
+      "edit": "{n} 件のファイルを編集",
+      "search": "{n} 回検索",
+      "call": "{n} 回ツールを呼び出し",
+      "failed": "{n} 件失敗"
+    }
   },
   "processFold": {
     "unknown": "{n} 件の結果記録なし",
@@ -3842,5 +3850,18 @@
     "workspace_graph": "リポジトリ依存関係の確認",
     "workspace_repos": "関連リポジトリの一覧",
     "workspace_verify": "統合チェックの実行"
+  },
+  "toolRow": {
+    "run": "実行",
+    "read": "読み取り",
+    "list": "一覧",
+    "edit": "編集",
+    "write": "書き込み",
+    "search": "検索",
+    "fetch": "取得",
+    "call": "呼び出し",
+    "command": "コマンド",
+    "params": "引数",
+    "error": "エラー"
   }
 }

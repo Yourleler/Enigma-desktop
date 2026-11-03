@@ -678,7 +678,15 @@
     "failed": "⚠ Something seems off · {n} steps",
     "countWithFail": "{total} tools ({fail} failed)",
     "count": "{n} tools",
-    "running": "{n} tools running"
+    "running": "{n} tools running",
+    "kind": {
+      "command": "Ran {n} commands",
+      "read": "Read {n} files",
+      "edit": "Edited {n} files",
+      "search": "Searched {n} times",
+      "call": "Called {n} tools",
+      "failed": "{n} failed"
+    }
   },
   "processFold": {
     "unknown": "{n} results not recorded",
@@ -3847,5 +3855,18 @@
     "workspace_graph": "Read repository dependencies",
     "workspace_repos": "List linked repositories",
     "workspace_verify": "Run joint checks"
+  },
+  "toolRow": {
+    "run": "Ran",
+    "read": "Read",
+    "list": "Listed",
+    "edit": "Edited",
+    "write": "Wrote",
+    "search": "Searched",
+    "fetch": "Fetched",
+    "call": "Called",
+    "command": "Command",
+    "params": "Arguments",
+    "error": "Error"
   }
 }

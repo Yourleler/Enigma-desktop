@@ -679,7 +679,15 @@
     "failed": "⚠ 好像出了点问题 · {n} 步",
     "countWithFail": "{total} 个工具（{fail} 个失败）",
     "count": "{n} 个工具",
-    "running": "{n} 个工具运行中"
+    "running": "{n} 个工具运行中",
+    "kind": {
+      "command": "运行 {n} 条命令",
+      "read": "读取 {n} 个文件",
+      "edit": "编辑 {n} 个文件",
+      "search": "搜索 {n} 次",
+      "call": "调用 {n} 次工具",
+      "failed": "{n} 个失败"
+    }
   },
   "processFold": {
     "unknown": "{n} 项未记录结果",
@@ -3848,5 +3856,18 @@
     "workspace_graph": "读取仓库依赖",
     "workspace_repos": "查看关联仓库",
     "workspace_verify": "执行联合检查"
+  },
+  "toolRow": {
+    "run": "运行",
+    "read": "读取",
+    "list": "查看",
+    "edit": "编辑",
+    "write": "写入",
+    "search": "搜索",
+    "fetch": "访问",
+    "call": "调用",
+    "command": "命令",
+    "params": "参数",
+    "error": "错误"
   }
 }

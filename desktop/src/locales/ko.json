@@ -678,7 +678,15 @@
     "failed": "⚠ 뭔가 이상한 것 같아요 · {n}단계",
     "countWithFail": "{total}개 도구 ({fail}개 실패)",
     "count": "{n}개 도구",
-    "running": "{n}개 도구 실행 중"
+    "running": "{n}개 도구 실행 중",
+    "kind": {
+      "command": "명령 {n}개 실행",
+      "read": "파일 {n}개 읽음",
+      "edit": "파일 {n}개 편집",
+      "search": "{n}회 검색",
+      "call": "도구 {n}회 호출",
+      "failed": "{n}개 실패"
+    }
   },
   "processFold": {
     "unknown": "결과가 기록되지 않은 항목 {n}개",
@@ -3842,5 +3850,18 @@
     "workspace_graph": "저장소 의존성 읽기",
     "workspace_repos": "연결된 저장소 확인",
     "workspace_verify": "통합 검사 실행"
+  },
+  "toolRow": {
+    "run": "실행",
+    "read": "읽기",
+    "list": "보기",
+    "edit": "편집",
+    "write": "쓰기",
+    "search": "검색",
+    "fetch": "가져오기",
+    "call": "호출",
+    "command": "명령",
+    "params": "인수",
+    "error": "오류"
   }
 }

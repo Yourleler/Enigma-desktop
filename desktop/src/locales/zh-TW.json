@@ -678,7 +678,15 @@
     "failed": "⚠ 好像出了點問題 · {n} 步",
     "countWithFail": "{total} 個工具（{fail} 個失敗）",
     "count": "{n} 個工具",
-    "running": "{n} 個工具運行中"
+    "running": "{n} 個工具運行中",
+    "kind": {
+      "command": "執行 {n} 條命令",
+      "read": "讀取 {n} 個檔案",
+      "edit": "編輯 {n} 個檔案",
+      "search": "搜尋 {n} 次",
+      "call": "呼叫 {n} 次工具",
+      "failed": "{n} 個失敗"
+    }
   },
   "processFold": {
     "unknown": "{n} 項未記錄結果",
@@ -3842,5 +3850,18 @@
     "workspace_graph": "讀取儲存庫相依性",
     "workspace_repos": "查看關聯儲存庫",
     "workspace_verify": "執行聯合檢查"
+  },
+  "toolRow": {
+    "run": "執行",
+    "read": "讀取",
+    "list": "查看",
+    "edit": "編輯",
+    "write": "寫入",
+    "search": "搜尋",
+    "fetch": "存取",
+    "call": "呼叫",
+    "command": "命令",
+    "params": "參數",
+    "error": "錯誤"
   }
 }

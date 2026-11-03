@@ -7,6 +7,8 @@ import { MessageFooterActions, formatMessageTime } from './MessageFooterActions'
 import { TurnTiming } from './TurnTiming';
 import { buildProcessFoldSummary, type ProcessFoldRenderItem } from './process-fold';
 import { useSessionNodeActions } from './SessionNodeActions';
+import { AppIcon } from '../../ui/app-icons';
+import { formatDuration } from './tool-row';
 import type {
   ForkedSessionHandler,
   SessionNodeTarget,
@@ -67,6 +69,11 @@ export const ProcessFoldBlock = memo(function ProcessFoldBlock({
   );
 
   const toggle = useCallback(() => setOpen(value => !value), []);
+  const [summaryTitle, ...summaryStats] = summary.split(' · ');
+  const firstData = group.items[0]?.item.data;
+  const lastData = group.items[group.items.length - 1]?.item.data;
+  const startedAt = firstData?.turnStartedAt ?? firstData?.timestamp;
+  const duration = startedAt && lastData?.timestamp ? formatDuration(lastData.timestamp - startedAt) : '';
   const messageRef = useCallback((messageId: string) => (
     (element: HTMLDivElement | null) => registerMessageElement?.(messageId, element)
   ), [registerMessageElement]);
@@ -109,8 +116,10 @@ export const ProcessFoldBlock = memo(function ProcessFoldBlock({
             onClick={toggle}
           >
             <span className={styles.processFoldTitle}>
-              <span className={styles.processFoldTitleText}>{summary}</span>
-              <span className={styles.processFoldArrow} aria-hidden="true">›</span>
+              <span className={styles.processFoldTitleText}>{summaryTitle}</span>
+              {duration && <>{' '}<span className={styles.processFoldDuration}>{duration}</span></>}
+              {summaryStats.length > 0 && <>{' · '}<span className={styles.processFoldStats}>{summaryStats.join(' · ')}</span></>}
+              <AppIcon name="chevronRight" size={13} className={styles.processFoldArrow}/>
             </span>
           </button>
         </div>
