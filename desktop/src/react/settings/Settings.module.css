@@ -324,6 +324,7 @@
     min-width: 0;
     min-height: 0;
     overflow-y: auto;
+    scrollbar-gutter: stable;
     overscroll-behavior: contain;
     padding: 0 var(--settings-main-x-padding, var(--space-40)) var(--space-40);
     max-width: none;
@@ -335,7 +336,7 @@
     width: 100%;
     max-width: 860px;
     min-width: 0;
-    overflow-x: hidden;
+    overflow-x: clip;
 }
 
 .settings-panel-modal .settings-main::before {
