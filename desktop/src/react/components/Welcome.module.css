@@ -222,7 +222,8 @@
     cursor: default;
     transition: all var(--duration-fast) var(--ease-out);
     -webkit-app-region: no-drag;
-    opacity: 0.8;
+    /* Muted ink alone ranks this hint; stacked opacity dropped it under 4.5:1. */
+    opacity: 1;
 }
 
 .memoryToggleBtn:hover {
@@ -232,14 +233,17 @@
 
 .memoryToggleBtnActive {
     color: var(--accent);
-    opacity: 0.85;
 }
 
 .memoryToggleBtnDisabled,
 .memoryToggleBtnDisabled:hover {
     color: var(--text-muted);
-    opacity: 0.42;
     cursor: default;
+}
+
+/* The disabled label is still a status the user reads; only the glyph dims. */
+.memoryToggleBtnDisabled .memoryToggleIcon {
+    opacity: 0.5;
 }
 
 .memoryToggleIcon {

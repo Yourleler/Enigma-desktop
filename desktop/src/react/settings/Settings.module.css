@@ -840,7 +840,8 @@
     font-family: inherit;
     font-size: var(--fs-hint);
     line-height: 1.3;
-    opacity: 0.68;
+    /* Enabled actions keep full muted ink (0.68 opacity read at ~3:1). */
+    opacity: 1;
     padding: calc(var(--space-4) * 0.5) var(--space-8);
     transition: background var(--duration-fast) var(--ease-out),
                 color var(--duration-fast) var(--ease-out),
@@ -1917,7 +1918,8 @@
     font-size: var(--fs-ui);
     line-height: 1;
     color: var(--eg-on-accent, #fff);
-    background: color-mix(in srgb, var(--accent) 70%, transparent);
+    /* At 70% the frame bled through and on-accent text fell to 3.4:1. */
+    background: color-mix(in srgb, var(--accent) 92%, transparent);
     border: 1px solid rgba(var(--accent-rgb), 0.25);
     border-radius: var(--radius-card, 8px);
     cursor: default;
@@ -3492,7 +3494,7 @@
     font-family: inherit;
     font-size: var(--fs-ui);
     color: var(--eg-on-accent, #fff);
-    background: color-mix(in srgb, var(--accent) 70%, transparent);
+    background: color-mix(in srgb, var(--accent) 92%, transparent);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(var(--accent-rgb), 0.25);

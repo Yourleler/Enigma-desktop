@@ -715,7 +715,8 @@
     line-height: 1.35;
     text-align: left;
     cursor: default;
-    opacity: 0.72;
+    /* Muted ink already ranks it below titles; extra opacity dropped it to 3.2:1. */
+    opacity: 1;
     transition: background var(--duration-fast), color var(--duration-fast), opacity var(--duration-fast);
 }
 

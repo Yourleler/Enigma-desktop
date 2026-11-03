@@ -130,7 +130,7 @@
 
 .enigma-file-name-status { display:flex; gap:var(--space-8); align-items:center; min-width:0; }
 .enigma-file-name-status > :first-child { flex:1; min-width:0; }
-.enigma-file-status { flex:0 0 auto; font:10px/1.5 var(--font-ui); color:var(--text-muted); white-space:nowrap; margin-left:auto; }
+.enigma-file-status { flex:0 0 auto; font:11px/1.5 var(--font-ui); color:var(--text-muted); white-space:nowrap; margin-left:auto; }
 .enigma-file-status[data-status="added"] { color:var(--accent); }
 .enigma-file-status[data-status="modified"],.enigma-file-status[data-status="renamed"] { color:var(--gold,var(--accent)); }
 .enigma-file-status[data-status="deleted"],.enigma-file-status[data-status="conflict"] { color:var(--coral); }
