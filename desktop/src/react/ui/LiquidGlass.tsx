@@ -28,7 +28,10 @@ export function LiquidGlass() {
       // Avoid allocating filters for hidden views and large scrolling panels.
       if(el.dataset.liquid==='sidebar'||rect.width<8||rect.height<8||rect.width*rect.height>240000||document.body.classList.contains('enigma-glass-off')){el.style.removeProperty('--liquid-refraction');el.removeAttribute('data-liquid-refraction');return;}
       const w=Math.round(rect.width/8)*8,h=Math.round(rect.height/8)*8;
-      const radius=parseFloat(getComputedStyle(el).borderRadius)||14,key=`${w}:${h}:${Math.round(radius)}`;
+      const radius=parseFloat(getComputedStyle(el).borderRadius)||14;
+      // The composer sits over moving text: a wide, strong edge lens shifts that
+      // text into a visible second copy, so it gets a narrow, gentle rim.
+      const soft=el.dataset.liquid==='composer',key=`${w}:${h}:${Math.round(radius)}:${soft?'s':'n'}`;
       let id=maps.get(key);
       if(!id&&maps.size>=40){
         const used=new Set([...tracked].filter(node=>node.isConnected&&node!==el).map(node=>node.style.getPropertyValue('--liquid-refraction')));
@@ -36,13 +39,13 @@ export function LiquidGlass() {
       }
       if(!id&&maps.size<40){
         const started=performance.now();
-        const map=createGlassMap(w,h,radius),canvas=document.createElement('canvas');canvas.width=map.width;canvas.height=map.height;
+        const map=createGlassMap(w,h,radius,320,soft?8:18),canvas=document.createElement('canvas');canvas.width=map.width;canvas.height=map.height;
         const ctx=canvas.getContext('2d');if(!ctx)return;
         ctx.putImageData(new ImageData(map.pixels,map.width,map.height),0,0);
         id=`enigma-liquid-${++seq}`;
         const filter=document.createElementNS(svgNS,'filter');filter.id=id;filter.setAttribute('x','0');filter.setAttribute('y','0');filter.setAttribute('width','1');filter.setAttribute('height','1');filter.setAttribute('color-interpolation-filters','sRGB');
         const image=document.createElementNS(svgNS,'feImage');image.setAttribute('href',canvas.toDataURL());image.setAttribute('width','100%');image.setAttribute('height','100%');image.setAttribute('preserveAspectRatio','none');image.setAttribute('result','edge-map');
-        const warp=document.createElementNS(svgNS,'feDisplacementMap');warp.setAttribute('in','SourceGraphic');warp.setAttribute('in2','edge-map');warp.setAttribute('scale','28');warp.setAttribute('xChannelSelector','R');warp.setAttribute('yChannelSelector','G');
+        const warp=document.createElementNS(svgNS,'feDisplacementMap');warp.setAttribute('in','SourceGraphic');warp.setAttribute('in2','edge-map');warp.setAttribute('scale',soft?'10':'28');warp.setAttribute('xChannelSelector','R');warp.setAttribute('yChannelSelector','G');
         filter.append(image,warp);defs.append(filter);maps.set(key,id);
         svg.dataset.textureCount=String(maps.size);
         svg.dataset.lastMapMs=(performance.now()-started).toFixed(2);

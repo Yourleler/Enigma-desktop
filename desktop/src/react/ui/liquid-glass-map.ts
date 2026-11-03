@@ -1,10 +1,10 @@
 /** Rounded-rectangle signed distance / inward normal displacement map.
  * Inspired by the technique documented at childrentime/liquid-glass;
  * implemented here with a bounded edge band and a neutral, undistorted center. */
-export function createGlassMap(width: number, height: number, radius = 16, maxDimension = 320) {
+export function createGlassMap(width: number, height: number, radius = 16, maxDimension = 320, edgeBand = 18) {
   const ratio = Math.min(1, maxDimension / Math.max(width,height));
   const w=Math.max(2,Math.round(width*ratio)), h=Math.max(2,Math.round(height*ratio));
-  const r=Math.min(radius,width/2,height/2)*ratio, band=Math.min(18*ratio,w/3,h/3);
+  const r=Math.min(radius,width/2,height/2)*ratio, band=Math.min(edgeBand*ratio,w/3,h/3);
   const pixels=new Uint8ClampedArray(w*h*4);
   for(let y=0;y<h;y++) for(let x=0;x<w;x++) {
     const px=x+.5-w/2,py=y+.5-h/2;
