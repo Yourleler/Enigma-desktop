@@ -795,7 +795,15 @@ export function SessionRegistryFilesPanel({placement,query=''}:{placement?:'file
   return (
     <section className={styles.sessionFilesPanel} aria-label={tr('rightWorkspace.tabs.sessionFiles')}>
       {sortedFiles.length === 0 ? (
-        <div className={styles.emptyState}>{query?'没有匹配的附件':tr('rightWorkspace.sessionFiles.empty')}</div>
+        <div className={styles.emptyState}>
+          {query?'没有匹配的附件':(
+            <div className={styles.emptyGuide}>
+              <span className={styles.emptyGuideIcon} aria-hidden="true"><FileKindIcon kind="doc" size={20}/></span>
+              <strong>{tr('rightWorkspace.sessionFiles.empty')}</strong>
+              <span>在输入框点 ＋ 或把文件拖进对话即可添加；助手生成的文件也会出现在这里。</span>
+            </div>
+          )}
+        </div>
       ) : (
         <>
           <div className={styles.sessionFilesToolbar}>

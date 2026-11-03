@@ -194,6 +194,34 @@
     text-align: center;
 }
 
+/* Empty attachments: say what the list holds and how to add to it. */
+.emptyGuide {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-6);
+    max-width: 22em;
+    line-height: 1.65;
+    text-wrap: pretty;
+}
+
+.emptyGuide strong {
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.emptyGuideIcon {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    margin-bottom: var(--space-4);
+    border-radius: 12px;
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
 .fileList {
     position: absolute;
     top: var(--right-workspace-list-toolbar-height);

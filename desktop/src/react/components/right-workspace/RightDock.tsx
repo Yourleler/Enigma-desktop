@@ -46,6 +46,11 @@ const toolIcons: Record<string, AppIconName> = {
   artifacts: 'file', environment: 'command', review: 'shield', memory: 'memory',
   skills: 'skill', handoff: 'arrowEnter', documents: 'file', acceptance: 'check',
 };
+const focusComposer=()=>document.getElementById('inputBox')?.focus();
+/** Empty panel: what this panel is for, and the one thing to do next. */
+function DockEmpty({icon,title,children,action}:{icon:AppIconName|'browser'|'changes';title:string;children:React.ReactNode;action?:{label:string;onClick:()=>void}}){
+  return <div className="enigma-dock-empty" data-dock-empty=""><span className="enigma-dock-empty-icon" aria-hidden="true"><DockIcon name={icon}/></span><h3>{title}</h3><p>{children}</p>{action&&<button type="button" className="enigma-dock-empty-action" onClick={action.onClick}>{action.label}</button>}</div>;
+}
 function tabScrollLimit(list:HTMLElement){
   // Optical stretch and layout transitions may extend scrollWidth beyond the
   // final tab. That decoration must not leave an arrow covering its close button.
@@ -201,15 +206,15 @@ export function RightDock(){
           <RightWorkspacePanel filesOnly active={show('files')}/>
         </FileSplitPane>
       </section>
-      {hasVisited('changes')&&<section key={`changes:${scope}`} hidden={!show('changes')} inert={!show('changes')} aria-hidden={!show('changes')} className="enigma-dock-section">{session?<ChangeWorkbench active={visible&&show('changes')}/>:<div className="enigma-dock-empty">开始项目对话后，在这里查看代码变更。</div>}</section>}
+      {hasVisited('changes')&&<section key={`changes:${scope}`} hidden={!show('changes')} inert={!show('changes')} aria-hidden={!show('changes')} className="enigma-dock-section">{session?<ChangeWorkbench active={visible&&show('changes')}/>:<DockEmpty icon="changes" title="还没有代码变更" action={{label:'开始对话',onClick:focusComposer}}>在项目里开始对话；助手修改文件后，可以在这里逐项审阅差异。</DockEmpty>}</section>}
       {hasVisited('browser')&&<section key={`browser:${scope}`} hidden={!show('browser')} inert={!show('browser')} aria-hidden={!show('browser')} className="enigma-dock-section"><SidebarBrowser sessionPath={view?.browserSession===undefined?session:view.browserSession}/></section>}
       {hasVisited('terminal')&&<section key={`terminal:${scope}:${view?.terminalRoot||''}`} hidden={!show('terminal')} inert={!show('terminal')} aria-hidden={!show('terminal')} className="enigma-dock-section"><Suspense fallback={<p>正在打开终端…</p>}><WorkspaceTerminal root={view?.terminalRoot} active={show('terminal')}/></Suspense></section>}
       {hasVisited('agents')&&<section hidden={!show('agents')} inert={!show('agents')} aria-hidden={!show('agents')} className="enigma-dock-section"><SubagentPanel/></section>}
       {hasVisited('sidechat')&&<section key={`sidechat:${scope}`} hidden={!show('sidechat')} inert={!show('sidechat')} aria-hidden={!show('sidechat')} className="enigma-dock-section"><SideConversation scope={scope} active={show('sidechat')}/></section>}
-      {hasVisited('tasks')&&<section hidden={!show('tasks')} inert={!show('tasks')} aria-hidden={!show('tasks')} className="enigma-dock-section enigma-dock-task-list"><div className="enigma-dock-task-intro"><h3>任务概览</h3><p>当前对话的计划、协作和运行信息。</p>{engineering?.connected&&<div><button onClick={()=>openGroup('plan')}>计划</button><button onClick={()=>openGroup('acceptance')}>检查结果</button><button onClick={()=>openGroup('observer')}>运行诊断</button></div>}</div><SessionClock compact/><SessionTodoCard/><WorkflowCard/><AgentActivityCard/><SessionStatusCard/></section>}
-      {(resolved==='tools'||resolved?.startsWith('tool:'))&&<section className="enigma-dock-section">{engineering?.connected?<EngineeringPanel embedded/>:<div className="enigma-dock-empty"><h3>打开项目工具</h3><p>沿用当前对话的目录。没有目录的项目也可以管理任务；代码功能需要在“仓库”中关联代码目录。</p><button onClick={()=>void openProjectTool(resolved?.startsWith('tool:')?resolved.slice(5):'project')}>打开工具</button></div>}</section>}
+      {hasVisited('tasks')&&<section hidden={!show('tasks')} inert={!show('tasks')} aria-hidden={!show('tasks')} className="enigma-dock-section enigma-dock-task-list"><div className="enigma-dock-task-intro"><h3>任务概览</h3><p>当前对话的计划、协作和运行信息。</p>{engineering?.connected&&<div><button onClick={()=>openGroup('plan')}>计划</button><button onClick={()=>openGroup('acceptance')}>检查结果</button><button onClick={()=>openGroup('observer')}>运行诊断</button></div>}</div><SessionClock compact/><SessionTodoCard/><WorkflowCard/><AgentActivityCard/><SessionStatusCard/><DockEmpty icon="activity" title="还没有任务进展" action={{label:'描述一个任务',onClick:focusComposer}}>向助手描述要完成的工作后，这里会显示计划步骤、协作助手和运行状态。</DockEmpty></section>}
+      {(resolved==='tools'||resolved?.startsWith('tool:'))&&<section className="enigma-dock-section">{engineering?.connected?<EngineeringPanel embedded/>:<DockEmpty icon="layers" title="打开项目工具" action={{label:'打开工具',onClick:()=>void openProjectTool(resolved?.startsWith('tool:')?resolved.slice(5):'project')}}>沿用当前对话的目录。没有目录的项目也可以管理任务；代码功能需要在“仓库”中关联代码目录。</DockEmpty>}</section>}
       {!(show('files')&&inlineItem?.id===fileId)&&<PreviewPanel embedded watchDocuments={false} visible={previewShown} itemId={fileId||null}/>}
-      {!resolved&&<div className="enigma-dock-empty"><h3>添加工作面板</h3><p>点击上方＋，选择文件、浏览器、变更或其他工具。</p></div>}
+      {!resolved&&<DockEmpty icon="add" title="添加工作面板">点击上方＋，选择文件、浏览器、变更或其他工具。</DockEmpty>}
     </div>
   </div>;
 }

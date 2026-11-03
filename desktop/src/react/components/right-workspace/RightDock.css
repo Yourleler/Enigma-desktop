@@ -22,6 +22,11 @@
 .enigma-dock-tab button span:last-child { max-width:170px; overflow:hidden; text-overflow:ellipsis; }
 .enigma-dock-tab .enigma-dock-tab-close { padding:var(--enigma-spacing-10) var(--enigma-spacing-5); font-size:17px; }
 .enigma-dock-tab:hover, .enigma-dock-actions button:hover { background:var(--overlay-light); }
+/* Current dock tab: heavier label and accent icon on top of the glass lens. */
+.enigma-dock-tab.active > [role="tab"] { font-weight:600; }
+.enigma-dock-tab.active > [role="tab"] > :is(svg,.enigma-icon) { color:var(--accent); }
+.enigma-dock-tab > [role="tab"]:focus-visible,.enigma-dock-tab .enigma-dock-tab-close:focus-visible,.enigma-dock-actions button:focus-visible { outline:2px solid color-mix(in srgb,var(--accent) 70%,transparent); outline-offset:-2px; }
+.enigma-dock-actions button:hover { color:var(--text); }
 .enigma-dock-actions { display:flex; flex:0 0 auto; gap:var(--enigma-spacing-4); }
 .enigma-dock-actions button { display:grid; place-items:center; width:28px; height:30px; padding:var(--enigma-spacing-10); border:0; border-radius:7px; background:transparent; color:var(--text-muted); cursor:pointer; }
 .enigma-dock-body { flex:1; min-height:0; min-width:0; position:relative; overflow:hidden; }
@@ -31,6 +36,18 @@
 /* Match the file panel's empty state: centered in the panel, not pinned to a corner. */
 .enigma-dock-body .enigma-dock-empty { min-height:100%; box-sizing:border-box; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; text-wrap:pretty; }
 .enigma-dock-body .enigma-dock-empty :is(h3,p) { margin:0 0 var(--enigma-spacing-8); max-width:36em; }
+/* Empty panels: icon → title → one-line explanation → single next action. */
+.enigma-dock-body .enigma-dock-empty { gap:var(--space-2); }
+.enigma-dock-empty-icon { display:grid; place-items:center; width:40px; height:40px; margin-bottom:var(--space-10); border-radius:12px; color:var(--accent); background:color-mix(in srgb,var(--accent) 10%,transparent); }
+.enigma-dock-empty-icon svg,.enigma-dock-empty-icon .enigma-icon { width:20px; height:20px; }
+.enigma-dock-body .enigma-dock-empty h3 { color:var(--text); font-size:15px; font-weight:600; line-height:1.45; }
+.enigma-dock-body .enigma-dock-empty p { max-width:26em; color:var(--text-muted); font-size:13px; line-height:1.65; }
+.enigma-dock-empty .enigma-dock-empty-action { margin-top:var(--space-8); border:0; border-radius:8px; padding:var(--space-7) var(--space-16); background:var(--accent); color:var(--eg-on-accent,var(--bg)); font:500 13px/1.5 var(--font-ui); cursor:pointer; }
+.enigma-dock-empty .enigma-dock-empty-action:hover { filter:brightness(1.06); }
+.enigma-dock-empty .enigma-dock-empty-action:focus-visible { outline:2px solid color-mix(in srgb,var(--accent) 70%,transparent); outline-offset:2px; }
+/* The task overview only shows its empty guidance while no task card rendered. */
+.enigma-dock-task-list > .enigma-dock-empty { flex:1 1 auto; min-height:auto; }
+.enigma-dock-task-list > :not(.enigma-dock-task-intro):not(.enigma-dock-empty) ~ .enigma-dock-empty { display:none; }
 .enigma-dock-task-list { padding:var(--enigma-spacing-3); display:flex; flex-direction:column; gap:var(--enigma-spacing-3); }
 .enigma-dock-task-list > * { flex:0 0 auto; }
 .enigma-dock-task-intro { color:var(--text-muted); font:12px/1.6 var(--font-ui); }

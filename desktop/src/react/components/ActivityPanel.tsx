@@ -203,7 +203,7 @@ export function ActivityPanel({embedded=false}:{embedded?:boolean}={}) {
             </button>
           </div>
           <div className={fp.floatingPanelBody}>
-            <p className="enigma-page-description">这里记录计划任务、自动巡检和后台工作实际执行的结果。展开记录可查看过程与输出，也可以打开对应对话继续处理。普通聊天中的操作请在原对话查看。</p><div className="enigma-page-refresh"><button className={automationStyles.textButton} disabled={refreshing} aria-busy={refreshing} onClick={loadData}><AppIcon name="refresh" size={15} className={refreshing?'enigma-refreshing':''}/>{refreshing?'正在刷新…':'刷新记录'}</button><span role="status">{updatedAt?`更新于 ${new Date(updatedAt).toLocaleTimeString('zh-CN',{hour12:false})} · ${activities.length} 条记录`:'正在读取执行记录'}</span></div>
+            <p className="enigma-page-description">这里记录计划任务、自动巡检和后台工作实际执行的结果。展开记录可查看过程与输出，也可以打开对应对话继续处理。普通聊天中的操作请在原对话查看。</p><div className="enigma-page-refresh"><button className={`${automationStyles.textButton} enigma-ghost-button`} disabled={refreshing} aria-busy={refreshing} onClick={loadData}><AppIcon name="refresh" size={15} className={refreshing?'enigma-refreshing':''}/>{refreshing?'正在刷新…':'刷新记录'}</button><span role="status">{updatedAt?`更新于 ${new Date(updatedAt).toLocaleTimeString('zh-CN',{hour12:false})} · ${activities.length} 条记录`:'正在读取执行记录'}</span></div>
             {(loadError||heartbeatError)&&<p role="alert" className={automationStyles.feedback}>{loadError||heartbeatError}</p>}
             <div className={fp.activityCards} id="activityCards">
               {agentTabs.length === 0 ? (
@@ -243,7 +243,7 @@ export function ActivityPanel({embedded=false}:{embedded?:boolean}={}) {
                   </div>
                   <div className={automationStyles.groupList}>
                     {activeActivities.length === 0 ? (
-                      !loadError&&<div className={fp.activityEmpty}><strong>还没有这类执行记录</strong><p>任务运行后，这里会显示结果、用时和可查看的过程。</p><button onClick={()=>useStore.getState().setActivePanel('automation')}>查看任务计划</button></div>
+                      !loadError&&<div className={fp.activityEmpty}><strong>还没有这类执行记录</strong><p>任务运行后，这里会显示结果、用时和可查看的过程。</p><button className="enigma-primary" onClick={()=>useStore.getState().setActivePanel('automation')}>查看任务计划</button></div>
                     ) : activeActivities.map(a => (
                       <ActivityCard
                         key={`${connectionKey}:${a.agentId}:${a.id}`}
