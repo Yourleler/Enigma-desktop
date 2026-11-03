@@ -4,6 +4,15 @@ import { fileURLToPath } from "url";
 import { spawn as spawnChild } from "child_process";
 import { resolveTerminalShell } from "./shell-resolver.ts";
 
+// 交互终端的环境补充：声明真彩色支持让 ls/git 等输出彩色；macOS 自带 bash 每次启动都会打印
+// “默认 shell 已改为 zsh”提示，对工作区终端只是噪音，这里静默掉。用户显式设置的值优先。
+export function terminalEnv(base: NodeJS.ProcessEnv, platform: NodeJS.Platform = process.platform): NodeJS.ProcessEnv {
+  const env = { ...base };
+  env.COLORTERM ??= "truecolor";
+  if (platform === "darwin") env.BASH_SILENCE_DEPRECATION_WARNING ??= "1";
+  return env;
+}
+
 export async function createAsyncNodePtyBackend() {
   const pty = await import("node-pty");
   ensureUnixSpawnHelperExecutable();
@@ -14,7 +23,7 @@ export async function createAsyncNodePtyBackend() {
         cwd,
         cols,
         rows,
-        env: resolved.env || env || process.env,
+        env: terminalEnv(resolved.env || env || process.env),
         name: "xterm-256color",
       });
       proc.onData((data) => onData?.(data));
