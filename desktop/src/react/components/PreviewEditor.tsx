@@ -155,6 +155,11 @@ function getErrorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
 
+function saveWriteFailedText(): string {
+  const text = window.t?.('preview.saveWriteFailed');
+  return text && text !== 'preview.saveWriteFailed' ? text : '无法写入文件，请检查文件权限或磁盘空间后重试。';
+}
+
 function showSaveError(prefixKey: string, err: unknown): void {
   const tFn = window.t ?? ((p: string) => p);
   window.dispatchEvent(new CustomEvent('hana-inline-notice', {
@@ -697,7 +702,7 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
               saveBlockedRef.current = true;
               throw new Error(tFn('settings.fileChangedOnDisk'));
             }
-            throw new Error('saveDocument returned false');
+            throw new Error(saveWriteFailedText());
           }
           nextVersion = result.version ?? null;
           if (result.version) diskVersionRef.current = result.version;
@@ -712,14 +717,14 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
                 saveBlockedRef.current = true;
                 throw new Error(tFn('settings.fileChangedOnDisk'));
               }
-              throw new Error('write-file-if-unchanged returned false');
+              throw new Error(saveWriteFailedText());
             }
             nextVersion = result.version ?? null;
             if (result.version) diskVersionRef.current = result.version;
           } else {
             const ok = await window.platform?.writeFile(fp, text);
             if(!valid())return;
-            if (ok === false) throw new Error('write-file returned false');
+            if (ok === false) throw new Error(saveWriteFailedText());
             nextVersion = undefined;
           }
         }

@@ -95,14 +95,19 @@ export function supportsSourceView(previewItem: PreviewItem | null): boolean {
 /** 源码能否写回：与 isEditable 的判定一致——只有本地文件或远程工作区文件可保存，
     纯内容 artifact（对话产物、Skill 文本等）只能只读查看。 */
 function hasWritableSource(previewItem: PreviewItem): boolean {
-  return !!previewItem.filePath || isRemoteWorkbenchContentRef(previewItem.remoteContentRef);
+  return isRemoteWorkbenchContentRef(previewItem.remoteContentRef)
+    || (!!previewItem.filePath && window.platform?.canWriteLocalFiles !== false);
 }
 
 function sourceViewLanguage(previewItem: PreviewItem): string {
   return previewItem.type === 'html' ? 'html' : 'markdown';
 }
 
-function sourceReadOnlyText(): string {
+function sourceReadOnlyText(previewItem: PreviewItem): string {
+  if (previewItem.filePath && window.platform?.canWriteLocalFiles === false) {
+    const web = window.t?.('preview.sourceReadOnlyWeb');
+    return web && web !== 'preview.sourceReadOnlyWeb' ? web : '源码只读：网页版暂不支持写入本机文件，请在桌面 App 中编辑。';
+  }
   const fallback = '源码只读：此内容没有关联可写入的文件（如对话生成的产物），修改无法保存。';
   const translated = window.t?.('preview.sourceReadOnly');
   return translated && translated !== 'preview.sourceReadOnly' ? translated : fallback;
@@ -583,7 +588,7 @@ export function PreviewPanel({embedded=false,visible=true,itemId,panelId='previe
             {previewOpen && previewItem && !editable && (
               <PreviewRenderer previewItem={previewItem} htmlFind={previewItem.type==='html'?{open:findOpen,query:findQuery,index:findIndex,onResult:(count,truncated)=>{setFindCount(count);setFindTruncated(truncated);},onOpen:()=>setFindOpen(true)}:undefined}/>
             )}
-            {previewOpen && previewItem && sourceReadOnly && <PreviewSourceReadOnlyNotice message={sourceReadOnlyText()}/>}
+            {previewOpen && previewItem && sourceReadOnly && <PreviewSourceReadOnlyNotice message={sourceReadOnlyText(previewItem)}/>}
             {previewOpen && previewItem && editable && (
               <PreviewEditor key={`${draftScope}:${previewItem.id}${sourceView ? ':source' : ''}`}
                 ref={editorRef}

@@ -590,6 +590,8 @@ export interface PlatformApi {
   writeFileBinary?(filePath: string, base64Data: string): Promise<boolean>;
   copyFile?(sourcePath: string, destinationPath: string): Promise<boolean>;
   readFileSnapshot?(path: string): Promise<TextFileSnapshot | null>;
+  /** false on the browser shell, which cannot write local paths. */
+  canWriteLocalFiles?: boolean;
   writeFileIfUnchanged?(filePath: string, content: string, expectedVersion?: FileVersion | null): Promise<VersionedWriteResult>;
   watchFile(filePath: string): Promise<boolean>;
   unwatchFile(filePath: string): Promise<boolean>;
