@@ -1,5 +1,6 @@
 .enigma-conversation-progress { display:flex;flex-direction:column;gap:5px;margin:0 6px 6px;min-width:0;font:12px/1.5 var(--font-ui);color:var(--text-muted); }
-.enigma-change-summary { display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;min-width:0; }
+/* Same glass pill as the usage meter, so the two read as one family. */
+.enigma-change-summary { display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px;min-width:0;align-self:center;max-width:100%;padding:2px 4px;border:1px solid var(--border);border-radius:11px;background:var(--bg-card);box-sizing:border-box; }
 .enigma-change-summary button,.enigma-goal-strip button { display:inline-flex;align-items:center;gap:6px;border:0;background:transparent;color:inherit;font:inherit;padding:4px 6px;border-radius:8px;cursor:pointer; }
 .enigma-change-summary button:hover,.enigma-goal-strip button:hover { background:color-mix(in srgb,var(--accent) 9%,transparent); }
 .enigma-change-summary button:focus-visible,.enigma-goal-strip button:focus-visible { outline:2px solid var(--accent);outline-offset:2px; }

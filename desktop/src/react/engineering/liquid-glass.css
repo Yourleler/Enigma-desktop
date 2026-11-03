@@ -221,15 +221,17 @@ body.enigma-surface[data-enigma-tone]:not(.enigma-glass-off) [data-liquid="compo
   backdrop-filter:var(--liquid-refraction,blur(0px)) blur(var(--glass-blur)) saturate(1.3) brightness(var(--glass-composer-dim,.9));
 }
 body.enigma-surface[data-enigma-tone="light"] [data-liquid="composer"] { --glass-composer-dim:1.03; }
-/* Labels on clear glass: like Apple's vibrant labels, secondary text is
-   pulled toward the primary label colour instead of the muted chrome grey,
-   with a hairline shadow that separates glyphs from busy content beneath. */
-body.enigma-surface:not(.enigma-glass-off) :is([data-liquid="composer"],[data-liquid="control"]) {
+/* Labels on glass, everywhere glass is used: like Apple's vibrant labels,
+   secondary text is pulled toward the primary label colour instead of the
+   muted chrome grey, and a tight shadow halo separates glyphs from busy
+   content beneath. Fill and blur are untouched. */
+body.enigma-surface:not(.enigma-glass-off) :is([data-liquid-surface],[data-glass-frame],.enigma-surface-menu,.enigma-token-popover,.titlebar) {
   --text-muted:color-mix(in srgb,var(--eg-muted) 62%,var(--eg-text));
   --text-light:color-mix(in srgb,var(--eg-muted) 80%,var(--eg-text));
 }
-body.enigma-surface[data-enigma-tone="dark"]:not(.enigma-glass-off) :is([data-liquid="composer"],[data-liquid="control"]) { text-shadow:0 .5px 1.5px rgb(0 0 0 / 35%); }
-body.enigma-surface[data-enigma-tone="light"]:not(.enigma-glass-off) :is([data-liquid="composer"],[data-liquid="control"]) { text-shadow:0 .5px 1px rgb(255 255 255 / 55%); }
+body.enigma-surface[data-enigma-tone="dark"]:not(.enigma-glass-off) :is([data-liquid-surface],[data-glass-frame],.enigma-surface-menu,.enigma-token-popover,.titlebar) { text-shadow:0 1px 2px rgb(0 0 0 / 70%),0 0 1px rgb(0 0 0 / 55%); }
+body.enigma-surface[data-enigma-tone="light"]:not(.enigma-glass-off) :is([data-liquid-surface],[data-glass-frame],.enigma-surface-menu,.enigma-token-popover,.titlebar) { text-shadow:0 1px 2px rgb(255 255 255 / 90%),0 0 1px rgb(255 255 255 / 80%); }
+body.enigma-surface:not(.enigma-glass-off) :is([data-liquid-surface],[data-glass-frame],.enigma-surface-menu,.enigma-token-popover,.titlebar) :is(pre,code,.xterm,input,textarea) { text-shadow:none; }
 @media (prefers-reduced-transparency:reduce),(prefers-contrast:more) {
   body.enigma-surface[data-enigma-tone]:not(.enigma-glass-off) [data-liquid="composer"][data-liquid-surface] {
     background:var(--eg-card);backdrop-filter:none;-webkit-backdrop-filter:none;

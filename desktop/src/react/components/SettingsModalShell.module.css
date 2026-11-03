@@ -52,7 +52,7 @@
   box-shadow:
     0 26px 70px rgba(20, 18, 14, 0.18),
     0 8px 24px rgba(20, 18, 14, 0.12);
-  transform: translateY(6px) scale(var(--settings-modal-scale));
+  transform: translateY(6px);
   transform-origin: center;
   pointer-events: none;
   transition: transform var(--settings-modal-open-dur) var(--settings-modal-ease);
@@ -79,7 +79,7 @@
 }
 
 .card.closing {
-  transform: translateY(6px) scale(var(--settings-modal-scale));
+  transform: translateY(6px);
   pointer-events: none;
   transition-duration: var(--settings-modal-close-dur);
 }

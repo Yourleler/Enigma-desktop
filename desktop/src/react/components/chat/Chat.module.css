@@ -2311,27 +2311,27 @@
        复用 InputArea 注入到 .main-content 的 --input-card-h（.sessionShell 同源消费）；
        变量未注入时回退 124px(≈单行卡片高度)+space-md=原 140px，行为不变。 */
     bottom: calc(var(--input-card-h, 124px) + var(--space-16));
-    left: 50%;
-    transform: translateX(-50%);
+    /* Glass, parked at the right end of the usage-meter row so it no longer
+       covers the centred file-change pill. InputArea injects both values. */
+    bottom: var(--scroll-fab-bottom, calc(var(--input-card-h, 124px) + var(--space-16)));
+    right: var(--scroll-fab-right, var(--space-24));
     z-index: 6;
-    width: 36px;
-    height: 36px;
+    width: 34px;
+    height: 34px;
+    padding: 0;
     border-radius: 50%;
-    border: 1px solid var(--border-light, rgba(0,0,0,0.08));
-    background: var(--bg-card, #fff);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.04);
+    border: 1px solid var(--border);
+    background: var(--bg-card);
     cursor: default;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--text-muted);
-    transition: opacity var(--duration-fast), box-shadow var(--duration-fast);
-    opacity: 0.85;
+    color: var(--text);
 }
 
-.scrollToBottomFab:hover {
-    opacity: 1;
-    box-shadow: 0 3px 12px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.06);
+/* Glass host rules set position:relative; the FAB must stay anchored. */
+:global(body.enigma-surface) .scrollToBottomFab[data-liquid-surface] {
+    position: absolute;
 }
 
 .scrollToBottomFab svg {

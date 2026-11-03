@@ -759,6 +759,9 @@ function InputAreaInner({ surface }: Required<InputAreaProps>) {
 
       if(parent.style.getPropertyValue('--input-card-h')!==`${cardHeight}px`)parent.style.setProperty('--input-card-h', `${cardHeight}px`);
       if(parent.style.getPropertyValue('--input-card-bottom-inset')!==`${bottomInset}px`)parent.style.setProperty('--input-card-bottom-inset', `${bottomInset}px`);
+      const parentRect=parent.getBoundingClientRect(),meter=surface.querySelector('[data-testid="token-meter"]')?.getBoundingClientRect();
+      parent.style.setProperty('--scroll-fab-bottom',`${Math.round(parentRect.bottom-(meter&&meter.height?meter.top+meter.height/2+17:cardRect.top-10))}px`);
+      parent.style.setProperty('--scroll-fab-right',`${Math.round(parentRect.right-cardRect.right+8)}px`);
     };
 
     updateMetrics();

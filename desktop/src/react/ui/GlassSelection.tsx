@@ -18,8 +18,12 @@ export function GlassSelection({ selection, selector = '[aria-selected="true"], 
       const bounds = active?.getBoundingClientRect();
       if (!active || !bounds?.width || !bounds.height) { lens.style.opacity = '0'; return; }
       const parent = group.getBoundingClientRect();
-      const nextX = layoutCoordinates ? active.offsetLeft : bounds.left - parent.left + group.scrollLeft - group.clientLeft;
-      const nextY = layoutCoordinates ? active.offsetTop : bounds.top - parent.top + group.scrollTop - group.clientTop;
+      // Measure in layout pixels: an ancestor mid-way through a scale
+      // animation (e.g. the settings sheet opening) shrinks client rects, and
+      // the lens would then visibly stretch to its real size afterwards.
+      const scale = group.offsetWidth ? parent.width / group.offsetWidth : 1;
+      const nextX = layoutCoordinates ? active.offsetLeft : (bounds.left - parent.left) / scale + group.scrollLeft - group.clientLeft;
+      const nextY = layoutCoordinates ? active.offsetTop : (bounds.top - parent.top) / scale + group.scrollTop - group.clientTop;
       const previous = previousPosition.current;
       const dx = previous ? nextX - previous.x : 0, dy = previous ? nextY - previous.y : 0;
       if (dx || dy) {
@@ -28,8 +32,8 @@ export function GlassSelection({ selection, selector = '[aria-selected="true"], 
       }
       previousPosition.current = { x: nextX, y: nextY };
       if (!positioned.current) lens.style.transition = 'none';
-      lens.style.width = `${layoutCoordinates ? active.offsetWidth : bounds.width}px`;
-      lens.style.height = `${layoutCoordinates ? active.offsetHeight : bounds.height}px`;
+      lens.style.width = `${layoutCoordinates ? active.offsetWidth : bounds.width / scale}px`;
+      lens.style.height = `${layoutCoordinates ? active.offsetHeight : bounds.height / scale}px`;
       lens.style.transform = `translate3d(${nextX}px,${nextY}px,0)`;
       lens.style.borderRadius = getComputedStyle(active).borderRadius || '10px';
       lens.style.opacity = '1';
