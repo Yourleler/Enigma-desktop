@@ -38,8 +38,14 @@ body.enigma-motion-off .app :is(.sidebar-inner,.jian-sidebar-inner) { transition
 body.enigma-surface .app { padding:0 var(--space-8, 8px) var(--space-8, 8px) 0;box-sizing:border-box;gap:0; }
 .enigma-workspace-frame { display:flex;flex:1 1 0;min-width:0;min-height:0;overflow:hidden;border:1px solid var(--border);border-radius:14px;isolation:isolate; }
 /* A single backdrop spans all three columns. Independent card fills made
-   the conversation brighter and produced seams at otherwise equal settings. */
-body.enigma-surface[data-enigma-tone] .enigma-workspace-frame {
+   the conversation brighter and produced seams at otherwise equal settings.
+   The material lives on a pseudo-element: a backdrop-filter on the frame
+   itself would make it the Backdrop Root, so glass inside it (composer,
+   pills) would only sample the translucent messages, not the opaque scene,
+   and the sharp original would show through as a second layer. */
+body.enigma-surface[data-enigma-tone] .enigma-workspace-frame { position:relative; }
+body.enigma-surface[data-enigma-tone] .enigma-workspace-frame::before {
+  content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;border-radius:inherit;
   background:color-mix(in srgb,var(--eg-sidebar) var(--glass-content-mix,42%),transparent);
   backdrop-filter:blur(var(--glass-content-blur,8px)) saturate(1.08);
   -webkit-backdrop-filter:blur(var(--glass-content-blur,8px)) saturate(1.08);
@@ -105,8 +111,9 @@ body.enigma-surface .enigma-sidebar-rail [data-channel-layout="rail"] > button {
 body.enigma-surface .enigma-sidebar-rail [data-channel-layout="rail"] > button[aria-pressed="true"] { color:var(--accent);background:var(--accent-light); }
 body.enigma-surface .enigma-sidebar-rail [data-channel-layout="rail"] > [data-glass-selection] { display:none; }
 body.enigma-surface.enigma-glass-off .enigma-workspace-frame {background:var(--eg-sidebar);backdrop-filter:none;-webkit-backdrop-filter:none;}
+body.enigma-surface.enigma-glass-off .enigma-workspace-frame::before {display:none;}
 body.enigma-surface.enigma-glass-off .app > .enigma-sidebar-rail,body.enigma-surface.enigma-glass-off .titlebar {background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;}
-@media(prefers-reduced-transparency:reduce),(prefers-contrast:more) {body.enigma-surface[data-enigma-tone] .enigma-workspace-frame {background:var(--eg-sidebar);backdrop-filter:none;-webkit-backdrop-filter:none;}body.enigma-surface[data-enigma-tone] .app > .enigma-sidebar-rail,body.enigma-surface[data-enigma-tone] .titlebar {background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;}}
+@media(prefers-reduced-transparency:reduce),(prefers-contrast:more) {body.enigma-surface[data-enigma-tone] .enigma-workspace-frame {background:var(--eg-sidebar);backdrop-filter:none;-webkit-backdrop-filter:none;}body.enigma-surface[data-enigma-tone] .enigma-workspace-frame::before {display:none;}body.enigma-surface[data-enigma-tone] .app > .enigma-sidebar-rail,body.enigma-surface[data-enigma-tone] .titlebar {background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;}}
 @media(max-width:1050px) {body.enigma-surface #enigma-titlebar-chat-tools .enigma-project-context {max-width:105px;}body.enigma-surface #enigma-titlebar-chat-tools .enigma-conversation-header {gap:var(--space-4, 4px);}body.enigma-surface #enigma-titlebar-chat-tools .enigma-compact-tools > button {gap:var(--space-3, 3px);padding:var(--space-2, 2px) var(--space-4, 4px);}}
 @media(max-width:700px) {body.enigma-surface .titlebar{gap:var(--space-3, 3px);padding-right:var(--space-4, 4px);}body.enigma-surface .titlebar .tb-conversation-group{gap:var(--space-3, 3px);}body.enigma-surface .titlebar:has(#enigma-titlebar-workspace:not([hidden])) .tb-center-title{display:none;}body.enigma-surface .titlebar:has(#enigma-titlebar-workspace:not([hidden])) #enigma-titlebar-chat-tools [data-testid="session-clock"]{display:none;}body.enigma-surface #enigma-titlebar-chat-tools .enigma-project-context{max-width:90px;}body.enigma-surface #enigma-titlebar-chat-tools .enigma-new-task-settings button{max-width:80px;}body.enigma-surface .app{padding-right:var(--space-4, 4px);padding-bottom:var(--space-4, 4px);}.enigma-workspace-frame{border-radius:11px;}}
 body.enigma-surface .app.mobile-desktop-app { padding-top:var(--titlebar-h,46px); }

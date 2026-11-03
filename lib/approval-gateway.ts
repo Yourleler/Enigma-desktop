@@ -279,10 +279,10 @@ export function createModelApprovalReviewer({
   role = "utility",
   resolveUtilityConfig,
   callText,
-  timeoutMs = 15_000,
+  timeoutMs = 25_000,
   maxTokens = 220,
 }: any = {}) {
-  return async (input) => {
+  return async (input, options: any = {}) => {
     if (typeof resolveUtilityConfig !== "function") {
       return failureResult("reviewer_not_configured", 0);
     }
@@ -303,6 +303,14 @@ export function createModelApprovalReviewer({
     const selected = configForReviewerRole(config, role);
     if (!selected.model || !selected.api || !selected.baseUrl) {
       return failureResult("reviewer_config_missing", 0);
+    }
+    // When both roles resolve to the same endpoint and model, a timeout from
+    // the small reviewer would just repeat here and double the user's wait.
+    if (role === "utility_large" && options.priorFailure?.reasonCode === "reviewer_timeout") {
+      const small = configForReviewerRole(config, "utility");
+      if (small.baseUrl === selected.baseUrl && (small.model?.id ?? small.model) === (selected.model?.id ?? selected.model)) {
+        return failureResult("reviewer_timeout", 0, options.priorFailure.errorCode);
+      }
     }
     let priorFormatFailure = "";
     for (let attempt = 1; attempt <= 2; attempt += 1) {
@@ -380,7 +388,7 @@ function logReviewerFailure(result: ReviewerFailure) {
   );
 }
 
-async function callReviewer(fn, input, reviewer: ReviewerId) {
+async function callReviewer(fn, input, reviewer: ReviewerId, options: any = {}) {
   if (typeof fn !== "function") {
     return { ...failureResult("reviewer_not_configured", 0), reviewer };
   }
@@ -389,8 +397,8 @@ async function callReviewer(fn, input, reviewer: ReviewerId) {
     let result: ReviewerAttemptResult;
     try {
       const raw = attempt > 1
-        ? await fn(input, { attempt, formatCorrection: priorFormatFailure })
-        : await fn(input);
+        ? await fn(input, { ...options, attempt, formatCorrection: priorFormatFailure })
+        : options.priorFailure ? await fn(input, options) : await fn(input);
       result = normalizeReviewerReturn(raw, reviewer, attempt);
     } catch (error) {
       result = failureFromError(error, attempt, "call");
@@ -462,6 +470,7 @@ export function createApprovalGateway({
         largeToolModelReviewer,
         reviewerInput,
         "large_tool_model",
+        smallDecision.kind === "failure" ? { priorFailure: smallDecision } : {},
       );
       if (isAllowedReviewerAction(largeDecision)) {
         return decisionWithFailures(largeDecision, smallDecision);

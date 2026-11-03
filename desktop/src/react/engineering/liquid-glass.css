@@ -213,10 +213,23 @@ body.enigma-surface :is([data-liquid="control"],.enigma-token-popover)[data-liqu
 body.enigma-surface[data-enigma-tone]:not(.enigma-glass-off) [data-liquid="composer"][data-liquid-surface] {
   background:transparent;
   --glass-fill:color-mix(in srgb,var(--eg-card) var(--glass-composer-mix,38%),transparent);
-  /* Text now passes under the whole card; a light floor keeps refracted
-     lines from reading as a doubled copy at the low end of the slider. */
-  --glass-blur:max(5px,var(--glass-composer-blur,5.35px));
+  /* Same material as the usage pill, a little more blur. Like Apple's
+     regular Liquid Glass, it slightly dims what passes underneath so the
+     composer's own labels stay legible without turning it frosted. */
+  --glass-blur:var(--glass-composer-blur,5px);
+  -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(1.3) brightness(var(--glass-composer-dim,.9));
+  backdrop-filter:var(--liquid-refraction,blur(0px)) blur(var(--glass-blur)) saturate(1.3) brightness(var(--glass-composer-dim,.9));
 }
+body.enigma-surface[data-enigma-tone="light"] [data-liquid="composer"] { --glass-composer-dim:1.03; }
+/* Labels on clear glass: like Apple's vibrant labels, secondary text is
+   pulled toward the primary label colour instead of the muted chrome grey,
+   with a hairline shadow that separates glyphs from busy content beneath. */
+body.enigma-surface:not(.enigma-glass-off) :is([data-liquid="composer"],[data-liquid="control"]) {
+  --text-muted:color-mix(in srgb,var(--eg-muted) 62%,var(--eg-text));
+  --text-light:color-mix(in srgb,var(--eg-muted) 80%,var(--eg-text));
+}
+body.enigma-surface[data-enigma-tone="dark"]:not(.enigma-glass-off) :is([data-liquid="composer"],[data-liquid="control"]) { text-shadow:0 .5px 1.5px rgb(0 0 0 / 35%); }
+body.enigma-surface[data-enigma-tone="light"]:not(.enigma-glass-off) :is([data-liquid="composer"],[data-liquid="control"]) { text-shadow:0 .5px 1px rgb(255 255 255 / 55%); }
 @media (prefers-reduced-transparency:reduce),(prefers-contrast:more) {
   body.enigma-surface[data-enigma-tone]:not(.enigma-glass-off) [data-liquid="composer"][data-liquid-surface] {
     background:var(--eg-card);backdrop-filter:none;-webkit-backdrop-filter:none;

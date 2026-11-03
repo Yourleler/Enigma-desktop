@@ -128,8 +128,8 @@ const ToolIndicator = memo(function ToolIndicator({ tool, agentName }: { tool: T
   const reviewerTimedOut=(tool.details?.confirmation as { reasonCode?: string } | undefined)?.reasonCode==='approval_review_failed';
   const errorText = tool.error ? (approvalUnavailable
     ? (reviewerTimedOut
-      ? '自动审核模型超时没有给出结论，按规则转人工确认；但这次运行不能弹出审批，所以操作没有执行。'
-      : '这次操作需要你确认，但当时的运行方式不能弹出审批，所以操作没有执行。')
+      ? '自动审核模型超时没有给出结论。这次是自动权限下的后台/子任务运行，按设计不会弹审批打断你，所以操作没有执行；可在设置里给「工具模型」换一个响应更快的模型。'
+      : '这次操作需要你确认，但它运行在不能弹审批的后台/子任务中，所以没有执行。')
     : tool.error) : '';
   const expandable = !!(row.command || row.diff || row.params || errorText);
 
