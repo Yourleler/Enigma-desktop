@@ -29,5 +29,10 @@
 .enigma-conductor-add input { flex:1;min-width:0; }
 .enigma-conductor-add button { white-space:nowrap; }
 .enigma-conductor-check { display:flex;gap:8px;align-items:center; }
-.enigma-conductor-page .enigma-primary,.enigma-conductor-create .enigma-primary { background:var(--accent);color:var(--text-on-accent,#fff); }
+.enigma-conductor-page .enigma-primary,.enigma-conductor-create .enigma-primary { background:var(--accent);color:var(--eg-on-accent,var(--bg)); }
+/* Empty state: accent icon, a real title, then the single create action. */
+.enigma-conductor-empty > .enigma-icon,.enigma-conductor-empty > svg { color:var(--accent); }
+.enigma-conductor-empty h3 { margin:var(--space-12) 0 var(--space-4);color:var(--text);font-size:17px;font-weight:600; }
+.enigma-conductor-empty p { margin:0 auto;max-width:34em;text-wrap:pretty; }
+.enigma-conductor-page>nav button:focus-visible { outline:2px solid color-mix(in srgb,var(--accent) 70%,transparent);outline-offset:2px; }
 @media(max-width:600px){.enigma-conductor-page>header{padding:18px 16px}.enigma-conductor-content{padding:16px}.enigma-conductor-models{grid-template-columns:1fr}.enigma-conductor-page>nav{padding-inline:16px}}

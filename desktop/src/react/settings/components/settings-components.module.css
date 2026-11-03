@@ -11,7 +11,10 @@
     display: block;
     width: 100%;
     min-width: 0;
-    overflow-x: hidden;
+    /* clip, not hidden: hidden turns the page into a vertical scroller, so the
+       4px fade-up on open briefly overflowed, showed a scrollbar and narrowed
+       the content, which then snapped wider: a visible stretch on open. */
+    overflow-x: clip;
 }
 
 .surface {
@@ -296,6 +299,16 @@
 
 .expandable {
     margin-top: var(--space-8);
+}
+
+/* 直接放在无内边距卡片里时，只给折叠标题加内边距，与卡片内列表行（space-12）对齐；
+   展开内容自带行内边距，保持原样，避免二次缩进和分隔线脱离卡片边框 */
+.surfaceCard > .expandable {
+    margin-top: 0;
+}
+
+.surfaceCard > .expandable > .expandableHeader {
+    padding-inline: var(--space-12);
 }
 
 .expandableHeader {

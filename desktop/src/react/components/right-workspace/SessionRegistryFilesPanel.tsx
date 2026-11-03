@@ -795,7 +795,15 @@ export function SessionRegistryFilesPanel({placement,query=''}:{placement?:'file
   return (
     <section className={styles.sessionFilesPanel} aria-label={tr('rightWorkspace.tabs.sessionFiles')}>
       {sortedFiles.length === 0 ? (
-        <div className={styles.emptyState}>{query?'没有匹配的附件':tr('rightWorkspace.sessionFiles.empty')}</div>
+        <div className={styles.emptyState}>
+          {query?tr('rightWorkspace.sessionFiles.noMatch'):(
+            <div className={styles.emptyGuide}>
+              <span className={styles.emptyGuideIcon} aria-hidden="true"><FileKindIcon kind="doc" size={20}/></span>
+              <strong>{tr('rightWorkspace.sessionFiles.empty')}</strong>
+              <span>{tr('rightWorkspace.sessionFiles.emptyHint')}</span>
+            </div>
+          )}
+        </div>
       ) : (
         <>
           <div className={styles.sessionFilesToolbar}>

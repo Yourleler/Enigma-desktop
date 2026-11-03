@@ -36,6 +36,22 @@ interface Props {
   showMarkdownPreviewToggle?: boolean;
   markdownPreviewActive?: boolean;
   onToggleMarkdownPreview?: () => void;
+  /** 有渲染视图的文本文件（markdown / html）可切到源码，按代码文件方式编辑 */
+  showSourceViewToggle?: boolean;
+  sourceViewActive?: boolean;
+  /** markdown 从所见即所得编辑进入源码时，退出源码回到编辑而不是渲染预览 */
+  sourceViewReturnsToEditor?: boolean;
+  onToggleSourceView?: () => void;
+}
+
+function SourceCodeIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M16 18l6-6-6-6" />
+      <path d="M8 6l-6 6 6 6" />
+    </svg>
+  );
 }
 
 type CoverGenerationStatus = {
@@ -181,9 +197,16 @@ export function FloatingActions({
   showMarkdownPreviewToggle = false,
   markdownPreviewActive = false,
   onToggleMarkdownPreview,
+  showSourceViewToggle = false,
+  sourceViewActive = false,
+  sourceViewReturnsToEditor = false,
+  onToggleSourceView,
 }: Props) {
   const [copyLabel, setCopyLabel] = useState<string | null>(null);
   const copyInfo=previewCopyInfo(contentType,language);
+  const sourceToggleLabelKey = !sourceViewActive
+    ? 'preview.viewSource'
+    : sourceViewReturnsToEditor ? 'preview.exitMarkdownPreview' : 'preview.exitSourceView';
   const copyGeneration=useRef(0);
   const [coverBusy, setCoverBusy] = useState(false);
   const [coverMenuOpen, setCoverMenuOpen] = useState(false);
@@ -562,6 +585,23 @@ export function FloatingActions({
                   <path d="M3 3v5h5" />
                   <path d="M12 7v5l3 3" />
                 </svg>
+              </button>
+            )}
+          </Tooltip>
+        )}
+        {showSourceViewToggle && (
+          <Tooltip content={t(sourceToggleLabelKey)} placement="top" align="end">
+            {({ ref, ...tooltipProps }) => (
+              <button
+                ref={(node) => ref(node)}
+                className={`${styles.actionBtn}${sourceViewActive ? ` ${styles.actionBtnActive}` : ''}`}
+                onClick={onToggleSourceView}
+                aria-label={t(sourceToggleLabelKey)}
+                aria-pressed={sourceViewActive}
+                data-preview-source-toggle=""
+                {...tooltipProps}
+              >
+                <SourceCodeIcon />
               </button>
             )}
           </Tooltip>

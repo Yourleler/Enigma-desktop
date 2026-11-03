@@ -48,6 +48,7 @@
   }
 
   window.platform = {
+    canWriteLocalFiles: false,
     // 服务器连接
     getServerPort: async () => serverPort,
     getServerToken: async () => token,

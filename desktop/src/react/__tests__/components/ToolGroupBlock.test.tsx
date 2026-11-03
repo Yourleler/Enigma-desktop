@@ -53,7 +53,8 @@ describe('ToolGroupBlock', () => {
 
     const detail = screen.getByTitle(command);
 
-    expect(detail.textContent).toBe('rm -rf /Users/jason/.claude/plugins/mar…');
+    // 目标显示完整命令首行，由 CSS 省略号截断
+    expect(detail.textContent).toBe(command);
   });
 
   it('renders exec_command with the legacy bash user-facing copy', () => {
@@ -75,7 +76,7 @@ describe('ToolGroupBlock', () => {
       />,
     );
 
-    expect(screen.getByText('运行命令')).toBeInTheDocument();
+    expect(screen.getByText('运行')).toBeInTheDocument();
     expect(screen.getByText('npm test')).toBeInTheDocument();
   });
 
@@ -155,7 +156,7 @@ describe('ToolGroupBlock', () => {
     const {rerender}=render(<ToolGroupBlock tools={pending} collapsed={false}/>);
     expect(screen.getByRole('button',{name:'toolGroup.running'})).toBeDisabled();
     rerender(<ToolGroupBlock tools={pending.map(t=>({...t,done:true,success:true}))} collapsed={true}/>);
-    const trigger=screen.getByRole('button',{name:/toolGroup.count/});expect(trigger).toBeEnabled();expect(trigger).toHaveAttribute('aria-expanded','false');
+    const trigger=screen.getByRole('button',{name:/读取 2 个文件/});expect(trigger).toBeEnabled();expect(trigger).toHaveAttribute('aria-expanded','false');
     trigger.focus();expect(trigger).toHaveFocus();fireEvent.click(trigger);expect(trigger).toHaveAttribute('aria-expanded','true');
     await waitFor(()=>expect(screen.getByText('two.txt')).toBeVisible());
     fireEvent.click(trigger);expect(trigger).toHaveAttribute('aria-expanded','false');
@@ -300,15 +301,15 @@ describe('ToolGroupBlock', () => {
     expect(screen.queryByText('Tea')).not.toBeInTheDocument();
   });
 
-  it('keeps the tool layout box aligned to the task-block width', () => {
+  it('keeps the tool timeline as wide as the message body', () => {
     const css = fs.readFileSync(
       path.join(process.cwd(), 'desktop/src/react/components/chat/Chat.module.css'),
       'utf8',
     );
     const toolGroupRule = css.match(/\.toolGroup\s*\{(?<body>[^}]*)\}/)?.groups?.body || '';
 
-    expect(toolGroupRule).toContain('width: var(--chat-task-block-width)');
-    expect(toolGroupRule).toContain('max-width: 100%');
+    expect(toolGroupRule).toContain('width: calc(100% + 0.4rem)');
+    expect(toolGroupRule).toContain('max-width: calc(100% + 0.4rem)');
     expect(toolGroupRule).toContain('box-sizing: border-box');
   });
 

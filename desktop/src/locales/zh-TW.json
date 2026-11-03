@@ -678,7 +678,15 @@
     "failed": "⚠ 好像出了點問題 · {n} 步",
     "countWithFail": "{total} 個工具（{fail} 個失敗）",
     "count": "{n} 個工具",
-    "running": "{n} 個工具運行中"
+    "running": "{n} 個工具運行中",
+    "kind": {
+      "command": "執行 {n} 條命令",
+      "read": "讀取 {n} 個檔案",
+      "edit": "編輯 {n} 個檔案",
+      "search": "搜尋 {n} 次",
+      "call": "呼叫 {n} 次工具",
+      "failed": "{n} 個失敗"
+    }
   },
   "processFold": {
     "unknown": "{n} 項未記錄結果",
@@ -2767,11 +2775,67 @@
       "status": {
         "available": "可用",
         "expired": "已過期"
-      }
+      },
+      "emptyHint": "在輸入框點 ＋ 或把檔案拖進對話即可加入；助手產生的檔案也會出現在這裡。",
+      "noMatch": "沒有符合的附件"
     },
     "jian": {
       "collapse": "收起資料夾說明",
       "expand": "展開資料夾說明"
+    },
+    "dock": {
+      "label": "工作面板",
+      "scrollLeft": "向左捲動工作標籤",
+      "scrollRight": "向右捲動工作標籤",
+      "scrollLeftHint": "查看左側標籤；也可橫向捲動",
+      "scrollRightHint": "查看右側標籤；也可橫向捲動",
+      "menuSwitch": "切換到此面板",
+      "menuRestore": "重新加入",
+      "tabs": {
+        "files": {
+          "label": "檔案",
+          "hint": "專案目錄與本次對話的附件"
+        },
+        "changes": {
+          "label": "變更",
+          "hint": "程式碼變更、智慧閱讀和完整差異"
+        },
+        "browser": {
+          "label": "瀏覽器",
+          "hint": "瀏覽網頁，切換標籤仍保留頁面"
+        },
+        "tasks": {
+          "label": "任務",
+          "hint": "進度、協作助手和任務詳情"
+        },
+        "terminal": {
+          "label": "終端機",
+          "hint": "在選定的工作目錄執行指令"
+        },
+        "sidechat": {
+          "label": "側邊對話",
+          "hint": "獨立提問、傳檔案或處理問題，主對話繼續保留",
+          "menuHint": "獨立提問或處理問題"
+        },
+        "agents": {
+          "label": "協作助手",
+          "hint": "子任務、執行紀錄和父對話定位",
+          "menuHint": "查看子任務及執行紀錄"
+        }
+      },
+      "empty": {
+        "changesTitle": "還沒有程式碼變更",
+        "changesBody": "在專案裡開始對話；助手修改檔案後，可以在這裡逐項審閱差異。",
+        "changesAction": "開始對話",
+        "tasksTitle": "還沒有任務進展",
+        "tasksBody": "向助手描述要完成的工作後，這裡會顯示計畫步驟、協作助手和執行狀態。",
+        "tasksAction": "描述一個任務",
+        "toolsTitle": "開啟專案工具",
+        "toolsBody": "沿用目前對話的目錄。沒有目錄的專案也可以管理任務；程式碼功能需要在「倉庫」中關聯程式碼目錄。",
+        "toolsAction": "開啟工具",
+        "addTitle": "新增工作面板",
+        "addBody": "點選上方＋，選擇檔案、瀏覽器、變更或其他工具。"
+      }
     }
   },
   "desk": {
@@ -3381,6 +3445,10 @@
   "mobile.update.reload": "重新整理",
   "subagentAbort": "終止",
   "subagentAborted": "已終止",
+  "subagentAbortMissing": "任務已結束或不存在",
+  "subagentAbortUnsupported": "該任務不支援中途停止",
+  "subagentAbortFailed": "停止失敗，請重試",
+  "subagentAbortNetwork": "網路異常，停止請求未送達",
   "preview.toggle": "預覽面板",
   "preview.markdownPreview": "預覽",
   "preview.exitMarkdownPreview": "回到編輯",
@@ -3523,6 +3591,11 @@
   },
   "preview": {
     "fileHistory": "歷史版本",
+    "viewSource": "查看原始碼",
+    "exitSourceView": "返回預覽",
+    "sourceReadOnly": "原始碼唯讀：此內容沒有關聯可寫入的檔案（如對話產生的產物），修改無法儲存。",
+    "sourceReadOnlyWeb": "原始碼唯讀：網頁版暫不支援寫入本機檔案，請在桌面 App 中編輯。",
+    "saveWriteFailed": "無法寫入檔案，請檢查檔案權限或磁碟空間後重試。",
     "fileMovedOrDeleted": "原稿件已移动或者删除",
     "legacyImageUpgrade": "此图片预览已升级，点此在新查看器打开",
     "coverLayoutSaveFailed": "Cover 布局保存失败，文件可能已被外部修改。",
@@ -3532,6 +3605,14 @@
       "saveImage": "保存图片",
       "regenerateWithPrompt": "自定义提示词生成图片",
       "deleteCover": "删除封面"
+    },
+    "pendingSave": {
+      "label": "檔案儲存狀態",
+      "failed": "修改尚未儲存到檔案。預覽顯示的是草稿，可回到原始碼重試儲存。",
+      "conflict": "檔案有外部更新，自動儲存已暫停。預覽顯示的是你的草稿，請回到原始碼比較後再決定。",
+      "draft": "有一份尚未寫入檔案的草稿。預覽顯示的是磁碟上的版本，回到原始碼可恢復並比較。",
+      "recovered": "已復原一份未儲存的草稿，自動儲存已暫停。預覽顯示的是該草稿；回到原始碼與磁碟版本比較後再決定如何儲存。",
+      "action": "回到原始碼處理"
     }
   },
   "subagent": {
@@ -3769,5 +3850,18 @@
     "workspace_graph": "讀取儲存庫相依性",
     "workspace_repos": "查看關聯儲存庫",
     "workspace_verify": "執行聯合檢查"
+  },
+  "toolRow": {
+    "run": "執行",
+    "read": "讀取",
+    "list": "查看",
+    "edit": "編輯",
+    "write": "寫入",
+    "search": "搜尋",
+    "fetch": "存取",
+    "call": "呼叫",
+    "command": "命令",
+    "params": "參數",
+    "error": "錯誤"
   }
 }

@@ -44,7 +44,15 @@
 .enigma-repository-menu>div>button,.enigma-repository-recent button { font-size:12px; }
 .tb-title-context { display:flex;align-items:center;min-width:0;gap:6px;overflow:hidden; }
 .tb-title-context>.tb-center-title { flex:1 1 auto;min-width:40px; }
-.tb-title-context>.enigma-repository-context { flex:0 1 auto;max-width:140px; }
+.tb-title-context>.enigma-repository-context { flex:0 1 auto;max-width:140px;color:color-mix(in srgb,var(--text) 82%,var(--text-muted)); }
 body.enigma-surface .titlebar .tb-conversation-group { grid-template-columns:minmax(0,1fr) max-content; }
 @media(max-width:1000px){.tb-title-context>.enigma-repository-context{max-width:100px}.tb-title-context>.enigma-repository-context small{display:none}}
 body.enigma-surface .tb-title-context>.tb-center-title { width:auto;flex:0 1 auto;padding-right:4px; }
+/* Desktop chat titlebar: the title + working directory sit centered over the
+   middle column (spacer | title | tools, the side tracks share the rest), so
+   they follow the column as either panel opens/closes and only truncate when
+   the column itself is too narrow. */
+body.enigma-surface :not(.mobile-desktop-root)>.titlebar:not([data-primary-page]) .tb-conversation-group { grid-template-columns:minmax(0,1fr) minmax(0,max-content) minmax(max-content,1fr); }
+body.enigma-surface :not(.mobile-desktop-root)>.titlebar:not([data-primary-page]) .tb-conversation-group::before { content:''; }
+body.enigma-surface :not(.mobile-desktop-root)>.titlebar:not([data-primary-page]) #enigma-titlebar-chat-tools { justify-self:end; }
+@media(max-width:520px){body.enigma-surface .titlebar:has(#enigma-titlebar-workspace:not([hidden])) .tb-conversation-group::before{display:none}}

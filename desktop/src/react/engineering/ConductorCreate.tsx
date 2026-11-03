@@ -4,6 +4,7 @@ import {useStore} from '../stores';
 import {loadSessions,switchSession} from '../stores/session-actions';
 import {useEngineering,engineeringRequest} from './state';
 import {useRepositoryContext} from '../components/chat/RepositoryContext';
+import {hanaFetch} from '../hooks/use-hana-fetch';
 import {FormSelectControl} from './FormSelect';
 import {AppIcon} from '../ui/app-icons';
 import './ConductorPage.css';
@@ -17,11 +18,23 @@ export function ConductorCreateDialog({close,embedded=false}:{close:()=>void;emb
  const defaultModel=key(initial?.execution)||key(models.find(m=>m.isCurrent)||models[0]);
  const [mode,setMode]=useState(initial?.mode||'delegated'),[main,setMain]=useState(defaultModel),[worker,setWorker]=useState(key(initial?.worker)||defaultModel),[planner,setPlanner]=useState(key(initial?.planning)||defaultModel),[reviewer,setReviewer]=useState(key(initial?.review)||defaultModel);
  const [parallel,setParallel]=useState(2),[maximum,setMaximum]=useState(8),[rewind,setRewind]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState('');
- const [extraRoots,setExtraRoots]=useState<string[]>([]),[rootText,setRootText]=useState(''),[access,setAccess]=useState<Record<string,'none'|'read'|'write'>>({});
- const available=[...repositories,...extraRoots.filter(path=>!repositories.some(r=>r.path===path)).map(path=>({path,name:path.split(/[\\/]/).at(-1)||path,git:true,branch:null}))];
+ const server=useStore(s=>s.activeServerConnection),nativePicker=!!window.hana&&server?.kind==='local'&&typeof window.platform?.selectFolder==='function';
+ type Repo={path:string;name:string;git:boolean;gitRoot?:string|null;branch:string|null};
+ const [extraRoots,setExtraRoots]=useState<Repo[]>([]),[rootText,setRootText]=useState(''),[adding,setAdding]=useState(false),[access,setAccess]=useState<Record<string,'none'|'read'|'write'>>({});
+ // A conversation folder inside a repository is offered as its repository root, which is what the conductor registers.
+ const asRoot=(r:Repo):Repo=>r.git&&r.gitRoot&&r.gitRoot!==r.path?{...r,path:r.gitRoot,name:r.gitRoot.split(/[\\/]/).at(-1)||r.gitRoot}:r;
+ const available=[...new Map([...(repositories as Repo[]),...extraRoots].map(asRoot).map(r=>[r.path,r] as const)).values()];
  const modelOptions=models.map(m=>({value:key(m),label:m.name||m.id,group:m.provider}));
  const selectModel=(label:string,value:string,change:(value:string)=>void)=><label><span>{label}</span><FormSelectControl label={label} value={value} onChange={change} options={modelOptions}/></label>;
- const add=async()=>{const root=window.platform?.openTerminal?await window.platform.selectFolder():rootText.trim();if(root){setExtraRoots(old=>[...new Set([...old,root])]);setAccess(old=>({...old,[root]:'read'}));setRootText('');}};
+ const add=async()=>{if(adding)return;setError('');
+  const root=nativePicker?await window.platform!.selectFolder():rootText.trim();if(!root)return;
+  setAdding(true);
+  try{const r=await hanaFetch('/api/enigma/repositories/context',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({roots:[root]})}),data=await r.json().catch(()=>null);
+   if(!r.ok)throw Error(data?.error||'无法读取该目录');const found=(data?.repositories||[])[0];if(!found)throw Error('无法读取该目录');const repo=asRoot(found);
+   if(!repo.git)throw Error(`${repo.name} 不是 Git 仓库，管家只能登记 Git 仓库`);
+   setExtraRoots(old=>[...old.filter(x=>asRoot(x).path!==repo.path),repo]);setAccess(old=>({...old,[repo.path]:old[repo.path]&&old[repo.path]!=='none'?old[repo.path]:'read'}));setRootText('');
+  }catch(e){setError(e instanceof Error?e.message:'添加仓库失败');}finally{setAdding(false);}
+ };
  const create=async()=>{
   if(busy)return;setBusy(true);setError('');
   try{
@@ -31,7 +44,7 @@ export function ConductorCreateDialog({close,embedded=false}:{close:()=>void;emb
    const policy={mode,execution:role(main),...(mode==='delegated'||phased?{worker:role(worker)}:{}),...(phased?{planning:role(planner),review:role(reviewer)}:{})};
    const selected=available.filter(r=>access[r.path]&&access[r.path]!=='none').map(r=>({root:r.path,access:access[r.path]}));
    const selectedModels=[main,...(mode==='delegated'||phased?[worker]:[]),...(phased?[planner,reviewer]:[])];
-   const result=await engineeringRequest('/conductor/new',sourcePath,{agentId:useStore.getState().currentAgentId,modelPolicy:policy,repositories:selected,limits:{maxConcurrent:parallel,maxTasks:maximum,writableRepos:[],allowedModels:[...new Set(selectedModels)],allowRewind:rewind}});
+   const result=await engineeringRequest('/conductor/new',sourcePath,{agentId:useStore.getState().currentAgentId,modelPolicy:policy,...(selected.length?{repositories:selected}:{}),limits:{maxConcurrent:parallel,maxTasks:maximum,writableRepos:[],allowedModels:[...new Set(selectedModels)],allowRewind:rewind}});
    await loadSessions();
    if(sourcePath!==(useStore.getState().currentSessionPath||'')||sourceConnection!==useStore.getState().activeServerConnectionId){setError('会话或服务已切换，管家已创建，可从列表打开');return;}
    close();useStore.getState().setActivePanel(null);await switchSession(result.sessionPath);
@@ -43,7 +56,7 @@ export function ConductorCreateDialog({close,embedded=false}:{close:()=>void;emb
   <fieldset disabled={busy}>
    <section><h3>工作范围</h3><p>选择管家可以读取或修改的仓库。没有代码任务时可以留空，照常处理资料和安排工作。</p>
     <div className="enigma-conductor-repos">{available.map(repo=><div key={repo.path}><AppIcon name="project" size={17}/><span><strong>{repo.name}</strong><small>{repo.path}</small>{!repo.git&&<small>{repositoriesLoading?'正在识别仓库…':'普通目录：代码协作请选择 Git 仓库；资料可在创建后附加。'}</small>}</span><select aria-label={`${repo.name} 工作权限`} value={access[repo.path]||'none'} disabled={!repo.git} onChange={e=>setAccess({...access,[repo.path]:e.target.value as any})}><option value="none">不参与</option><option value="read">只读</option><option value="write">可修改</option></select></div>)}</div>
-    <div className="enigma-conductor-add">{!window.platform?.openTerminal&&<input aria-label="仓库根目录" placeholder="仓库根目录路径" value={rootText} onChange={e=>setRootText(e.target.value)}/>}<button type="button" onClick={()=>void add()}><AppIcon name="add" size={15}/>添加仓库</button></div>
+    <div className="enigma-conductor-add">{!nativePicker&&<input aria-label="仓库根目录" placeholder={server&&server.kind!=='local'?'服务器上的仓库根目录路径':'仓库根目录路径'} value={rootText} onChange={e=>setRootText(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();void add();}}}/>}<button type="button" disabled={adding||(!nativePicker&&!rootText.trim())} onClick={()=>void add()}><AppIcon name="add" size={15}/>{adding?'正在检查…':'添加仓库'}</button></div>
    </section>
    <section><h3>模型编排</h3><p>主模型负责组织工作，子模型执行分配的任务；可以使用不同模型。</p>
     <label><span>工作方式</span><select aria-label="管家模型编排方式" value={mode} onChange={e=>setMode(e.target.value)}><option value="single">单模型</option><option value="delegated">主模型 + 子模型</option><option value="plan-execute">规划 → 执行 → 复核</option><option value="adaptive">按任务进展切换阶段</option></select></label>

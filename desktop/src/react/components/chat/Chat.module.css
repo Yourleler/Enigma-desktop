@@ -90,6 +90,11 @@
     width: 92%;
 }
 
+/* 展开工具详情（命令 / diff）时让消息撑到可用宽度，详情块不随叙述文字长短变窄 */
+.messageAssistant:not(.processFoldPanel):has(.toolRowDetail) {
+    width: 92%;
+}
+
 .message + .message {
     margin-top: var(--space-4);
 }
@@ -421,9 +426,11 @@
     font-size: var(--fs-caption);
     line-height: 1.6;
     white-space: pre-wrap;
-    border-left: 2px solid var(--mood-accent);
-    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-    opacity: 0.7;
+    /* An inset tinted well instead of a side stripe; full opacity keeps the
+       muted italic above 4.5:1 on glass. */
+    background: color-mix(in srgb, var(--mood-accent) 6%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mood-accent) 22%, transparent);
+    border-radius: var(--radius-sm);
 }
 
 /* ── 幕间消息 ── */
@@ -1250,11 +1257,11 @@
 }
 
 .settingsUpdateCardApplied {
-    border-left: 3px solid var(--accent);
+    box-shadow: 0 2px 8px var(--shade-black-8, transparent), inset 0 0 0 1px color-mix(in srgb, var(--accent) 42%, transparent);
 }
 
 .settingsUpdateCardFailed {
-    border-left: 3px solid var(--red, #b24a3b);
+    box-shadow: 0 2px 8px var(--shade-black-8, transparent), inset 0 0 0 1px color-mix(in srgb, var(--red, var(--danger)) 46%, transparent);
 }
 
 .settingsUpdateHeader {
@@ -1316,30 +1323,35 @@
 
 .toolGroup {
     position: relative;
-    margin: var(--space-4) 0;
+    /* 左移一个 hover 内边距，让图标和文字与正文左缘对齐 */
+    margin: var(--space-4) 0 var(--space-4) -0.4rem;
     border-radius: var(--radius-sm);
     background: transparent;
     overflow: hidden;
-    width: var(--chat-task-block-width);
-    max-width: 100%;
+    /* 工具时间线和正文同宽：命令、diff 详情需要横向空间 */
+    width: calc(100% + 0.4rem);
+    max-width: calc(100% + 0.4rem);
     box-sizing: border-box;
     animation: hana-chat-soft-down-in 110ms var(--ease-out) both;
 }
 
+/* 分组摘要行：次要灰色小字 + 行内箭头，像一行旁注而不是卡片标题 */
 .toolGroupSummary {
-    display: flex;
-    width: 100%;
+    display: inline-flex;
+    max-width: 100%;
     border: 0;
     background: transparent;
     font-family: inherit;
     text-align: left;
     align-items: center;
-    gap: 0.4rem;
-    padding: 0.4rem 0.75rem;
-    font-size: var(--fs-ui);
-    color: var(--tool-text);
+    gap: 0.3rem;
+    padding: 0.2rem 0.4rem;
+    border-radius: 6px;
+    font-size: 13px;
+    color: var(--text-muted);
     line-height: 1.5;
     user-select: none;
+    transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
 }
 
 .toolGroupSummaryClickable {
@@ -1351,31 +1363,35 @@
 .toolGroupSummaryClickable:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: -2px;
-    border-radius: inherit;
 }
 
 .toolGroupSummaryClickable:hover {
-    background: var(--overlay-subtle);
+    background: var(--overlay-light);
+    color: var(--tool-text);
 }
 
 .toolGroupTitle {
-    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .toolGroupArrow {
-    font-size: var(--fs-hint);
-    color: var(--text-muted);
-    width: 0.8em;
     flex-shrink: 0;
+    opacity: 0.8;
+    transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.toolGroupSummary[data-open] .toolGroupArrow {
+    transform: rotate(90deg);
 }
 
 .toolGroupContent {
-    padding: 0 0.75rem 0.3rem;
-}
-
-/* 单条工具时隐藏标题行 */
-.toolGroupSingle .toolGroupSummary {
-    display: none;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    padding: 0.2rem 0 0.1rem;
 }
 
 .toolGroupSingle .toolGroupContent {
@@ -1400,14 +1416,14 @@
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    margin: var(--space-4) 0;
-    padding: 0.4rem 0.75rem;
+    margin: var(--space-4) 0 var(--space-4) -0.4rem;
+    padding: 0.2rem 0.4rem;
     border: 0;
-    border-radius: var(--radius-sm);
+    border-radius: 6px;
     background: transparent;
     color: var(--text-muted);
     font: inherit;
-    font-size: 12px;
+    font-size: 13px;
     line-height: 1.5;
     cursor: pointer;
     transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
@@ -1419,8 +1435,7 @@
 }
 
 .processFoldSummaryOpen {
-    margin-bottom: 0;
-    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    margin-bottom: var(--space-4);
 }
 
 .processFoldTitle {
@@ -1428,22 +1443,21 @@
     max-width: 100%;
     min-width: 0;
     align-items: center;
-    justify-content: center;
-    gap: 0.42rem;
+    justify-content: flex-start;
+    gap: 0.35rem;
 }
 
 .processFoldTitleText {
     min-width: 0;
     overflow: hidden;
-    text-align: center;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
 .processFoldArrow {
     flex: 0 0 auto;
-    color: var(--text-muted);
-    font-size: var(--fs-caption);
+    color: inherit;
+    opacity: 0.8;
     transition: transform var(--duration-fast) var(--ease-out);
 }
 
@@ -1454,11 +1468,22 @@
 .processFoldPanel {
     width: 100%;
     box-sizing: border-box;
-    margin: 0 0 var(--space-4);
-    padding: 0.4rem 0.75rem;
-    border-radius: 0 0 var(--radius-sm) var(--radius-sm);
-    background: var(--overlay-subtle);
-    background: color-mix(in srgb, var(--overlay-subtle) 62%, transparent);
+    margin: 0 0 var(--space-8);
+    padding: 0;
+    background: transparent;
+}
+
+.processFoldDuration {
+    flex: 0 0 auto;
+    font-variant-numeric: tabular-nums;
+}
+
+.processFoldStats {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    opacity: 0.8;
 }
 
 .processFoldMessage + .processFoldPanel {
@@ -1481,53 +1506,65 @@
 
 /* ── 工具调用指示器 ── */
 
-.toolIndicator {
-    display: flex;
-    align-items: center;
-    gap: var(--space-8);
+.toolRow {
     min-width: 0;
-    font-size: var(--fs-caption);
-    color: var(--tool-text);
-    padding: 0.2rem 0;
-    line-height: 1.5;
     max-width: 100%;
 }
 
-.toolGroupSingle .toolIndicator {
-    font-size: 12px;
-    padding: 8px 10px;
-    border-radius: 10px;
-    background: transparent;
+/* 工具行：单色图标 · 灰色动词 · 主色目标 · 更淡的附注；hover 浅底 */
+.toolIndicator {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    width: fit-content;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: 0.25rem 0.4rem;
     border: 0;
-    box-shadow: none;
+    border-radius: 6px;
+    background: transparent;
+    font: inherit;
+    font-size: 13px;
+    text-align: left;
+    color: var(--text-muted);
+    line-height: 1.5;
 }
 
-.toolIndicator > svg { flex-shrink: 0; color: var(--text-muted); }
-.toolIndicator[data-status="running"] { border-color: color-mix(in srgb,var(--accent) 25%,transparent); }
-.toolGroupSingle .toolIndicator:hover,
-.toolGroupSingle .toolIndicator:focus-within { background: color-mix(in srgb,var(--accent) 6%,transparent); }
+.toolIndicatorClickable {
+    cursor: pointer;
+    transition: background var(--duration-fast) var(--ease-out);
+}
+
+.toolIndicatorClickable:hover,
+.toolRow[data-open] > .toolIndicatorClickable {
+    background: var(--overlay-light);
+}
+
+.toolIndicatorClickable:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+}
+
+.toolIcon { flex-shrink: 0; color: var(--text-muted); opacity: 0.85; }
 
 .toolDesc {
-    flex: 0 1 auto;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    flex: 0 0 auto;
     white-space: nowrap;
+    color: var(--text-muted);
 }
 
 .toolDetail {
-    flex: 1;
+    flex: 0 1 auto;
     min-width: 0;
-    font-size: var(--fs-hint);
-    color: var(--text-muted);
-    font-family: var(--font-mono);
+    color: var(--tool-text);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
 .toolDetailLink {
-    cursor: default;
+    cursor: pointer;
     transition: color var(--duration-fast);
 }
 
@@ -1536,6 +1573,129 @@
     text-decoration: underline;
     text-underline-offset: 2px;
 }
+
+.toolMeta {
+    flex: 0 100 auto;
+    min-width: 0;
+    color: var(--text-muted);
+    opacity: 0.75;
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.toolLines {
+    display: inline-flex;
+    flex: 0 0 auto;
+    gap: 0.3rem;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+}
+
+.toolLinesAdd { color: var(--green); }
+.toolLinesDel { color: var(--danger); }
+
+.toolError {
+    flex: 0 100 auto;
+    min-width: 0;
+    font-size: 12px;
+    color: var(--danger);
+    opacity: 0.85;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.toolChevron {
+    flex-shrink: 0;
+    margin-left: -0.1rem;
+    opacity: 0.5;
+    transition: transform var(--duration-fast) var(--ease-out), opacity var(--duration-fast) var(--ease-out);
+}
+
+.toolIndicatorClickable:hover .toolChevron,
+.toolIndicatorClickable:focus-visible .toolChevron,
+.toolRow[data-open] .toolChevron { opacity: 0.9; }
+.toolRow[data-open] .toolChevron { transform: rotate(90deg); }
+
+/* 行详情：从图标下方拉一条细线，内容缩进到动词对齐处 */
+.toolRowDetail {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+    margin: 0.1rem 0 0.4rem calc(0.4rem + 7px);
+    padding: 0.2rem 0 0.2rem calc(0.45rem + 7px);
+    border-left: 1px solid var(--border);
+}
+
+.toolSection {
+    min-width: 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--overlay-subtle) 70%, transparent);
+    overflow: hidden;
+}
+
+.toolSectionLabel {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-8);
+    padding: 0.4rem 0.7rem 0.1rem;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--tool-text);
+}
+
+.toolSectionPath {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: var(--font-mono);
+    font-weight: 400;
+}
+
+.toolCode {
+    margin: 0;
+    padding: 0.35rem 0.7rem 0.55rem;
+    max-height: 280px;
+    overflow: auto;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-variant-ligatures: none;
+    line-height: 1.6;
+    color: var(--tool-text);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    background: transparent;
+}
+
+.toolCodeError { color: var(--danger); }
+
+.toolDiff {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.toolDiff > span {
+    display: block;
+    padding: 0 0.7rem 0 0.4rem;
+}
+
+.toolDiffSign {
+    display: inline-block;
+    width: 1.1em;
+    color: var(--text-muted);
+    user-select: none;
+}
+
+.toolDiffAdd { background: color-mix(in srgb, var(--green) 13%, transparent); }
+.toolDiffAdd .toolDiffSign { color: var(--green); }
+.toolDiffDel { background: color-mix(in srgb, var(--danger) 14%, transparent); }
+.toolDiffDel .toolDiffSign { color: var(--danger); }
 
 .toolTag {
     flex: 0 1 auto;
@@ -1567,8 +1727,9 @@
 }
 
 .toolStatus {
+    flex-shrink: 0;
     margin-left: auto;
-    font-size: var(--fs-ui);
+    font-size: 12px;
 }
 
 .toolStatusDone {
@@ -1576,7 +1737,7 @@
 }
 
 .toolStatusFailed {
-    color: var(--coral);
+    color: var(--danger);
 }
 .toolStatusUnknown {
     color: var(--text-muted);
@@ -1638,8 +1799,9 @@
     font-size: var(--fs-caption);
     line-height: 1.6;
     white-space: pre-wrap;
-    border-left: 2px solid var(--border);
-    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    background: var(--overlay-subtle, transparent);
+    box-shadow: inset 0 0 0 1px var(--border);
+    border-radius: var(--radius-sm);
 }
 
 /* ── 文件输出卡片操作按钮 ── */
@@ -2023,7 +2185,9 @@
     top: 0;
     left: 0;
     right: 0;
-    bottom: calc(var(--chat-scrollbar-bottom-inset) + var(--space-24));
+    /* Messages run under the whole composer so its glass refracts one
+       continuous scene instead of a scene cut mid-card. */
+    bottom: 0;
     overflow: hidden;
 }
 
@@ -2044,7 +2208,7 @@
 /* 静默滚动条：默认 thumb 透明（track 已是 transparent），hover 或正在滚动时才显色。
    不改宽度，避免布局抖动。is-scrolling class 由 Panel 的 scroll handler 在滚动时打上、800ms 无滚动后摘掉。 */
 .sessionPanel::-webkit-scrollbar-track {
-    margin-bottom: var(--chat-scrollbar-bottom-inset);
+    margin-bottom: calc(var(--chat-scrollbar-bottom-inset) * 2 + var(--space-24));
 }
 
 .sessionPanel::-webkit-scrollbar-thumb {
@@ -2115,7 +2279,7 @@
 
 .sessionFooter {
     /* 和 sessionPanel 的切点对齐：遮挡发生在输入卡片中部，同时在滚到底时额外留一行左右呼吸空间。 */
-    height: calc(var(--chat-scrollbar-bottom-inset) + var(--space-24) + 5rem);
+    height: calc(var(--chat-scrollbar-bottom-inset) * 2 + var(--space-24) * 2 + 5rem);
     flex-shrink: 0;
 }
 
@@ -2147,27 +2311,27 @@
        复用 InputArea 注入到 .main-content 的 --input-card-h（.sessionShell 同源消费）；
        变量未注入时回退 124px(≈单行卡片高度)+space-md=原 140px，行为不变。 */
     bottom: calc(var(--input-card-h, 124px) + var(--space-16));
-    left: 50%;
-    transform: translateX(-50%);
+    /* Glass, parked at the right end of the usage-meter row so it no longer
+       covers the centred file-change pill. InputArea injects both values. */
+    bottom: var(--scroll-fab-bottom, calc(var(--input-card-h, 124px) + var(--space-16)));
+    right: var(--scroll-fab-right, var(--space-24));
     z-index: 6;
-    width: 36px;
-    height: 36px;
+    width: 34px;
+    height: 34px;
+    padding: 0;
     border-radius: 50%;
-    border: 1px solid var(--border-light, rgba(0,0,0,0.08));
-    background: var(--bg-card, #fff);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.04);
+    border: 1px solid var(--border);
+    background: var(--bg-card);
     cursor: default;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--text-muted);
-    transition: opacity var(--duration-fast), box-shadow var(--duration-fast);
-    opacity: 0.85;
+    color: var(--text);
 }
 
-.scrollToBottomFab:hover {
-    opacity: 1;
-    box-shadow: 0 3px 12px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.06);
+/* Glass host rules set position:relative; the FAB must stay anchored. */
+:global(body.enigma-surface) .scrollToBottomFab[data-liquid-surface] {
+    position: absolute;
 }
 
 .scrollToBottomFab svg {

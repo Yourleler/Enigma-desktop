@@ -19,6 +19,7 @@ import {alignPreviewAnchor,findPreviewAnchor} from '../utils/preview-anchor';
 import { PreviewEditor, type PreviewEditorHandle, type PreviewEditorStats } from './PreviewEditor';
 import { PreviewRenderer } from './preview/PreviewRenderer';
 import {PreviewRefreshNotice} from './preview/PreviewRefreshNotice';
+import {PreviewPendingSaveNotice,PreviewSourceReadOnlyNotice,type PreviewPendingSaveKind} from './preview/PreviewSaveNotice';
 import {capturePreviewContext,previewConnectionKey} from '../utils/preview-context';
 import { TabBar } from './preview/TabBar';
 import {DocumentNavigation} from './preview/DocumentNavigation';
@@ -45,7 +46,7 @@ import {
 import type { PreviewScrollSnapshot } from '../../../../shared/preview-reading-position.ts';
 import previewStyles from './Preview.module.css';
 import { AppIcon } from '../ui/app-icons';
-import { editorRecoveryScope } from '../stores/editor-draft-recovery';
+import { EditorDraftRecovery, editorRecoveryKey, editorRecoveryScope } from '../stores/editor-draft-recovery';
 
 const EDITABLE_TYPES = new Set(['markdown', 'code', 'csv']);
 const CHAPTER_RAIL_HOVER_ZONE_PX = 64;
@@ -82,7 +83,39 @@ function isMarkdownFile(previewItem: PreviewItem | null): boolean {
     && (!!previewItem.filePath || isRemoteWorkbenchContentRef(previewItem.remoteContentRef));
 }
 
-function getEditorMode(previewItem: PreviewItem): 'markdown' | 'code' | 'csv' | 'text' {
+/** 有渲染视图的文本文件：可在「预览 ↔ 源码」之间切换 */
+const SOURCE_VIEW_TYPES = new Set(['markdown', 'html']);
+
+export function supportsSourceView(previewItem: PreviewItem | null): boolean {
+  if (!previewItem) return false;
+  if (previewItem.status === 'missing' || previewItem.status === 'unavailable') return false;
+  return SOURCE_VIEW_TYPES.has(previewItem.type);
+}
+
+/** 源码能否写回：与 isEditable 的判定一致——只有本地文件或远程工作区文件可保存，
+    纯内容 artifact（对话产物、Skill 文本等）只能只读查看。 */
+function hasWritableSource(previewItem: PreviewItem): boolean {
+  return isRemoteWorkbenchContentRef(previewItem.remoteContentRef)
+    || (!!previewItem.filePath && window.platform?.canWriteLocalFiles !== false);
+}
+
+function sourceViewLanguage(previewItem: PreviewItem): string {
+  return previewItem.type === 'html' ? 'html' : 'markdown';
+}
+
+function sourceReadOnlyText(previewItem: PreviewItem): string {
+  if (previewItem.filePath && window.platform?.canWriteLocalFiles === false) {
+    const web = window.t?.('preview.sourceReadOnlyWeb');
+    return web && web !== 'preview.sourceReadOnlyWeb' ? web : '源码只读：网页版暂不支持写入本机文件，请在桌面 App 中编辑。';
+  }
+  const fallback = '源码只读：此内容没有关联可写入的文件（如对话生成的产物），修改无法保存。';
+  const translated = window.t?.('preview.sourceReadOnly');
+  return translated && translated !== 'preview.sourceReadOnly' ? translated : fallback;
+}
+
+function getEditorMode(previewItem: PreviewItem, sourceView = false): 'markdown' | 'code' | 'csv' | 'text' {
+  // 源码模式统一走 code 编辑器（行号、语法高亮、折叠），与打开代码文件一致
+  if (sourceView) return 'code';
   if (previewItem.type === 'markdown') return 'markdown';
   if (previewItem.type === 'csv') return 'csv';
   return 'code';
@@ -152,8 +185,13 @@ export function PreviewPanel({embedded=false,visible=true,itemId,panelId='previe
   const previewItem = previewItems.find(a => a.id === activeTabId) ?? null;
   const connectionKey=useStore(previewConnectionKey);
   const ownsPreview=useMemo(()=>capturePreviewContext(),[connectionKey,activeTabId]);
+  // 「查看源码」按标签页记忆（仅内存，不持久化）；切换标签再回来仍保持源码模式
+  const [sourceViewIds,setSourceViewIds]=useState<ReadonlySet<string>>(()=>new Set());
+  const sourceViewCapable = supportsSourceView(previewItem);
+  const sourceView = sourceViewCapable && !!previewItem && sourceViewIds.has(previewItem.id);
+  const sourceReadOnly = sourceView && !!previewItem && !hasWritableSource(previewItem);
   const markdownPreviewActive = !!previewItem && markdownPreviewIds.includes(previewItem.id);
-  const editable = isEditable(previewItem) && !markdownPreviewActive && (previewItem?.type!=='csv'||csvSource);
+  const editable = sourceView || isEditable(previewItem) && !markdownPreviewActive && (previewItem?.type!=='csv'||csvSource);
   const markdownFile = isMarkdownFile(previewItem);
   const showMarkdownEditorStatus = editable && previewItem?.type === 'markdown';
   const contentHash = useMemo(() => previewItem&&['markdown','code','csv','text'].includes(previewItem.type) ? hashMarkdownContent(previewItem.content) : '', [previewItem?.content, previewItem?.type]);
@@ -169,10 +207,60 @@ export function PreviewPanel({embedded=false,visible=true,itemId,panelId='previe
       saveRemoteWorkbenchContent(remoteRef, content, expectedVersion ?? null);
   }, [previewItem?.remoteContentRef]);
 
+  const setSourceViewActive = useCallback((id: string, active: boolean) => {
+    setSourceViewIds(current => {
+      if (current.has(id) === active) return current;
+      const next = new Set(current);
+      if (active) next.add(id); else next.delete(id);
+      return next;
+    });
+  }, []);
+
   const handleToggleMarkdownPreview = useCallback(() => {
     if (!previewItem || !isMarkdownFile(previewItem)) return;
+    // 源码模式下点「预览」：退出源码并进入渲染预览
+    if (sourceView) {
+      setSourceViewActive(previewItem.id, false);
+      setMarkdownPreviewActive(previewItem.id, true);
+      return;
+    }
     setMarkdownPreviewActive(previewItem.id, !markdownPreviewActive);
-  }, [previewItem, markdownPreviewActive]);
+  }, [previewItem, markdownPreviewActive, sourceView, setSourceViewActive]);
+
+  // 切换源码/预览：编辑器以独立实例挂载（key 带 source 后缀），
+  // 卸载时 PreviewEditor 会冲刷未落盘的防抖保存；预览始终渲染 store 中的最新缓冲区。
+  const handleToggleSourceView = useCallback(() => {
+    if (!previewItem || !supportsSourceView(previewItem)) return;
+    setSourceViewActive(previewItem.id, !sourceView);
+  }, [previewItem, sourceView, setSourceViewActive]);
+
+  // Unresolved saves outlive the editor: switching back to the rendered preview
+  // unmounts it (and its PreviewSaveNotice), so the panel keeps the last state
+  // the editor reported, keyed like the editor instance's recovery identity.
+  const [saveStates,setSaveStates]=useState<Readonly<Record<string,PreviewPendingSaveKind>>>({});
+  const editorSeenRef=useRef<Set<string>>(new Set());
+  const saveStateKey=previewItem?`${draftScope}:${previewItem.id}`:'';
+  const reportSaveState=useCallback((key:string,state:PreviewPendingSaveKind|null)=>setSaveStates(current=>{
+    if((current[key]??null)===state)return current;
+    const next={...current};
+    if(state)next[key]=state;else delete next[key];
+    return next;
+  }),[]);
+  useEffect(()=>{if(editable&&saveStateKey)editorSeenRef.current.add(saveStateKey);},[editable,saveStateKey]);
+  // A recovery copy left by an earlier session: no editor has run here yet, so
+  // the rendered preview still shows the disk version without any warning.
+  const storedDraft=useMemo(()=>{
+    if(editable||!previewItem||!draftScope||!hasWritableSource(previewItem)||editorSeenRef.current.has(saveStateKey))return false;
+    const key=editorRecoveryKey(previewItem.filePath,previewItem.remoteContentRef);
+    if(!key)return false;
+    try{return new EditorDraftRecovery(localStorage).list(draftScope,key).length>0;}catch{return false;}
+  },[editable,previewItem?.id,previewItem?.filePath,previewItem?.remoteContentRef,draftScope,saveStateKey]); // eslint-disable-line react-hooks/exhaustive-deps -- 只按文件身份重新扫描恢复副本，内容变化无需重扫
+  const pendingSave:PreviewPendingSaveKind|null=saveStates[saveStateKey]??(storedDraft?'draft':null);
+  const returnToSource=useCallback(()=>{
+    if(!previewItem)return;
+    if(supportsSourceView(previewItem))setSourceViewActive(previewItem.id,true);
+    else if(previewItem.type==='csv')setCsvSource(true);
+  },[previewItem,setSourceViewActive]);
 
   const handleEditorContentChange = useCallback((content: string, fileVersion?: PreviewItem['fileVersion']) => {
     if (!previewItem||!ownsPreview()) return;
@@ -444,7 +532,7 @@ export function PreviewPanel({embedded=false,visible=true,itemId,panelId='previe
         {previewOpen&&previewItem&&<PreviewRefreshNotice key={previewItem.id} item={previewItem}/>}
         {previewItem?.type==='csv'&&isEditable(previewItem)&&<div className="enigma-csv-mode" role="group" aria-label="CSV 显示方式"><button aria-pressed={!csvSource} onClick={()=>setCsvSource(false)}>表格预览</button><button aria-pressed={csvSource} onClick={()=>setCsvSource(true)}>编辑 CSV</button></div>}
         {previewOpen&&previewItem&&(['markdown','code','text','html'].includes(previewItem.type)||previewItem.type==='csv'&&csvSource)&&!['missing','unavailable'].includes(previewItem.status||'')&&<DocumentNavigation
-          documentId={previewItem.id} contentType={previewItem.type} language={previewItem.language} findOpen={findOpen} headings={markdownHeadings} activeHeadingId={activeHeadingId} editable={editable} wrapLines={wrapLines}
+          documentId={previewItem.id} contentType={previewItem.type} language={previewItem.language} findOpen={findOpen} headings={markdownHeadings} activeHeadingId={activeHeadingId} editable={editable} sourceView={sourceView} wrapLines={wrapLines}
           onJump={handleJumpHeading} onFind={()=>{if(editable)editorRef.current?.openSearch();else setFindOpen(true);}}
           onGotoLine={()=>editorRef.current?.gotoLine()} onToggleWrap={()=>setWrapLines(value=>{try{localStorage.setItem('enigma-preview-wrap',String(!value));}catch{}return !value;})}
           onFold={editable?()=>editorRef.current?.foldAll():undefined} onUnfold={editable?()=>editorRef.current?.unfoldAll():undefined}>
@@ -456,8 +544,12 @@ export function PreviewPanel({embedded=false,visible=true,itemId,panelId='previe
               contentType={previewItem.type}
               language={previewItem.language}
               showMarkdownPreviewToggle={isMarkdownFile(previewItem)}
-              markdownPreviewActive={markdownPreviewActive}
+              markdownPreviewActive={markdownPreviewActive && !sourceView}
               onToggleMarkdownPreview={handleToggleMarkdownPreview}
+              showSourceViewToggle={sourceViewCapable}
+              sourceViewActive={sourceView}
+              sourceViewReturnsToEditor={isMarkdownFile(previewItem) && !markdownPreviewActive}
+              onToggleSourceView={handleToggleSourceView}
             />
           )}
         </DocumentNavigation>}
@@ -490,11 +582,15 @@ export function PreviewPanel({embedded=false,visible=true,itemId,panelId='previe
           />
           {previewOpen && anchorMessage && <div role="status" className={previewStyles.previewAnchorMessage}>{anchorMessage}<button type="button" aria-label="关闭章节提示" onClick={()=>setAnchorMessage('')}>×</button></div>}
           <div ref={previewBodyRef} className={`universal-card ${previewStyles.previewPanelBody}`} id={panelId==='previewPanel'?'previewBody':`${panelId}-body`} data-preview-panel-body="" data-preview-kind={previewItem?.type} onMouseUp={handleMouseUp}>
+            {previewOpen && previewItem && !editable && pendingSave && (
+              <PreviewPendingSaveNotice kind={pendingSave} onReturnToSource={returnToSource}/>
+            )}
             {previewOpen && previewItem && !editable && (
               <PreviewRenderer previewItem={previewItem} htmlFind={previewItem.type==='html'?{open:findOpen,query:findQuery,index:findIndex,onResult:(count,truncated)=>{setFindCount(count);setFindTruncated(truncated);},onOpen:()=>setFindOpen(true)}:undefined}/>
             )}
+            {previewOpen && previewItem && sourceReadOnly && <PreviewSourceReadOnlyNotice message={sourceReadOnlyText(previewItem)}/>}
             {previewOpen && previewItem && editable && (
-              <PreviewEditor key={`${draftScope}:${previewItem.id}`}
+              <PreviewEditor key={`${draftScope}:${previewItem.id}${sourceView ? ':source' : ''}`}
                 ref={editorRef}
                 draftScope={draftScope}
                 content={previewItem.content}
@@ -502,9 +598,10 @@ export function PreviewPanel({embedded=false,visible=true,itemId,panelId='previe
                 remoteContentRef={previewItem.remoteContentRef}
                 fileVersion={previewItem.fileVersion ?? previewItem.remoteContentRef?.version ?? null}
                 saveDocument={saveDocument}
-                mode={getEditorMode(previewItem)}
+                mode={getEditorMode(previewItem, sourceView)}
+                readOnly={sourceReadOnly}
                 wrapLines={wrapLines}
-                language={previewItem.language}
+                language={sourceView ? sourceViewLanguage(previewItem) : previewItem.language}
                 onSelectionCommit={(view) => {
                   if (previewItem) scheduleCaptureSelection(previewItem, view);
                 }}
@@ -516,6 +613,7 @@ export function PreviewPanel({embedded=false,visible=true,itemId,panelId='previe
                 initialScrollSnapshot={readingPosition?.edit ?? null}
                 contentHash={contentHash}
                 onScrollSnapshotChange={handleEditorScrollSnapshot}
+                onSaveStateChange={state => reportSaveState(saveStateKey, state)}
               />
             )}
             {previewOpen && previewItem && editable && previewItem.type === 'markdown' && (

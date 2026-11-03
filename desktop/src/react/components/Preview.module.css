@@ -823,7 +823,7 @@
 }
 
 :global(.cm-blockquote-line) {
-    border-left: 3px solid var(--accent);
+    border-left: 1px solid var(--accent);
     padding-left: 1em;
     background: var(--overlay-subtle);
 }

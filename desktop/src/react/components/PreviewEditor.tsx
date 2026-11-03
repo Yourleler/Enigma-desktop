@@ -126,6 +126,12 @@ export interface PreviewEditorProps {
    */
   readOnly?: boolean;
   wrapLines?: boolean;
+  /**
+   * Unresolved save state, reported through a ref so a save that settles after
+   * the editor unmounts (e.g. switching back to the rendered preview) still
+   * reaches the parent. Null once the draft is on disk or discarded.
+   */
+  onSaveStateChange?: (state: 'failed' | 'conflict' | 'recovered' | null) => void;
 }
 
 const SAVE_DELAY = 600;
@@ -147,6 +153,11 @@ interface PendingIncomingContent {
 
 function getErrorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
+}
+
+function saveWriteFailedText(): string {
+  const text = window.t?.('preview.saveWriteFailed');
+  return text && text !== 'preview.saveWriteFailed' ? text : '无法写入文件，请检查文件权限或磁盘空间后重试。';
 }
 
 function showSaveError(prefixKey: string, err: unknown): void {
@@ -404,7 +415,7 @@ function isEditorCoverRailDrop(view: EditorView, event: DragEvent): boolean {
 /* ── Editor Component ── */
 
 export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>(
-  function PreviewEditor({ content, filePath, remoteContentRef, fileVersion, saveDocument, mode, language, onSelectionChange, onSelectionCommit, onQuoteRange, onStatsChange, onContentChange, initialScrollSnapshot, contentHash, onScrollSnapshotChange, readOnly = false, wrapLines = true, draftScope }, ref) {
+  function PreviewEditor({ content, filePath, remoteContentRef, fileVersion, saveDocument, mode, language, onSelectionChange, onSelectionCommit, onQuoteRange, onStatsChange, onContentChange, initialScrollSnapshot, contentHash, onScrollSnapshotChange, readOnly = false, wrapLines = true, draftScope, onSaveStateChange }, ref) {
     const incomingFileVersionKey = fileVersionIdentity(fileVersion ?? null);
     const remoteIdentityKey=JSON.stringify(remoteContentRef?[remoteContentRef.kind,remoteContentRef.mountId,remoteContentRef.rootId,remoteContentRef.subdir,remoteContentRef.name,remoteContentRef.contentPath]:null);
     const sourceIdentity=JSON.stringify([filePath,remoteIdentityKey,draftScope]);
@@ -433,11 +444,20 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
     const selfWriteContentsRef = useRef<Set<string>>(new Set());
     const pendingIncomingContentRef = useRef<PendingIncomingContent | null>(null);
     const saveBlockedRef = useRef(false);
-    const [saveIssue, setSaveIssue] = useState<{ conflict: boolean; message: string } | null>(null);
+    const [saveIssue, setSaveIssueState] = useState<{ conflict: boolean; message: string } | null>(null);
+    const saveStateCbRef = useRef(onSaveStateChange);
+    saveStateCbRef.current = onSaveStateChange;
+    const recoveredRef = useRef(false);
     const [refreshingConflict, setRefreshingConflict] = useState(false);
     const recovery = useRef<EditorDraftRecovery | null>(null);
     const recoveryCopy = useRef<EditorDraftCopy | null>(null);
-    const [recovered, setRecovered] = useState(false);
+    const [recovered, setRecoveredState] = useState(false);
+    const setRecovered = (value: boolean) => { recoveredRef.current = value; setRecoveredState(value); };
+    // Mirrors every save-issue change to the parent, including after unmount.
+    const setSaveIssue = useCallback((issue: { conflict: boolean; message: string } | null) => {
+      setSaveIssueState(issue);
+      saveStateCbRef.current?.(!issue ? null : recoveredRef.current ? 'recovered' : issue.conflict ? 'conflict' : 'failed');
+    }, []);
     const [recoveryCopies, setRecoveryCopies] = useState<EditorDraftCopy[]>([]);
     const [recoveryError, setRecoveryError] = useState('');
     const recoveryKey = editorRecoveryKey(filePath, remoteContentRef);
@@ -682,7 +702,7 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
               saveBlockedRef.current = true;
               throw new Error(tFn('settings.fileChangedOnDisk'));
             }
-            throw new Error('saveDocument returned false');
+            throw new Error(saveWriteFailedText());
           }
           nextVersion = result.version ?? null;
           if (result.version) diskVersionRef.current = result.version;
@@ -697,14 +717,14 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
                 saveBlockedRef.current = true;
                 throw new Error(tFn('settings.fileChangedOnDisk'));
               }
-              throw new Error('write-file-if-unchanged returned false');
+              throw new Error(saveWriteFailedText());
             }
             nextVersion = result.version ?? null;
             if (result.version) diskVersionRef.current = result.version;
           } else {
             const ok = await window.platform?.writeFile(fp, text);
             if(!valid())return;
-            if (ok === false) throw new Error('write-file returned false');
+            if (ok === false) throw new Error(saveWriteFailedText());
             nextVersion = undefined;
           }
         }

@@ -13,7 +13,11 @@
 .enigma-primary-page [data-agent-id]>span:first-child { width:24px;height:24px;border:0;box-shadow:none;background:transparent; }
 .enigma-primary-page [data-agent-id]>span:first-child>img { width:24px;height:24px; }
 .enigma-primary-page [data-testid="agent-tab-scroller"]~button:disabled,.enigma-primary-page div:has(>[data-testid="agent-tab-scroller"])>button:disabled { visibility:hidden; }
-.enigma-primary-page div:has(>[data-testid="agent-tab-scroller"]) { grid-template-columns:20px minmax(0,1fr) 20px;align-items:center;margin:0 0 14px;padding:0; }
+.enigma-primary-page div:has(>[data-testid="agent-tab-scroller"]) { grid-template-columns:26px minmax(0,1fr) 26px;align-items:center;margin:0 0 14px;padding:0; }
+/* Without overflow both arrows are disabled; don't indent the assistant chips
+   away from the page text for invisible controls. */
+.enigma-primary-page div:has(>[data-testid="agent-tab-scroller"]):not(:has(>button:enabled)) { grid-template-columns:minmax(0,1fr); }
+.enigma-primary-page div:has(>[data-testid="agent-tab-scroller"]):not(:has(>button:enabled))>button { display:none; }
 .enigma-primary-page div:has(>[data-testid="agent-tab-scroller"])>button { height:30px; }
 .app[data-primary-page] #sidebar,.app[data-primary-page] #jianSidebar,.app[data-primary-page] .main-content { display:none!important; }
 .app[data-primary-page] .enigma-workspace-frame { grid-template-columns:minmax(0,1fr)!important; }
@@ -50,3 +54,16 @@ body.enigma-surface .titlebar[data-primary-page] .tb-left-group { width:calc(var
 .enigma-primary-page { background:color-mix(in srgb,var(--eg-sidebar,var(--bg-card)) 86%,transparent);backdrop-filter:blur(18px);--text-muted:color-mix(in srgb,var(--text) 78%,var(--eg-sidebar,var(--bg-card))); }
 .enigma-primary-page { font:13px/1.65 var(--font-ui); }
 .enigma-connection-empty p { font:13px/1.75 var(--font-ui);text-wrap:pretty; }
+
+/* Visual guidance: each page has one accent action (the empty-state CTA or the
+   page's create button); refresh is a quiet utility next to its timestamp. */
+.enigma-primary-page .enigma-ghost-button { display:inline-flex;align-items:center;gap:var(--space-6);border:0;border-radius:8px;padding:var(--space-5) var(--space-8);background:transparent;color:color-mix(in srgb,var(--text) 72%,var(--text-muted));font:13px/1.5 var(--font-ui);cursor:pointer; }
+.enigma-primary-page .enigma-ghost-button:hover:not(:disabled) { background:color-mix(in srgb,var(--text) 6%,transparent);color:var(--text); }
+.enigma-primary-page .enigma-ghost-button:disabled { opacity:.55; }
+.enigma-primary-page :is([class*="activityEmpty"],[class*="automationEmpty"]) { display:flex;flex-direction:column;align-items:center;gap:var(--space-4); }
+.enigma-primary-page :is([class*="activityEmpty"],[class*="automationEmpty"]) strong { font-weight:600; }
+.enigma-primary-page :is([class*="activityEmpty"],[class*="automationEmpty"]) p { margin:0;max-width:34em;text-wrap:pretty; }
+/* body.enigma-surface outranks the global .enigma-primary padding for page CTAs. */
+body.enigma-surface .enigma-primary-page :is([class*="activityEmpty"],[class*="automationEmpty"],.enigma-conductor-empty,.enigma-connection-empty) .enigma-primary { margin-top:var(--space-12);border:0;border-radius:8px;padding:var(--space-8) var(--space-18);background:var(--accent);color:var(--eg-on-accent,var(--bg));font:500 13px/1.5 var(--font-ui);cursor:pointer; }
+body.enigma-surface .enigma-primary-page :is([class*="activityEmpty"],[class*="automationEmpty"],.enigma-conductor-empty,.enigma-connection-empty) .enigma-primary:hover:not(:disabled) { background:var(--accent);filter:brightness(1.06); }
+.enigma-connection-empty > .enigma-icon,.enigma-connection-empty > svg { color:var(--accent); }

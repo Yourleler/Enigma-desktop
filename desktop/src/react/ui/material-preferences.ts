@@ -21,7 +21,9 @@ export function applyMaterialPreferences(value:MaterialPreferences){
  document.body.style.setProperty('--glass-navigation-blur',`${2+tint*.06+20*dense}px`);
  document.body.style.setProperty('--glass-control-blur',`${.5+tint*.02+18*dense}px`);
  document.body.style.setProperty('--glass-composer-mix',`${3+tint*.7+25*dense}%`);
- document.body.style.setProperty('--glass-composer-blur',`${.35+tint*.1+14*dense}px`);
+ // Starts at the usage pill's clarity plus a touch more blur; the slider
+ // carries the composer from clear glass to a dense, readable slab.
+ document.body.style.setProperty('--glass-composer-blur',`${1+tint*.055+14*dense}px`);
  document.body.style.setProperty('--glass-control-highlight',`${10+tint*.32-35*dense}%`);
  document.body.style.setProperty('--glass-menu-mix',`${38+tint*.32+28*dense}%`);
  document.body.style.setProperty('--glass-frame-mix',`${38+tint*.38+22*dense}%`);

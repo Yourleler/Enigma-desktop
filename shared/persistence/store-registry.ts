@@ -212,7 +212,7 @@ export const PERSISTENT_STORES: readonly StoreDescriptor[] = Object.freeze([
     siteRules: [
       ...rules(["plugins/enigma/conductor.ts"], "Creates only the parent of a manager-owned worker workspace.", ["mkdir"], "path\\.dirname\\(root\\)"),
       ...rules(["plugins/enigma/conductor.ts"], "Creates a fresh native-only worker directory when no code repository exists.", ["mkdir"], "fs\\.mkdir\\(root\\)"),
-      ...rules(["plugins/enigma/host.ts"], "Creates a profile-owned manager workspace when no project scope exists.", ["mkdir"], "fs\\.mkdir\\(managerRoot"),
+      ...rules(["plugins/enigma/host.ts"], "Creates a profile-owned manager workspace when no project scope exists; removes it only when this same creation call made it and repository setup failed.", ["mkdir", "remove-path"], "fs\\.(?:mkdir|rm)\\(managerRoot"),
       ...rules(['plugins/enigma/conductor-inputs.ts'],'Creates exclusive read-only input copies inside the new worker workspace; never modifies source files.',['mkdir','write-file']),
     ],
   }),

@@ -678,7 +678,15 @@
     "failed": "⚠ Something seems off · {n} steps",
     "countWithFail": "{total} tools ({fail} failed)",
     "count": "{n} tools",
-    "running": "{n} tools running"
+    "running": "{n} tools running",
+    "kind": {
+      "command": "Ran {n} commands",
+      "read": "Read {n} files",
+      "edit": "Edited {n} files",
+      "search": "Searched {n} times",
+      "call": "Called {n} tools",
+      "failed": "{n} failed"
+    }
   },
   "processFold": {
     "unknown": "{n} results not recorded",
@@ -2766,11 +2774,67 @@
       "status": {
         "available": "Available",
         "expired": "Expired"
-      }
+      },
+      "emptyHint": "Click + in the composer or drag files into the chat to add them; files the assistant creates show up here too.",
+      "noMatch": "No matching attachments"
     },
     "jian": {
       "collapse": "Collapse folder instructions",
       "expand": "Expand folder instructions"
+    },
+    "dock": {
+      "label": "Workspace panels",
+      "scrollLeft": "Scroll workspace tabs left",
+      "scrollRight": "Scroll workspace tabs right",
+      "scrollLeftHint": "Show tabs on the left; you can also scroll sideways",
+      "scrollRightHint": "Show tabs on the right; you can also scroll sideways",
+      "menuSwitch": "Switch to this panel",
+      "menuRestore": "Add back",
+      "tabs": {
+        "files": {
+          "label": "Files",
+          "hint": "Project folders and this chat's attachments"
+        },
+        "changes": {
+          "label": "Changes",
+          "hint": "Code changes, guided reading and full diffs"
+        },
+        "browser": {
+          "label": "Browser",
+          "hint": "Browse the web; pages stay loaded when you switch tabs"
+        },
+        "tasks": {
+          "label": "Tasks",
+          "hint": "Progress, helper agents and task details"
+        },
+        "terminal": {
+          "label": "Terminal",
+          "hint": "Run commands in the selected working folder"
+        },
+        "sidechat": {
+          "label": "Side chat",
+          "hint": "Ask separately, share files or troubleshoot while the main chat stays as it is",
+          "menuHint": "Ask or troubleshoot separately"
+        },
+        "agents": {
+          "label": "Helper agents",
+          "hint": "Subtasks, run logs and a link back to the parent chat",
+          "menuHint": "View subtasks and run logs"
+        }
+      },
+      "empty": {
+        "changesTitle": "No code changes yet",
+        "changesBody": "Start a chat in a project. Once the assistant edits files, you can review each diff here.",
+        "changesAction": "Start a chat",
+        "tasksTitle": "No task progress yet",
+        "tasksBody": "Describe the work to the assistant; its plan, helper agents and run status will appear here.",
+        "tasksAction": "Describe a task",
+        "toolsTitle": "Open project tools",
+        "toolsBody": "Uses this chat's folder. Projects without a folder can still manage tasks; code features need a code folder linked under “Repositories”.",
+        "toolsAction": "Open tools",
+        "addTitle": "Add a workspace panel",
+        "addBody": "Click + above to pick files, the browser, changes or another tool."
+      }
     }
   },
   "desk": {
@@ -3497,6 +3561,10 @@
   "action.retry": "Retry",
   "subagentAbort": "Stop",
   "subagentAborted": "Stopped",
+  "subagentAbortMissing": "The task has already finished or no longer exists",
+  "subagentAbortUnsupported": "This task cannot be stopped midway",
+  "subagentAbortFailed": "Could not stop the task. Try again",
+  "subagentAbortNetwork": "Network error. The stop request was not delivered",
   "preview.toggle": "Preview panel",
   "preview.markdownPreview": "Preview",
   "preview.exitMarkdownPreview": "Back to editing",
@@ -3607,10 +3675,23 @@
   },
   "preview": {
     "fileHistory": "File history",
+    "viewSource": "View source",
+    "exitSourceView": "Back to preview",
+    "sourceReadOnly": "Read-only source: this content is not backed by a writable file (for example, a chat-generated artifact), so changes cannot be saved.",
+    "sourceReadOnlyWeb": "Read-only source: the web version cannot write local files yet. Edit it in the desktop app.",
+    "saveWriteFailed": "Could not write the file. Check file permissions or free disk space and try again.",
     "cover": {
       "saveImage": "Save image",
       "regenerateWithPrompt": "Generate image with custom prompt",
       "deleteCover": "Delete cover"
+    },
+    "pendingSave": {
+      "label": "File save status",
+      "failed": "This edit hasn't been saved to the file. The preview shows your draft; go back to the source to retry.",
+      "conflict": "The file changed on disk, so autosave is paused. The preview shows your draft; go back to the source to compare and decide.",
+      "draft": "A draft was never written to the file. The preview shows the version on disk; go back to the source to restore and compare.",
+      "recovered": "An unsaved draft was restored and autosave is paused. The preview shows that draft; go back to the source to compare it with the file on disk.",
+      "action": "Resolve in source"
     }
   },
   "mediaViewer": {
@@ -3774,5 +3855,18 @@
     "workspace_graph": "Read repository dependencies",
     "workspace_repos": "List linked repositories",
     "workspace_verify": "Run joint checks"
+  },
+  "toolRow": {
+    "run": "Ran",
+    "read": "Read",
+    "list": "Listed",
+    "edit": "Edited",
+    "write": "Wrote",
+    "search": "Searched",
+    "fetch": "Fetched",
+    "call": "Called",
+    "command": "Command",
+    "params": "Arguments",
+    "error": "Error"
   }
 }

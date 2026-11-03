@@ -328,7 +328,7 @@ export function BridgePanel({embedded=false}:{embedded?:boolean}={}) {
             </svg>
           </button>
         </div>
-        <div className="enigma-bridge-intro"><p className="enigma-page-description">查看外部消息平台的连接状态与会话。配置后可从对应平台联系助手；本机工作对话仍独立保留。</p><div className="enigma-page-refresh"><button disabled={loading} onClick={()=>void loadPlatformData(platform)}><AppIcon name="refresh" size={15} className={loading?'enigma-refreshing':''}/>{loading?'正在刷新…':'刷新连接'}</button><span role="status">{loadError|| (updatedAt?`更新于 ${new Date(updatedAt).toLocaleTimeString('zh-CN',{hour12:false})}`:'')}</span></div></div><div className={fp.bridgeBody}>
+        <div className="enigma-bridge-intro"><p className="enigma-page-description">查看外部消息平台的连接状态与会话。配置后可从对应平台联系助手；本机工作对话仍独立保留。</p><div className="enigma-page-refresh"><button className="enigma-ghost-button" disabled={loading} onClick={()=>void loadPlatformData(platform)}><AppIcon name="refresh" size={15} className={loading?'enigma-refreshing':''}/>{loading?'正在刷新…':'刷新连接'}</button><span role="status">{loadError|| (updatedAt?`更新于 ${new Date(updatedAt).toLocaleTimeString('zh-CN',{hour12:false})}`:'')}</span></div></div><div className={fp.bridgeBody}>
           {showOverlay?<div className="enigma-connection-empty"><AppIcon name="link" size={30}/><h3>尚未连接 {bridgePlatformLabel(platform,t)}</h3><p>添加平台配置后，可以在这里查看会话和连接状态。</p><button className="enigma-primary" onClick={()=>openSettingsModal('bridge')}>配置连接</button></div>:<>
           <div className={fp.bridgeSidebar} id="bridgeSidebar">
             <div className={fp.bridgeContactList} id="bridgeContactList">

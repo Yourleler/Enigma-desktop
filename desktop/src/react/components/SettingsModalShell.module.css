@@ -10,19 +10,17 @@
   align-items: center;
   justify-content: center;
   padding: var(--space-24);
-  background: var(--eg-scrim, rgba(0, 0, 0, 0.3));
-  opacity: 0;
-  backdrop-filter: blur(0);
-  -webkit-backdrop-filter: blur(0);
+  /* Never fade the overlay or card with opacity: a translucent ancestor is a
+     Backdrop Root, so the card's glass would sample only the scrim and snap
+     to its real blur after the fade. The scrim fades by colour instead. */
+  background-color: transparent;
   transition:
-    opacity var(--settings-modal-open-dur) var(--settings-modal-ease);
+    background-color var(--settings-modal-open-dur) var(--settings-modal-ease);
   -webkit-app-region: no-drag;
 }
 
 .overlay.open {
-  opacity: 1;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
+  background-color: var(--eg-scrim, rgba(0, 0, 0, 0.3));
 }
 
 :global(html[data-platform="win32"]) .overlay.open {
@@ -34,9 +32,7 @@
 }
 
 .overlay.closing {
-  opacity: 0;
-  backdrop-filter: blur(0);
-  -webkit-backdrop-filter: blur(0);
+  background: transparent;
   pointer-events: none;
   transition-duration: var(--settings-modal-close-dur);
 }
@@ -56,26 +52,34 @@
   box-shadow:
     0 26px 70px rgba(20, 18, 14, 0.18),
     0 8px 24px rgba(20, 18, 14, 0.12);
-  opacity: 0;
-  transform: scale(var(--settings-modal-scale));
+  transform: translateY(6px);
   transform-origin: center;
   pointer-events: none;
-  transition:
-    transform var(--settings-modal-open-dur) var(--settings-modal-ease),
-    opacity var(--settings-modal-open-dur) var(--settings-modal-ease);
-  will-change: transform, opacity;
+  transition: transform var(--settings-modal-open-dur) var(--settings-modal-ease);
+}
+
+/* The glass slab arrives already blurred; only its contents fade in. */
+.card > * {
+  opacity: 0;
+  transition: opacity var(--settings-modal-open-dur) var(--settings-modal-ease);
 }
 
 .card.open {
-  opacity: 1;
-  transform: scale(1);
+  transform: none;
   pointer-events: auto;
-  will-change: auto;
+}
+
+.card.open > * {
+  opacity: 1;
+}
+
+.card.closing > * {
+  opacity: 0;
+  transition-duration: var(--settings-modal-close-dur);
 }
 
 .card.closing {
-  opacity: 0;
-  transform: scale(var(--settings-modal-scale));
+  transform: translateY(6px);
   pointer-events: none;
   transition-duration: var(--settings-modal-close-dur);
 }

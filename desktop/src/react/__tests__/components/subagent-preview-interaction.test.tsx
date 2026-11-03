@@ -267,7 +267,10 @@ describe('SubagentCard static resource card', () => {
     fireEvent.click(abort);
 
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalledWith('http://127.0.0.1:3210/api/task/task-a/abort', { method: 'POST' });
+      expect(fetch).toHaveBeenCalledWith(
+        'http://127.0.0.1:3210/api/task/task-a/abort',
+        expect.objectContaining({ method: 'POST' }),
+      );
     });
     expect(screen.queryByText('Preview A')).toBeNull();
     expect(useStore.getState().subagentPreviewByTaskId).toEqual({});

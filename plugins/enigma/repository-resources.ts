@@ -9,8 +9,8 @@ export async function repositoryResources(engine:any,sessionPath:string|undefine
  const roots=sessionPath?(await conversationChanges(engine).resolveRoots(sessionPath)).map(r=>r.root):selected;
  return Promise.all([...new Set(roots)].map(async root=>{
   const real=await fs.realpath(root);if(!(await fs.stat(real)).isDirectory())throw Error('请选择目录');
-  let branch='',gitRoot='';try{gitRoot=await git(real,['rev-parse','--show-toplevel']);branch=await git(real,['branch','--show-current']);}catch{}
-  return {path:real,name:path.basename(real),git:!!gitRoot,branch:gitRoot?(branch||'分离 HEAD'):null};
+  let branch='',gitRoot='';try{gitRoot=await fs.realpath(await git(real,['rev-parse','--show-toplevel']));branch=await git(real,['branch','--show-current']);}catch{gitRoot='';}
+  return {path:real,name:path.basename(real),git:!!gitRoot,gitRoot:gitRoot||null,branch:gitRoot?(branch||'分离 HEAD'):null};
  }));
 }
 export async function repositoryBranches(root:string){return (await git(root,['for-each-ref','--format=%(refname:short)','refs/heads','refs/remotes'])).split('\n').filter(Boolean);}

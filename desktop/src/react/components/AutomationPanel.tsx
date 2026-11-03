@@ -240,7 +240,7 @@ export function AutomationPanel({embedded=false}:{embedded?:boolean}={}) {
         <div className={fp.floatingPanelBody}>
           <div className={styles.toolbar}>
             <span className={styles.help}>应用运行时自动执行；休眠或退出期间不会执行。</span>
-            <button className={styles.textButton} disabled={refreshing} aria-busy={refreshing} onClick={()=>void loadData()}><AppIcon name="refresh" size={15} className={refreshing?'enigma-refreshing':''}/>{refreshing?'正在刷新…':'刷新列表'}</button><span role="status">{updatedAt?`更新于 ${new Date(updatedAt).toLocaleTimeString('zh-CN',{hour12:false})}`:''}</span>
+            <button className={`${styles.textButton} enigma-ghost-button`} disabled={refreshing} aria-busy={refreshing} onClick={()=>void loadData()}><AppIcon name="refresh" size={15} className={refreshing?'enigma-refreshing':''}/>{refreshing?'正在刷新…':'刷新列表'}</button><span role="status">{updatedAt?`更新于 ${new Date(updatedAt).toLocaleTimeString('zh-CN',{hour12:false})}`:''}</span>
             <button className={`${styles.iconButton} enigma-add-plan`} type="button" onClick={addManualJob} title={t('automation.add')} aria-label={t('automation.add')} disabled={addingManualJob} aria-busy={addingManualJob}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <line x1="12" y1="5" x2="12" y2="19" />
@@ -266,7 +266,7 @@ export function AutomationPanel({embedded=false}:{embedded?:boolean}={}) {
                 />
                 <div className={styles.groupList}>
                   {activeJobs.length === 0 ? (!loadError && (
-                    <div className={fp.automationEmpty}><strong>还没有任务计划</strong><p>安排指定时间或周期执行的任务，例如每天整理进展、定期检查项目。</p><button className={styles.textButton} onClick={addManualJob} disabled={addingManualJob}>创建第一个计划</button></div>
+                    <div className={fp.automationEmpty}><strong>还没有任务计划</strong><p>安排指定时间或周期执行的任务，例如每天整理进展、定期检查项目。</p><button className={`${styles.textButton} enigma-primary`} onClick={addManualJob} disabled={addingManualJob}>创建第一个计划</button></div>
                   )) : activeJobs.map(job => (
                     <AutomationCard
                       key={`${connectionKey}:${job.id}`}

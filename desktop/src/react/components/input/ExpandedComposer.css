@@ -29,7 +29,7 @@ body.enigma-surface .enigma-expand-composer:focus-visible {outline:2px solid var
 
 /* Compact idle composer, with enough room for a short thought and clear
    separation from the lower controls. Longer drafts grow up to a scroll cap. */
-body.enigma-surface [data-liquid="composer"] {padding:var(--space-14, 14px) var(--space-16, 16px) var(--space-10, 10px);gap:var(--space-10, 10px);border-radius:20px;}
+body.enigma-surface [data-liquid="composer"] {padding:var(--space-14, 14px) var(--space-16, 16px) var(--space-10, 10px);gap:var(--space-10, 10px);border-radius:26px;}
 body.enigma-surface [data-liquid="composer"] .tiptap {font:14px/1.65 var(--font-ui);min-height:42px;max-height:180px;padding-right:var(--space-22, 22px);box-sizing:border-box;}
 body.enigma-surface .input-area {padding:0 var(--space-20, 20px) var(--space-18, 18px);}
 body.enigma-surface .input-area > .enigma-composer-surface-mount {max-width:760px;}

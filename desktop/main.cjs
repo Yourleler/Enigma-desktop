@@ -2050,7 +2050,7 @@ function createTray() {
     // Windows 优先用 .ico，缺失则回退到 .png
     const icoName = isDev ? "tray-dev.ico" : "tray.ico";
     const pngName = isDev ? "tray-dev-template.png" : "tray-template.png";
-    resolved = loadTrayImageFromCandidates([icoName, pngName]);
+    resolved = loadTrayImageFromCandidates(PRODUCT_NAME === 'Enigma' ? ['enigma/tray.ico', icoName, pngName] : [icoName, pngName]);
   } else {
     const iconName = isDev ? "tray-dev-template.png" : "tray-template.png";
     resolved = loadTrayImageFromCandidates(PRODUCT_NAME === 'Enigma' ? ['enigma/tray-template.png', iconName] : [iconName]);

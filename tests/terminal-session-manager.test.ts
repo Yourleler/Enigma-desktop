@@ -237,3 +237,12 @@ describe("TerminalSessionManager", () => {
     }).output).toBe("line before restart\n");
   });
 });
+
+describe("terminalEnv", () => {
+  it("adds truecolor support and silences the macOS bash zsh notice without overriding user values", async () => {
+    const { terminalEnv } = await import("../lib/terminal/node-pty-backend.ts");
+    expect(terminalEnv({ PATH: "/bin" }, "darwin")).toMatchObject({ PATH: "/bin", COLORTERM: "truecolor", BASH_SILENCE_DEPRECATION_WARNING: "1" });
+    expect(terminalEnv({ COLORTERM: "24bit", BASH_SILENCE_DEPRECATION_WARNING: "0" }, "darwin")).toMatchObject({ COLORTERM: "24bit", BASH_SILENCE_DEPRECATION_WARNING: "0" });
+    expect(terminalEnv({}, "linux").BASH_SILENCE_DEPRECATION_WARNING).toBeUndefined();
+  });
+});

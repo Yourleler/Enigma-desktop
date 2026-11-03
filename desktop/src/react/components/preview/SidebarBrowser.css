@@ -8,3 +8,4 @@
 .enigma-browser-placeholder { width:100%;height:100%;object-fit:cover;object-position:top;opacity:.6;pointer-events:none; }
 .enigma-browser-empty { display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--space-10);text-align:center;min-height:180px;height:100%;padding:var(--space-20);color:var(--text-muted);font-size:12px; }
 .enigma-browser-empty p { margin:0; }
+.enigma-browser-empty { text-wrap:pretty; }

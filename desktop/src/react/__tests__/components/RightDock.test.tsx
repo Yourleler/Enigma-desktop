@@ -28,7 +28,7 @@ it('ignores animated selection overflow after the last tab reaches the titlebar 
  expect(list.closest('#enigma-titlebar-workspace')).not.toBeNull();
  Object.defineProperties(list,{clientWidth:{configurable:true,value:240},scrollWidth:{configurable:true,value:646}});
  [...list.querySelectorAll<HTMLElement>('[data-dock-tab-id]')].forEach((tab,index)=>Object.defineProperties(tab,{offsetLeft:{value:index*155},offsetWidth:{value:155}}));
- list.scrollLeft=380;fireEvent.scroll(list);
+ list.scrollLeft=535;fireEvent.scroll(list);
  expect(screen.queryByRole('button',{name:'向右滚动工作标签'})).toBeNull();
  expect(screen.getByRole('button',{name:'向左滚动工作标签'})).toBeEnabled();
 });
@@ -44,10 +44,10 @@ it('reveals overflow in either direction without changing the selected panel',()
  expect(scrollTo).toHaveBeenCalledWith({left:168,behavior:'smooth'});
  expect(viewport).toHaveAttribute('data-overflow-left');expect(viewport).toHaveAttribute('data-overflow-right');
  expect(screen.getByRole('tab',{name:'文件'})).toHaveAttribute('aria-selected','true');
- list.scrollLeft=380;fireEvent.scroll(list);
+ list.scrollLeft=535;fireEvent.scroll(list);
  expect(screen.queryByRole('button',{name:'向右滚动工作标签'})).toBeNull();
- fireEvent.click(screen.getByRole('button',{name:'向左滚动工作标签'}));expect(list.scrollLeft).toBe(212);
- Object.defineProperty(list,'clientWidth',{value:700});list.scrollLeft=0;fireEvent.scroll(list);
+ fireEvent.click(screen.getByRole('button',{name:'向左滚动工作标签'}));expect(list.scrollLeft).toBe(367);
+ Object.defineProperty(list,'clientWidth',{value:800});list.scrollLeft=0;fireEvent.scroll(list);
  expect(viewport).not.toHaveAttribute('data-overflow-left');expect(viewport).not.toHaveAttribute('data-overflow-right');
 });
 it('keeps keyboard-selected tabs inside the fade instead of underneath its arrow',()=>{
@@ -59,9 +59,17 @@ it('keeps keyboard-selected tabs inside the fade instead of underneath its arrow
  fireEvent.keyDown(screen.getByRole('tab',{name:'文件'}),{key:'ArrowRight'});
  expect(list.scrollLeft).toBe(28);
  fireEvent.keyDown(screen.getByRole('tab',{name:'变更'}),{key:'End'});
- expect(list.scrollLeft).toBe(240);expect(screen.queryByRole('button',{name:'向右滚动工作标签'})).toBeNull();
- fireEvent.keyDown(screen.getByRole('tab',{name:'任务'}),{key:'Home'});
+ expect(list.scrollLeft).toBe(360);expect(screen.queryByRole('button',{name:'向右滚动工作标签'})).toBeNull();
+ fireEvent.keyDown(screen.getByRole('tab',{name:'终端'}),{key:'Home'});
  expect(list.scrollLeft).toBe(0);expect(screen.queryByRole('button',{name:'向左滚动工作标签'})).toBeNull();
+});
+it('lays scroll arrows out beside the tab strip instead of on top of its tabs',()=>{
+ const {container}=render(<RightDock/>),list=screen.getByRole('tablist',{name:'工作面板'});
+ const [left,right]=container.querySelectorAll<HTMLButtonElement>('.enigma-dock-scroll');
+ // Flex siblings own their lane; hidden arrows are disabled and out of the tab order.
+ expect(list.previousElementSibling).toBe(left);expect(list.nextElementSibling).toBe(right);
+ expect(left.parentElement).toHaveClass('enigma-dock-tabs-viewport');
+ expect(left).toBeDisabled();expect(left).toHaveAttribute('tabindex','-1');expect(right).toBeDisabled();
 });
 it('does not move restored file tabs when they are selected for the first time',()=>{
  const scope=dockScope(useStore.getState());patchDockView(scope,{tab:'files',order:['files','changes','browser','tasks']});
