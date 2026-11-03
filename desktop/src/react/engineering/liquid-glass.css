@@ -264,7 +264,7 @@ body.enigma-surface [data-glass-selection] {
   background: linear-gradient(155deg,color-mix(in srgb,var(--glass-edge) 13%,transparent),transparent 65%),color-mix(in srgb,var(--eg-accent) 7%,transparent);
   box-shadow: inset 0 1px 0 var(--glass-edge),inset 0 -1px 0 var(--glass-edge-low),0 2px 7px color-mix(in srgb,var(--eg-accent) 14%,transparent);
   backdrop-filter: blur(3px) saturate(1.3); -webkit-backdrop-filter: blur(3px) saturate(1.3);
-  transition: transform var(--duration-340ms) cubic-bezier(.22,.8,.18,1.08),width var(--duration-340ms) cubic-bezier(.22,.8,.18,1.08);
+  transition: transform var(--duration-340ms) cubic-bezier(.22,1,.36,1),width var(--duration-340ms) cubic-bezier(.22,1,.36,1);
   transform-origin: center;
 }
 body.enigma-surface .hana-toggle { border-radius: 999px; height: 22px; width: 38px; cursor: pointer; border: 1px solid var(--eg-stroke); }
@@ -272,13 +272,13 @@ body.enigma-surface .hana-toggle::after {
   border-radius: 999px; width: 16px; height: 16px; top: 2px; left: 2px;
   background: linear-gradient(145deg,var(--shine-white) 10%,var(--shine-white-65));
   border: 1px solid var(--shine-white-80); box-shadow: 0 1px 4px var(--shade-black-22),inset 0 1px 0 var(--shine-white);
-  transition: transform var(--duration-280ms) cubic-bezier(.22,.8,.18,1.1),box-shadow var(--duration-180ms);
+  transition: transform var(--duration-280ms) cubic-bezier(.22,1,.36,1),box-shadow var(--duration-180ms);
 }
 body.enigma-surface .hana-toggle:active::after { width: 19px; }
 body.enigma-surface .enigma-switch-track i {
   background: linear-gradient(145deg,var(--shine-white),var(--glass-tint-mint)); border: 1px solid var(--shine-white-75);
   box-shadow: inset 0 1px 0 var(--shine-white),0 1px 4px var(--shade-black-22);
-  transition: transform var(--duration-280ms) cubic-bezier(.22,.8,.18,1.1);
+  transition: transform var(--duration-280ms) cubic-bezier(.22,1,.36,1);
 }
 .enigma-glass-clarity { display: grid; gap: var(--space-8); padding: var(--space-12) var(--space-4) var(--space-4); border-top: 1px solid var(--border); font-size: 12px; }
 .enigma-glass-clarity label,.enigma-glass-clarity > div { display:flex; align-items:center; justify-content:space-between; gap:var(--space-12); }
@@ -335,10 +335,10 @@ body.enigma-surface [data-settings-navigation] { background:color-mix(in srgb,va
 body.enigma-surface [data-settings-navigation] > button[aria-current="page"] { background:transparent; box-shadow:none; }
 body.enigma-surface [data-glass-frame="hint"] { color:var(--eg-text); border-radius:11px; background:color-mix(in srgb,var(--eg-card) 92%,transparent); }
 body.enigma-surface [data-glass-frame="sheet"] { animation:enigma-sheet-arrive var(--duration-260ms) cubic-bezier(.18,.78,.22,1); }
-body.enigma-surface [data-glass-selection] { overflow:hidden; transition:transform var(--duration-420ms) cubic-bezier(.2,.8,.18,1.04),width var(--duration-420ms) cubic-bezier(.2,.8,.18,1.04),height var(--duration-420ms) cubic-bezier(.2,.8,.18,1.04); }
+body.enigma-surface [data-glass-selection] { overflow:hidden; transition:transform var(--duration-420ms) cubic-bezier(.22,1,.36,1),width var(--duration-420ms) cubic-bezier(.22,1,.36,1),height var(--duration-420ms) cubic-bezier(.22,1,.36,1); }
 body.enigma-surface [data-glass-selection]::after { content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;background:linear-gradient(110deg,transparent 12%,color-mix(in srgb,var(--glass-edge) 44%,transparent) 48%,transparent 80%); }
 body.enigma-surface [data-glass-selection][data-glass-motion="running"]::after { animation:enigma-lens-sheen var(--duration-420ms) ease-out; }
-body.enigma-surface :is([data-glass-interactive],[data-glass-controls] button) { transition:scale var(--duration-260ms) cubic-bezier(.2,.8,.2,1.15),background-color var(--duration-fast),box-shadow var(--duration-fast),color var(--duration-fast); }
+body.enigma-surface :is([data-glass-interactive],[data-glass-controls] button) { transition:scale var(--duration-260ms) cubic-bezier(.22,1,.36,1),background-color var(--duration-fast),box-shadow var(--duration-fast),color var(--duration-fast); }
 body.enigma-surface:not(.enigma-glass-off) :is([data-glass-interactive],[data-glass-controls] button):is(:hover,:focus-visible,[data-liquid-pressed]):not(:disabled) {
   background-image:radial-gradient(ellipse 75% 100% at var(--glass-pointer-x,50%) var(--glass-pointer-y,25%),color-mix(in srgb,var(--glass-edge) var(--glass-control-highlight,26%),transparent),transparent 82%);
   box-shadow:inset 0 1px 0 color-mix(in srgb,var(--glass-edge) 70%,transparent),0 3px 10px color-mix(in srgb,var(--glass-shadow) 24%,transparent);

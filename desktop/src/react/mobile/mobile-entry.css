@@ -683,7 +683,7 @@ html[data-platform="linux"] .tb-toggle-right {
 .md-content blockquote {
     margin: var(--space-8) 0;
     padding-left: var(--space-16);
-    border-left: 2px solid var(--border);
+    border-left: 1px solid var(--border);
     color: var(--text-light);
     font-style: italic;
 }
@@ -692,8 +692,8 @@ html[data-platform="linux"] .tb-toggle-right {
     --callout-rgb: var(--accent-rgb, 83, 125, 150);
     margin: 0.65em 0;
     padding: 0.55em 0.8em 0.6em 0.9em;
-    border-left: 2px solid rgba(var(--callout-rgb), 0.58);
-    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    border: 1px solid rgba(var(--callout-rgb), 0.3);
+    border-radius: var(--radius-sm);
     background: rgba(var(--callout-rgb), 0.055);
     color: var(--text);
     font-style: normal;
