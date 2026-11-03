@@ -3527,6 +3527,9 @@
   },
   "preview": {
     "fileHistory": "履歴",
+    "viewSource": "ソースを表示",
+    "exitSourceView": "プレビューに戻る",
+    "sourceReadOnly": "ソースは読み取り専用です：この内容は書き込み可能なファイルに関連付けられていないため（会話で生成された成果物など）、変更を保存できません。",
     "fileMovedOrDeleted": "原稿が移動または削除されました",
     "legacyImageUpgrade": "この画像プレビューは更新されました。新しいビューアで開くにはクリックしてください。",
     "coverLayoutSaveFailed": "Cover レイアウトの保存に失敗しました。ファイルが外部で変更された可能性があります。",

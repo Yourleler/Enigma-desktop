@@ -3489,6 +3489,9 @@
   },
   "preview": {
     "fileHistory": "历史版本",
+    "viewSource": "查看源码",
+    "exitSourceView": "返回预览",
+    "sourceReadOnly": "源码只读：此内容没有关联可写入的文件（如对话生成的产物），修改无法保存。",
     "cover": {
       "saveImage": "保存图片",
       "regenerateWithPrompt": "自定义提示词生成图片",

@@ -3611,6 +3611,9 @@
   },
   "preview": {
     "fileHistory": "File history",
+    "viewSource": "View source",
+    "exitSourceView": "Back to preview",
+    "sourceReadOnly": "Read-only source: this content is not backed by a writable file (for example, a chat-generated artifact), so changes cannot be saved.",
     "cover": {
       "saveImage": "Save image",
       "regenerateWithPrompt": "Generate image with custom prompt",

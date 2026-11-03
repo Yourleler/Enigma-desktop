@@ -5,6 +5,13 @@ import styles from './PreviewSaveNotice.module.css';
 
 type ExternalContent = { content: string; fileVersion: FileVersion | null; noticeShown: boolean };
 
+/** 源码只读提示：与保存提示同处编辑器上方、同一套样式，说明为何不能修改。 */
+export function PreviewSourceReadOnlyNotice({message}: {message: string}) {
+  return <section className={styles.notice} data-preview-save-notice="" data-preview-source-readonly="" aria-label="源码只读">
+    <p role="status">{message}</p>
+  </section>;
+}
+
 /** Saving failures stay beside the affected document until resolved. */
 export function PreviewSaveNotice({issue, external, refreshing, onCopy, onRefresh, onRetry, onResolve, recovered=false, copies=[], onSelectCopy}: {
   recovered?: boolean;

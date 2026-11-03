@@ -3527,6 +3527,9 @@
   },
   "preview": {
     "fileHistory": "歷史版本",
+    "viewSource": "查看原始碼",
+    "exitSourceView": "返回預覽",
+    "sourceReadOnly": "原始碼唯讀：此內容沒有關聯可寫入的檔案（如對話產生的產物），修改無法儲存。",
     "fileMovedOrDeleted": "原稿件已移动或者删除",
     "legacyImageUpgrade": "此图片预览已升级，点此在新查看器打开",
     "coverLayoutSaveFailed": "Cover 布局保存失败，文件可能已被外部修改。",
