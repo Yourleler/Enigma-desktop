@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { installWindowTestT } from '../helpers/i18n-test-strings';
 import { PreviewPanel } from '../../components/PreviewPanel';
 import { useStore, type StoreState } from '../../stores';
+import { EditorDraftRecovery, editorRecoveryKey, editorRecoveryScope } from '../../stores/editor-draft-recovery';
 import type { PlatformApi, PreviewItem } from '../../types';
 
 const mocks = vi.hoisted(() => ({
@@ -200,5 +201,128 @@ describe('PreviewPanel source view toggle', () => {
     setPreview([{ id: 'code', type: 'code', title: 'a.ts', content: 'export {};\n', filePath: '/tmp/a.ts', ext: 'ts', language: 'ts' }], 'code');
     render(<PreviewPanel watchDocuments={false} />);
     expect(screen.queryByRole('button', { name: '查看源码' })).toBeNull();
+  });
+
+  it('jumps the markdown source editor to the heading line picked from the outline', async () => {
+    setPreview([{ id: 'note', type: 'markdown', title: 'note.md', content: '# 开头\n\n正文\n\n## 第二节\n\n更多', filePath: '/tmp/toc-note.md' }], 'note', ['note']);
+    render(<PreviewPanel watchDocuments={false} />);
+    fireEvent.click(screen.getByRole('button', { name: '查看源码' }));
+    await waitFor(() => expect(document.querySelector('.preview-editor.mode-code .cm-content')).toBeTruthy());
+
+    fireEvent.click(screen.getByRole('button', { name: /目录/ }));
+    fireEvent.click(screen.getByRole('button', { name: '第二节' }));
+    const view = editorView();
+    expect(view.state.selection.main.head).toBe(view.state.doc.line(5).from);
+  });
+});
+
+/** Source → preview while a save is unresolved: the editor (and its notice) unmounts. */
+describe('PreviewPanel pending save notice in rendered preview', () => {
+  const connection = { serverId: 'server-1', kind: 'local', baseUrl: 'http://127.0.0.1:1' } as unknown as StoreState['activeServerConnection'];
+  const draftScope = () => JSON.stringify([editorRecoveryScope(connection), '']);
+  const DISK = { mtimeMs: 1, size: 5, sha256: 'disk' };
+  let platform: Partial<PlatformApi>;
+  let rectSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    localStorage.clear();
+    installWindowTestT(LABELS);
+    rectSpy = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(() => rect());
+    Range.prototype.getClientRects = vi.fn(() => [] as unknown as DOMRectList);
+    Range.prototype.getBoundingClientRect = vi.fn(() => rect(0, 0));
+    mocks.hanaFetch.mockReset().mockImplementation(async (url: string) => ({
+      ok: true,
+      json: async () => (url === '/api/preview/html' ? { previewUrl: 'about:blank#html-preview' } : {}),
+    }));
+    platform = {
+      watchFile: vi.fn(async () => true),
+      unwatchFile: vi.fn(async () => true),
+      onFileChanged: vi.fn(),
+      writeFile: vi.fn(async () => true),
+      writeFileIfUnchanged: vi.fn(async () => ({ ok: false, conflict: false })),
+      readFileSnapshot: vi.fn(async () => ({ content: '原文', version: DISK })),
+    };
+    window.platform = platform as PlatformApi;
+    useStore.setState({ activeServerConnection: connection, deskBasePath: '', selectedFolder: '', homeFolder: '' } as Partial<StoreState>);
+  });
+
+  afterEach(() => {
+    cleanup();
+    rectSpy.mockRestore();
+    setPreview([], '');
+    useStore.setState({ activeServerConnection: null } as Partial<StoreState>);
+    vi.clearAllMocks();
+  });
+
+  async function editSourceThenReturn(text: string) {
+    fireEvent.click(screen.getByRole('button', { name: '查看源码' }));
+    await waitFor(() => expect(document.querySelector('.preview-editor.mode-code .cm-content')).toBeTruthy());
+    typeIntoEditor(text);
+    await waitFor(() => expect(platform.writeFileIfUnchanged).toHaveBeenCalled(), { timeout: 3000 });
+    await waitFor(() => expect(document.querySelector('.preview-editor')?.previousElementSibling).toHaveAttribute('data-preview-save-notice'));
+    fireEvent.click(screen.getByRole('button', { name: '返回预览' }));
+    await waitFor(() => expect(document.querySelector('.preview-editor')).toBeNull());
+  }
+
+  it('keeps a failed save visible in the markdown preview and returns to the source to retry', async () => {
+    setPreview([{ id: 'note', type: 'markdown', title: 'note.md', content: '原文', filePath: '/tmp/failed-note.md', fileVersion: DISK }], 'note', ['note']);
+    render(<PreviewPanel watchDocuments={false} />);
+    await editSourceThenReturn('，未保存');
+
+    const notice = await screen.findByRole('region', { name: '文件保存状态' });
+    expect(notice).toHaveAttribute('data-preview-pending-save', 'failed');
+    expect(notice).toHaveTextContent('修改尚未保存到文件');
+    expect(document.querySelector('.preview-markdown')).toHaveTextContent('原文，未保存');
+
+    fireEvent.click(screen.getByRole('button', { name: '回到源码处理' }));
+    await waitFor(() => expect(document.querySelector('.preview-editor.mode-code .cm-content')).toBeTruthy());
+    expect(editorView().state.doc.toString()).toBe('原文，未保存');
+    // The source editor restores the local copy and takes over with its full notice.
+    expect(await screen.findByText(/已恢复未保存的草稿/)).toBeInTheDocument();
+    expect(document.querySelector('[data-preview-pending-save]')).toBeNull();
+  });
+
+  it('keeps an external-change conflict visible above the HTML preview', async () => {
+    vi.mocked(platform.writeFileIfUnchanged!).mockResolvedValue({ ok: false, conflict: true } as never);
+    setPreview([{ id: 'page', type: 'html', title: 'demo.html', content: '<h1>A</h1>', filePath: '/tmp/conflict.html', ext: 'html', fileVersion: DISK }], 'page');
+    render(<PreviewPanel watchDocuments={false} />);
+    await waitFor(() => expect(document.querySelector('iframe[data-html-preview-frame]')).toBeTruthy());
+    await editSourceThenReturn('<p>B</p>');
+
+    const notice = await screen.findByRole('region', { name: '文件保存状态' });
+    expect(notice).toHaveAttribute('data-preview-pending-save', 'conflict');
+    expect(notice).toHaveTextContent('文件有外部更新');
+    expect(document.querySelector('iframe[data-html-preview-frame]')).toBeTruthy();
+  });
+
+  it('clears the notice once the source save succeeds', async () => {
+    vi.mocked(platform.writeFileIfUnchanged!).mockResolvedValue({ ok: true, conflict: false, version: { mtimeMs: 2, size: 9, sha256: 'saved' } } as never);
+    setPreview([{ id: 'note', type: 'markdown', title: 'note.md', content: '原文', filePath: '/tmp/saved-note.md', fileVersion: DISK }], 'note', ['note']);
+    render(<PreviewPanel watchDocuments={false} />);
+    fireEvent.click(screen.getByRole('button', { name: '查看源码' }));
+    await waitFor(() => expect(document.querySelector('.preview-editor .cm-content')).toBeTruthy());
+    typeIntoEditor('，已保存');
+    await waitFor(() => expect(platform.writeFileIfUnchanged).toHaveBeenCalled(), { timeout: 3000 });
+    fireEvent.click(screen.getByRole('button', { name: '返回预览' }));
+    await waitFor(() => expect(document.querySelector('.preview-markdown')).toHaveTextContent('原文，已保存'));
+    expect(document.querySelector('[data-preview-pending-save]')).toBeNull();
+  });
+
+  it('warns in preview about a draft from an earlier session that was never written', async () => {
+    new EditorDraftRecovery(localStorage).write({ id: 'copy-1', scope: draftScope(), key: editorRecoveryKey('/tmp/draft-note.md'), text: '上次的草稿', baseVersion: DISK, updatedAt: 1 });
+    setPreview([{ id: 'note', type: 'markdown', title: 'note.md', content: '原文', filePath: '/tmp/draft-note.md', fileVersion: DISK }], 'note', ['note']);
+    render(<PreviewPanel watchDocuments={false} />);
+
+    const notice = screen.getByRole('region', { name: '文件保存状态' });
+    expect(notice).toHaveAttribute('data-preview-pending-save', 'draft');
+    expect(document.querySelector('.preview-markdown')).toHaveTextContent('原文');
+
+    fireEvent.click(screen.getByRole('button', { name: '回到源码处理' }));
+    await waitFor(() => expect(editorView().state.doc.toString()).toBe('上次的草稿'));
+    expect(await screen.findByText(/已恢复未保存的草稿/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '返回预览' }));
+    await waitFor(() => expect(document.querySelector('[data-preview-pending-save]')).toHaveAttribute('data-preview-pending-save', 'recovered'));
+    expect(document.querySelector('.preview-markdown')).toHaveTextContent('上次的草稿');
   });
 });

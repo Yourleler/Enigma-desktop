@@ -126,6 +126,12 @@ export interface PreviewEditorProps {
    */
   readOnly?: boolean;
   wrapLines?: boolean;
+  /**
+   * Unresolved save state, reported through a ref so a save that settles after
+   * the editor unmounts (e.g. switching back to the rendered preview) still
+   * reaches the parent. Null once the draft is on disk or discarded.
+   */
+  onSaveStateChange?: (state: 'failed' | 'conflict' | 'recovered' | null) => void;
 }
 
 const SAVE_DELAY = 600;
@@ -404,7 +410,7 @@ function isEditorCoverRailDrop(view: EditorView, event: DragEvent): boolean {
 /* ── Editor Component ── */
 
 export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>(
-  function PreviewEditor({ content, filePath, remoteContentRef, fileVersion, saveDocument, mode, language, onSelectionChange, onSelectionCommit, onQuoteRange, onStatsChange, onContentChange, initialScrollSnapshot, contentHash, onScrollSnapshotChange, readOnly = false, wrapLines = true, draftScope }, ref) {
+  function PreviewEditor({ content, filePath, remoteContentRef, fileVersion, saveDocument, mode, language, onSelectionChange, onSelectionCommit, onQuoteRange, onStatsChange, onContentChange, initialScrollSnapshot, contentHash, onScrollSnapshotChange, readOnly = false, wrapLines = true, draftScope, onSaveStateChange }, ref) {
     const incomingFileVersionKey = fileVersionIdentity(fileVersion ?? null);
     const remoteIdentityKey=JSON.stringify(remoteContentRef?[remoteContentRef.kind,remoteContentRef.mountId,remoteContentRef.rootId,remoteContentRef.subdir,remoteContentRef.name,remoteContentRef.contentPath]:null);
     const sourceIdentity=JSON.stringify([filePath,remoteIdentityKey,draftScope]);
@@ -433,11 +439,20 @@ export const PreviewEditor = forwardRef<PreviewEditorHandle, PreviewEditorProps>
     const selfWriteContentsRef = useRef<Set<string>>(new Set());
     const pendingIncomingContentRef = useRef<PendingIncomingContent | null>(null);
     const saveBlockedRef = useRef(false);
-    const [saveIssue, setSaveIssue] = useState<{ conflict: boolean; message: string } | null>(null);
+    const [saveIssue, setSaveIssueState] = useState<{ conflict: boolean; message: string } | null>(null);
+    const saveStateCbRef = useRef(onSaveStateChange);
+    saveStateCbRef.current = onSaveStateChange;
+    const recoveredRef = useRef(false);
     const [refreshingConflict, setRefreshingConflict] = useState(false);
     const recovery = useRef<EditorDraftRecovery | null>(null);
     const recoveryCopy = useRef<EditorDraftCopy | null>(null);
-    const [recovered, setRecovered] = useState(false);
+    const [recovered, setRecoveredState] = useState(false);
+    const setRecovered = (value: boolean) => { recoveredRef.current = value; setRecoveredState(value); };
+    // Mirrors every save-issue change to the parent, including after unmount.
+    const setSaveIssue = useCallback((issue: { conflict: boolean; message: string } | null) => {
+      setSaveIssueState(issue);
+      saveStateCbRef.current?.(!issue ? null : recoveredRef.current ? 'recovered' : issue.conflict ? 'conflict' : 'failed');
+    }, []);
     const [recoveryCopies, setRecoveryCopies] = useState<EditorDraftCopy[]>([]);
     const [recoveryError, setRecoveryError] = useState('');
     const recoveryKey = editorRecoveryKey(filePath, remoteContentRef);

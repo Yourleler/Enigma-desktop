@@ -12,6 +12,32 @@ export function PreviewSourceReadOnlyNotice({message}: {message: string}) {
   </section>;
 }
 
+/** Save state reported by the editor; it survives the editor unmounting. */
+export type PreviewPendingSaveKind = 'failed' | 'conflict' | 'recovered' | 'draft';
+const pendingSaveFallback: Record<PreviewPendingSaveKind | 'label' | 'action', string> = {
+  label: '文件保存状态',
+  failed: '修改尚未保存到文件。预览显示的是草稿，可回到源码重试保存。',
+  conflict: '文件有外部更新，自动保存已暂停。预览显示的是你的草稿，请回到源码比较后再决定。',
+  recovered: '已恢复一份未保存的草稿，自动保存已暂停。预览显示的是该草稿；回到源码与磁盘版本比较后再决定如何保存。',
+  draft: '有一份尚未写入文件的草稿。预览显示的是磁盘上的版本，回到源码可恢复并比较。',
+  action: '回到源码处理',
+};
+function pendingSaveText(key: keyof typeof pendingSaveFallback) {
+  const path = `preview.pendingSave.${key}`, value = window.t?.(path);
+  return typeof value === 'string' && value && value !== path ? value : pendingSaveFallback[key];
+}
+
+/** Rendered preview: the editor (and its full notice) is unmounted, so keep the
+ *  unresolved save visible here and offer the way back to the source editor. */
+export function PreviewPendingSaveNotice({kind, onReturnToSource}: {kind: PreviewPendingSaveKind; onReturnToSource: () => void}) {
+  return <section className={`${styles.notice} ${styles.pending}`} data-preview-save-notice="" data-preview-pending-save={kind} aria-label={pendingSaveText('label')}>
+    <p role="status">{pendingSaveText(kind)}</p>
+    <div className={styles.actions}>
+      <button type="button" onClick={onReturnToSource}>{pendingSaveText('action')}</button>
+    </div>
+  </section>;
+}
+
 /** Saving failures stay beside the affected document until resolved. */
 export function PreviewSaveNotice({issue, external, refreshing, onCopy, onRefresh, onRetry, onResolve, recovered=false, copies=[], onSelectCopy}: {
   recovered?: boolean;

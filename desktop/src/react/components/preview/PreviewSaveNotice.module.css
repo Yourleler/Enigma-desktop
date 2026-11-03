@@ -10,3 +10,7 @@
 .actions button:hover { background: var(--overlay-medium); }
 .actions button:disabled { opacity: .5; cursor: default; }
 .actions button:focus-visible, .notice summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+/* Rendered preview: pin the notice to the top of the scrolling body (reading
+   positions often restore mid-document), on frosted glass over the content. */
+.pending { position: sticky; top: 0; z-index: 2; background: color-mix(in srgb, var(--panel-card-bg) 80%, transparent); -webkit-backdrop-filter: blur(10px) saturate(1.1); backdrop-filter: blur(10px) saturate(1.1); }
+:global([data-preview-panel-body]:has(> [data-preview-pending-save]) > div:has(> .preview-html-frame)) { flex: 1 1 auto; min-height: 0; height: auto; }

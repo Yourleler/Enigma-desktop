@@ -19,7 +19,7 @@ import {alignPreviewAnchor,findPreviewAnchor} from '../utils/preview-anchor';
 import { PreviewEditor, type PreviewEditorHandle, type PreviewEditorStats } from './PreviewEditor';
 import { PreviewRenderer } from './preview/PreviewRenderer';
 import {PreviewRefreshNotice} from './preview/PreviewRefreshNotice';
-import {PreviewSourceReadOnlyNotice} from './preview/PreviewSaveNotice';
+import {PreviewPendingSaveNotice,PreviewSourceReadOnlyNotice,type PreviewPendingSaveKind} from './preview/PreviewSaveNotice';
 import {capturePreviewContext,previewConnectionKey} from '../utils/preview-context';
 import { TabBar } from './preview/TabBar';
 import {DocumentNavigation} from './preview/DocumentNavigation';
@@ -46,7 +46,7 @@ import {
 import type { PreviewScrollSnapshot } from '../../../../shared/preview-reading-position.ts';
 import previewStyles from './Preview.module.css';
 import { AppIcon } from '../ui/app-icons';
-import { editorRecoveryScope } from '../stores/editor-draft-recovery';
+import { EditorDraftRecovery, editorRecoveryKey, editorRecoveryScope } from '../stores/editor-draft-recovery';
 
 const EDITABLE_TYPES = new Set(['markdown', 'code', 'csv']);
 const CHAPTER_RAIL_HOVER_ZONE_PX = 64;
@@ -228,6 +228,34 @@ export function PreviewPanel({embedded=false,visible=true,itemId,panelId='previe
     if (!previewItem || !supportsSourceView(previewItem)) return;
     setSourceViewActive(previewItem.id, !sourceView);
   }, [previewItem, sourceView, setSourceViewActive]);
+
+  // Unresolved saves outlive the editor: switching back to the rendered preview
+  // unmounts it (and its PreviewSaveNotice), so the panel keeps the last state
+  // the editor reported, keyed like the editor instance's recovery identity.
+  const [saveStates,setSaveStates]=useState<Readonly<Record<string,PreviewPendingSaveKind>>>({});
+  const editorSeenRef=useRef<Set<string>>(new Set());
+  const saveStateKey=previewItem?`${draftScope}:${previewItem.id}`:'';
+  const reportSaveState=useCallback((key:string,state:PreviewPendingSaveKind|null)=>setSaveStates(current=>{
+    if((current[key]??null)===state)return current;
+    const next={...current};
+    if(state)next[key]=state;else delete next[key];
+    return next;
+  }),[]);
+  useEffect(()=>{if(editable&&saveStateKey)editorSeenRef.current.add(saveStateKey);},[editable,saveStateKey]);
+  // A recovery copy left by an earlier session: no editor has run here yet, so
+  // the rendered preview still shows the disk version without any warning.
+  const storedDraft=useMemo(()=>{
+    if(editable||!previewItem||!draftScope||!hasWritableSource(previewItem)||editorSeenRef.current.has(saveStateKey))return false;
+    const key=editorRecoveryKey(previewItem.filePath,previewItem.remoteContentRef);
+    if(!key)return false;
+    try{return new EditorDraftRecovery(localStorage).list(draftScope,key).length>0;}catch{return false;}
+  },[editable,previewItem?.id,previewItem?.filePath,previewItem?.remoteContentRef,draftScope,saveStateKey]); // eslint-disable-line react-hooks/exhaustive-deps -- 只按文件身份重新扫描恢复副本，内容变化无需重扫
+  const pendingSave:PreviewPendingSaveKind|null=saveStates[saveStateKey]??(storedDraft?'draft':null);
+  const returnToSource=useCallback(()=>{
+    if(!previewItem)return;
+    if(supportsSourceView(previewItem))setSourceViewActive(previewItem.id,true);
+    else if(previewItem.type==='csv')setCsvSource(true);
+  },[previewItem,setSourceViewActive]);
 
   const handleEditorContentChange = useCallback((content: string, fileVersion?: PreviewItem['fileVersion']) => {
     if (!previewItem||!ownsPreview()) return;
@@ -549,6 +577,9 @@ export function PreviewPanel({embedded=false,visible=true,itemId,panelId='previe
           />
           {previewOpen && anchorMessage && <div role="status" className={previewStyles.previewAnchorMessage}>{anchorMessage}<button type="button" aria-label="关闭章节提示" onClick={()=>setAnchorMessage('')}>×</button></div>}
           <div ref={previewBodyRef} className={`universal-card ${previewStyles.previewPanelBody}`} id={panelId==='previewPanel'?'previewBody':`${panelId}-body`} data-preview-panel-body="" data-preview-kind={previewItem?.type} onMouseUp={handleMouseUp}>
+            {previewOpen && previewItem && !editable && pendingSave && (
+              <PreviewPendingSaveNotice kind={pendingSave} onReturnToSource={returnToSource}/>
+            )}
             {previewOpen && previewItem && !editable && (
               <PreviewRenderer previewItem={previewItem} htmlFind={previewItem.type==='html'?{open:findOpen,query:findQuery,index:findIndex,onResult:(count,truncated)=>{setFindCount(count);setFindTruncated(truncated);},onOpen:()=>setFindOpen(true)}:undefined}/>
             )}
@@ -577,6 +608,7 @@ export function PreviewPanel({embedded=false,visible=true,itemId,panelId='previe
                 initialScrollSnapshot={readingPosition?.edit ?? null}
                 contentHash={contentHash}
                 onScrollSnapshotChange={handleEditorScrollSnapshot}
+                onSaveStateChange={state => reportSaveState(saveStateKey, state)}
               />
             )}
             {previewOpen && previewItem && editable && previewItem.type === 'markdown' && (
