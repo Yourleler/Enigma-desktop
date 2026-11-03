@@ -9,12 +9,14 @@ import {openWorkspaceTerminal,useRepositoryContext} from '../chat/RepositoryCont
 import './WorkspaceTerminal.css';
 
 // 终端配色：按界面明暗取值，ANSI 色针对各自底色调到足够对比度，避免黄/青等颜色在浅底上看不清。
+// 提示符使用 256 色槽位 99（见 lib/terminal/node-pty-backend.ts），按主题映射：浅色紫、深色绿。
+function promptSlot(color:string):string[]{const slots:string[]=[];slots[99-16]=color;return slots;}
 const LIGHT:ITheme={background:'#fbfaf7',foreground:'#1d1b26',cursor:'#5b3fa0',cursorAccent:'#fbfaf7',selectionBackground:'#d9cdf3',
  black:'#1d1b26',red:'#b42318',green:'#1f7a3a',yellow:'#8a5a00',blue:'#1d4fbf',magenta:'#8e3fae',cyan:'#0f6f7c',white:'#5c5a66',
- brightBlack:'#55525f',brightRed:'#d12c1f',brightGreen:'#23893f',brightYellow:'#9c6700',brightBlue:'#2a5fd6',brightMagenta:'#a04cc2',brightCyan:'#12808f',brightWhite:'#2b2935'};
+ brightBlack:'#55525f',brightRed:'#d12c1f',brightGreen:'#23893f',brightYellow:'#9c6700',brightBlue:'#2a5fd6',brightMagenta:'#a04cc2',brightCyan:'#12808f',brightWhite:'#2b2935',extendedAnsi:promptSlot('#7149be')};
 const DARK:ITheme={background:'#14171d',foreground:'#eef0f4',cursor:'#c3b0f2',cursorAccent:'#14171d',selectionBackground:'#4a4166',
  black:'#3b4048',red:'#ff7b72',green:'#7ee08a',yellow:'#f2cc60',blue:'#79b8ff',magenta:'#d2a8ff',cyan:'#76e3ea',white:'#d8dbe2',
- brightBlack:'#8b929e',brightRed:'#ffa198',brightGreen:'#a5f0ad',brightYellow:'#f8de8a',brightBlue:'#a5d0ff',brightMagenta:'#e2c5ff',brightCyan:'#a3f0f4',brightWhite:'#ffffff'};
+ brightBlack:'#8b929e',brightRed:'#ffa198',brightGreen:'#a5f0ad',brightYellow:'#f8de8a',brightBlue:'#a5d0ff',brightMagenta:'#e2c5ff',brightCyan:'#a3f0f4',brightWhite:'#ffffff',extendedAnsi:promptSlot('#7ee08a')};
 const dark=()=>document.body.dataset.enigmaTone==='dark';
 const palette=()=>dark()?DARK:LIGHT;
 // 启动整条链路（list → start → read）的上限；超时后给出明确错误和重试入口，而不是一直“正在连接”。

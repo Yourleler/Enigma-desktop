@@ -13,6 +13,16 @@ export function terminalEnv(base: NodeJS.ProcessEnv, platform: NodeJS.Platform =
   return env;
 }
 
+// 工作区终端的提示符用 256 色槽位 99 着色，前端按主题把该槽位映射成紫色（浅色）/绿色（深色）。
+const PROMPT_COLOR = 99;
+export function terminalPrompt(env: NodeJS.ProcessEnv, shellFile: string): NodeJS.ProcessEnv {
+  if (env.PS1) return env;
+  const shell = path.basename(shellFile);
+  if (shell === "bash") env.PS1 = `\\[\\e[1;38;5;${PROMPT_COLOR}m\\]\\W \\$\\[\\e[0m\\] `;
+  else if (shell === "zsh") env.PS1 = `%B%F{${PROMPT_COLOR}}%1~ %#%f%b `;
+  return env;
+}
+
 export async function createAsyncNodePtyBackend() {
   const pty = await import("node-pty");
   ensureUnixSpawnHelperExecutable();
@@ -23,7 +33,7 @@ export async function createAsyncNodePtyBackend() {
         cwd,
         cols,
         rows,
-        env: terminalEnv(resolved.env || env || process.env),
+        env: terminalPrompt(terminalEnv(resolved.env || env || process.env), resolved.file),
         name: "xterm-256color",
       });
       proc.onData((data) => onData?.(data));
